@@ -1,12 +1,12 @@
 ---
 name: issue-start
-description: 指定したIssue番号から開発用ブランチを作成し、開発を開始する。
+description: 指定したIssue番号からIssue内容を読み取り、ブランチ作成・実装・PR作成まで行う。
 user_invocable: true
 ---
 
-# Issue開発開始スキル
+# Issue開発スキル
 
-指定されたGitHub IssueのブランチをCLAUDE.mdの規約に従って作成し、開発を開始します。
+指定されたGitHub Issueに基づいて、ブランチ作成から実装、PR作成まで一連の開発を行います。
 
 ## 使い方
 
@@ -17,23 +17,58 @@ user_invocable: true
 
 ## 実行手順
 
-1. **Issue取得**: `gh issue view <番号>` でIssueの内容を取得する
-2. **ラベル確認**: Issueのラベルからブランチのtype prefix を決定する
+### Phase 1: Issue分析
+
+1. `gh issue view <番号>` でIssueの本文・ラベル・コメントをすべて取得する
+2. 関連する過去のIssue（本文中のリンクや関連ラベル）があれば参照する
+3. 要件・設計・定義・完了条件を整理する
+4. 不明点があれば `AskUserQuestion` でユーザーに確認する（推測しない）
+
+### Phase 2: ブランチ作成
+
+1. Issueのラベルからブランチのtype prefixを決定する
    - `feature` → `feature/`
    - `bug` → `fix/`
    - `refactor` → `refactor/`
    - `docs` → `docs/`
    - ラベルなし → ユーザーに確認
-3. **ブランチ名生成**: `<type>/#<issue番号>-<kebab-case説明>` 形式
-   - Issueタイトルから簡潔な英語の説明を生成
-   - 例: `feature/#1-add-skill-data-model`
-4. **developブランチから分岐**:
+2. ブランチ名を生成: `<type>/#<issue番号>-<kebab-case説明>`
+3. developブランチから分岐する:
    ```bash
    git checkout develop
    git pull origin develop
-   git checkout -b feature/#<番号>-<説明>
+   git checkout -b <ブランチ名>
    ```
-5. **開発開始の確認**: Issueの要件と完了条件を表示し、実装方針をユーザーと確認する
+
+### Phase 3: 実装
+
+1. CLAUDE.mdのコーディング規約に従って実装する
+2. コミットメッセージにIssue番号を含める（例: `feat: 〜 #1`）
+3. 実装中に判明した技術情報や設計判断は、Issueにコメントとして記録する:
+   ```bash
+   gh issue comment <番号> --body "実装メモ: ..."
+   ```
+
+### Phase 4: PR作成
+
+1. リモートにブランチをプッシュする
+2. developブランチへのPRを作成する:
+   ```bash
+   gh pr create \
+     --base develop \
+     --title "<type>: <説明> #<issue番号>" \
+     --body "$(cat <<'EOF'
+   ## 概要
+   ...
+   ## 変更点
+   ...
+   ## テスト
+   ...
+   closes #<issue番号>
+   EOF
+   )"
+   ```
+3. 作成されたPRのURLをユーザーに返す
 
 ## ブランチtype判定表
 
@@ -43,10 +78,10 @@ user_invocable: true
 | `bug` | `fix/` |
 | `refactor` | `refactor/` |
 | `docs` | `docs/` |
-| `hotfix`（mainから分岐） | `hotfix/` |
 
 ## 注意事項
 
 - developブランチが存在しない場合は作成する
 - 作業中の変更がある場合はユーザーに確認してからブランチを切り替える
-- Issueの完了条件を確認し、実装計画を立ててから着手する
+- Issueに記載のない仕様は推測せず、ユーザーに確認する
+- 過去のIssueやPRから関連情報を積極的に収集する

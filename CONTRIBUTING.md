@@ -7,14 +7,16 @@
 - **ユーザー**がGitHub Issueを作成し、要件や仕様を定義する
 - **Claude Code**がIssueの内容に基づいてコーディングを行う
 - 設計書・定義書などのドキュメントはIssueに紐づけて管理する
+- Claude Codeは必要に応じてIssueに情報を記載し、過去のIssueから情報を参照する
 
 ## 開発フロー
 
 ```
 1. Issue作成（ユーザー）
-2. 設計・定義をIssueに記載（ユーザー）
-3. Claude CodeがIssueを読み取り、ブランチ作成・実装
-4. PR作成 → レビュー → マージ（Issue自動クローズ）
+2. Claude Code起動 & Issue指定（ユーザー）
+3. ブランチ作成 & 実装（Claude Code）
+4. PR作成（Claude Code）
+5. 最終確認 & マージ（ユーザー）→ Issue自動クローズ
 ```
 
 ### 1. Issue作成（ユーザー）
@@ -25,32 +27,32 @@
 - **要件**: やること／やらないこと
 - **完了条件（DoD）**: チェックリスト形式
 
-### 2. 設計・定義の紐づけ（ユーザー）
+設計書や定義書は、Issueの本文・コメントに直接記載するか、別ドキュメントへのリンクを貼り付けてください。
 
-実装に必要な設計書や定義書は、Issueのコメントまたは本文に直接記載するか、
-別ドキュメントへのリンクをIssueに貼り付けて紐づけます。
+### 2. Claude Code起動 & Issue指定（ユーザー）
 
-Claude Codeはこの情報を読み取って実装するため、必要な仕様は漏れなくIssueに集約してください。
+ユーザーがClaude Codeを起動し、作業対象のIssueを指定します。
 
-### 3. 実装開始
+```
+/issue-start #<番号>
+```
 
-実装の開始方法は2つあります。
+### 3. ブランチ作成 & 実装（Claude Code）
 
-#### 方法A: 自動実行（GitHub Actions）
+Claude CodeがIssueの内容を読み取り、以下を行います。
 
-Issueに `ready-for-implementation` ラベルを付与すると、GitHub Actions経由でClaude Codeが自動的に起動し、実装からPR作成まで行います。
+1. Issueの要件・設計・定義、および関連する過去のIssueを確認
+2. 規約に沿ったブランチを作成
+3. 実装を進める
+4. 必要に応じてIssueにコメントで進捗や技術的な情報を記載
 
-#### 方法B: 手動実行（ローカルClaude Code）
+### 4. PR作成（Claude Code）
 
-ローカルでClaude Codeを使い `/issue-start #<番号>` を実行すると、Issueを読み取りブランチ作成・実装を行います。
+実装完了後、Issueに紐づいたPRを作成します。PRの本文に `closes #<issue番号>` が含まれます。
 
-### 4. @claudeメンション
+### 5. 最終確認 & マージ（ユーザー）
 
-IssueやPRのコメントで `@claude` とメンションすると、Claude Codeが応答します。追加の修正依頼や質問に使えます。
-
-### 5. PR作成・マージ
-
-実装完了後、PRが作成されます（自動実行の場合は自動作成）。PRの本文に `closes #<issue番号>` が含まれるため、マージ時にIssueが自動クローズされます。
+ユーザーがPRの内容を確認し、承認・マージします。マージによりIssueが自動クローズされます。
 
 ---
 
@@ -95,4 +97,3 @@ IssueやPRのコメントで `@claude` とメンションすると、Claude Code
 | `docs` | ドキュメント |
 | `question` | 要確認・議論 |
 | `priority:high` / `medium` / `low` | 優先度 |
-| `ready-for-implementation` | Claude Code自動実装トリガー |
