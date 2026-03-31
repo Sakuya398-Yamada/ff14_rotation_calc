@@ -1,0 +1,51 @@
+name: Issue to PR (Claude Code)
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  implement:
+    # "ready-for-implementation" ラベルが付与されたときのみ実行
+    if: github.event.label.name == 'ready-for-implementation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            GitHub Issue #${{ github.event.issue.number }} の内容に基づいて実装を行い、PRを作成してください。
+
+            ## Issue情報
+            - タイトル: ${{ github.event.issue.title }}
+            - 番号: #${{ github.event.issue.number }}
+
+            ## 実装手順
+            1. Issueの本文とコメントをすべて読み、要件・設計・定義を把握する
+            2. CLAUDE.mdの規約に従い、developブランチから作業ブランチを作成する
+              - ブランチ名: Issueのラベルに応じた type を使用（feature, fix, refactor, docs）
+              - 形式: <type>/#${{ github.event.issue.number }}-<kebab-case説明>
+            3. Issueの要件に基づいて実装する
+            4. コミットメッセージにIssue番号を含める（例: feat: 〜 #${{ github.event.issue.number }}）
+            5. 実装完了後、developブランチへのPRを作成する
+              - PRの本文に closes #${{ github.event.issue.number }} を含める
+
+            ## 重要な原則
+            - Issueに記載されていない仕様は推測せず、Issueにコメントで質問する
+            - CLAUDE.mdのコーディング規約・コミット規約に従う
+          claude_args: "--max-turns 30"
