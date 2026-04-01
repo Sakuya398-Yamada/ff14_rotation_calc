@@ -1,4 +1,5 @@
 import type { Skill, CharacterStats } from "../types/skill";
+import { calcCritRate, calcCritMultiplier, calcDhRate, calcGcd } from "../logic/stat-calc";
 
 interface SkillPaletteProps {
   skills: Skill[];
@@ -67,6 +68,9 @@ export function SkillPalette({
               min={420}
             />
           </div>
+          <div style={styles.statDetail}>
+            発生率: {(calcCritRate(stats) * 100).toFixed(1)}% / 倍率: x{calcCritMultiplier(stats).toFixed(3)}
+          </div>
           <div style={styles.statRow}>
             <label style={styles.statLabel}>DH</label>
             <input
@@ -77,6 +81,9 @@ export function SkillPalette({
               min={420}
             />
           </div>
+          <div style={styles.statDetail}>
+            発生率: {(calcDhRate(stats) * 100).toFixed(1)}%
+          </div>
           <div style={styles.statRow}>
             <label style={styles.statLabel}>SS</label>
             <input
@@ -86,6 +93,9 @@ export function SkillPalette({
               style={styles.statInput}
               min={420}
             />
+          </div>
+          <div style={styles.statDetail}>
+            GCD: {calcGcd(2.5, stats).toFixed(2)}s
           </div>
         </div>
       </div>
@@ -213,6 +223,13 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "4px",
     color: "#e0e0e0",
     outline: "none",
+  },
+  statDetail: {
+    fontSize: "11px",
+    color: "#4fc3f7",
+    paddingLeft: "40px",
+    marginTop: "-2px",
+    marginBottom: "2px",
   },
   skillGrid: {
     display: "flex",
