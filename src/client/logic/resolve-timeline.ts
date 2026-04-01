@@ -110,17 +110,24 @@ function getPotencyMultiplier(
 }
 
 /**
- * 内部で追跡するDoT状態。
- * 同じスキルIDのDoTは1つだけ存在し、再適用時に上書き（リフレッシュ）される。
+ * DoTストリーム: 同一スキルIDのDoTの適用履歴を管理する。
+ * FF14のDoTはサーバーティック（3秒間隔）で発動し、再適用時にティックタイマーはリセットされない。
+ * 再適用時は持続時間（endTime）とバフスナップショットのみ更新される。
  */
-interface InternalDoT {
+interface DoTStream {
   skillId: string;
-  startTime: number;
-  endTime: number;
-  dotPotency: number;
   icon: string;
-  /** 適用時にスナップショットしたバフ倍率 */
-  buffMultiplier: number;
+  dotPotency: number;
+  /** 最初の適用時刻（ティックタイマーの基準） */
+  firstAppliedAt: number;
+  /** 現在の終了時刻（再適用で延長される） */
+  currentEndTime: number;
+  /** 適用セグメント: 各適用時点のバフスナップショットを記録 */
+  segments: Array<{
+    appliedAt: number;
+    endTime: number;
+    buffMultiplier: number;
+  }>;
 }
 
 export function resolveTimeline(
@@ -145,10 +152,8 @@ export function resolveTimeline(
   const autoGenTimers: Record<string, AutoGenTimer> = {};
   // アクティブなバフのリスト
   const currentActiveBuffs: ActiveBuff[] = [];
-  // アクティブなDoTのマップ（skillId → InternalDoT）
-  const currentDoTs: Map<string, InternalDoT> = new Map();
-  // 全DoT期間を記録（タイムライン表示用）
-  const allDoTs: ActiveDoT[] = [];
+  // DoTストリームのマップ（skillId → DoTStream）
+  const dotStreams: Map<string, DoTStream> = new Map();
 
   // リソース初期化
   for (const res of resources) {
@@ -302,26 +307,22 @@ export function resolveTimeline(
       const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
       const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
-      const dot: InternalDoT = {
-        skillId: skill.id,
-        startTime,
-        endTime,
-        dotPotency: skill.dotPotency,
-        icon: skill.icon,
-        buffMultiplier,
-      };
-
-      // 同じスキルIDのDoTは上書き（リフレッシュ＆バフ再スナップショット）
-      currentDoTs.set(skill.id, dot);
-
-      allDoTs.push({
-        skillId: dot.skillId,
-        startTime: dot.startTime,
-        endTime: dot.endTime,
-        potency: dot.dotPotency,
-        icon: dot.icon,
-        buffMultiplier: dot.buffMultiplier,
-      });
+      const existing = dotStreams.get(skill.id);
+      if (existing) {
+        // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
+        existing.currentEndTime = endTime;
+        existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier });
+      } else {
+        // 初回適用: 新規DoTストリーム作成
+        dotStreams.set(skill.id, {
+          skillId: skill.id,
+          icon: skill.icon,
+          dotPotency: skill.dotPotency,
+          firstAppliedAt: startTime,
+          currentEndTime: endTime,
+          segments: [{ appliedAt: startTime, endTime, buffMultiplier }],
+        });
+      }
     }
 
     resolved.push({
@@ -335,27 +336,44 @@ export function resolveTimeline(
     });
   }
 
-  // DoTティックを計算
+  // DoTティックを計算 & activeDoTsを生成
   const dotTicks: DoTTick[] = [];
   let dotTotalPotency = 0;
+  const allDoTs: ActiveDoT[] = [];
 
-  for (const dot of allDoTs) {
-    // ティックは適用時刻 + 3s, + 6s, ... で発生
-    let tickTime = dot.startTime + DOT_TICK_INTERVAL;
-    while (tickTime <= dot.endTime) {
-      // 同じスキルIDの後続DoTがこのティック時刻より前に適用されていた場合、
-      // このDoTはその時点で上書きされているのでティックを生成しない
-      const laterDot = allDoTs.find(
-        (d) => d.skillId === dot.skillId && d.startTime > dot.startTime && d.startTime < tickTime
-      );
-      if (laterDot) break;
+  for (const stream of dotStreams.values()) {
+    // activeDoTs生成（タイムライン表示用: 各セグメントをActiveDoTとして記録）
+    for (const seg of stream.segments) {
+      allDoTs.push({
+        skillId: stream.skillId,
+        startTime: seg.appliedAt,
+        endTime: seg.endTime,
+        potency: stream.dotPotency,
+        icon: stream.icon,
+        buffMultiplier: seg.buffMultiplier,
+      });
+    }
 
-      const potency = Math.floor(dot.potency * dot.buffMultiplier);
+    // ティック生成: 最初の適用時刻基準で3秒毎、最終endTimeまで
+    let tickTime = stream.firstAppliedAt + DOT_TICK_INTERVAL;
+    while (tickTime <= stream.currentEndTime) {
+      // このティック時点で有効なセグメントのバフ倍率を取得
+      // （最後に適用されたセグメントで appliedAt <= tickTime のもの）
+      let activeSegment = stream.segments[0];
+      for (const seg of stream.segments) {
+        if (seg.appliedAt <= tickTime) {
+          activeSegment = seg;
+        } else {
+          break;
+        }
+      }
+
+      const potency = Math.floor(stream.dotPotency * activeSegment.buffMultiplier);
       dotTicks.push({
         time: Math.round(tickTime * 1000) / 1000,
         potency,
-        skillId: dot.skillId,
-        icon: dot.icon,
+        skillId: stream.skillId,
+        icon: stream.icon,
       });
       dotTotalPotency += potency;
       tickTime += DOT_TICK_INTERVAL;
