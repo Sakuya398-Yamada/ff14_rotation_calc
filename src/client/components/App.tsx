@@ -1,18 +1,33 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
-import { WHM_ATTACK_SKILLS } from "../data/whm-skills";
 import { resolveTimeline } from "../logic/resolve-timeline";
-import type { TimelineEntry } from "../types/skill";
+import { resolveIconUrl } from "../utils/resolve-icon-url";
+import type { Skill, TimelineEntry } from "../types/skill";
 
 let nextUid = 1;
 
 export function App() {
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/skills")
+      .then((res) => res.json())
+      .then((data: Skill[]) => {
+        const resolved = data.map((s) => ({
+          ...s,
+          icon: resolveIconUrl(s.icon),
+        }));
+        setSkills(resolved);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const skillMap = useMemo(
-    () => new Map(WHM_ATTACK_SKILLS.map((s) => [s.id, s])),
-    []
+    () => new Map(skills.map((s) => [s.id, s])),
+    [skills]
   );
 
   const resolvedEntries = useMemo(
@@ -36,6 +51,14 @@ export function App() {
     }, 0);
   }, [entries, skillMap]);
 
+  if (loading) {
+    return (
+      <div style={styles.app}>
+        <div style={styles.loading}>読み込み中...</div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.app}>
       <header style={styles.header}>
@@ -43,9 +66,9 @@ export function App() {
         <span style={styles.headerJob}>白魔道士 (WHM)</span>
       </header>
       <div style={styles.main}>
-        <SkillPalette skills={WHM_ATTACK_SKILLS} />
+        <SkillPalette skills={skills} />
         <Timeline
-          skills={WHM_ATTACK_SKILLS}
+          skills={skills}
           resolvedEntries={resolvedEntries}
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}
@@ -70,6 +93,14 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#e0e0e0",
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+  loading: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100vh",
+    fontSize: "18px",
+    color: "#888",
   },
   header: {
     display: "flex",

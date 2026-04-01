@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,4 +8,22 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+}
+
+/// スキルの定義データ
+model Skill {
+  /// スキルの一意識別子
+  id            String @id
+  /// スキル名（日本語）
+  name          String
+  /// 威力
+  potency       Int
+  /// GCD or oGCD
+  type          String
+  /// スキルアイコン画像のファイル名（例: "whm/Stone.png"）
+  icon          String
+  /// リキャストタイム（秒）
+  recastTime    Float
+  /// アニメーションロック（秒）
+  animationLock Float
 }
