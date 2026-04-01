@@ -10,6 +10,7 @@ import type {
   DoTTick,
   ActiveDoT,
   TimelineResult,
+  BossUntargetableWindow,
 } from "../types/skill";
 import { calcGcd } from "./stat-calc";
 
@@ -130,12 +131,28 @@ interface DoTStream {
   }>;
 }
 
+/**
+ * 指定時刻がボス離脱ウィンドウ内にあるかどうかを判定する。
+ */
+function isInUntargetableWindow(
+  time: number,
+  windows: BossUntargetableWindow[]
+): boolean {
+  for (const w of windows) {
+    if (time >= w.startTime && time < w.endTime) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function resolveTimeline(
   entries: TimelineEntry[],
   skillMap: Map<string, Skill>,
   resources: ResourceDefinition[],
   stats?: CharacterStats,
-  buffs?: BuffDefinition[]
+  buffs?: BuffDefinition[],
+  untargetableWindows?: BossUntargetableWindow[]
 ): TimelineResult {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
@@ -325,6 +342,11 @@ export function resolveTimeline(
       }
     }
 
+    // ボス離脱中チェック
+    const untargetableError = untargetableWindows
+      ? isInUntargetableWindow(startTime, untargetableWindows)
+      : false;
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
@@ -332,6 +354,7 @@ export function resolveTimeline(
       resourceSnapshot: snapshot,
       resourceErrors,
       comboErrors,
+      untargetableError,
       activeBuffs: [...currentActiveBuffs],
     });
   }
@@ -368,14 +391,17 @@ export function resolveTimeline(
         }
       }
 
-      const potency = Math.floor(stream.dotPotency * activeSegment.buffMultiplier);
-      dotTicks.push({
-        time: Math.round(tickTime * 1000) / 1000,
-        potency,
-        skillId: stream.skillId,
-        icon: stream.icon,
-      });
-      dotTotalPotency += potency;
+      // ボス離脱中のティックはスキップ
+      if (!untargetableWindows || !isInUntargetableWindow(tickTime, untargetableWindows)) {
+        const potency = Math.floor(stream.dotPotency * activeSegment.buffMultiplier);
+        dotTicks.push({
+          time: Math.round(tickTime * 1000) / 1000,
+          potency,
+          skillId: stream.skillId,
+          icon: stream.icon,
+        });
+        dotTotalPotency += potency;
+      }
       tickTime += DOT_TICK_INTERVAL;
     }
   }
