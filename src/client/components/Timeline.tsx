@@ -394,7 +394,7 @@ export function Timeline({
               {showResources && resources.map((res) => (
                 <div key={res.id} style={styles.resourceLane}>
                   <div style={styles.resourceLaneLabel} title={res.name}>
-                    {res.name}
+                    {res.shortName}
                   </div>
                   <div style={styles.resourceLaneContent}>
                     {resolvedEntries.map((entry) => {

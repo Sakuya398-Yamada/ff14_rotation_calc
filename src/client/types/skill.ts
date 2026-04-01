@@ -43,6 +43,8 @@ export interface ResourceDefinition {
   id: string;
   /** リソース名（日本語） */
   name: string;
+  /** 短縮名（レーンラベル用） */
+  shortName: string;
   /** 最大スタック数 */
   maxStacks: number;
   /** 自動生成の間隔（秒）。未設定の場合は自動生成なし */
