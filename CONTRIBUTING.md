@@ -15,8 +15,9 @@
 1. Issue作成（ユーザー）
 2. Claude Code起動 & Issue指定（ユーザー）
 3. ブランチ作成 & 実装（Claude Code）
-4. PR作成（Claude Code）
-5. 最終確認 & マージ（ユーザー）→ Issue自動クローズ
+4. PR作成 feature→develop（Claude Code）
+5. 最終確認 & マージ feature→develop（ユーザー）
+6. PR作成 develop→main & マージ（ユーザー）→ Issue自動クローズ
 ```
 
 ### 1. Issue作成（ユーザー）
@@ -48,11 +49,17 @@ Claude CodeがIssueの内容を読み取り、以下を行います。
 
 ### 4. PR作成（Claude Code）
 
-実装完了後、Issueに紐づいたPRを作成します。PRの本文に `closes #<issue番号>` が含まれます。
+実装完了後、Issueに紐づいたPRを作成します。PRの本文に `関連Issue: #<issue番号>` が含まれます。
+
+> **注意**: feature→develop PRには `closes` を使いません。GitHub の自動クローズはデフォルトブランチ（`main`）へのマージ時のみ機能するためです。
 
 ### 5. 最終確認 & マージ（ユーザー）
 
-ユーザーがPRの内容を確認し、承認・マージします。マージによりIssueが自動クローズされます。
+ユーザーがPRの内容を確認し、feature→develop PRをマージします。
+
+### 6. develop → main マージ & Issueクローズ
+
+develop→main のPRを作成する際に `closes #<issue番号>` を含め、mainへのマージ時にIssueが自動クローズされます。
 
 ---
 

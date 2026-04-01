@@ -118,10 +118,11 @@ git checkout -b <type>/#<issue番号>-<kebab-case説明>
    ...
    ## テスト
    ...
-   closes #<issue番号>
+   関連Issue: #<issue番号>
    EOF
    )"
    ```
+   **注意**: feature→develop PRには `closes` を使わない（developマージでは自動クローズされないため）。`closes` は develop→main PR で記載する。
 3. 作成されたPRのURLをユーザーに返す
 
 ## 注意事項

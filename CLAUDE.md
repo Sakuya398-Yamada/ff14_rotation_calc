@@ -72,7 +72,13 @@ test: ローテーションエンジンのユニットテスト追加 #8
 - `## 概要`: 変更内容の要約（1〜3行）
 - `## 変更点`: 具体的な変更のリスト
 - `## テスト`: テスト方法・結果
-- `closes #<issue番号>`: マージ時にIssueを自動クローズ
+- `関連Issue: #<issue番号>`: 対応するIssue番号を記載（feature→develop PRには `closes` を使わない）
+
+### Issueの自動クローズについて
+
+- GitHub の `closes #<番号>` はデフォルトブランチ（`main`）へのマージ時のみ機能する
+- **feature → develop PR**: `関連Issue: #<番号>` と記載する（`closes` は使わない）
+- **develop → main PR**: `closes #<番号>` を記載し、mainマージ時にIssueを自動クローズする
 
 ## Issue 規約
 
