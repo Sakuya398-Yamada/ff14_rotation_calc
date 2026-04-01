@@ -5,6 +5,8 @@ import type {
   ResourceDefinition,
   ResourceSnapshot,
   CharacterStats,
+  BuffDefinition,
+  ActiveBuff,
 } from "../types/skill";
 import { calcGcd } from "./stat-calc";
 
@@ -61,14 +63,36 @@ function processAutoGen(
  * - oGCDスキル: 前のアクションのアニメーションロック完了後（GCDリキャスト中に使用可能）
  * - リソース自動生成: スタックが最大未満になった時点から20秒後に1つ追加（最大まで繰り返し）
  */
+/**
+ * 指定時刻にアクティブなバフから速度バフの合成倍率を計算する。
+ */
+function getSpeedMultiplier(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): number {
+  let multiplier = 1;
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "speed") {
+        multiplier *= effect.value;
+      }
+    }
+  }
+  return multiplier;
+}
+
 export function resolveTimeline(
   entries: TimelineEntry[],
   skillMap: Map<string, Skill>,
   resources: ResourceDefinition[],
-  stats?: CharacterStats
+  stats?: CharacterStats,
+  buffs?: BuffDefinition[]
 ): ResolvedTimelineEntry[] {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
+  const buffDefMap = new Map((buffs ?? []).map((b) => [b.id, b]));
 
   /** 次のGCDが使用可能になる時刻 */
   let gcdAvailableAt = 0;
@@ -79,6 +103,8 @@ export function resolveTimeline(
   const resourceState: ResourceSnapshot = {};
   // 自動生成タイマー状態
   const autoGenTimers: Record<string, AutoGenTimer> = {};
+  // アクティブなバフのリスト
+  const currentActiveBuffs: ActiveBuff[] = [];
 
   // リソース初期化
   for (const res of resources) {
@@ -97,16 +123,36 @@ export function resolveTimeline(
     let startTime: number;
 
     if (skill.type === "gcd") {
-      const recastTime = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
+      const baseRecast = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
       startTime = Math.max(gcdAvailableAt, actionAvailableAt);
+      startTime = Math.round(startTime * 1000) / 1000;
+
+      // 期限切れバフを除去
+      for (let i = currentActiveBuffs.length - 1; i >= 0; i--) {
+        if (currentActiveBuffs[i].endTime <= startTime) {
+          currentActiveBuffs.splice(i, 1);
+        }
+      }
+
+      // 速度バフを適用してリキャスト計算
+      const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap);
+      const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
+
       gcdAvailableAt = startTime + recastTime;
       actionAvailableAt = startTime + skill.animationLock;
     } else {
       startTime = actionAvailableAt;
+      startTime = Math.round(startTime * 1000) / 1000;
+
+      // 期限切れバフを除去
+      for (let i = currentActiveBuffs.length - 1; i >= 0; i--) {
+        if (currentActiveBuffs[i].endTime <= startTime) {
+          currentActiveBuffs.splice(i, 1);
+        }
+      }
+
       actionAvailableAt = startTime + skill.animationLock;
     }
-
-    startTime = Math.round(startTime * 1000) / 1000;
 
     // 自動生成リソースを時刻に応じて加算
     for (const res of resources) {
@@ -159,12 +205,34 @@ export function resolveTimeline(
       }
     }
 
+    // バフ適用: スキルにbuffApplicationsがあればアクティブバフに追加
+    if (skill.buffApplications) {
+      for (const buffId of skill.buffApplications) {
+        const buffDef = buffDefMap.get(buffId);
+        if (!buffDef) continue;
+
+        // 同じバフが既にアクティブなら上書き（リフレッシュ）
+        const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+        const newBuff: ActiveBuff = {
+          buffId,
+          startTime,
+          endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+        };
+        if (existingIdx >= 0) {
+          currentActiveBuffs[existingIdx] = newBuff;
+        } else {
+          currentActiveBuffs.push(newBuff);
+        }
+      }
+    }
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
       startTime,
       resourceSnapshot: snapshot,
       resourceErrors,
+      activeBuffs: [...currentActiveBuffs],
     });
   }
 

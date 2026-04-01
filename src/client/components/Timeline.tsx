@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, CharacterStats } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats } from "../types/skill";
 import { calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
@@ -14,6 +14,9 @@ const LANE_HEIGHT = 72;
 
 /** リソースレーンの高さ（px） */
 const RESOURCE_LANE_HEIGHT = 36;
+
+/** バフレーンの高さ（px） */
+const BUFF_LANE_HEIGHT = 32;
 
 /** 時間軸の高さ（px） */
 const RULER_HEIGHT = 28;
@@ -31,6 +34,7 @@ interface TimelineProps {
   onRemoveEntry: (uid: string) => void;
   totalPotency: number;
   resources: ResourceDefinition[];
+  buffs: BuffDefinition[];
   expectedMultiplier: number | null;
   statsEnabled: boolean;
   stats?: CharacterStats;
@@ -106,6 +110,7 @@ export function Timeline({
   onRemoveEntry,
   totalPotency,
   resources,
+  buffs,
   expectedMultiplier,
   statsEnabled,
   stats,
@@ -113,6 +118,7 @@ export function Timeline({
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [showResources, setShowResources] = useState(true);
+  const [showBuffs, setShowBuffs] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** 末尾追加時のみ自動スクロールするためのフラグ */
   const shouldAutoScrollRef = useRef(true);
@@ -130,6 +136,11 @@ export function Timeline({
     [skills]
   );
 
+  const buffDefMap = useMemo(
+    () => new Map(buffs.map((b) => [b.id, b])),
+    [buffs]
+  );
+
   const getRecastTime = useCallback(
     (skill: Skill) => {
       if (stats && skill.type === "gcd") {
@@ -138,6 +149,26 @@ export function Timeline({
       return skill.recastTime;
     },
     [stats]
+  );
+
+  /** エントリのアクティブバフを考慮したリキャスト計算 */
+  const getEntryRecastTime = useCallback(
+    (skill: Skill, activeBuffs: ActiveBuff[]) => {
+      let recast = getRecastTime(skill);
+      if (skill.type === "gcd" && activeBuffs.length > 0) {
+        for (const ab of activeBuffs) {
+          const def = buffDefMap.get(ab.buffId);
+          if (!def) continue;
+          for (const effect of def.effects) {
+            if (effect.type === "speed") {
+              recast = Math.round(recast * effect.value * 1000) / 1000;
+            }
+          }
+        }
+      }
+      return recast;
+    },
+    [getRecastTime, buffDefMap]
   );
 
   const gcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
@@ -158,11 +189,15 @@ export function Timeline({
     for (const entry of resolvedEntries) {
       const skill = skillMap.get(entry.skillId);
       if (!skill) continue;
-      const end = entry.startTime + getRecastTime(skill);
+      const end = entry.startTime + getEntryRecastTime(skill, entry.activeBuffs);
       if (end > maxEnd) maxEnd = end;
+      // バフ終了時刻も考慮
+      for (const ab of entry.activeBuffs) {
+        if (ab.endTime > maxEnd) maxEnd = ab.endTime;
+      }
     }
     return maxEnd;
-  }, [resolvedEntries, skillMap, getRecastTime]);
+  }, [resolvedEntries, skillMap, getEntryRecastTime]);
 
   const timelineWidth = Math.max(totalDuration * PX_PER_SEC + 100, 600);
 
@@ -183,14 +218,14 @@ export function Timeline({
     if (scrollRef.current && resolvedEntries.length > 0) {
       const last = resolvedEntries[resolvedEntries.length - 1];
       const skill = skillMap.get(last.skillId);
-      const recast = skill ? getRecastTime(skill) : 0;
+      const recast = skill ? getEntryRecastTime(skill, last.activeBuffs) : 0;
       const endPx = (last.startTime + recast) * PX_PER_SEC;
       const container = scrollRef.current;
       if (endPx > container.scrollLeft + container.clientWidth - 100) {
         container.scrollLeft = endPx - container.clientWidth + 150;
       }
     }
-  }, [resolvedEntries, skillMap, getRecastTime]);
+  }, [resolvedEntries, skillMap, getEntryRecastTime]);
 
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
@@ -261,6 +296,24 @@ export function Timeline({
     return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getRecastTime);
   }, [insertIndex, resolvedEntries, skillMap, getRecastTime]);
 
+  // タイムライン上の全バフ期間を収集（重複排除）
+  const buffTimespans = useMemo(() => {
+    const spans: Map<string, ActiveBuff[]> = new Map();
+    for (const entry of resolvedEntries) {
+      for (const ab of entry.activeBuffs) {
+        if (!spans.has(ab.buffId)) {
+          spans.set(ab.buffId, []);
+        }
+        const list = spans.get(ab.buffId)!;
+        // 同じ開始時刻のバフは重複追加しない
+        if (!list.some((s) => s.startTime === ab.startTime && s.endTime === ab.endTime)) {
+          list.push(ab);
+        }
+      }
+    }
+    return spans;
+  }, [resolvedEntries]);
+
   // リソースエラーがあるエントリのUIDセット
   const entriesWithErrors = useMemo(() => {
     const set = new Set<string>();
@@ -277,6 +330,15 @@ export function Timeline({
       <div style={styles.header}>
         <h2 style={styles.title}>タイムライン</h2>
         <div style={styles.headerControls}>
+          {buffs.length > 0 && (
+            <button
+              style={styles.toggleButton}
+              onClick={() => setShowBuffs((v) => !v)}
+              title={showBuffs ? "バフ表示を非表示" : "バフ表示を表示"}
+            >
+              {showBuffs ? "バフ ▼" : "バフ ▶"}
+            </button>
+          )}
           {resources.length > 0 && (
             <button
               style={styles.toggleButton}
@@ -329,7 +391,7 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
-                    const recast = getRecastTime(entry.skill);
+                    const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
                     const expectedPot = expectedMultiplier !== null && entry.skill.potency > 0
                       ? Math.floor(entry.skill.potency * expectedMultiplier)
                       : null;
@@ -467,6 +529,47 @@ export function Timeline({
                   </div>
                 </div>
               ))}
+
+              {/* バフレーン */}
+              {showBuffs && buffs.map((buffDef) => {
+                const spans = buffTimespans.get(buffDef.id);
+                if (!spans || spans.length === 0) return null;
+                return (
+                  <div key={buffDef.id} style={styles.buffLane}>
+                    <div style={styles.buffLaneLabel} title={buffDef.name}>
+                      {buffDef.shortName}
+                    </div>
+                    <div style={styles.buffLaneContent}>
+                      {spans.map((span, i) => {
+                        const left = span.startTime * PX_PER_SEC;
+                        const width = (span.endTime - span.startTime) * PX_PER_SEC;
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              ...styles.buffBar,
+                              left,
+                              width,
+                              backgroundColor: `${buffDef.color}30`,
+                              borderColor: buffDef.color,
+                            }}
+                            title={`${buffDef.name} (${span.startTime.toFixed(2)}s - ${span.endTime.toFixed(2)}s)`}
+                          >
+                            <img
+                              src={buffDef.icon}
+                              alt={buffDef.name}
+                              style={styles.buffIcon}
+                            />
+                            <span style={{ ...styles.buffDuration, color: buffDef.color }}>
+                              {buffDef.duration}s
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
 
               {/* 時間軸ルーラー */}
               <div style={styles.ruler}>
@@ -741,6 +844,56 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "bold",
     color: "#ef5350",
     lineHeight: 1,
+  },
+  // バフレーン
+  buffLane: {
+    display: "flex",
+    height: BUFF_LANE_HEIGHT,
+    position: "relative",
+    marginBottom: "2px",
+  },
+  buffLaneLabel: {
+    width: LANE_LABEL_WIDTH,
+    flexShrink: 0,
+    fontSize: "11px",
+    color: "#777",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingRight: "8px",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  buffLaneContent: {
+    position: "relative",
+    flex: 1,
+    borderBottom: "1px solid rgba(255,255,255,0.05)",
+  },
+  buffBar: {
+    position: "absolute",
+    top: "4px",
+    height: BUFF_LANE_HEIGHT - 8,
+    borderRadius: "4px",
+    border: "1px solid",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    paddingLeft: "2px",
+    paddingRight: "6px",
+    overflow: "hidden",
+  },
+  buffIcon: {
+    width: "20px",
+    height: "20px",
+    borderRadius: "3px",
+    flexShrink: 0,
+    objectFit: "contain" as const,
+  },
+  buffDuration: {
+    fontSize: "10px",
+    whiteSpace: "nowrap" as const,
+    flexShrink: 0,
   },
   ruler: {
     display: "flex",

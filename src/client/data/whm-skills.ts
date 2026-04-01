@@ -16,6 +16,7 @@ import afflatus_miseryIcon from "../assets/icons/whm/Afflatus_Misery.png";
 import afflatus_solaceIcon from "../assets/icons/whm/Afflatus_Solace.png";
 import afflatus_raptureIcon from "../assets/icons/whm/Afflatus_Rapture.png";
 import assizeIcon from "../assets/icons/whm/Assize.png";
+import presenceOfMindIcon from "../assets/icons/whm/Presence_of_Mind.png";
 
 /** GCDのデフォルトリキャストタイム（秒） */
 const GCD_RECAST = 2.5;
@@ -186,5 +187,15 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: assizeIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
+  },
+  {
+    id: "presence-of-mind",
+    name: "神速魔",
+    potency: 0,
+    type: "ogcd",
+    icon: presenceOfMindIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    buffApplications: ["presence-of-mind"],
   },
 ];

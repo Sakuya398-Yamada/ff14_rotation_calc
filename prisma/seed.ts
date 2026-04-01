@@ -30,6 +30,7 @@ const WHM_SKILLS = [
   { id: "heart-of-misery", name: "ハート・オブ・ミゼリ", potency: 1400, type: "gcd", icon: "whm/Afflatus_Misery.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, resourceChanges: JSON.stringify([{ resourceId: "blood-lily", amount: -3 }]) },
   // === oGCD ===
   { id: "assize", name: "アサイズ", potency: 400, type: "ogcd", icon: "whm/Assize.png", recastTime: DEFAULT_ANIMATION_LOCK, animationLock: DEFAULT_ANIMATION_LOCK },
+  { id: "presence-of-mind", name: "神速魔", potency: 0, type: "ogcd", icon: "whm/Presence_of_Mind.png", recastTime: DEFAULT_ANIMATION_LOCK, animationLock: DEFAULT_ANIMATION_LOCK, buffApplications: JSON.stringify(["presence-of-mind"]) },
 ];
 
 async function main() {

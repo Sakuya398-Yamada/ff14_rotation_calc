@@ -4,6 +4,7 @@ import { Timeline } from "./Timeline";
 import { resolveTimeline } from "../logic/resolve-timeline";
 import { resolveIconUrl } from "../utils/resolve-icon-url";
 import { WHM_RESOURCES } from "../data/whm-resources";
+import { WHM_BUFFS } from "../data/whm-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import type { Skill, TimelineEntry, CharacterStats } from "../types/skill";
 
@@ -35,7 +36,7 @@ export function App() {
   );
 
   const resolvedEntries = useMemo(
-    () => resolveTimeline(entries, skillMap, WHM_RESOURCES, statsEnabled ? stats : undefined),
+    () => resolveTimeline(entries, skillMap, WHM_RESOURCES, statsEnabled ? stats : undefined, WHM_BUFFS),
     [entries, skillMap, stats, statsEnabled]
   );
 
@@ -96,6 +97,7 @@ export function App() {
           onRemoveEntry={handleRemoveEntry}
           totalPotency={totalPotency}
           resources={WHM_RESOURCES}
+          buffs={WHM_BUFFS}
           expectedMultiplier={expectedMultiplier}
           statsEnabled={statsEnabled}
           stats={statsEnabled ? stats : undefined}
