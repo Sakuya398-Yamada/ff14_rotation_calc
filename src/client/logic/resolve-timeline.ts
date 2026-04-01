@@ -409,12 +409,62 @@ export function resolveTimeline(
   // ティックを時刻順にソート
   dotTicks.sort((a, b) => a.time - b.time);
 
+  // 最後のGCDのリキャスト完了時刻を算出
+  let lastGcdEndTime = 0;
+  for (const entry of resolved) {
+    const skill = skillMap.get(entry.skillId);
+    if (!skill || skill.type !== "gcd") continue;
+    const baseRecast = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
+    const speedMul = getSpeedMultiplier(entry.activeBuffs, buffDefMap);
+    const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
+    const endTime = entry.startTime + recastTime;
+    if (endTime > lastGcdEndTime) lastGcdEndTime = endTime;
+  }
+
   return {
     entries: resolved,
     dotTicks,
     dotTotalPotency,
     activeDoTs: allDoTs,
+    lastGcdEndTime,
   };
+}
+
+/**
+ * 指定範囲内のPPS（Power Per Second）を計算する。
+ * - 直接威力: startTime が範囲内にあるスキルの威力を合算
+ * - DoT威力: time が範囲内にあるDoTティックの威力を合算
+ * - PPS = 合計威力 / 範囲の秒数
+ */
+export function calcPps(
+  resolvedEntries: ResolvedTimelineEntry[],
+  skillMap: Map<string, Skill>,
+  dotTicks: DoTTick[],
+  rangeStart: number,
+  rangeEnd: number
+): { pps: number; totalPotency: number; directPotency: number; dotPotency: number } {
+  const duration = rangeEnd - rangeStart;
+  if (duration <= 0) return { pps: 0, totalPotency: 0, directPotency: 0, dotPotency: 0 };
+
+  let directPotency = 0;
+  for (const entry of resolvedEntries) {
+    if (entry.startTime >= rangeStart && entry.startTime < rangeEnd) {
+      const skill = skillMap.get(entry.skillId);
+      directPotency += skill?.potency ?? 0;
+    }
+  }
+
+  let dotPotency = 0;
+  for (const tick of dotTicks) {
+    if (tick.time >= rangeStart && tick.time < rangeEnd) {
+      dotPotency += tick.potency;
+    }
+  }
+
+  const totalPotency = directPotency + dotPotency;
+  const pps = totalPotency / duration;
+
+  return { pps, totalPotency, directPotency, dotPotency };
 }
 
 /**

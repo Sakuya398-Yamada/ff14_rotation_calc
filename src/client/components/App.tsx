@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
-import { resolveTimeline } from "../logic/resolve-timeline";
+import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { resolveIconUrl } from "../utils/resolve-icon-url";
 import { WHM_RESOURCES } from "../data/whm-resources";
 import { WHM_BUFFS } from "../data/whm-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
-import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow } from "../types/skill";
+import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange } from "../types/skill";
 
 let nextUid = 1;
 
@@ -17,6 +17,7 @@ export function App() {
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
   const [statsEnabled, setStatsEnabled] = useState(false);
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
+  const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
 
   useEffect(() => {
     fetch("/api/skills")
@@ -73,6 +74,30 @@ export function App() {
     [stats, statsEnabled]
   );
 
+  // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
+  const overallPps = useMemo(() => {
+    if (timelineResult.lastGcdEndTime <= 0) return null;
+    return calcPps(
+      resolvedEntries,
+      skillMap,
+      timelineResult.dotTicks,
+      0,
+      timelineResult.lastGcdEndTime
+    );
+  }, [resolvedEntries, skillMap, timelineResult.dotTicks, timelineResult.lastGcdEndTime]);
+
+  // 範囲選択PPS
+  const rangePps = useMemo(() => {
+    if (!ppsRange) return null;
+    return calcPps(
+      resolvedEntries,
+      skillMap,
+      timelineResult.dotTicks,
+      ppsRange.startTime,
+      ppsRange.endTime
+    );
+  }, [resolvedEntries, skillMap, timelineResult.dotTicks, ppsRange]);
+
   if (loading) {
     return (
       <div style={styles.app}>
@@ -111,6 +136,11 @@ export function App() {
           dotTotalPotency={timelineResult.dotTotalPotency}
           untargetableWindows={untargetableWindows}
           onUntargetableWindowsChange={setUntargetableWindows}
+          overallPps={overallPps}
+          rangePps={rangePps}
+          ppsRange={ppsRange}
+          onPpsRangeChange={setPpsRange}
+          lastGcdEndTime={timelineResult.lastGcdEndTime}
         />
       </div>
       <footer style={styles.footer}>

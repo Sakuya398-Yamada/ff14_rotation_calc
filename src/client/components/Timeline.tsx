@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, PpsRange } from "../types/skill";
 import { calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
@@ -46,6 +46,11 @@ interface TimelineProps {
   dotTotalPotency: number;
   untargetableWindows: BossUntargetableWindow[];
   onUntargetableWindowsChange: (windows: BossUntargetableWindow[]) => void;
+  overallPps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
+  rangePps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
+  ppsRange: PpsRange | null;
+  onPpsRangeChange: (range: PpsRange | null) => void;
+  lastGcdEndTime: number;
 }
 
 /**
@@ -127,6 +132,11 @@ export function Timeline({
   dotTotalPotency,
   untargetableWindows,
   onUntargetableWindowsChange,
+  overallPps,
+  rangePps,
+  ppsRange,
+  onPpsRangeChange,
+  lastGcdEndTime,
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
@@ -134,6 +144,7 @@ export function Timeline({
   const [showBuffs, setShowBuffs] = useState(true);
   const [showDoTs, setShowDoTs] = useState(true);
   const [showUntargetableEditor, setShowUntargetableEditor] = useState(false);
+  const [showPpsRange, setShowPpsRange] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** 末尾追加時のみ自動スクロールするためのフラグ */
   const shouldAutoScrollRef = useRef(true);
@@ -434,6 +445,25 @@ export function Timeline({
               {showResources ? "リソース ▼" : "リソース ▶"}
             </button>
           )}
+          <button
+            style={{
+              ...styles.toggleButton,
+              ...(ppsRange ? { borderColor: "rgba(255, 183, 77, 0.5)", color: "#ffb74d" } : {}),
+            }}
+            onClick={() => {
+              const next = !showPpsRange;
+              setShowPpsRange(next);
+              if (next && !ppsRange) {
+                onPpsRangeChange({ startTime: 0, endTime: Math.max(lastGcdEndTime, 10) });
+              }
+              if (!next) {
+                onPpsRangeChange(null);
+              }
+            }}
+            title="PPS範囲選択"
+          >
+            {showPpsRange ? "PPS範囲 ▼" : "PPS範囲 ▶"}
+          </button>
           <div style={styles.potencyDisplay}>
             合計威力: <span style={styles.potencyValue}>{totalPotency}</span>
             {dotTotalPotency > 0 && (
@@ -446,9 +476,79 @@ export function Timeline({
                 {" "}(期待値: {Math.floor(totalPotency * expectedMultiplier)})
               </span>
             )}
+            {overallPps !== null && (
+              <span style={styles.ppsDisplay}>
+                {" "}PPS: <span style={styles.ppsValue}>{overallPps.pps.toFixed(2)}</span>
+              </span>
+            )}
           </div>
         </div>
       </div>
+
+      {showPpsRange && (
+        <div style={styles.ppsRangeEditor}>
+          <div style={styles.ppsRangeHeader}>
+            <span style={styles.ppsRangeTitle}>PPS範囲選択</span>
+          </div>
+          <div style={styles.ppsRangeRow}>
+            <label style={styles.ppsRangeLabel}>
+              開始:
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={ppsRange?.startTime ?? 0}
+                style={styles.ppsRangeInput}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (isNaN(val) || val < 0) return;
+                  onPpsRangeChange({
+                    startTime: val,
+                    endTime: ppsRange?.endTime ?? lastGcdEndTime,
+                  });
+                }}
+              />
+              s
+            </label>
+            <label style={styles.ppsRangeLabel}>
+              終了:
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={ppsRange?.endTime ?? lastGcdEndTime}
+                style={styles.ppsRangeInput}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (isNaN(val) || val < 0) return;
+                  onPpsRangeChange({
+                    startTime: ppsRange?.startTime ?? 0,
+                    endTime: val,
+                  });
+                }}
+              />
+              s
+            </label>
+            <button
+              style={styles.ppsRangeResetButton}
+              onClick={() => onPpsRangeChange({ startTime: 0, endTime: lastGcdEndTime })}
+              title="全体範囲にリセット"
+            >
+              全体
+            </button>
+          </div>
+          {rangePps !== null && (
+            <div style={styles.ppsRangeResult}>
+              <span>
+                範囲PPS: <span style={styles.ppsValue}>{rangePps.pps.toFixed(2)}</span>
+              </span>
+              <span style={styles.ppsRangeDetail}>
+                (威力: {rangePps.totalPotency} = 直接{rangePps.directPotency} + DoT{rangePps.dotPotency})
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {showUntargetableEditor && (
         <div style={styles.untargetableEditor}>
@@ -844,6 +944,29 @@ export function Timeline({
                   </div>
                 );
               })}
+
+              {/* PPS範囲選択オーバーレイ */}
+              {ppsRange && showPpsRange && (() => {
+                const left = LANE_LABEL_WIDTH + ppsRange.startTime * PX_PER_SEC;
+                const width = (ppsRange.endTime - ppsRange.startTime) * PX_PER_SEC;
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      bottom: RULER_HEIGHT,
+                      left,
+                      width,
+                      backgroundColor: "rgba(255, 183, 77, 0.08)",
+                      borderLeft: "2px solid rgba(255, 183, 77, 0.6)",
+                      borderRight: "2px solid rgba(255, 183, 77, 0.6)",
+                      zIndex: 4,
+                      pointerEvents: "none",
+                    }}
+                    title={`PPS範囲 (${ppsRange.startTime}s - ${ppsRange.endTime}s)`}
+                  />
+                );
+              })()}
 
               {/* 時間軸ルーラー */}
               <div style={styles.ruler}>
@@ -1346,5 +1469,79 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "2px 8px",
     cursor: "pointer",
     lineHeight: 1,
+  },
+  // PPS表示
+  ppsDisplay: {
+    fontSize: "14px",
+    color: "#ffb74d",
+    marginLeft: "8px",
+  },
+  ppsValue: {
+    fontSize: "18px",
+    fontWeight: "bold",
+    color: "#ffb74d",
+  },
+  // PPS範囲選択エディタ
+  ppsRangeEditor: {
+    backgroundColor: "rgba(255, 183, 77, 0.05)",
+    border: "1px solid rgba(255, 183, 77, 0.2)",
+    borderRadius: "6px",
+    padding: "8px 12px",
+    marginBottom: "8px",
+  },
+  ppsRangeHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "6px",
+  },
+  ppsRangeTitle: {
+    fontSize: "13px",
+    fontWeight: "bold",
+    color: "#ffb74d",
+  },
+  ppsRangeRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "4px",
+  },
+  ppsRangeLabel: {
+    fontSize: "12px",
+    color: "#aaa",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  ppsRangeInput: {
+    width: "60px",
+    backgroundColor: "#1a1a3e",
+    border: "1px solid #444",
+    borderRadius: "4px",
+    color: "#e0e0e0",
+    padding: "2px 6px",
+    fontSize: "12px",
+    textAlign: "right" as const,
+  },
+  ppsRangeResetButton: {
+    background: "none",
+    border: "1px solid rgba(255, 183, 77, 0.4)",
+    borderRadius: "4px",
+    color: "#ffb74d",
+    fontSize: "12px",
+    padding: "2px 10px",
+    cursor: "pointer",
+  },
+  ppsRangeResult: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "13px",
+    color: "#e0e0e0",
+    marginTop: "4px",
+  },
+  ppsRangeDetail: {
+    fontSize: "12px",
+    color: "#888",
   },
 };
