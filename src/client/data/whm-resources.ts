@@ -13,6 +13,7 @@ export const WHM_RESOURCES: ResourceDefinition[] = [
     name: "ヒーリングリリー",
     shortName: "H.リリー",
     maxStacks: 3,
+    initialStacks: 3,
     autoGenerateInterval: 20,
     color: "#4fc3f7",
   },

@@ -43,7 +43,7 @@ export function resolveTimeline(
 
   // リソース初期化
   for (const res of resources) {
-    resourceState[res.id] = 0;
+    resourceState[res.id] = res.initialStacks ?? 0;
     prevAutoGenCount[res.id] = 0;
   }
 
@@ -134,7 +134,7 @@ export function getFinalResourceState(
   if (resolvedEntries.length === 0) {
     const snapshot: ResourceSnapshot = {};
     for (const res of resources) {
-      snapshot[res.id] = 0;
+      snapshot[res.id] = res.initialStacks ?? 0;
     }
     return snapshot;
   }

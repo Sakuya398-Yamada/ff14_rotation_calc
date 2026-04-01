@@ -47,6 +47,8 @@ export interface ResourceDefinition {
   shortName: string;
   /** 最大スタック数 */
   maxStacks: number;
+  /** 戦闘開始時の初期スタック数（デフォルト0） */
+  initialStacks?: number;
   /** 自動生成の間隔（秒）。未設定の場合は自動生成なし */
   autoGenerateInterval?: number;
   /** 表示色 */
