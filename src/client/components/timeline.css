@@ -1,4 +1,5 @@
-.timeline-scroll {
+.timeline-scroll,
+.custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #555 #1a1a2e;
 }
@@ -7,16 +8,23 @@
   height: 8px;
 }
 
-.timeline-scroll::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.timeline-scroll::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
   background: #1a1a2e;
   border-radius: 4px;
 }
 
-.timeline-scroll::-webkit-scrollbar-thumb {
+.timeline-scroll::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 4px;
 }
 
-.timeline-scroll::-webkit-scrollbar-thumb:hover {
+.timeline-scroll::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #777;
 }

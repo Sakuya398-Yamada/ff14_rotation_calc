@@ -1,5 +1,6 @@
 import type { Skill, CharacterStats } from "../types/skill";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
+import "./timeline.css";
 
 interface SkillPaletteProps {
   skills: Skill[];
@@ -31,7 +32,7 @@ export function SkillPalette({
   };
 
   return (
-    <div style={styles.container}>
+    <div className="custom-scrollbar" style={styles.container}>
       <h2 style={styles.title}>スキルパレット</h2>
 
       {/* ステータス入力セクション */}
