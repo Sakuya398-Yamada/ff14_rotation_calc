@@ -30,28 +30,28 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   {
     id: "aero2",
     name: "エアロラ",
-    potency: 60,
+    potency: 50,
     type: "gcd",
     color: "#5fbf5f",
   },
   {
     id: "stone3",
     name: "ストンガ",
-    potency: 260,
+    potency: 220,
     type: "gcd",
     color: "#c9a96a",
   },
   {
     id: "stone4",
     name: "ストンジャ",
-    potency: 310,
+    potency: 260,
     type: "gcd",
     color: "#d4b87a",
   },
   {
     id: "dia",
     name: "ディア",
-    potency: 75,
+    potency: 85,
     type: "gcd",
     color: "#f5e6a3",
   },
@@ -65,14 +65,14 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   {
     id: "glare3",
     name: "グレアガ",
-    potency: 310,
+    potency: 350,
     type: "gcd",
     color: "#fff8a0",
   },
   {
     id: "glare4",
     name: "グレアジャ",
-    potency: 370,
+    potency: 640,
     type: "gcd",
     color: "#fffacd",
   },
@@ -91,6 +91,14 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     color: "#ffe44d",
   },
 
+  {
+    id: "heart-of-misery",
+    name: "ハート・オブ・ミゼリ",
+    potency: 1400,
+    type: "gcd",
+    color: "#ff6b6b",
+  },
+
   // === oGCD ===
   {
     id: "assize",
@@ -98,26 +106,5 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 400,
     type: "ogcd",
     color: "#87ceeb",
-  },
-  {
-    id: "presence-of-mind",
-    name: "神速魔",
-    potency: 0,
-    type: "ogcd",
-    color: "#dda0dd",
-  },
-  {
-    id: "afflatus-misery",
-    name: "アフラタスミゼリ",
-    potency: 1240,
-    type: "ogcd",
-    color: "#ff6b6b",
-  },
-  {
-    id: "glare5",
-    name: "グレアレクイス",
-    potency: 440,
-    type: "ogcd",
-    color: "#ffffd0",
   },
 ];
