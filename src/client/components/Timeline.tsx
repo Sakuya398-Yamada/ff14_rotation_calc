@@ -670,7 +670,7 @@ const styles: Record<string, React.CSSProperties> = {
   resourceLaneLabel: {
     width: LANE_LABEL_WIDTH,
     flexShrink: 0,
-    fontSize: "9px",
+    fontSize: "11px",
     color: "#777",
     display: "flex",
     alignItems: "center",
