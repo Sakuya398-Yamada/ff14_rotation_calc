@@ -124,6 +124,65 @@ test: ローテーションエンジンのユニットテスト追加 #8
 - 開発フローや規約が変わったとき
 - 新しいツールやライブラリが導入されたとき
 
+## 技術スタック
+
+| レイヤー | 技術 | 備考 |
+|---------|------|------|
+| 言語 | TypeScript | フロント・バックエンド統一 |
+| フロントエンド | React + Vite | SPA構成 |
+| バックエンド | Hono (Node.js) | 軽量・Web標準準拠 |
+| DB | SQLite | Prismaで抽象化（クラウド移行時にPostgreSQL等に切替可） |
+| ORM | Prisma | 型安全なDB操作 |
+| デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare |
+
+## インフラ構成
+
+```
+[Cloudflare] → [Nginx (リバースプロキシ)] → [Node.js (Hono API + Vite静的配信)]
+                                                    ↓
+                                              [SQLite ファイル]
+```
+
+- ホスティング: オンプレミスUbuntuサーバー
+- 外部公開: Cloudflare経由
+- クラウド移行: PrismaのDB設定変更で対応可能
+
 ## コーディング規約
 
-（技術スタック決定後に追記）
+### 基本方針
+
+- 言語は**TypeScript**で統一する（フロントエンド・バックエンド共通）
+- `strict: true` で型安全性を確保する
+- フロントエンドは**React + Vite**で構築する
+- バックエンドは**Hono**でAPI構築する
+- DB操作は**Prisma**経由で行い、直接SQLは書かない
+
+### ディレクトリ構成（予定）
+
+```
+ff14_rotation_calc/
+├── CLAUDE.md
+├── CONTRIBUTING.md
+├── package.json
+├── prisma/
+│   └── schema.prisma
+├── src/
+│   ├── client/          # React フロントエンド
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── main.tsx
+│   └── server/          # Hono バックエンド
+│       ├── routes/
+│       ├── services/
+│       └── index.ts
+└── .claude/
+    └── skills/
+```
+
+### 命名規約
+
+- ファイル名: `kebab-case`（例: `skill-data.ts`）
+- コンポーネント: `PascalCase`（例: `SkillList.tsx`）
+- 変数・関数: `camelCase`（例: `calculateDamage`）
+- 定数: `UPPER_SNAKE_CASE`（例: `MAX_BUFF_STACK`）
+- 型・インターフェース: `PascalCase`（例: `SkillData`）

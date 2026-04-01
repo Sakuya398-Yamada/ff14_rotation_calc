@@ -97,3 +97,29 @@ Claude CodeがIssueの内容を読み取り、以下を行います。
 | `docs` | ドキュメント |
 | `question` | 要確認・議論 |
 | `priority:high` / `medium` / `low` | 優先度 |
+
+---
+
+## 技術スタック
+
+| レイヤー | 技術 |
+|---------|------|
+| 言語 | TypeScript（フロント・バック統一） |
+| フロントエンド | React + Vite |
+| バックエンド | Hono (Node.js) |
+| DB | SQLite（Prismaで抽象化） |
+| ORM | Prisma |
+| デプロイ | pm2 or systemd + Nginx + Cloudflare |
+
+### ローカル開発（予定）
+
+```bash
+# 依存インストール
+npm install
+
+# DB初期化
+npx prisma migrate dev
+
+# 開発サーバー起動
+npm run dev
+```
