@@ -49,7 +49,7 @@ function calcInsertIndex(
   scrollLeft: number,
   resolvedEntries: ResolvedTimelineEntry[],
   skillMap: Map<string, Skill>,
-  recastFn: (skill: Skill) => number
+  recastFn: (skill: Skill, activeBuffs: ActiveBuff[]) => number
 ): number {
   // タイムラインコンテンツ上の実際のX座標（スクロール考慮、レーンラベル分を引く）
   const contentX = mouseX + scrollLeft - LANE_LABEL_WIDTH;
@@ -62,7 +62,7 @@ function calcInsertIndex(
     const entry = resolvedEntries[i];
     const skill = skillMap.get(entry.skillId);
     if (!skill) continue;
-    const centerTime = entry.startTime + recastFn(skill) / 2;
+    const centerTime = entry.startTime + recastFn(skill, entry.activeBuffs) / 2;
     if (time < centerTime) {
       return i;
     }
@@ -79,7 +79,7 @@ function calcInsertIndicatorX(
   insertIndex: number,
   resolvedEntries: ResolvedTimelineEntry[],
   skillMap: Map<string, Skill>,
-  recastFn: (skill: Skill) => number
+  recastFn: (skill: Skill, activeBuffs: ActiveBuff[]) => number
 ): number {
   if (resolvedEntries.length === 0) return 0;
 
@@ -92,13 +92,13 @@ function calcInsertIndicatorX(
     // 末尾に挿入
     const last = resolvedEntries[resolvedEntries.length - 1];
     const skill = skillMap.get(last.skillId);
-    return (last.startTime + (skill ? recastFn(skill) : 0)) * PX_PER_SEC + 4;
+    return (last.startTime + (skill ? recastFn(skill, last.activeBuffs) : 0)) * PX_PER_SEC + 4;
   }
 
   // 中間に挿入: 前のエントリの終了位置と次のエントリの開始位置の中間
   const prevEntry = resolvedEntries[insertIndex - 1];
   const prevSkill = skillMap.get(prevEntry.skillId);
-  const prevEnd = prevEntry.startTime + (prevSkill ? recastFn(prevSkill) : 0);
+  const prevEnd = prevEntry.startTime + (prevSkill ? recastFn(prevSkill, prevEntry.activeBuffs) : 0);
   const nextStart = resolvedEntries[insertIndex].startTime;
   return ((prevEnd + nextStart) / 2) * PX_PER_SEC;
 }
@@ -241,14 +241,14 @@ export function Timeline({
           scrollRef.current.scrollLeft,
           resolvedEntries,
           skillMap,
-          getRecastTime
+          getEntryRecastTime
         );
         setInsertIndex(idx);
       } else {
         setInsertIndex(null);
       }
     },
-    [resolvedEntries, skillMap, getRecastTime]
+    [resolvedEntries, skillMap, getEntryRecastTime]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -275,7 +275,7 @@ export function Timeline({
           scrollRef.current.scrollLeft,
           resolvedEntries,
           skillMap,
-          getRecastTime
+          getEntryRecastTime
         );
         const isInsertMiddle = idx < resolvedEntries.length;
         if (isInsertMiddle) {
@@ -287,14 +287,14 @@ export function Timeline({
       }
       setInsertIndex(null);
     },
-    [onAddEntry, resolvedEntries, skillMap, getRecastTime]
+    [onAddEntry, resolvedEntries, skillMap, getEntryRecastTime]
   );
 
   // 挿入インジケーターのX座標
   const indicatorX = useMemo(() => {
     if (insertIndex === null) return null;
-    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getRecastTime);
-  }, [insertIndex, resolvedEntries, skillMap, getRecastTime]);
+    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
+  }, [insertIndex, resolvedEntries, skillMap, getEntryRecastTime]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   const buffTimespans = useMemo(() => {
