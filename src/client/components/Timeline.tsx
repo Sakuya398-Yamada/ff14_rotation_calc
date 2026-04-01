@@ -98,6 +98,14 @@ export function Timeline({
   /** 末尾追加時のみ自動スクロールするためのフラグ */
   const shouldAutoScrollRef = useRef(true);
 
+  const handleRemoveEntry = useCallback(
+    (uid: string) => {
+      shouldAutoScrollRef.current = false;
+      onRemoveEntry(uid);
+    },
+    [onRemoveEntry]
+  );
+
   const skillMap = useMemo(
     () => new Map(skills.map((s) => [s.id, s])),
     [skills]
@@ -291,7 +299,7 @@ export function Timeline({
                       <div
                         style={styles.skillIcon}
                         title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]`}
-                        onClick={() => onRemoveEntry(entry.uid)}
+                        onClick={() => handleRemoveEntry(entry.uid)}
                       >
                         <img
                           src={entry.skill.icon}
@@ -322,7 +330,7 @@ export function Timeline({
                       <div
                         style={styles.ogcdIcon}
                         title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]`}
-                        onClick={() => onRemoveEntry(entry.uid)}
+                        onClick={() => handleRemoveEntry(entry.uid)}
                       >
                         <img
                           src={entry.skill.icon}
