@@ -119,6 +119,9 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: glare4Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    buffConsumptions: [
+      { buffId: "sacred-sight", stacks: 1 },
+    ],
   },
   {
     id: "holy",
@@ -196,6 +199,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: presenceOfMindIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    buffApplications: ["presence-of-mind"],
+    buffApplications: ["presence-of-mind", "sacred-sight"],
   },
 ];

@@ -30,4 +30,6 @@ model Skill {
   resourceChanges String?
   /// バフ付与（JSON文字列）。例: ["presence-of-mind"]
   buffApplications String?
+  /// バフスタック消費（JSON文字列）。例: [{"buffId":"sacred-sight","stacks":1}]
+  buffConsumptions String?
 }

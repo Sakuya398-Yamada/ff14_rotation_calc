@@ -21,7 +21,7 @@ const WHM_SKILLS = [
   { id: "dia", name: "ディア", potency: 85, type: "gcd", icon: "whm/Dia.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "glare", name: "グレア", potency: 290, type: "gcd", icon: "whm/Glare.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "glare3", name: "グレアガ", potency: 350, type: "gcd", icon: "whm/Glare_III.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
-  { id: "glare4", name: "グレアジャ", potency: 640, type: "gcd", icon: "whm/Glare_IV.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
+  { id: "glare4", name: "グレアジャ", potency: 640, type: "gcd", icon: "whm/Glare_IV.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, buffConsumptions: JSON.stringify([{ buffId: "sacred-sight", stacks: 1 }]) },
   { id: "holy", name: "ホーリー", potency: 140, type: "gcd", icon: "whm/Holy.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "holy3", name: "ホーリガ", potency: 150, type: "gcd", icon: "whm/Holy_III.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   // === リリー関連GCD ===
@@ -30,7 +30,7 @@ const WHM_SKILLS = [
   { id: "heart-of-misery", name: "ハート・オブ・ミゼリ", potency: 1400, type: "gcd", icon: "whm/Afflatus_Misery.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, resourceChanges: JSON.stringify([{ resourceId: "blood-lily", amount: -3 }]) },
   // === oGCD ===
   { id: "assize", name: "アサイズ", potency: 400, type: "ogcd", icon: "whm/Assize.png", recastTime: DEFAULT_ANIMATION_LOCK, animationLock: DEFAULT_ANIMATION_LOCK },
-  { id: "presence-of-mind", name: "神速魔", potency: 0, type: "ogcd", icon: "whm/Presence_of_Mind.png", recastTime: DEFAULT_ANIMATION_LOCK, animationLock: DEFAULT_ANIMATION_LOCK, buffApplications: JSON.stringify(["presence-of-mind"]) },
+  { id: "presence-of-mind", name: "神速魔", potency: 0, type: "ogcd", icon: "whm/Presence_of_Mind.png", recastTime: DEFAULT_ANIMATION_LOCK, animationLock: DEFAULT_ANIMATION_LOCK, buffApplications: JSON.stringify(["presence-of-mind", "sacred-sight"]) },
 ];
 
 async function main() {
