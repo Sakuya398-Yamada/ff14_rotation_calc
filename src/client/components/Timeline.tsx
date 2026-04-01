@@ -85,17 +85,18 @@ export function Timeline({
                 {gcdEntries.map((entry, index) => (
                   <div key={entry.uid} style={styles.slotWrapper}>
                     <div
-                      style={{
-                        ...styles.skillSlot,
-                        backgroundColor: entry.skill.color,
-                      }}
+                      style={styles.skillSlot}
                       title={`${entry.skill.name} (威力: ${entry.skill.potency})`}
                       onClick={() => onRemoveEntry(entry.uid)}
                     >
-                      <div style={styles.slotName}>{entry.skill.name}</div>
-                      <div style={styles.slotPotency}>
-                        {entry.skill.potency}
-                      </div>
+                      <img
+                        src={entry.skill.icon}
+                        alt={entry.skill.name}
+                        style={styles.slotIcon}
+                      />
+                    </div>
+                    <div style={styles.slotPotency}>
+                      {entry.skill.potency}
                     </div>
                     <div style={styles.slotIndex}>{index + 1}</div>
                   </div>
@@ -110,18 +111,18 @@ export function Timeline({
                 {ogcdEntries.map((entry, index) => (
                   <div key={entry.uid} style={styles.slotWrapper}>
                     <div
-                      style={{
-                        ...styles.skillSlot,
-                        ...styles.ogcdSlot,
-                        backgroundColor: entry.skill.color,
-                      }}
+                      style={{ ...styles.skillSlot, ...styles.ogcdSlot }}
                       title={`${entry.skill.name} (威力: ${entry.skill.potency})`}
                       onClick={() => onRemoveEntry(entry.uid)}
                     >
-                      <div style={styles.slotName}>{entry.skill.name}</div>
-                      <div style={styles.slotPotency}>
-                        {entry.skill.potency}
-                      </div>
+                      <img
+                        src={entry.skill.icon}
+                        alt={entry.skill.name}
+                        style={styles.slotIcon}
+                      />
+                    </div>
+                    <div style={styles.slotPotency}>
+                      {entry.skill.potency}
                     </div>
                     <div style={styles.slotIndex}>{index + 1}</div>
                   </div>
@@ -222,36 +223,28 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "2px",
   },
   skillSlot: {
-    width: "64px",
+    width: "48px",
     height: "48px",
     borderRadius: "6px",
     display: "flex",
-    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
     transition: "opacity 0.15s",
     border: "1px solid rgba(255,255,255,0.2)",
+    overflow: "hidden",
   },
   ogcdSlot: {
     borderRadius: "50%",
-    width: "48px",
-    height: "48px",
   },
-  slotName: {
-    fontSize: "10px",
-    fontWeight: "bold",
-    color: "#000",
-    textAlign: "center" as const,
-    lineHeight: "1.1",
-    maxWidth: "58px",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
+  slotIcon: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain" as const,
   },
   slotPotency: {
     fontSize: "9px",
-    color: "rgba(0,0,0,0.7)",
+    color: "#888",
   },
   slotIndex: {
     fontSize: "9px",

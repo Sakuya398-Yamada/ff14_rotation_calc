@@ -38,6 +38,9 @@ articles/
 generated/
 *.db
 
+# Fankit raw downloads
+FFXIVIcons*/
+
 # Coverage
 htmlcov/
 .coverage

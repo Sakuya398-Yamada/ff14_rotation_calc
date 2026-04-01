@@ -11,8 +11,8 @@ export interface Skill {
   potency: number;
   /** GCD or oGCD */
   type: SkillType;
-  /** スキルアイコンの色（仮。将来的にアイコン画像に置き換え） */
-  color: string;
+  /** スキルアイコン画像のパス */
+  icon: string;
 }
 
 /** タイムラインに配置されたスキル */

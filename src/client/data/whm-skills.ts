@@ -1,5 +1,20 @@
 import type { Skill } from "../types/skill";
 
+import stoneIcon from "../assets/icons/whm/Stone.png";
+import aeroIcon from "../assets/icons/whm/Aero.png";
+import stone2Icon from "../assets/icons/whm/Stone_II.png";
+import aero2Icon from "../assets/icons/whm/Aero_II.png";
+import stone3Icon from "../assets/icons/whm/Stone_III.png";
+import stone4Icon from "../assets/icons/whm/Stone_IV.png";
+import diaIcon from "../assets/icons/whm/Dia.png";
+import glareIcon from "../assets/icons/whm/Glare.png";
+import glare3Icon from "../assets/icons/whm/Glare_III.png";
+import glare4Icon from "../assets/icons/whm/Glare_IV.png";
+import holyIcon from "../assets/icons/whm/Holy.png";
+import holy3Icon from "../assets/icons/whm/Holy_III.png";
+import afflatus_miseryIcon from "../assets/icons/whm/Afflatus_Misery.png";
+import assizeIcon from "../assets/icons/whm/Assize.png";
+
 /**
  * 白魔道士（WHM）攻撃スキル一覧
  * パッチ7.x準拠の威力値
@@ -11,84 +26,84 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     name: "ストーン",
     potency: 140,
     type: "gcd",
-    color: "#a0855b",
+    icon: stoneIcon,
   },
   {
     id: "aero",
     name: "エアロ",
     potency: 50,
     type: "gcd",
-    color: "#7ecf7e",
+    icon: aeroIcon,
   },
   {
     id: "stone2",
     name: "ストンラ",
     potency: 190,
     type: "gcd",
-    color: "#b8975f",
+    icon: stone2Icon,
   },
   {
     id: "aero2",
     name: "エアロラ",
     potency: 50,
     type: "gcd",
-    color: "#5fbf5f",
+    icon: aero2Icon,
   },
   {
     id: "stone3",
     name: "ストンガ",
     potency: 220,
     type: "gcd",
-    color: "#c9a96a",
+    icon: stone3Icon,
   },
   {
     id: "stone4",
     name: "ストンジャ",
     potency: 260,
     type: "gcd",
-    color: "#d4b87a",
+    icon: stone4Icon,
   },
   {
     id: "dia",
     name: "ディア",
     potency: 85,
     type: "gcd",
-    color: "#f5e6a3",
+    icon: diaIcon,
   },
   {
     id: "glare",
     name: "グレア",
     potency: 290,
     type: "gcd",
-    color: "#f0e68c",
+    icon: glareIcon,
   },
   {
     id: "glare3",
     name: "グレアガ",
     potency: 350,
     type: "gcd",
-    color: "#fff8a0",
+    icon: glare3Icon,
   },
   {
     id: "glare4",
     name: "グレアジャ",
     potency: 640,
     type: "gcd",
-    color: "#fffacd",
+    icon: glare4Icon,
   },
   {
     id: "holy",
     name: "ホーリー",
     potency: 140,
     type: "gcd",
-    color: "#ffd700",
+    icon: holyIcon,
   },
   {
     id: "holy3",
     name: "ホーリガ",
     potency: 150,
     type: "gcd",
-    color: "#ffe44d",
+    icon: holy3Icon,
   },
 
   {
@@ -96,7 +111,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     name: "ハート・オブ・ミゼリ",
     potency: 1400,
     type: "gcd",
-    color: "#ff6b6b",
+    icon: afflatus_miseryIcon,
   },
 
   // === oGCD ===
@@ -105,6 +120,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     name: "アサイズ",
     potency: 400,
     type: "ogcd",
-    color: "#87ceeb",
+    icon: assizeIcon,
   },
 ];
