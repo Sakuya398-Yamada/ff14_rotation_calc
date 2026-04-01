@@ -60,6 +60,18 @@ export interface ResourceSnapshot {
   [resourceId: string]: number;
 }
 
+/** キャラクターステータス */
+export interface CharacterStats {
+  /** クリティカル値 */
+  critical: number;
+  /** ダイレクトヒット値 */
+  directHit: number;
+  /** 意志力 */
+  determination: number;
+  /** スキルスピード / スペルスピード */
+  speed: number;
+}
+
 /** 時間情報付きタイムラインエントリ（計算結果） */
 export interface ResolvedTimelineEntry {
   /** タイムラインエントリの一意ID */

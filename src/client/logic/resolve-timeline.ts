@@ -4,7 +4,9 @@ import type {
   ResolvedTimelineEntry,
   ResourceDefinition,
   ResourceSnapshot,
+  CharacterStats,
 } from "../types/skill";
+import { calcGcd } from "./stat-calc";
 
 /**
  * 自動生成タイマーの状態。
@@ -62,7 +64,8 @@ function processAutoGen(
 export function resolveTimeline(
   entries: TimelineEntry[],
   skillMap: Map<string, Skill>,
-  resources: ResourceDefinition[]
+  resources: ResourceDefinition[],
+  stats?: CharacterStats
 ): ResolvedTimelineEntry[] {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
@@ -94,8 +97,9 @@ export function resolveTimeline(
     let startTime: number;
 
     if (skill.type === "gcd") {
+      const recastTime = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
       startTime = Math.max(gcdAvailableAt, actionAvailableAt);
-      gcdAvailableAt = startTime + skill.recastTime;
+      gcdAvailableAt = startTime + recastTime;
       actionAvailableAt = startTime + skill.animationLock;
     } else {
       startTime = actionAvailableAt;

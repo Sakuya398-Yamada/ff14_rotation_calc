@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, CharacterStats } from "../types/skill";
+import { calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
@@ -30,6 +31,9 @@ interface TimelineProps {
   onRemoveEntry: (uid: string) => void;
   totalPotency: number;
   resources: ResourceDefinition[];
+  expectedMultiplier: number | null;
+  statsEnabled: boolean;
+  stats?: CharacterStats;
 }
 
 /**
@@ -40,7 +44,8 @@ function calcInsertIndex(
   mouseX: number,
   scrollLeft: number,
   resolvedEntries: ResolvedTimelineEntry[],
-  skillMap: Map<string, Skill>
+  skillMap: Map<string, Skill>,
+  recastFn: (skill: Skill) => number
 ): number {
   // タイムラインコンテンツ上の実際のX座標（スクロール考慮、レーンラベル分を引く）
   const contentX = mouseX + scrollLeft - LANE_LABEL_WIDTH;
@@ -53,7 +58,7 @@ function calcInsertIndex(
     const entry = resolvedEntries[i];
     const skill = skillMap.get(entry.skillId);
     if (!skill) continue;
-    const centerTime = entry.startTime + skill.recastTime / 2;
+    const centerTime = entry.startTime + recastFn(skill) / 2;
     if (time < centerTime) {
       return i;
     }
@@ -69,7 +74,8 @@ function calcInsertIndex(
 function calcInsertIndicatorX(
   insertIndex: number,
   resolvedEntries: ResolvedTimelineEntry[],
-  skillMap: Map<string, Skill>
+  skillMap: Map<string, Skill>,
+  recastFn: (skill: Skill) => number
 ): number {
   if (resolvedEntries.length === 0) return 0;
 
@@ -82,13 +88,13 @@ function calcInsertIndicatorX(
     // 末尾に挿入
     const last = resolvedEntries[resolvedEntries.length - 1];
     const skill = skillMap.get(last.skillId);
-    return (last.startTime + (skill?.recastTime ?? 0)) * PX_PER_SEC + 4;
+    return (last.startTime + (skill ? recastFn(skill) : 0)) * PX_PER_SEC + 4;
   }
 
   // 中間に挿入: 前のエントリの終了位置と次のエントリの開始位置の中間
   const prevEntry = resolvedEntries[insertIndex - 1];
   const prevSkill = skillMap.get(prevEntry.skillId);
-  const prevEnd = prevEntry.startTime + (prevSkill?.recastTime ?? 0);
+  const prevEnd = prevEntry.startTime + (prevSkill ? recastFn(prevSkill) : 0);
   const nextStart = resolvedEntries[insertIndex].startTime;
   return ((prevEnd + nextStart) / 2) * PX_PER_SEC;
 }
@@ -100,6 +106,9 @@ export function Timeline({
   onRemoveEntry,
   totalPotency,
   resources,
+  expectedMultiplier,
+  statsEnabled,
+  stats,
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
@@ -121,6 +130,16 @@ export function Timeline({
     [skills]
   );
 
+  const getRecastTime = useCallback(
+    (skill: Skill) => {
+      if (stats && skill.type === "gcd") {
+        return calcGcd(skill.recastTime, stats);
+      }
+      return skill.recastTime;
+    },
+    [stats]
+  );
+
   const gcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   const ogcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   for (const entry of resolvedEntries) {
@@ -139,11 +158,11 @@ export function Timeline({
     for (const entry of resolvedEntries) {
       const skill = skillMap.get(entry.skillId);
       if (!skill) continue;
-      const end = entry.startTime + skill.recastTime;
+      const end = entry.startTime + getRecastTime(skill);
       if (end > maxEnd) maxEnd = end;
     }
     return maxEnd;
-  }, [resolvedEntries, skillMap]);
+  }, [resolvedEntries, skillMap, getRecastTime]);
 
   const timelineWidth = Math.max(totalDuration * PX_PER_SEC + 100, 600);
 
@@ -164,13 +183,14 @@ export function Timeline({
     if (scrollRef.current && resolvedEntries.length > 0) {
       const last = resolvedEntries[resolvedEntries.length - 1];
       const skill = skillMap.get(last.skillId);
-      const endPx = (last.startTime + (skill?.recastTime ?? 0)) * PX_PER_SEC;
+      const recast = skill ? getRecastTime(skill) : 0;
+      const endPx = (last.startTime + recast) * PX_PER_SEC;
       const container = scrollRef.current;
       if (endPx > container.scrollLeft + container.clientWidth - 100) {
         container.scrollLeft = endPx - container.clientWidth + 150;
       }
     }
-  }, [resolvedEntries, skillMap]);
+  }, [resolvedEntries, skillMap, getRecastTime]);
 
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
@@ -185,14 +205,15 @@ export function Timeline({
           mouseX,
           scrollRef.current.scrollLeft,
           resolvedEntries,
-          skillMap
+          skillMap,
+          getRecastTime
         );
         setInsertIndex(idx);
       } else {
         setInsertIndex(null);
       }
     },
-    [resolvedEntries, skillMap]
+    [resolvedEntries, skillMap, getRecastTime]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -218,7 +239,8 @@ export function Timeline({
           mouseX,
           scrollRef.current.scrollLeft,
           resolvedEntries,
-          skillMap
+          skillMap,
+          getRecastTime
         );
         const isInsertMiddle = idx < resolvedEntries.length;
         if (isInsertMiddle) {
@@ -230,14 +252,14 @@ export function Timeline({
       }
       setInsertIndex(null);
     },
-    [onAddEntry, resolvedEntries, skillMap]
+    [onAddEntry, resolvedEntries, skillMap, getRecastTime]
   );
 
   // 挿入インジケーターのX座標
   const indicatorX = useMemo(() => {
     if (insertIndex === null) return null;
-    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap);
-  }, [insertIndex, resolvedEntries, skillMap]);
+    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getRecastTime);
+  }, [insertIndex, resolvedEntries, skillMap, getRecastTime]);
 
   // リソースエラーがあるエントリのUIDセット
   const entriesWithErrors = useMemo(() => {
@@ -266,6 +288,11 @@ export function Timeline({
           )}
           <div style={styles.potencyDisplay}>
             合計威力: <span style={styles.potencyValue}>{totalPotency}</span>
+            {expectedMultiplier !== null && (
+              <span style={styles.expectedPotency}>
+                {" "}(期待値: {Math.floor(totalPotency * expectedMultiplier)})
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -302,18 +329,22 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
+                    const recast = getRecastTime(entry.skill);
+                    const expectedPot = expectedMultiplier !== null && entry.skill.potency > 0
+                      ? Math.floor(entry.skill.potency * expectedMultiplier)
+                      : null;
                     return (
                       <div
                         key={entry.uid}
                         style={{
                           ...styles.skillBlock,
                           left: entry.startTime * PX_PER_SEC,
-                          width: entry.skill.recastTime * PX_PER_SEC,
+                          width: recast * PX_PER_SEC,
                         }}
                       >
                         <div
                           style={styles.recastBar}
-                          title={`リキャスト: ${entry.skill.recastTime}s`}
+                          title={`リキャスト: ${recast}s`}
                         />
                         <div
                           style={styles.animLockBar}
@@ -323,10 +354,7 @@ export function Timeline({
                             style={{
                               ...styles.animLockFill,
                               width:
-                                (entry.skill.animationLock /
-                                  entry.skill.recastTime) *
-                                  100 +
-                                "%",
+                                (entry.skill.animationLock / recast) * 100 + "%",
                             }}
                           />
                         </div>
@@ -335,7 +363,7 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -345,7 +373,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {entry.skill.potency}
+                          {expectedPot !== null ? expectedPot : entry.skill.potency}
                         </div>
                       </div>
                     );
@@ -359,6 +387,9 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
+                    const expectedPot = expectedMultiplier !== null && entry.skill.potency > 0
+                      ? Math.floor(entry.skill.potency * expectedMultiplier)
+                      : null;
                     return (
                       <div
                         key={entry.uid}
@@ -372,7 +403,7 @@ export function Timeline({
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -382,7 +413,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {entry.skill.potency}
+                          {expectedPot !== null ? expectedPot : entry.skill.potency}
                         </div>
                       </div>
                     );
@@ -513,6 +544,10 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "22px",
     fontWeight: "bold",
     color: "#ffd700",
+  },
+  expectedPotency: {
+    fontSize: "14px",
+    color: "#4fc3f7",
   },
   dropZone: {
     flex: 1,
