@@ -553,14 +553,12 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    border: "2px dashed #444",
     borderRadius: "8px",
-    transition: "border-color 0.2s, background-color 0.2s",
+    transition: "background-color 0.2s",
     minHeight: "200px",
     overflow: "hidden",
   },
   dropZoneActive: {
-    borderColor: "#ffd700",
     backgroundColor: "rgba(255, 215, 0, 0.05)",
   },
   placeholder: {
