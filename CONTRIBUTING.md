@@ -97,3 +97,35 @@ Claude CodeがIssueの内容を読み取り、以下を行います。
 | `docs` | ドキュメント |
 | `question` | 要確認・議論 |
 | `priority:high` / `medium` / `low` | 優先度 |
+
+---
+
+## 技術スタック
+
+| レイヤー | 技術 |
+|---------|------|
+| 言語 | TypeScript（フロント・バック統一） |
+| フロントエンド | React + Vite |
+| バックエンド | Hono (Node.js) |
+| DB | SQLite（Prismaで抽象化） |
+| ORM | Prisma |
+| デプロイ | pm2 or systemd + Nginx + Cloudflare |
+
+### 開発環境
+
+WSL上に**開発コンテナ（Dev Container）**を作成して開発します。コンテナ内にNode.js、SQLite等の依存がすべて含まれるため、ローカル環境への個別インストールは不要です。
+
+### ローカル開発（予定）
+
+```bash
+# 開発コンテナ内で実行
+
+# 依存インストール
+npm install
+
+# DB初期化
+npx prisma migrate dev
+
+# 開発サーバー起動
+npm run dev
+```
