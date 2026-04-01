@@ -27,6 +27,8 @@ export interface Skill {
   animationLock: number;
   /** リソース変動（未設定の場合はリソースに影響なし） */
   resourceChanges?: ResourceChange[];
+  /** 使用時に付与するバフのIDリスト */
+  buffApplications?: string[];
 }
 
 /** タイムラインに配置されたスキル */
@@ -72,6 +74,55 @@ export interface CharacterStats {
   speed: number;
 }
 
+/** バフ・デバフのエフェクト種別 */
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource";
+
+/** バフ・デバフの効果 */
+export interface BuffEffect {
+  /** エフェクト種別 */
+  type: BuffEffectType;
+  /**
+   * 効果量
+   * - speed: GCD乗算倍率（0.8 = GCD×0.8）
+   * - potency: 威力乗算倍率（1.1 = 威力×1.1）
+   * - stat: ステータス加算値
+   * - resource: リソース変動量
+   */
+  value: number;
+  /** statバフの対象ステータスキー */
+  statKey?: keyof CharacterStats;
+  /** resourceバフの対象リソースID */
+  resourceId?: string;
+}
+
+/** バフ・デバフの定義 */
+export interface BuffDefinition {
+  /** バフの一意識別子 */
+  id: string;
+  /** バフ名 */
+  name: string;
+  /** 短縮名（レーンラベル用） */
+  shortName: string;
+  /** アイコン画像のパス */
+  icon: string;
+  /** 効果時間（秒） */
+  duration: number;
+  /** バフの効果リスト */
+  effects: BuffEffect[];
+  /** 表示色 */
+  color: string;
+}
+
+/** タイムライン上のアクティブなバフ */
+export interface ActiveBuff {
+  /** バフ定義のID */
+  buffId: string;
+  /** バフ適用開始時刻（秒） */
+  startTime: number;
+  /** バフ終了時刻（秒） */
+  endTime: number;
+}
+
 /** 時間情報付きタイムラインエントリ（計算結果） */
 export interface ResolvedTimelineEntry {
   /** タイムラインエントリの一意ID */
@@ -84,4 +135,6 @@ export interface ResolvedTimelineEntry {
   resourceSnapshot: ResourceSnapshot;
   /** リソース不足のリソースIDリスト */
   resourceErrors: string[];
+  /** このスキル使用時にアクティブなバフ一覧 */
+  activeBuffs: ActiveBuff[];
 }

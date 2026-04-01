@@ -10,6 +10,9 @@ skills.get("/", async (c) => {
     resourceChanges: skill.resourceChanges
       ? JSON.parse(skill.resourceChanges)
       : undefined,
+    buffApplications: skill.buffApplications
+      ? JSON.parse(skill.buffApplications)
+      : undefined,
   }));
   return c.json(parsed);
 });
