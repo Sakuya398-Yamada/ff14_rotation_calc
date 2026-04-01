@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { WHM_ATTACK_SKILLS } from "../data/whm-skills";
+import { resolveTimeline } from "../logic/resolve-timeline";
 import type { TimelineEntry } from "../types/skill";
 
 let nextUid = 1;
@@ -12,6 +13,11 @@ export function App() {
   const skillMap = useMemo(
     () => new Map(WHM_ATTACK_SKILLS.map((s) => [s.id, s])),
     []
+  );
+
+  const resolvedEntries = useMemo(
+    () => resolveTimeline(entries, skillMap),
+    [entries, skillMap]
   );
 
   const handleAddEntry = useCallback((skillId: string) => {
@@ -40,7 +46,7 @@ export function App() {
         <SkillPalette skills={WHM_ATTACK_SKILLS} />
         <Timeline
           skills={WHM_ATTACK_SKILLS}
-          entries={entries}
+          resolvedEntries={resolvedEntries}
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}
           totalPotency={totalPotency}

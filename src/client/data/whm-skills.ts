@@ -15,6 +15,12 @@ import holy3Icon from "../assets/icons/whm/Holy_III.png";
 import afflatus_miseryIcon from "../assets/icons/whm/Afflatus_Misery.png";
 import assizeIcon from "../assets/icons/whm/Assize.png";
 
+/** GCDのデフォルトリキャストタイム（秒） */
+const GCD_RECAST = 2.5;
+
+/** デフォルトのアニメーションロック（秒） */
+const DEFAULT_ANIMATION_LOCK = 0.65;
+
 /**
  * 白魔道士（WHM）攻撃スキル一覧
  * パッチ7.x準拠の威力値
@@ -27,6 +33,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 140,
     type: "gcd",
     icon: stoneIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "aero",
@@ -34,6 +42,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 50,
     type: "gcd",
     icon: aeroIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "stone2",
@@ -41,6 +51,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 190,
     type: "gcd",
     icon: stone2Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "aero2",
@@ -48,6 +60,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 50,
     type: "gcd",
     icon: aero2Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "stone3",
@@ -55,6 +69,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 220,
     type: "gcd",
     icon: stone3Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "stone4",
@@ -62,6 +78,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 260,
     type: "gcd",
     icon: stone4Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "dia",
@@ -69,6 +87,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 85,
     type: "gcd",
     icon: diaIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "glare",
@@ -76,6 +96,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 290,
     type: "gcd",
     icon: glareIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "glare3",
@@ -83,6 +105,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 350,
     type: "gcd",
     icon: glare3Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "glare4",
@@ -90,6 +114,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 640,
     type: "gcd",
     icon: glare4Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "holy",
@@ -97,6 +123,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 140,
     type: "gcd",
     icon: holyIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
   {
     id: "holy3",
@@ -104,14 +132,17 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 150,
     type: "gcd",
     icon: holy3Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
-
   {
     id: "heart-of-misery",
     name: "ハート・オブ・ミゼリ",
     potency: 1400,
     type: "gcd",
     icon: afflatus_miseryIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
 
   // === oGCD ===
@@ -121,5 +152,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     potency: 400,
     type: "ogcd",
     icon: assizeIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
   },
 ];
