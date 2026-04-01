@@ -6,7 +6,7 @@ import { resolveIconUrl } from "../utils/resolve-icon-url";
 import { WHM_RESOURCES } from "../data/whm-resources";
 import { WHM_BUFFS } from "../data/whm-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
-import type { Skill, TimelineEntry, CharacterStats } from "../types/skill";
+import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow } from "../types/skill";
 
 let nextUid = 1;
 
@@ -16,6 +16,7 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
   const [statsEnabled, setStatsEnabled] = useState(false);
+  const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
 
   useEffect(() => {
     fetch("/api/skills")
@@ -36,8 +37,8 @@ export function App() {
   );
 
   const timelineResult = useMemo(
-    () => resolveTimeline(entries, skillMap, WHM_RESOURCES, statsEnabled ? stats : undefined, WHM_BUFFS),
-    [entries, skillMap, stats, statsEnabled]
+    () => resolveTimeline(entries, skillMap, WHM_RESOURCES, statsEnabled ? stats : undefined, WHM_BUFFS, untargetableWindows),
+    [entries, skillMap, stats, statsEnabled, untargetableWindows]
   );
 
   const resolvedEntries = timelineResult.entries;
@@ -108,6 +109,8 @@ export function App() {
           dotTicks={timelineResult.dotTicks}
           activeDoTs={timelineResult.activeDoTs}
           dotTotalPotency={timelineResult.dotTotalPotency}
+          untargetableWindows={untargetableWindows}
+          onUntargetableWindowsChange={setUntargetableWindows}
         />
       </div>
       <footer style={styles.footer}>

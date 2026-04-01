@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow } from "../types/skill";
 import { calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
@@ -44,6 +44,8 @@ interface TimelineProps {
   dotTicks: DoTTick[];
   activeDoTs: ActiveDoT[];
   dotTotalPotency: number;
+  untargetableWindows: BossUntargetableWindow[];
+  onUntargetableWindowsChange: (windows: BossUntargetableWindow[]) => void;
 }
 
 /**
@@ -123,12 +125,15 @@ export function Timeline({
   dotTicks,
   activeDoTs,
   dotTotalPotency,
+  untargetableWindows,
+  onUntargetableWindowsChange,
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [showResources, setShowResources] = useState(true);
   const [showBuffs, setShowBuffs] = useState(true);
   const [showDoTs, setShowDoTs] = useState(true);
+  const [showUntargetableEditor, setShowUntargetableEditor] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** 末尾追加時のみ自動スクロールするためのフラグ */
   const shouldAutoScrollRef = useRef(true);
@@ -210,8 +215,12 @@ export function Timeline({
     for (const dot of activeDoTs) {
       if (dot.endTime > maxEnd) maxEnd = dot.endTime;
     }
+    // ボス離脱ウィンドウの終了時刻も考慮
+    for (const w of untargetableWindows) {
+      if (w.endTime > maxEnd) maxEnd = w.endTime;
+    }
     return maxEnd;
-  }, [resolvedEntries, skillMap, getEntryRecastTime, activeDoTs]);
+  }, [resolvedEntries, skillMap, getEntryRecastTime, activeDoTs, untargetableWindows]);
 
   const timelineWidth = Math.max(totalDuration * PX_PER_SEC + 100, 600);
 
@@ -375,7 +384,7 @@ export function Timeline({
   const entriesWithErrors = useMemo(() => {
     const set = new Set<string>();
     for (const entry of resolvedEntries) {
-      if (entry.resourceErrors.length > 0 || entry.comboErrors.length > 0) {
+      if (entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError) {
         set.add(entry.uid);
       }
     }
@@ -387,6 +396,17 @@ export function Timeline({
       <div style={styles.header}>
         <h2 style={styles.title}>タイムライン</h2>
         <div style={styles.headerControls}>
+          <button
+            style={{
+              ...styles.toggleButton,
+              ...(untargetableWindows.length > 0 ? { borderColor: "rgba(255, 80, 80, 0.5)", color: "#ef5350" } : {}),
+            }}
+            onClick={() => setShowUntargetableEditor((v) => !v)}
+            title="ボス離脱タイミング設定"
+          >
+            {showUntargetableEditor ? "離脱 ▼" : "離脱 ▶"}
+            {untargetableWindows.length > 0 && ` (${untargetableWindows.length})`}
+          </button>
           {activeDoTs.length > 0 && (
             <button
               style={styles.toggleButton}
@@ -429,6 +449,80 @@ export function Timeline({
           </div>
         </div>
       </div>
+
+      {showUntargetableEditor && (
+        <div style={styles.untargetableEditor}>
+          <div style={styles.untargetableHeader}>
+            <span style={styles.untargetableTitle}>ボス離脱タイミング</span>
+            <button
+              style={styles.untargetableAddButton}
+              onClick={() => {
+                const lastEnd = untargetableWindows.length > 0
+                  ? Math.max(...untargetableWindows.map((w) => w.endTime))
+                  : 0;
+                onUntargetableWindowsChange([
+                  ...untargetableWindows,
+                  { startTime: lastEnd + 5, endTime: lastEnd + 10 },
+                ]);
+              }}
+            >
+              + 追加
+            </button>
+          </div>
+          {untargetableWindows.length === 0 && (
+            <div style={styles.untargetableEmpty}>離脱タイミングが未設定です</div>
+          )}
+          {untargetableWindows.map((w, i) => (
+            <div key={i} style={styles.untargetableRow}>
+              <label style={styles.untargetableLabel}>
+                開始:
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={w.startTime}
+                  style={styles.untargetableInput}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (isNaN(val) || val < 0) return;
+                    const next = [...untargetableWindows];
+                    next[i] = { ...next[i], startTime: val };
+                    onUntargetableWindowsChange(next);
+                  }}
+                />
+                s
+              </label>
+              <label style={styles.untargetableLabel}>
+                終了:
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={w.endTime}
+                  style={styles.untargetableInput}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (isNaN(val) || val < 0) return;
+                    const next = [...untargetableWindows];
+                    next[i] = { ...next[i], endTime: val };
+                    onUntargetableWindowsChange(next);
+                  }}
+                />
+                s
+              </label>
+              <button
+                style={styles.untargetableDeleteButton}
+                onClick={() => {
+                  onUntargetableWindowsChange(untargetableWindows.filter((_, idx) => idx !== i));
+                }}
+                title="削除"
+              >
+                x
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div
         style={{
@@ -496,7 +590,7 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -536,7 +630,7 @@ export function Timeline({
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -710,6 +804,46 @@ export function Timeline({
                   );
                 });
               })()}
+
+              {/* ボス離脱ウィンドウ */}
+              {untargetableWindows.map((w, i) => {
+                const left = LANE_LABEL_WIDTH + w.startTime * PX_PER_SEC;
+                const width = (w.endTime - w.startTime) * PX_PER_SEC;
+                return (
+                  <div
+                    key={`untargetable-${i}`}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      bottom: RULER_HEIGHT,
+                      left,
+                      width,
+                      backgroundColor: "rgba(255, 80, 80, 0.12)",
+                      borderLeft: "2px solid rgba(255, 80, 80, 0.5)",
+                      borderRight: "2px solid rgba(255, 80, 80, 0.5)",
+                      zIndex: 5,
+                      pointerEvents: "none",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "center",
+                      paddingTop: "2px",
+                    }}
+                    title={`ボス離脱 (${w.startTime}s - ${w.endTime}s)`}
+                  >
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        color: "rgba(255, 80, 80, 0.8)",
+                        fontWeight: "bold",
+                        whiteSpace: "nowrap",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      離脱
+                    </span>
+                  </div>
+                );
+              })}
 
               {/* 時間軸ルーラー */}
               <div style={styles.ruler}>
@@ -1147,5 +1281,70 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "12px",
     color: "#555",
     textAlign: "center" as const,
+  },
+  // ボス離脱エディタ
+  untargetableEditor: {
+    backgroundColor: "rgba(255, 80, 80, 0.05)",
+    border: "1px solid rgba(255, 80, 80, 0.2)",
+    borderRadius: "6px",
+    padding: "8px 12px",
+    marginBottom: "8px",
+  },
+  untargetableHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "6px",
+  },
+  untargetableTitle: {
+    fontSize: "13px",
+    fontWeight: "bold",
+    color: "#ef5350",
+  },
+  untargetableAddButton: {
+    background: "none",
+    border: "1px solid rgba(255, 80, 80, 0.4)",
+    borderRadius: "4px",
+    color: "#ef5350",
+    fontSize: "12px",
+    padding: "2px 10px",
+    cursor: "pointer",
+  },
+  untargetableEmpty: {
+    fontSize: "12px",
+    color: "#777",
+  },
+  untargetableRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "4px",
+  },
+  untargetableLabel: {
+    fontSize: "12px",
+    color: "#aaa",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  untargetableInput: {
+    width: "60px",
+    backgroundColor: "#1a1a3e",
+    border: "1px solid #444",
+    borderRadius: "4px",
+    color: "#e0e0e0",
+    padding: "2px 6px",
+    fontSize: "12px",
+    textAlign: "right" as const,
+  },
+  untargetableDeleteButton: {
+    background: "none",
+    border: "1px solid rgba(255, 80, 80, 0.3)",
+    borderRadius: "4px",
+    color: "#ef5350",
+    fontSize: "12px",
+    padding: "2px 8px",
+    cursor: "pointer",
+    lineHeight: 1,
   },
 };

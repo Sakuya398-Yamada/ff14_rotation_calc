@@ -169,6 +169,14 @@ export interface ActiveDoT {
   buffMultiplier: number;
 }
 
+/** ボス離脱（攻撃不可）ウィンドウ */
+export interface BossUntargetableWindow {
+  /** 離脱開始時刻（秒） */
+  startTime: number;
+  /** 離脱終了時刻（秒） */
+  endTime: number;
+}
+
 /** resolveTimelineの計算結果 */
 export interface TimelineResult {
   /** 各スキルの計算結果 */
@@ -195,6 +203,8 @@ export interface ResolvedTimelineEntry {
   resourceErrors: string[];
   /** バフスタック不足のバフIDリスト */
   comboErrors: string[];
+  /** ボス離脱中に攻撃したエラー */
+  untargetableError: boolean;
   /** このスキル使用時にアクティブなバフ一覧 */
   activeBuffs: ActiveBuff[];
 }
