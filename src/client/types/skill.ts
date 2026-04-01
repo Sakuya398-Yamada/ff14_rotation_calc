@@ -177,6 +177,14 @@ export interface BossUntargetableWindow {
   endTime: number;
 }
 
+/** PPS範囲選択 */
+export interface PpsRange {
+  /** 範囲開始時刻（秒） */
+  startTime: number;
+  /** 範囲終了時刻（秒） */
+  endTime: number;
+}
+
 /** resolveTimelineの計算結果 */
 export interface TimelineResult {
   /** 各スキルの計算結果 */
@@ -187,6 +195,8 @@ export interface TimelineResult {
   dotTotalPotency: number;
   /** アクティブDoT期間一覧（タイムライン表示用） */
   activeDoTs: ActiveDoT[];
+  /** 最後のGCDスキルのリキャスト完了時刻 */
+  lastGcdEndTime: number;
 }
 
 /** 時間情報付きタイムラインエントリ（計算結果） */
