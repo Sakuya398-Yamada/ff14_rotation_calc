@@ -95,6 +95,8 @@ export function Timeline({
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  /** 末尾追加時のみ自動スクロールするためのフラグ */
+  const shouldAutoScrollRef = useRef(true);
 
   const skillMap = useMemo(
     () => new Map(skills.map((s) => [s.id, s])),
@@ -137,6 +139,10 @@ export function Timeline({
   }, [totalDuration]);
 
   useEffect(() => {
+    if (!shouldAutoScrollRef.current) {
+      shouldAutoScrollRef.current = true;
+      return;
+    }
     if (scrollRef.current && resolvedEntries.length > 0) {
       const last = resolvedEntries[resolvedEntries.length - 1];
       const skill = skillMap.get(last.skillId);
@@ -196,7 +202,11 @@ export function Timeline({
           resolvedEntries,
           skillMap
         );
-        onAddEntry(skillId, idx < resolvedEntries.length ? idx : undefined);
+        const isInsertMiddle = idx < resolvedEntries.length;
+        if (isInsertMiddle) {
+          shouldAutoScrollRef.current = false;
+        }
+        onAddEntry(skillId, isInsertMiddle ? idx : undefined);
       } else {
         onAddEntry(skillId);
       }
