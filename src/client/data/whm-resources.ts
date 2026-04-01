@@ -11,7 +11,7 @@ export const WHM_RESOURCES: ResourceDefinition[] = [
   {
     id: "healing-lily",
     name: "ヒーリングリリー",
-    shortName: "H.リリー",
+    shortName: "H.ﾘﾘｰ",
     maxStacks: 3,
     initialStacks: 3,
     autoGenerateInterval: 20,
@@ -20,7 +20,7 @@ export const WHM_RESOURCES: ResourceDefinition[] = [
   {
     id: "blood-lily",
     name: "ブラッドリリー",
-    shortName: "B.リリー",
+    shortName: "B.ﾘﾘｰ",
     maxStacks: 3,
     color: "#ef5350",
   },
