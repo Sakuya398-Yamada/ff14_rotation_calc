@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Skill, ResolvedTimelineEntry } from "../types/skill";
+import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
 const PX_PER_SEC = 80;
@@ -252,7 +253,7 @@ export function Timeline({
             スキルパレットからドラッグ＆ドロップしてスキルを追加
           </div>
         ) : (
-          <div ref={scrollRef} style={styles.scrollContainer}>
+          <div ref={scrollRef} className="timeline-scroll" style={styles.scrollContainer}>
             <div style={{ ...styles.timelineContent, width: timelineWidth }}>
               {/* 挿入インジケーター */}
               {indicatorX !== null && (
