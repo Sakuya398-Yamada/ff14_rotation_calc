@@ -35,9 +35,16 @@ export function App() {
     [entries, skillMap]
   );
 
-  const handleAddEntry = useCallback((skillId: string) => {
+  const handleAddEntry = useCallback((skillId: string, insertIndex?: number) => {
     const uid = `entry-${nextUid++}`;
-    setEntries((prev) => [...prev, { uid, skillId }]);
+    setEntries((prev) => {
+      if (insertIndex !== undefined && insertIndex >= 0 && insertIndex < prev.length) {
+        const next = [...prev];
+        next.splice(insertIndex, 0, { uid, skillId });
+        return next;
+      }
+      return [...prev, { uid, skillId }];
+    });
   }, []);
 
   const handleRemoveEntry = useCallback((uid: string) => {
