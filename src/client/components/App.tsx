@@ -1,36 +1,22 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
-import { resolveIconUrl } from "../utils/resolve-icon-url";
+import { WHM_ATTACK_SKILLS } from "../data/whm-skills";
 import { WHM_RESOURCES } from "../data/whm-resources";
 import { WHM_BUFFS } from "../data/whm-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
-import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange } from "../types/skill";
+import type { TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange } from "../types/skill";
 
 let nextUid = 1;
 
 export function App() {
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const skills = WHM_ATTACK_SKILLS;
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
   const [statsEnabled, setStatsEnabled] = useState(false);
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
-
-  useEffect(() => {
-    fetch("/api/skills")
-      .then((res) => res.json())
-      .then((data: Skill[]) => {
-        const resolved = data.map((s) => ({
-          ...s,
-          icon: resolveIconUrl(s.icon),
-        }));
-        setSkills(resolved);
-      })
-      .finally(() => setLoading(false));
-  }, []);
 
   const skillMap = useMemo(
     () => new Map(skills.map((s) => [s.id, s])),
@@ -98,14 +84,6 @@ export function App() {
     );
   }, [resolvedEntries, skillMap, timelineResult.dotTicks, ppsRange]);
 
-  if (loading) {
-    return (
-      <div style={styles.app}>
-        <div style={styles.loading}>読み込み中...</div>
-      </div>
-    );
-  }
-
   return (
     <div style={styles.app}>
       <header style={styles.header}>
@@ -161,14 +139,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#e0e0e0",
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-  loading: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100vh",
-    fontSize: "18px",
-    color: "#888",
   },
   header: {
     display: "flex",

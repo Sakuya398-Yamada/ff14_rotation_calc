@@ -10,30 +10,3 @@ datasource db {
   provider = "sqlite"
 }
 
-/// スキルの定義データ
-model Skill {
-  /// スキルの一意識別子
-  id            String @id
-  /// スキル名（日本語）
-  name          String
-  /// 威力
-  potency       Int
-  /// GCD or oGCD
-  type          String
-  /// スキルアイコン画像のファイル名（例: "whm/Stone.png"）
-  icon          String
-  /// リキャストタイム（秒）
-  recastTime    Float
-  /// アニメーションロック（秒）
-  animationLock Float
-  /// リソース変動（JSON文字列）。例: [{"resourceId":"healing-lily","amount":-1}]
-  resourceChanges String?
-  /// バフ付与（JSON文字列）。例: ["presence-of-mind"]
-  buffApplications String?
-  /// バフスタック消費（JSON文字列）。例: [{"buffId":"sacred-sight","stacks":1}]
-  buffConsumptions String?
-  /// DoT威力（1ティックあたり）
-  dotPotency    Int?
-  /// DoT持続時間（秒）
-  dotDuration   Int?
-}
