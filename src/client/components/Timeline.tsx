@@ -411,11 +411,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dropZone: {
     flex: 1,
+    display: "flex",
+    flexDirection: "column",
     border: "2px dashed #444",
     borderRadius: "8px",
     transition: "border-color 0.2s, background-color 0.2s",
     minHeight: "200px",
-    overflow: "auto",
+    overflow: "hidden",
   },
   dropZoneActive: {
     borderColor: "#ffd700",
@@ -433,7 +435,8 @@ const styles: Record<string, React.CSSProperties> = {
   scrollContainer: {
     overflowX: "auto",
     overflowY: "hidden",
-    height: "100%",
+    flex: 1,
+    minHeight: 0,
     padding: "12px 0",
   },
   timelineContent: {
