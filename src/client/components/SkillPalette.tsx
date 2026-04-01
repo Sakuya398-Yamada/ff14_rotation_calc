@@ -25,14 +25,14 @@ export function SkillPalette({ skills }: SkillPaletteProps) {
               key={skill.id}
               draggable
               onDragStart={(e) => handleDragStart(e, skill)}
-              style={{ ...styles.skillCard, borderColor: skill.color }}
+              style={styles.skillCard}
               title={`${skill.name} (威力: ${skill.potency})`}
             >
-              <div
-                style={{ ...styles.skillIcon, backgroundColor: skill.color }}
-              >
-                {skill.name.charAt(0)}
-              </div>
+              <img
+                src={skill.icon}
+                alt={skill.name}
+                style={styles.skillIcon}
+              />
               <div style={styles.skillInfo}>
                 <div style={styles.skillName}>{skill.name}</div>
                 <div style={styles.skillPotency}>威力 {skill.potency}</div>
@@ -50,14 +50,14 @@ export function SkillPalette({ skills }: SkillPaletteProps) {
               key={skill.id}
               draggable
               onDragStart={(e) => handleDragStart(e, skill)}
-              style={{ ...styles.skillCard, borderColor: skill.color }}
+              style={styles.skillCard}
               title={`${skill.name} (威力: ${skill.potency})`}
             >
-              <div
-                style={{ ...styles.skillIcon, backgroundColor: skill.color }}
-              >
-                {skill.name.charAt(0)}
-              </div>
+              <img
+                src={skill.icon}
+                alt={skill.name}
+                style={styles.skillIcon}
+              />
               <div style={styles.skillInfo}>
                 <div style={styles.skillName}>{skill.name}</div>
                 <div style={styles.skillPotency}>威力 {skill.potency}</div>
@@ -106,7 +106,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "6px 8px",
     backgroundColor: "#16213e",
     borderRadius: "6px",
-    borderLeft: "3px solid",
     cursor: "grab",
     userSelect: "none" as const,
     transition: "background-color 0.15s",
@@ -115,13 +114,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: "32px",
     height: "32px",
     borderRadius: "4px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "14px",
-    fontWeight: "bold",
-    color: "#000",
     flexShrink: 0,
+    objectFit: "contain" as const,
   },
   skillInfo: {
     minWidth: 0,

@@ -46,6 +46,11 @@ export function App() {
           totalPotency={totalPotency}
         />
       </div>
+      <footer style={styles.footer}>
+        <small style={styles.copyright}>
+          Copyright (C) SQUARE ENIX CO., LTD. All Rights Reserved.
+        </small>
+      </footer>
     </div>
   );
 }
@@ -81,5 +86,15 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flex: 1,
     overflow: "hidden",
+  },
+  footer: {
+    padding: "8px 20px",
+    backgroundColor: "#16213e",
+    borderTop: "1px solid #333",
+    textAlign: "center" as const,
+  },
+  copyright: {
+    fontSize: "11px",
+    color: "#666",
   },
 };
