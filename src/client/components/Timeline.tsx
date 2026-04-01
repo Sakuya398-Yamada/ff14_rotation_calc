@@ -703,9 +703,11 @@ export function Timeline({
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
-                    const expectedPot = expectedMultiplier !== null && entry.skill.potency > 0
-                      ? Math.floor(entry.skill.potency * expectedMultiplier)
-                      : null;
+                    const expectedPot = hasError ? null : (
+                      expectedMultiplier !== null && entry.skill.potency > 0
+                        ? Math.floor(entry.skill.potency * expectedMultiplier)
+                        : null
+                    );
                     return (
                       <div
                         key={entry.uid}
@@ -746,7 +748,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {expectedPot !== null ? expectedPot : entry.skill.potency}
+                          {hasError ? "-" : (expectedPot !== null ? expectedPot : entry.skill.potency)}
                         </div>
                       </div>
                     );
@@ -760,9 +762,11 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
-                    const expectedPot = expectedMultiplier !== null && entry.skill.potency > 0
-                      ? Math.floor(entry.skill.potency * expectedMultiplier)
-                      : null;
+                    const expectedPot = hasError ? null : (
+                      expectedMultiplier !== null && entry.skill.potency > 0
+                        ? Math.floor(entry.skill.potency * expectedMultiplier)
+                        : null
+                    );
                     return (
                       <div
                         key={entry.uid}
@@ -786,7 +790,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {expectedPot !== null ? expectedPot : entry.skill.potency}
+                          {hasError ? "-" : (expectedPot !== null ? expectedPot : entry.skill.potency)}
                         </div>
                       </div>
                     );

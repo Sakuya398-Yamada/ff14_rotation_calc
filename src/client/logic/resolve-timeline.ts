@@ -249,29 +249,7 @@ export function resolveTimeline(
       }
     }
 
-    // リソース変動を適用（不足時でも適用し、0でクランプ）
-    if (skill.resourceChanges) {
-      for (const change of skill.resourceChanges) {
-        const def = resourceDefMap.get(change.resourceId);
-        if (!def) continue;
-        const prevValue = resourceState[change.resourceId];
-        resourceState[change.resourceId] = Math.max(
-          0,
-          Math.min(prevValue + change.amount, def.maxStacks)
-        );
-
-        // リソースが最大未満になったら自動生成タイマーを開始
-        if (
-          def.autoGenerateInterval &&
-          resourceState[change.resourceId] < def.maxStacks &&
-          autoGenTimers[change.resourceId].startedAt === null
-        ) {
-          autoGenTimers[change.resourceId].startedAt = startTime;
-        }
-      }
-    }
-
-    // バフスタック消費チェック & 適用
+    // バフスタック消費チェック
     const comboErrors: string[] = [];
     if (skill.buffConsumptions) {
       for (const consumption of skill.buffConsumptions) {
@@ -282,70 +260,97 @@ export function resolveTimeline(
       }
     }
 
-    // バフスタック消費を適用（エラー時でも適用、0以下にはしない）
-    if (skill.buffConsumptions) {
-      for (const consumption of skill.buffConsumptions) {
-        const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
-        if (activeBuff && activeBuff.stacks !== undefined) {
-          activeBuff.stacks = Math.max(0, activeBuff.stacks - consumption.stacks);
-          // スタック0になったらバフを除去
-          if (activeBuff.stacks === 0) {
-            const idx = currentActiveBuffs.indexOf(activeBuff);
-            if (idx >= 0) currentActiveBuffs.splice(idx, 1);
-          }
-        }
-      }
-    }
-
-    // バフ適用: スキルにbuffApplicationsがあればアクティブバフに追加
-    if (skill.buffApplications) {
-      for (const buffId of skill.buffApplications) {
-        const buffDef = buffDefMap.get(buffId);
-        if (!buffDef) continue;
-
-        // 同じバフが既にアクティブなら上書き（リフレッシュ）
-        const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
-        const newBuff: ActiveBuff = {
-          buffId,
-          startTime,
-          endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
-          stacks: buffDef.maxStacks,
-        };
-        if (existingIdx >= 0) {
-          currentActiveBuffs[existingIdx] = newBuff;
-        } else {
-          currentActiveBuffs.push(newBuff);
-        }
-      }
-    }
-
-    // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
-    if (skill.dotPotency && skill.dotDuration) {
-      const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
-      const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
-
-      const existing = dotStreams.get(skill.id);
-      if (existing) {
-        // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
-        existing.currentEndTime = endTime;
-        existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier });
-      } else {
-        // 初回適用: 新規DoTストリーム作成
-        dotStreams.set(skill.id, {
-          skillId: skill.id,
-          icon: skill.icon,
-          dotPotency: skill.dotPotency,
-          firstAppliedAt: startTime,
-          currentEndTime: endTime,
-          segments: [{ appliedAt: startTime, endTime, buffMultiplier }],
-        });
-      }
-    }
-
     // ボス離脱中チェック
     const untargetableError = untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
       : false;
+
+    // エラー判定: いずれかのエラーがある場合、スキル効果（リソース消費・バフ・DoT）を適用しない
+    const hasError = resourceErrors.length > 0 || comboErrors.length > 0 || untargetableError;
+
+    if (!hasError) {
+      // リソース変動を適用
+      if (skill.resourceChanges) {
+        for (const change of skill.resourceChanges) {
+          const def = resourceDefMap.get(change.resourceId);
+          if (!def) continue;
+          const prevValue = resourceState[change.resourceId];
+          resourceState[change.resourceId] = Math.max(
+            0,
+            Math.min(prevValue + change.amount, def.maxStacks)
+          );
+
+          // リソースが最大未満になったら自動生成タイマーを開始
+          if (
+            def.autoGenerateInterval &&
+            resourceState[change.resourceId] < def.maxStacks &&
+            autoGenTimers[change.resourceId].startedAt === null
+          ) {
+            autoGenTimers[change.resourceId].startedAt = startTime;
+          }
+        }
+      }
+
+      // バフスタック消費を適用
+      if (skill.buffConsumptions) {
+        for (const consumption of skill.buffConsumptions) {
+          const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
+          if (activeBuff && activeBuff.stacks !== undefined) {
+            activeBuff.stacks = Math.max(0, activeBuff.stacks - consumption.stacks);
+            // スタック0になったらバフを除去
+            if (activeBuff.stacks === 0) {
+              const idx = currentActiveBuffs.indexOf(activeBuff);
+              if (idx >= 0) currentActiveBuffs.splice(idx, 1);
+            }
+          }
+        }
+      }
+
+      // バフ適用: スキルにbuffApplicationsがあればアクティブバフに追加
+      if (skill.buffApplications) {
+        for (const buffId of skill.buffApplications) {
+          const buffDef = buffDefMap.get(buffId);
+          if (!buffDef) continue;
+
+          // 同じバフが既にアクティブなら上書き（リフレッシュ）
+          const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+          const newBuff: ActiveBuff = {
+            buffId,
+            startTime,
+            endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+            stacks: buffDef.maxStacks,
+          };
+          if (existingIdx >= 0) {
+            currentActiveBuffs[existingIdx] = newBuff;
+          } else {
+            currentActiveBuffs.push(newBuff);
+          }
+        }
+      }
+
+      // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
+      if (skill.dotPotency && skill.dotDuration) {
+        const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+        const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
+
+        const existing = dotStreams.get(skill.id);
+        if (existing) {
+          // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
+          existing.currentEndTime = endTime;
+          existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier });
+        } else {
+          // 初回適用: 新規DoTストリーム作成
+          dotStreams.set(skill.id, {
+            skillId: skill.id,
+            icon: skill.icon,
+            dotPotency: skill.dotPotency,
+            firstAppliedAt: startTime,
+            currentEndTime: endTime,
+            segments: [{ appliedAt: startTime, endTime, buffMultiplier }],
+          });
+        }
+      }
+    }
 
     resolved.push({
       uid: entry.uid,
@@ -449,6 +454,9 @@ export function calcPps(
   let directPotency = 0;
   for (const entry of resolvedEntries) {
     if (entry.startTime >= rangeStart && entry.startTime < rangeEnd) {
+      // エラーのあるスキルはダメージ計算対象外
+      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError;
+      if (hasError) continue;
       const skill = skillMap.get(entry.skillId);
       directPotency += skill?.potency ?? 0;
     }
@@ -488,7 +496,9 @@ export function getFinalResourceState(
   const skill = skillMap.get(last.skillId);
   const state: ResourceSnapshot = { ...last.resourceSnapshot };
 
-  if (skill?.resourceChanges) {
+  // エラーのあるスキルはリソース変動を適用しない
+  const hasError = last.resourceErrors.length > 0 || last.comboErrors.length > 0 || last.untargetableError;
+  if (!hasError && skill?.resourceChanges) {
     const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
     for (const change of skill.resourceChanges) {
       const def = resourceDefMap.get(change.resourceId);
