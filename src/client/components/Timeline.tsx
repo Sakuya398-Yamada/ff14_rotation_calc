@@ -415,7 +415,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "8px",
     transition: "border-color 0.2s, background-color 0.2s",
     minHeight: "200px",
-    overflow: "hidden",
+    overflow: "auto",
   },
   dropZoneActive: {
     borderColor: "#ffd700",
