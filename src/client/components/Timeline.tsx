@@ -19,9 +19,70 @@ const LANE_LABEL_WIDTH = 52;
 interface TimelineProps {
   skills: Skill[];
   resolvedEntries: ResolvedTimelineEntry[];
-  onAddEntry: (skillId: string) => void;
+  onAddEntry: (skillId: string, insertIndex?: number) => void;
   onRemoveEntry: (uid: string) => void;
   totalPotency: number;
+}
+
+/**
+ * ドラッグ中のマウスX座標から挿入インデックスを計算する。
+ * resolvedEntriesの各エントリの中央位置と比較し、挿入位置を決定する。
+ */
+function calcInsertIndex(
+  mouseX: number,
+  scrollLeft: number,
+  resolvedEntries: ResolvedTimelineEntry[],
+  skillMap: Map<string, Skill>
+): number {
+  // タイムラインコンテンツ上の実際のX座標（スクロール考慮、レーンラベル分を引く）
+  const contentX = mouseX + scrollLeft - LANE_LABEL_WIDTH;
+  const time = contentX / PX_PER_SEC;
+
+  if (resolvedEntries.length === 0) return 0;
+
+  // 各エントリの中央時刻と比較して挿入位置を決定
+  for (let i = 0; i < resolvedEntries.length; i++) {
+    const entry = resolvedEntries[i];
+    const skill = skillMap.get(entry.skillId);
+    if (!skill) continue;
+    const centerTime = entry.startTime + skill.recastTime / 2;
+    if (time < centerTime) {
+      return i;
+    }
+  }
+
+  // 末尾に追加
+  return resolvedEntries.length;
+}
+
+/**
+ * 挿入インジケーターのX座標（px）を算出する。
+ */
+function calcInsertIndicatorX(
+  insertIndex: number,
+  resolvedEntries: ResolvedTimelineEntry[],
+  skillMap: Map<string, Skill>
+): number {
+  if (resolvedEntries.length === 0) return 0;
+
+  if (insertIndex <= 0) {
+    // 先頭に挿入
+    return resolvedEntries[0].startTime * PX_PER_SEC - 4;
+  }
+
+  if (insertIndex >= resolvedEntries.length) {
+    // 末尾に挿入
+    const last = resolvedEntries[resolvedEntries.length - 1];
+    const skill = skillMap.get(last.skillId);
+    return (last.startTime + (skill?.recastTime ?? 0)) * PX_PER_SEC + 4;
+  }
+
+  // 中間に挿入: 前のエントリの終了位置と次のエントリの開始位置の中間
+  const prevEntry = resolvedEntries[insertIndex - 1];
+  const prevSkill = skillMap.get(prevEntry.skillId);
+  const prevEnd = prevEntry.startTime + (prevSkill?.recastTime ?? 0);
+  const nextStart = resolvedEntries[insertIndex].startTime;
+  return ((prevEnd + nextStart) / 2) * PX_PER_SEC;
 }
 
 export function Timeline({
@@ -32,7 +93,18 @@ export function Timeline({
   totalPotency,
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
+  const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  /** 末尾追加時のみ自動スクロールするためのフラグ */
+  const shouldAutoScrollRef = useRef(true);
+
+  const handleRemoveEntry = useCallback(
+    (uid: string) => {
+      shouldAutoScrollRef.current = false;
+      onRemoveEntry(uid);
+    },
+    [onRemoveEntry]
+  );
 
   const skillMap = useMemo(
     () => new Map(skills.map((s) => [s.id, s])),
@@ -75,6 +147,10 @@ export function Timeline({
   }, [totalDuration]);
 
   useEffect(() => {
+    if (!shouldAutoScrollRef.current) {
+      shouldAutoScrollRef.current = true;
+      return;
+    }
     if (scrollRef.current && resolvedEntries.length > 0) {
       const last = resolvedEntries[resolvedEntries.length - 1];
       const skill = skillMap.get(last.skillId);
@@ -86,27 +162,72 @@ export function Timeline({
     }
   }, [resolvedEntries, skillMap]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-    setDragOver(true);
-  }, []);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      setDragOver(true);
+
+      if (scrollRef.current && resolvedEntries.length > 0) {
+        const rect = scrollRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const idx = calcInsertIndex(
+          mouseX,
+          scrollRef.current.scrollLeft,
+          resolvedEntries,
+          skillMap
+        );
+        setInsertIndex(idx);
+      } else {
+        setInsertIndex(null);
+      }
+    },
+    [resolvedEntries, skillMap]
+  );
 
   const handleDragLeave = useCallback(() => {
     setDragOver(false);
+    setInsertIndex(null);
   }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
+
       const skillId = e.dataTransfer.getData("application/skill-id");
-      if (skillId) {
+      if (!skillId) {
+        setInsertIndex(null);
+        return;
+      }
+
+      if (scrollRef.current && resolvedEntries.length > 0) {
+        const rect = scrollRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const idx = calcInsertIndex(
+          mouseX,
+          scrollRef.current.scrollLeft,
+          resolvedEntries,
+          skillMap
+        );
+        const isInsertMiddle = idx < resolvedEntries.length;
+        if (isInsertMiddle) {
+          shouldAutoScrollRef.current = false;
+        }
+        onAddEntry(skillId, isInsertMiddle ? idx : undefined);
+      } else {
         onAddEntry(skillId);
       }
+      setInsertIndex(null);
     },
-    [onAddEntry]
+    [onAddEntry, resolvedEntries, skillMap]
   );
+
+  // 挿入インジケーターのX座標
+  const indicatorX = useMemo(() => {
+    if (insertIndex === null) return null;
+    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap);
+  }, [insertIndex, resolvedEntries, skillMap]);
 
   return (
     <div style={styles.container}>
@@ -133,6 +254,16 @@ export function Timeline({
         ) : (
           <div ref={scrollRef} style={styles.scrollContainer}>
             <div style={{ ...styles.timelineContent, width: timelineWidth }}>
+              {/* 挿入インジケーター */}
+              {indicatorX !== null && (
+                <div
+                  style={{
+                    ...styles.insertIndicator,
+                    left: LANE_LABEL_WIDTH + indicatorX,
+                  }}
+                />
+              )}
+
               {/* GCD行 */}
               <div style={styles.lane}>
                 <div style={styles.laneLabel}>GCD</div>
@@ -168,7 +299,7 @@ export function Timeline({
                       <div
                         style={styles.skillIcon}
                         title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]`}
-                        onClick={() => onRemoveEntry(entry.uid)}
+                        onClick={() => handleRemoveEntry(entry.uid)}
                       >
                         <img
                           src={entry.skill.icon}
@@ -199,7 +330,7 @@ export function Timeline({
                       <div
                         style={styles.ogcdIcon}
                         title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]`}
-                        onClick={() => onRemoveEntry(entry.uid)}
+                        onClick={() => handleRemoveEntry(entry.uid)}
                       >
                         <img
                           src={entry.skill.icon}
@@ -308,6 +439,16 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
     minWidth: "100%",
     paddingLeft: 0,
+  },
+  insertIndicator: {
+    position: "absolute",
+    top: 0,
+    bottom: RULER_HEIGHT,
+    width: "2px",
+    backgroundColor: "#ffd700",
+    zIndex: 10,
+    pointerEvents: "none",
+    boxShadow: "0 0 6px rgba(255, 215, 0, 0.6)",
   },
   lane: {
     display: "flex",
