@@ -140,6 +140,7 @@ export function Timeline({
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
+  const [dragType, setDragType] = useState<"gcd" | "ogcd" | null>(null);
   const [showResources, setShowResources] = useState(true);
   const [showBuffs, setShowBuffs] = useState(true);
   const [showDoTs, setShowDoTs] = useState(true);
@@ -261,19 +262,56 @@ export function Timeline({
     }
   }, [resolvedEntries, skillMap, getEntryRecastTime]);
 
+  /** ドラッグ中のスキルタイプを検出 */
+  const detectDragType = useCallback((e: React.DragEvent): "gcd" | "ogcd" => {
+    return e.dataTransfer.types.includes("application/skill-type-gcd") ? "gcd" : "ogcd";
+  }, []);
+
+  /** 指定タイプのエントリのみをフィルタ */
+  const filterEntriesByType = useCallback(
+    (type: "gcd" | "ogcd") => {
+      return resolvedEntries.filter((entry) => {
+        const skill = skillMap.get(entry.skillId);
+        return skill && (type === "gcd" ? skill.type === "gcd" : skill.type !== "gcd");
+      });
+    },
+    [resolvedEntries, skillMap]
+  );
+
+  /** フィルタ済みインデックスを元の resolvedEntries のインデックスに変換 */
+  const mapFilteredIndexToCombined = useCallback(
+    (filteredIdx: number, typedEntries: ResolvedTimelineEntry[]): number => {
+      if (filteredIdx >= typedEntries.length) {
+        // 末尾に追加: 最後の同タイプエントリの直後
+        if (typedEntries.length === 0) return resolvedEntries.length;
+        const lastTyped = typedEntries[typedEntries.length - 1];
+        const combinedIdx = resolvedEntries.findIndex((e) => e.uid === lastTyped.uid);
+        return combinedIdx + 1;
+      }
+      // filteredIdx番目の同タイプエントリの前に挿入
+      const targetEntry = typedEntries[filteredIdx];
+      return resolvedEntries.findIndex((e) => e.uid === targetEntry.uid);
+    },
+    [resolvedEntries]
+  );
+
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
       setDragOver(true);
 
+      const type = detectDragType(e);
+      setDragType(type);
+
       if (scrollRef.current && resolvedEntries.length > 0) {
         const rect = scrollRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
+        const typedEntries = filterEntriesByType(type);
         const idx = calcInsertIndex(
           mouseX,
           scrollRef.current.scrollLeft,
-          resolvedEntries,
+          typedEntries,
           skillMap,
           getEntryRecastTime
         );
@@ -282,12 +320,13 @@ export function Timeline({
         setInsertIndex(null);
       }
     },
-    [resolvedEntries, skillMap, getEntryRecastTime]
+    [resolvedEntries, skillMap, getEntryRecastTime, detectDragType, filterEntriesByType]
   );
 
   const handleDragLeave = useCallback(() => {
     setDragOver(false);
     setInsertIndex(null);
+    setDragType(null);
   }, []);
 
   const handleDrop = useCallback(
@@ -298,37 +337,44 @@ export function Timeline({
       const skillId = e.dataTransfer.getData("application/skill-id");
       if (!skillId) {
         setInsertIndex(null);
+        setDragType(null);
         return;
       }
 
       if (scrollRef.current && resolvedEntries.length > 0) {
         const rect = scrollRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        const idx = calcInsertIndex(
+        const skill = skillMap.get(skillId);
+        const type: "gcd" | "ogcd" = skill?.type === "gcd" ? "gcd" : "ogcd";
+        const typedEntries = filterEntriesByType(type);
+        const filteredIdx = calcInsertIndex(
           mouseX,
           scrollRef.current.scrollLeft,
-          resolvedEntries,
+          typedEntries,
           skillMap,
           getEntryRecastTime
         );
-        const isInsertMiddle = idx < resolvedEntries.length;
+        const combinedIdx = mapFilteredIndexToCombined(filteredIdx, typedEntries);
+        const isInsertMiddle = combinedIdx < resolvedEntries.length;
         if (isInsertMiddle) {
           shouldAutoScrollRef.current = false;
         }
-        onAddEntry(skillId, isInsertMiddle ? idx : undefined);
+        onAddEntry(skillId, isInsertMiddle ? combinedIdx : undefined);
       } else {
         onAddEntry(skillId);
       }
       setInsertIndex(null);
+      setDragType(null);
     },
-    [onAddEntry, resolvedEntries, skillMap, getEntryRecastTime]
+    [onAddEntry, resolvedEntries, skillMap, getEntryRecastTime, filterEntriesByType, mapFilteredIndexToCombined]
   );
 
-  // 挿入インジケーターのX座標
+  // 挿入インジケーターのX座標（タイプ別フィルタ済みエントリで計算）
   const indicatorX = useMemo(() => {
-    if (insertIndex === null) return null;
-    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
-  }, [insertIndex, resolvedEntries, skillMap, getEntryRecastTime]);
+    if (insertIndex === null || dragType === null) return null;
+    const typedEntries = filterEntriesByType(dragType);
+    return calcInsertIndicatorX(insertIndex, typedEntries, skillMap, getEntryRecastTime);
+  }, [insertIndex, dragType, filterEntriesByType, skillMap, getEntryRecastTime]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす

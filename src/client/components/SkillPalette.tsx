@@ -22,6 +22,7 @@ export function SkillPalette({
 
   const handleDragStart = (e: React.DragEvent, skill: Skill) => {
     e.dataTransfer.setData("application/skill-id", skill.id);
+    e.dataTransfer.setData(`application/skill-type-${skill.type}`, "1");
     e.dataTransfer.effectAllowed = "copy";
   };
 
