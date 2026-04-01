@@ -13,6 +13,8 @@ import glare4Icon from "../assets/icons/whm/Glare_IV.png";
 import holyIcon from "../assets/icons/whm/Holy.png";
 import holy3Icon from "../assets/icons/whm/Holy_III.png";
 import afflatus_miseryIcon from "../assets/icons/whm/Afflatus_Misery.png";
+import afflatus_solaceIcon from "../assets/icons/whm/Afflatus_Solace.png";
+import afflatus_raptureIcon from "../assets/icons/whm/Afflatus_Rapture.png";
 import assizeIcon from "../assets/icons/whm/Assize.png";
 
 /** GCDのデフォルトリキャストタイム（秒） */
@@ -135,6 +137,33 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
   },
+  // === リリー関連GCD ===
+  {
+    id: "heart-of-solace",
+    name: "ハート・オブ・ソラス",
+    potency: 0,
+    type: "gcd",
+    icon: afflatus_solaceIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    resourceChanges: [
+      { resourceId: "healing-lily", amount: -1 },
+      { resourceId: "blood-lily", amount: 1 },
+    ],
+  },
+  {
+    id: "heart-of-rapture",
+    name: "ハート・オブ・ラプチャー",
+    potency: 0,
+    type: "gcd",
+    icon: afflatus_raptureIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    resourceChanges: [
+      { resourceId: "healing-lily", amount: -1 },
+      { resourceId: "blood-lily", amount: 1 },
+    ],
+  },
   {
     id: "heart-of-misery",
     name: "ハート・オブ・ミゼリ",
@@ -143,6 +172,9 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: afflatus_miseryIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    resourceChanges: [
+      { resourceId: "blood-lily", amount: -3 },
+    ],
   },
 
   // === oGCD ===

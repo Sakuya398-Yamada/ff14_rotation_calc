@@ -26,4 +26,6 @@ model Skill {
   recastTime    Float
   /// アニメーションロック（秒）
   animationLock Float
+  /// リソース変動（JSON文字列）。例: [{"resourceId":"healing-lily","amount":-1}]
+  resourceChanges String?
 }
