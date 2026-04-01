@@ -907,9 +907,10 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "flex-end",
     paddingRight: "8px",
-    whiteSpace: "nowrap" as const,
+    whiteSpace: "pre-line" as const,
+    textAlign: "right" as const,
+    lineHeight: 1.2,
     overflow: "hidden",
-    textOverflow: "ellipsis",
   },
   buffLaneContent: {
     position: "relative",

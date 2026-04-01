@@ -23,8 +23,8 @@ export const WHM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "sacred-sight",
-    name: "神啓の光",
-    shortName: "神啓の光",
+    name: "グレアジャ実行可",
+    shortName: "グレアジャ\n実行可",
     icon: sacredSightIcon,
     duration: 30,
     effects: [],
