@@ -2,6 +2,8 @@ import type { CharacterStats } from "../types/skill";
 
 /** Lv.100 のサブステータス基準値 */
 const SUB = 420;
+/** Lv.100 のメインステータス基準値 */
+const MAIN = 440;
 /** Lv.100 の除数 */
 const DIV = 2780;
 
@@ -33,6 +35,14 @@ export function calcDhRate(stats: CharacterStats): number {
 }
 
 /**
+ * 意志力によるダメージ倍率を計算する。
+ * f(DET) = (floor(140 * (DET - MAIN) / DIV) + 1000) / 1000
+ */
+export function calcDetMultiplier(stats: CharacterStats): number {
+  return (Math.floor(140 * (stats.determination - MAIN) / DIV) + 1000) / 1000;
+}
+
+/**
  * SS（スキルスピード/スペルスピード）によるGCD短縮を計算する。
  * 入力: ベースGCD（秒）、出力: 短縮後GCD（秒）
  *
@@ -54,12 +64,14 @@ export function calcExpectedMultiplier(stats: CharacterStats): number {
   const critRate = calcCritRate(stats);
   const critMul = calcCritMultiplier(stats);
   const dhRate = calcDhRate(stats);
-  return (1 + critRate * (critMul - 1)) * (1 + dhRate * (DH_DAMAGE_MULTIPLIER - 1));
+  const detMul = calcDetMultiplier(stats);
+  return detMul * (1 + critRate * (critMul - 1)) * (1 + dhRate * (DH_DAMAGE_MULTIPLIER - 1));
 }
 
 /** デフォルトのステータス値（Lv.100基準値 = 補正なし） */
 export const DEFAULT_STATS: CharacterStats = {
   critical: SUB,
   directHit: SUB,
+  determination: MAIN,
   speed: SUB,
 };

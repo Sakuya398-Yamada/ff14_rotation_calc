@@ -1,5 +1,5 @@
 import type { Skill, CharacterStats } from "../types/skill";
-import { calcCritRate, calcCritMultiplier, calcDhRate, calcGcd } from "../logic/stat-calc";
+import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
 
 interface SkillPaletteProps {
   skills: Skill[];
@@ -83,6 +83,19 @@ export function SkillPalette({
           </div>
           <div style={styles.statDetail}>
             発生率: {(calcDhRate(stats) * 100).toFixed(1)}%
+          </div>
+          <div style={styles.statRow}>
+            <label style={styles.statLabel}>DET</label>
+            <input
+              type="number"
+              value={stats.determination}
+              onChange={(e) => handleStatChange("determination", e.target.value)}
+              style={styles.statInput}
+              min={440}
+            />
+          </div>
+          <div style={styles.statDetail}>
+            倍率: x{calcDetMultiplier(stats).toFixed(3)}
           </div>
           <div style={styles.statRow}>
             <label style={styles.statLabel}>SS</label>

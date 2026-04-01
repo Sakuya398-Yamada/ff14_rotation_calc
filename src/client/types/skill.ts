@@ -66,6 +66,8 @@ export interface CharacterStats {
   critical: number;
   /** ダイレクトヒット値 */
   directHit: number;
+  /** 意志力 */
+  determination: number;
   /** スキルスピード / スペルスピード */
   speed: number;
 }
