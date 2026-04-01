@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Skill, ResolvedTimelineEntry } from "../types/skill";
+import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
 const PX_PER_SEC = 80;
@@ -252,7 +253,7 @@ export function Timeline({
             スキルパレットからドラッグ＆ドロップしてスキルを追加
           </div>
         ) : (
-          <div ref={scrollRef} style={styles.scrollContainer}>
+          <div ref={scrollRef} className="timeline-scroll" style={styles.scrollContainer}>
             <div style={{ ...styles.timelineContent, width: timelineWidth }}>
               {/* 挿入インジケーター */}
               {indicatorX !== null && (
@@ -410,6 +411,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dropZone: {
     flex: 1,
+    display: "flex",
+    flexDirection: "column",
     border: "2px dashed #444",
     borderRadius: "8px",
     transition: "border-color 0.2s, background-color 0.2s",
@@ -432,7 +435,8 @@ const styles: Record<string, React.CSSProperties> = {
   scrollContainer: {
     overflowX: "auto",
     overflowY: "hidden",
-    height: "100%",
+    flex: 1,
+    minHeight: 0,
     padding: "12px 0",
   },
   timelineContent: {
