@@ -115,7 +115,7 @@ Claude CodeがIssueの内容を読み取り、以下を行います。
 
 WSL上に**開発コンテナ（Dev Container）**を作成して開発します。コンテナ内にNode.js、SQLite等の依存がすべて含まれるため、ローカル環境への個別インストールは不要です。
 
-### ローカル開発（予定）
+### ローカル開発
 
 ```bash
 # 開発コンテナ内で実行
@@ -123,9 +123,30 @@ WSL上に**開発コンテナ（Dev Container）**を作成して開発します
 # 依存インストール
 npm install
 
-# DB初期化
-npx prisma migrate dev
+# Prismaクライアント生成
+npm run db:generate
 
-# 開発サーバー起動
+# DBマイグレーション適用
+npm run db:migrate
+
+# 初期データ投入
+npm run db:seed
+
+# バックエンドサーバー起動（port 3000）
 npm run dev
+
+# フロントエンド開発サーバー起動（port 5173）
+npm run dev:client
 ```
+
+### npmスクリプト一覧
+
+| コマンド | 説明 |
+|---------|------|
+| `npm run dev` | Honoバックエンドサーバー起動（port 3000） |
+| `npm run dev:client` | Viteフロントエンド開発サーバー起動（port 5173） |
+| `npm run db:migrate` | Prismaマイグレーション適用 |
+| `npm run db:generate` | Prismaクライアント生成 |
+| `npm run db:seed` | 初期データ（スキルデータ）の投入 |
+
+> **Note**: 開発時はバックエンド（`npm run dev`）とフロントエンド（`npm run dev:client`）を別ターミナルで同時に起動してください。Vite開発サーバーは `/api/*` へのリクエストをバックエンド（port 3000）にプロキシします。
