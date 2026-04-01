@@ -135,7 +135,12 @@ test: ローテーションエンジンのユニットテスト追加 #8
 | ORM | Prisma | 型安全なDB操作 |
 | デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare |
 
-## インフラ構成
+## 開発環境
+
+- WSL（Windows Subsystem for Linux）上に**開発コンテナ（Dev Container）**を作成して開発する
+- コンテナ内にNode.js、SQLite等の依存をすべて閉じ込め、環境差異を排除する
+
+## インフラ構成（本番）
 
 ```
 [Cloudflare] → [Nginx (リバースプロキシ)] → [Node.js (Hono API + Vite静的配信)]

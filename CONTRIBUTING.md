@@ -111,9 +111,15 @@ Claude CodeがIssueの内容を読み取り、以下を行います。
 | ORM | Prisma |
 | デプロイ | pm2 or systemd + Nginx + Cloudflare |
 
+### 開発環境
+
+WSL上に**開発コンテナ（Dev Container）**を作成して開発します。コンテナ内にNode.js、SQLite等の依存がすべて含まれるため、ローカル環境への個別インストールは不要です。
+
 ### ローカル開発（予定）
 
 ```bash
+# 開発コンテナ内で実行
+
 # 依存インストール
 npm install
 
