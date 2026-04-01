@@ -1,6 +1,9 @@
 /** スキルの種別 */
 export type SkillType = "gcd" | "ogcd";
 
+/** スキルの実行対象 */
+export type SkillTarget = "enemy" | "party" | "self";
+
 /** リソースの変動（スキル使用時） */
 export interface ResourceChange {
   /** リソースID */
@@ -27,6 +30,8 @@ export interface Skill {
   potency: number;
   /** GCD or oGCD */
   type: SkillType;
+  /** スキルの実行対象（enemy: 敵, party: 味方, self: 自分） */
+  target: SkillTarget;
   /** スキルアイコン画像のパス */
   icon: string;
   /** リキャストタイム（秒）。GCDスキルは2.5s、oGCDはスキル固有値 */

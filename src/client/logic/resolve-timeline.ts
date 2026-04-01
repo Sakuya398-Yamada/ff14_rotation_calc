@@ -260,8 +260,8 @@ export function resolveTimeline(
       }
     }
 
-    // ボス離脱中チェック
-    const untargetableError = untargetableWindows
+    // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
+    const untargetableError = skill.target === "enemy" && untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
       : false;
 
