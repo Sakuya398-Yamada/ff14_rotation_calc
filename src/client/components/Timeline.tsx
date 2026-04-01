@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition } from "../types/skill";
 import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
@@ -11,11 +11,17 @@ const ICON_SIZE = 40;
 /** レーンの高さ（px） */
 const LANE_HEIGHT = 72;
 
+/** リソースレーンの高さ（px） */
+const RESOURCE_LANE_HEIGHT = 36;
+
 /** 時間軸の高さ（px） */
 const RULER_HEIGHT = 28;
 
 /** レーンラベルの幅（px） */
 const LANE_LABEL_WIDTH = 52;
+
+/** リソースドットのサイズ（px） */
+const RESOURCE_DOT_SIZE = 10;
 
 interface TimelineProps {
   skills: Skill[];
@@ -23,6 +29,7 @@ interface TimelineProps {
   onAddEntry: (skillId: string, insertIndex?: number) => void;
   onRemoveEntry: (uid: string) => void;
   totalPotency: number;
+  resources: ResourceDefinition[];
 }
 
 /**
@@ -92,9 +99,11 @@ export function Timeline({
   onAddEntry,
   onRemoveEntry,
   totalPotency,
+  resources,
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
+  const [showResources, setShowResources] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** 末尾追加時のみ自動スクロールするためのフラグ */
   const shouldAutoScrollRef = useRef(true);
@@ -230,12 +239,34 @@ export function Timeline({
     return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap);
   }, [insertIndex, resolvedEntries, skillMap]);
 
+  // リソースエラーがあるエントリのUIDセット
+  const entriesWithErrors = useMemo(() => {
+    const set = new Set<string>();
+    for (const entry of resolvedEntries) {
+      if (entry.resourceErrors.length > 0) {
+        set.add(entry.uid);
+      }
+    }
+    return set;
+  }, [resolvedEntries]);
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
         <h2 style={styles.title}>タイムライン</h2>
-        <div style={styles.potencyDisplay}>
-          合計威力: <span style={styles.potencyValue}>{totalPotency}</span>
+        <div style={styles.headerControls}>
+          {resources.length > 0 && (
+            <button
+              style={styles.toggleButton}
+              onClick={() => setShowResources((v) => !v)}
+              title={showResources ? "リソースゲージを非表示" : "リソースゲージを表示"}
+            >
+              {showResources ? "リソース ▼" : "リソース ▶"}
+            </button>
+          )}
+          <div style={styles.potencyDisplay}>
+            合計威力: <span style={styles.potencyValue}>{totalPotency}</span>
+          </div>
         </div>
       </div>
 
@@ -269,50 +300,56 @@ export function Timeline({
               <div style={styles.lane}>
                 <div style={styles.laneLabel}>GCD</div>
                 <div style={styles.laneContent}>
-                  {gcdEntries.map((entry) => (
-                    <div
-                      key={entry.uid}
-                      style={{
-                        ...styles.skillBlock,
-                        left: entry.startTime * PX_PER_SEC,
-                        width: entry.skill.recastTime * PX_PER_SEC,
-                      }}
-                    >
+                  {gcdEntries.map((entry) => {
+                    const hasError = entriesWithErrors.has(entry.uid);
+                    return (
                       <div
-                        style={styles.recastBar}
-                        title={`リキャスト: ${entry.skill.recastTime}s`}
-                      />
-                      <div
-                        style={styles.animLockBar}
-                        title={`アニメーションロック: ${entry.skill.animationLock}s`}
+                        key={entry.uid}
+                        style={{
+                          ...styles.skillBlock,
+                          left: entry.startTime * PX_PER_SEC,
+                          width: entry.skill.recastTime * PX_PER_SEC,
+                        }}
                       >
                         <div
+                          style={styles.recastBar}
+                          title={`リキャスト: ${entry.skill.recastTime}s`}
+                        />
+                        <div
+                          style={styles.animLockBar}
+                          title={`アニメーションロック: ${entry.skill.animationLock}s`}
+                        >
+                          <div
+                            style={{
+                              ...styles.animLockFill,
+                              width:
+                                (entry.skill.animationLock /
+                                  entry.skill.recastTime) *
+                                  100 +
+                                "%",
+                            }}
+                          />
+                        </div>
+                        <div
                           style={{
-                            ...styles.animLockFill,
-                            width:
-                              (entry.skill.animationLock /
-                                entry.skill.recastTime) *
-                                100 +
-                              "%",
+                            ...styles.skillIcon,
+                            ...(hasError ? styles.skillIconError : {}),
                           }}
-                        />
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
+                          onClick={() => handleRemoveEntry(entry.uid)}
+                        >
+                          <img
+                            src={entry.skill.icon}
+                            alt={entry.skill.name}
+                            style={styles.iconImage}
+                          />
+                        </div>
+                        <div style={styles.skillPotency}>
+                          {entry.skill.potency}
+                        </div>
                       </div>
-                      <div
-                        style={styles.skillIcon}
-                        title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]`}
-                        onClick={() => handleRemoveEntry(entry.uid)}
-                      >
-                        <img
-                          src={entry.skill.icon}
-                          alt={entry.skill.name}
-                          style={styles.iconImage}
-                        />
-                      </div>
-                      <div style={styles.skillPotency}>
-                        {entry.skill.potency}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -320,32 +357,85 @@ export function Timeline({
               <div style={styles.lane}>
                 <div style={styles.laneLabel}>oGCD</div>
                 <div style={styles.laneContent}>
-                  {ogcdEntries.map((entry) => (
-                    <div
-                      key={entry.uid}
-                      style={{
-                        ...styles.ogcdBlock,
-                        left: entry.startTime * PX_PER_SEC,
-                      }}
-                    >
+                  {ogcdEntries.map((entry) => {
+                    const hasError = entriesWithErrors.has(entry.uid);
+                    return (
                       <div
-                        style={styles.ogcdIcon}
-                        title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]`}
-                        onClick={() => handleRemoveEntry(entry.uid)}
+                        key={entry.uid}
+                        style={{
+                          ...styles.ogcdBlock,
+                          left: entry.startTime * PX_PER_SEC,
+                        }}
                       >
-                        <img
-                          src={entry.skill.icon}
-                          alt={entry.skill.name}
-                          style={styles.iconImage}
-                        />
+                        <div
+                          style={{
+                            ...styles.ogcdIcon,
+                            ...(hasError ? styles.ogcdIconError : {}),
+                          }}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
+                          onClick={() => handleRemoveEntry(entry.uid)}
+                        >
+                          <img
+                            src={entry.skill.icon}
+                            alt={entry.skill.name}
+                            style={styles.iconImage}
+                          />
+                        </div>
+                        <div style={styles.skillPotency}>
+                          {entry.skill.potency}
+                        </div>
                       </div>
-                      <div style={styles.skillPotency}>
-                        {entry.skill.potency}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* リソースゲージ行 */}
+              {showResources && resources.map((res) => (
+                <div key={res.id} style={styles.resourceLane}>
+                  <div style={styles.resourceLaneLabel} title={res.name}>
+                    {res.name}
+                  </div>
+                  <div style={styles.resourceLaneContent}>
+                    {resolvedEntries.map((entry) => {
+                      const count = entry.resourceSnapshot[res.id] ?? 0;
+                      const hasError = entry.resourceErrors.includes(res.id);
+                      return (
+                        <div
+                          key={entry.uid}
+                          style={{
+                            ...styles.resourceMarker,
+                            left: entry.startTime * PX_PER_SEC,
+                          }}
+                          title={`${res.name}: ${count}/${res.maxStacks}${hasError ? " (不足)" : ""}`}
+                        >
+                          <div style={styles.resourceDots}>
+                            {Array.from({ length: res.maxStacks }, (_, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  ...styles.resourceDot,
+                                  backgroundColor:
+                                    i < count
+                                      ? res.color
+                                      : "rgba(255,255,255,0.15)",
+                                  boxShadow:
+                                    i < count
+                                      ? `0 0 4px ${res.color}80`
+                                      : "none",
+                                }}
+                              />
+                            ))}
+                          </div>
+                          {hasError && (
+                            <div style={styles.resourceErrorMark}>!</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
 
               {/* 時間軸ルーラー */}
               <div style={styles.ruler}>
@@ -399,6 +489,21 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     fontSize: "18px",
     color: "#e0e0e0",
+  },
+  headerControls: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+  toggleButton: {
+    background: "none",
+    border: "1px solid #555",
+    borderRadius: "4px",
+    color: "#aaa",
+    fontSize: "12px",
+    padding: "4px 10px",
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
   },
   potencyDisplay: {
     fontSize: "16px",
@@ -519,6 +624,10 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     transition: "opacity 0.15s",
   },
+  skillIconError: {
+    border: "2px solid #ef5350",
+    boxShadow: "0 0 8px rgba(239, 83, 80, 0.6)",
+  },
   ogcdBlock: {
     position: "absolute",
     top: "8px",
@@ -536,6 +645,10 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     transition: "opacity 0.15s",
   },
+  ogcdIconError: {
+    border: "2px solid #ef5350",
+    boxShadow: "0 0 8px rgba(239, 83, 80, 0.6)",
+  },
   iconImage: {
     width: "100%",
     height: "100%",
@@ -546,6 +659,55 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#888",
     marginTop: "2px",
     textAlign: "center" as const,
+  },
+  // リソースゲージレーン
+  resourceLane: {
+    display: "flex",
+    height: RESOURCE_LANE_HEIGHT,
+    position: "relative",
+    marginBottom: "2px",
+  },
+  resourceLaneLabel: {
+    width: LANE_LABEL_WIDTH,
+    flexShrink: 0,
+    fontSize: "9px",
+    color: "#777",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingRight: "8px",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  resourceLaneContent: {
+    position: "relative",
+    flex: 1,
+    borderBottom: "1px solid rgba(255,255,255,0.05)",
+  },
+  resourceMarker: {
+    position: "absolute",
+    top: "4px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "2px",
+  },
+  resourceDots: {
+    display: "flex",
+    gap: "3px",
+  },
+  resourceDot: {
+    width: RESOURCE_DOT_SIZE,
+    height: RESOURCE_DOT_SIZE,
+    borderRadius: "50%",
+    transition: "background-color 0.2s",
+  },
+  resourceErrorMark: {
+    fontSize: "9px",
+    fontWeight: "bold",
+    color: "#ef5350",
+    lineHeight: 1,
   },
   ruler: {
     display: "flex",

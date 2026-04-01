@@ -5,7 +5,13 @@ const skills = new Hono();
 
 skills.get("/", async (c) => {
   const allSkills = await prisma.skill.findMany();
-  return c.json(allSkills);
+  const parsed = allSkills.map((skill) => ({
+    ...skill,
+    resourceChanges: skill.resourceChanges
+      ? JSON.parse(skill.resourceChanges)
+      : undefined,
+  }));
+  return c.json(parsed);
 });
 
 export { skills };

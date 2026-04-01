@@ -3,6 +3,7 @@ import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { resolveTimeline } from "../logic/resolve-timeline";
 import { resolveIconUrl } from "../utils/resolve-icon-url";
+import { WHM_RESOURCES } from "../data/whm-resources";
 import type { Skill, TimelineEntry } from "../types/skill";
 
 let nextUid = 1;
@@ -31,7 +32,7 @@ export function App() {
   );
 
   const resolvedEntries = useMemo(
-    () => resolveTimeline(entries, skillMap),
+    () => resolveTimeline(entries, skillMap, WHM_RESOURCES),
     [entries, skillMap]
   );
 
@@ -80,6 +81,7 @@ export function App() {
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}
           totalPotency={totalPotency}
+          resources={WHM_RESOURCES}
         />
       </div>
       <footer style={styles.footer}>

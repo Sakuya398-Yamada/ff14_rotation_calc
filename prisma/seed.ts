@@ -24,7 +24,10 @@ const WHM_SKILLS = [
   { id: "glare4", name: "グレアジャ", potency: 640, type: "gcd", icon: "whm/Glare_IV.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "holy", name: "ホーリー", potency: 140, type: "gcd", icon: "whm/Holy.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "holy3", name: "ホーリガ", potency: 150, type: "gcd", icon: "whm/Holy_III.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
-  { id: "heart-of-misery", name: "ハート・オブ・ミゼリ", potency: 1400, type: "gcd", icon: "whm/Afflatus_Misery.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
+  // === リリー関連GCD ===
+  { id: "heart-of-solace", name: "ハート・オブ・ソラス", potency: 0, type: "gcd", icon: "whm/Afflatus_Solace.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, resourceChanges: JSON.stringify([{ resourceId: "healing-lily", amount: -1 }, { resourceId: "blood-lily", amount: 1 }]) },
+  { id: "heart-of-rapture", name: "ハート・オブ・ラプチャー", potency: 0, type: "gcd", icon: "whm/Afflatus_Rapture.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, resourceChanges: JSON.stringify([{ resourceId: "healing-lily", amount: -1 }, { resourceId: "blood-lily", amount: 1 }]) },
+  { id: "heart-of-misery", name: "ハート・オブ・ミゼリ", potency: 1400, type: "gcd", icon: "whm/Afflatus_Misery.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, resourceChanges: JSON.stringify([{ resourceId: "blood-lily", amount: -3 }]) },
   // === oGCD ===
   { id: "assize", name: "アサイズ", potency: 400, type: "ogcd", icon: "whm/Assize.png", recastTime: DEFAULT_ANIMATION_LOCK, animationLock: DEFAULT_ANIMATION_LOCK },
 ];
