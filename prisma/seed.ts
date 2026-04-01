@@ -13,12 +13,12 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 const WHM_SKILLS = [
   // === GCD ===
   { id: "stone", name: "ストーン", potency: 140, type: "gcd", icon: "whm/Stone.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
-  { id: "aero", name: "エアロ", potency: 50, type: "gcd", icon: "whm/Aero.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
+  { id: "aero", name: "エアロ", potency: 50, type: "gcd", icon: "whm/Aero.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, dotPotency: 30, dotDuration: 18 },
   { id: "stone2", name: "ストンラ", potency: 190, type: "gcd", icon: "whm/Stone_II.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
-  { id: "aero2", name: "エアロラ", potency: 50, type: "gcd", icon: "whm/Aero_II.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
+  { id: "aero2", name: "エアロラ", potency: 50, type: "gcd", icon: "whm/Aero_II.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, dotPotency: 60, dotDuration: 18 },
   { id: "stone3", name: "ストンガ", potency: 220, type: "gcd", icon: "whm/Stone_III.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "stone4", name: "ストンジャ", potency: 260, type: "gcd", icon: "whm/Stone_IV.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
-  { id: "dia", name: "ディア", potency: 85, type: "gcd", icon: "whm/Dia.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
+  { id: "dia", name: "ディア", potency: 85, type: "gcd", icon: "whm/Dia.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, dotPotency: 75, dotDuration: 30 },
   { id: "glare", name: "グレア", potency: 290, type: "gcd", icon: "whm/Glare.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "glare3", name: "グレアガ", potency: 350, type: "gcd", icon: "whm/Glare_III.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK },
   { id: "glare4", name: "グレアジャ", potency: 640, type: "gcd", icon: "whm/Glare_IV.png", recastTime: GCD_RECAST, animationLock: DEFAULT_ANIMATION_LOCK, buffConsumptions: JSON.stringify([{ buffId: "sacred-sight", stacks: 1 }]) },

@@ -7,8 +7,14 @@ import type {
   CharacterStats,
   BuffDefinition,
   ActiveBuff,
+  DoTTick,
+  ActiveDoT,
+  TimelineResult,
 } from "../types/skill";
 import { calcGcd } from "./stat-calc";
+
+/** DoTティック間隔（秒） */
+const DOT_TICK_INTERVAL = 3;
 
 /**
  * 自動生成タイマーの状態。
@@ -83,13 +89,47 @@ function getSpeedMultiplier(
   return multiplier;
 }
 
+/**
+ * アクティブなバフから威力バフの合成倍率を計算する。
+ */
+function getPotencyMultiplier(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): number {
+  let multiplier = 1;
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "potency") {
+        multiplier *= effect.value;
+      }
+    }
+  }
+  return multiplier;
+}
+
+/**
+ * 内部で追跡するDoT状態。
+ * 同じスキルIDのDoTは1つだけ存在し、再適用時に上書き（リフレッシュ）される。
+ */
+interface InternalDoT {
+  skillId: string;
+  startTime: number;
+  endTime: number;
+  dotPotency: number;
+  icon: string;
+  /** 適用時にスナップショットしたバフ倍率 */
+  buffMultiplier: number;
+}
+
 export function resolveTimeline(
   entries: TimelineEntry[],
   skillMap: Map<string, Skill>,
   resources: ResourceDefinition[],
   stats?: CharacterStats,
   buffs?: BuffDefinition[]
-): ResolvedTimelineEntry[] {
+): TimelineResult {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
   const buffDefMap = new Map((buffs ?? []).map((b) => [b.id, b]));
@@ -105,6 +145,10 @@ export function resolveTimeline(
   const autoGenTimers: Record<string, AutoGenTimer> = {};
   // アクティブなバフのリスト
   const currentActiveBuffs: ActiveBuff[] = [];
+  // アクティブなDoTのマップ（skillId → InternalDoT）
+  const currentDoTs: Map<string, InternalDoT> = new Map();
+  // 全DoT期間を記録（タイムライン表示用）
+  const allDoTs: ActiveDoT[] = [];
 
   // リソース初期化
   for (const res of resources) {
@@ -253,6 +297,33 @@ export function resolveTimeline(
       }
     }
 
+    // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
+    if (skill.dotPotency && skill.dotDuration) {
+      const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+      const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
+
+      const dot: InternalDoT = {
+        skillId: skill.id,
+        startTime,
+        endTime,
+        dotPotency: skill.dotPotency,
+        icon: skill.icon,
+        buffMultiplier,
+      };
+
+      // 同じスキルIDのDoTは上書き（リフレッシュ＆バフ再スナップショット）
+      currentDoTs.set(skill.id, dot);
+
+      allDoTs.push({
+        skillId: dot.skillId,
+        startTime: dot.startTime,
+        endTime: dot.endTime,
+        potency: dot.dotPotency,
+        icon: dot.icon,
+        buffMultiplier: dot.buffMultiplier,
+      });
+    }
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
@@ -264,7 +335,42 @@ export function resolveTimeline(
     });
   }
 
-  return resolved;
+  // DoTティックを計算
+  const dotTicks: DoTTick[] = [];
+  let dotTotalPotency = 0;
+
+  for (const dot of allDoTs) {
+    // ティックは適用時刻 + 3s, + 6s, ... で発生
+    let tickTime = dot.startTime + DOT_TICK_INTERVAL;
+    while (tickTime <= dot.endTime) {
+      // 同じスキルIDの後続DoTがこのティック時刻より前に適用されていた場合、
+      // このDoTはその時点で上書きされているのでティックを生成しない
+      const laterDot = allDoTs.find(
+        (d) => d.skillId === dot.skillId && d.startTime > dot.startTime && d.startTime < tickTime
+      );
+      if (laterDot) break;
+
+      const potency = Math.floor(dot.potency * dot.buffMultiplier);
+      dotTicks.push({
+        time: Math.round(tickTime * 1000) / 1000,
+        potency,
+        skillId: dot.skillId,
+        icon: dot.icon,
+      });
+      dotTotalPotency += potency;
+      tickTime += DOT_TICK_INTERVAL;
+    }
+  }
+
+  // ティックを時刻順にソート
+  dotTicks.sort((a, b) => a.time - b.time);
+
+  return {
+    entries: resolved,
+    dotTicks,
+    dotTotalPotency,
+    activeDoTs: allDoTs,
+  };
 }
 
 /**

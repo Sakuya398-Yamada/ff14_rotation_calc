@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT } from "../types/skill";
 import { calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
@@ -17,6 +17,9 @@ const RESOURCE_LANE_HEIGHT = 36;
 
 /** バフレーンの高さ（px） */
 const BUFF_LANE_HEIGHT = 32;
+
+/** DoTレーンの高さ（px） */
+const DOT_LANE_HEIGHT = 36;
 
 /** 時間軸の高さ（px） */
 const RULER_HEIGHT = 28;
@@ -38,6 +41,9 @@ interface TimelineProps {
   expectedMultiplier: number | null;
   statsEnabled: boolean;
   stats?: CharacterStats;
+  dotTicks: DoTTick[];
+  activeDoTs: ActiveDoT[];
+  dotTotalPotency: number;
 }
 
 /**
@@ -114,11 +120,15 @@ export function Timeline({
   expectedMultiplier,
   statsEnabled,
   stats,
+  dotTicks,
+  activeDoTs,
+  dotTotalPotency,
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [showResources, setShowResources] = useState(true);
   const [showBuffs, setShowBuffs] = useState(true);
+  const [showDoTs, setShowDoTs] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** 末尾追加時のみ自動スクロールするためのフラグ */
   const shouldAutoScrollRef = useRef(true);
@@ -196,8 +206,12 @@ export function Timeline({
         if (ab.endTime > maxEnd) maxEnd = ab.endTime;
       }
     }
+    // DoT終了時刻も考慮
+    for (const dot of activeDoTs) {
+      if (dot.endTime > maxEnd) maxEnd = dot.endTime;
+    }
     return maxEnd;
-  }, [resolvedEntries, skillMap, getEntryRecastTime]);
+  }, [resolvedEntries, skillMap, getEntryRecastTime, activeDoTs]);
 
   const timelineWidth = Math.max(totalDuration * PX_PER_SEC + 100, 600);
 
@@ -373,6 +387,15 @@ export function Timeline({
       <div style={styles.header}>
         <h2 style={styles.title}>タイムライン</h2>
         <div style={styles.headerControls}>
+          {activeDoTs.length > 0 && (
+            <button
+              style={styles.toggleButton}
+              onClick={() => setShowDoTs((v) => !v)}
+              title={showDoTs ? "DoT表示を非表示" : "DoT表示を表示"}
+            >
+              {showDoTs ? "DoT ▼" : "DoT ▶"}
+            </button>
+          )}
           {buffs.length > 0 && (
             <button
               style={styles.toggleButton}
@@ -393,6 +416,11 @@ export function Timeline({
           )}
           <div style={styles.potencyDisplay}>
             合計威力: <span style={styles.potencyValue}>{totalPotency}</span>
+            {dotTotalPotency > 0 && (
+              <span style={styles.dotPotencyLabel}>
+                {" "}(DoT: {dotTotalPotency})
+              </span>
+            )}
             {expectedMultiplier !== null && (
               <span style={styles.expectedPotency}>
                 {" "}(期待値: {Math.floor(totalPotency * expectedMultiplier)})
@@ -616,6 +644,72 @@ export function Timeline({
                   </div>
                 );
               })}
+
+              {/* DoTレーン */}
+              {showDoTs && activeDoTs.length > 0 && (() => {
+                // スキルIDごとにDoTをグループ化
+                const dotBySkill = new Map<string, ActiveDoT[]>();
+                for (const dot of activeDoTs) {
+                  if (!dotBySkill.has(dot.skillId)) {
+                    dotBySkill.set(dot.skillId, []);
+                  }
+                  dotBySkill.get(dot.skillId)!.push(dot);
+                }
+
+                return Array.from(dotBySkill.entries()).map(([skillId, dots]) => {
+                  const skill = skillMap.get(skillId);
+                  const label = skill?.name ?? skillId;
+                  const ticksForSkill = dotTicks.filter((t) => t.skillId === skillId);
+
+                  return (
+                    <div key={`dot-${skillId}`} style={styles.dotLane}>
+                      <div style={styles.dotLaneLabel} title={`${label} DoT`}>
+                        DoT
+                      </div>
+                      <div style={styles.dotLaneContent}>
+                        {dots.map((dot, i) => {
+                          const left = dot.startTime * PX_PER_SEC;
+                          const width = (dot.endTime - dot.startTime) * PX_PER_SEC;
+                          return (
+                            <div
+                              key={i}
+                              style={{
+                                ...styles.dotBar,
+                                left,
+                                width,
+                              }}
+                              title={`${label} DoT (${dot.potency}威力/tick${dot.buffMultiplier !== 1 ? ` x${dot.buffMultiplier.toFixed(2)}` : ""}) ${dot.startTime.toFixed(2)}s - ${dot.endTime.toFixed(2)}s`}
+                            >
+                              <img
+                                src={dot.icon}
+                                alt={label}
+                                style={styles.dotIcon}
+                              />
+                              <span style={styles.dotDuration}>
+                                {dot.potency}{dot.buffMultiplier !== 1 ? `x${dot.buffMultiplier.toFixed(1)}` : ""}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {/* DoTティックマーカー */}
+                        {ticksForSkill.map((tick, i) => (
+                          <div
+                            key={`tick-${i}`}
+                            style={{
+                              ...styles.dotTickMarker,
+                              left: tick.time * PX_PER_SEC,
+                            }}
+                            title={`DoTティック: ${tick.potency}威力 @ ${tick.time.toFixed(2)}s`}
+                          >
+                            <div style={styles.dotTickLine} />
+                            <div style={styles.dotTickPotency}>{tick.potency}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
 
               {/* 時間軸ルーラー */}
               <div style={styles.ruler}>
@@ -973,6 +1067,79 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "10px",
     color: "#777",
     marginTop: "2px",
+    whiteSpace: "nowrap" as const,
+  },
+  dotPotencyLabel: {
+    fontSize: "13px",
+    color: "#a5d6a7",
+  },
+  // DoTレーン
+  dotLane: {
+    display: "flex",
+    height: DOT_LANE_HEIGHT,
+    position: "relative",
+    marginBottom: "2px",
+  },
+  dotLaneLabel: {
+    width: LANE_LABEL_WIDTH,
+    flexShrink: 0,
+    fontSize: "11px",
+    color: "#777",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingRight: "8px",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+  },
+  dotLaneContent: {
+    position: "relative",
+    flex: 1,
+    borderBottom: "1px solid rgba(255,255,255,0.05)",
+  },
+  dotBar: {
+    position: "absolute",
+    top: "4px",
+    height: DOT_LANE_HEIGHT - 12,
+    borderRadius: "4px",
+    border: "1px solid #a5d6a7",
+    backgroundColor: "rgba(165, 214, 167, 0.15)",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    paddingLeft: "2px",
+    paddingRight: "6px",
+    overflow: "hidden",
+  },
+  dotIcon: {
+    width: "18px",
+    height: "18px",
+    borderRadius: "3px",
+    flexShrink: 0,
+    objectFit: "contain" as const,
+  },
+  dotDuration: {
+    fontSize: "10px",
+    color: "#a5d6a7",
+    whiteSpace: "nowrap" as const,
+    flexShrink: 0,
+  },
+  dotTickMarker: {
+    position: "absolute",
+    top: "2px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    transform: "translateX(-50%)",
+  },
+  dotTickLine: {
+    width: "1px",
+    height: DOT_LANE_HEIGHT - 14,
+    backgroundColor: "rgba(165, 214, 167, 0.5)",
+  },
+  dotTickPotency: {
+    fontSize: "8px",
+    color: "#a5d6a7",
     whiteSpace: "nowrap" as const,
   },
   hint: {
