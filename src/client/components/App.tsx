@@ -4,7 +4,8 @@ import { Timeline } from "./Timeline";
 import { resolveTimeline } from "../logic/resolve-timeline";
 import { resolveIconUrl } from "../utils/resolve-icon-url";
 import { WHM_RESOURCES } from "../data/whm-resources";
-import type { Skill, TimelineEntry } from "../types/skill";
+import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
+import type { Skill, TimelineEntry, CharacterStats } from "../types/skill";
 
 let nextUid = 1;
 
@@ -12,6 +13,8 @@ export function App() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
+  const [statsEnabled, setStatsEnabled] = useState(false);
 
   useEffect(() => {
     fetch("/api/skills")
@@ -32,8 +35,8 @@ export function App() {
   );
 
   const resolvedEntries = useMemo(
-    () => resolveTimeline(entries, skillMap, WHM_RESOURCES),
-    [entries, skillMap]
+    () => resolveTimeline(entries, skillMap, WHM_RESOURCES, statsEnabled ? stats : undefined),
+    [entries, skillMap, stats, statsEnabled]
   );
 
   const handleAddEntry = useCallback((skillId: string, insertIndex?: number) => {
@@ -59,6 +62,11 @@ export function App() {
     }, 0);
   }, [entries, skillMap]);
 
+  const expectedMultiplier = useMemo(
+    () => (statsEnabled ? calcExpectedMultiplier(stats) : null),
+    [stats, statsEnabled]
+  );
+
   if (loading) {
     return (
       <div style={styles.app}>
@@ -74,7 +82,13 @@ export function App() {
         <span style={styles.headerJob}>白魔道士 (WHM)</span>
       </header>
       <div style={styles.main}>
-        <SkillPalette skills={skills} />
+        <SkillPalette
+          skills={skills}
+          stats={stats}
+          statsEnabled={statsEnabled}
+          onStatsChange={setStats}
+          onStatsEnabledChange={setStatsEnabled}
+        />
         <Timeline
           skills={skills}
           resolvedEntries={resolvedEntries}
@@ -82,6 +96,9 @@ export function App() {
           onRemoveEntry={handleRemoveEntry}
           totalPotency={totalPotency}
           resources={WHM_RESOURCES}
+          expectedMultiplier={expectedMultiplier}
+          statsEnabled={statsEnabled}
+          stats={statsEnabled ? stats : undefined}
         />
       </div>
       <footer style={styles.footer}>
