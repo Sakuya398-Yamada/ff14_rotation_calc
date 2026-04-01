@@ -32,4 +32,8 @@ model Skill {
   buffApplications String?
   /// バフスタック消費（JSON文字列）。例: [{"buffId":"sacred-sight","stacks":1}]
   buffConsumptions String?
+  /// DoT威力（1ティックあたり）
+  dotPotency    Int?
+  /// DoT持続時間（秒）
+  dotDuration   Int?
 }

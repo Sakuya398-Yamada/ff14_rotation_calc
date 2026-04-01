@@ -35,10 +35,12 @@ export function App() {
     [skills]
   );
 
-  const resolvedEntries = useMemo(
+  const timelineResult = useMemo(
     () => resolveTimeline(entries, skillMap, WHM_RESOURCES, statsEnabled ? stats : undefined, WHM_BUFFS),
     [entries, skillMap, stats, statsEnabled]
   );
+
+  const resolvedEntries = timelineResult.entries;
 
   const handleAddEntry = useCallback((skillId: string, insertIndex?: number) => {
     const uid = `entry-${nextUid++}`;
@@ -56,12 +58,14 @@ export function App() {
     setEntries((prev) => prev.filter((e) => e.uid !== uid));
   }, []);
 
-  const totalPotency = useMemo(() => {
+  const directPotency = useMemo(() => {
     return entries.reduce((sum, entry) => {
       const skill = skillMap.get(entry.skillId);
       return sum + (skill?.potency ?? 0);
     }, 0);
   }, [entries, skillMap]);
+
+  const totalPotency = directPotency + timelineResult.dotTotalPotency;
 
   const expectedMultiplier = useMemo(
     () => (statsEnabled ? calcExpectedMultiplier(stats) : null),
@@ -101,6 +105,9 @@ export function App() {
           expectedMultiplier={expectedMultiplier}
           statsEnabled={statsEnabled}
           stats={statsEnabled ? stats : undefined}
+          dotTicks={timelineResult.dotTicks}
+          activeDoTs={timelineResult.activeDoTs}
+          dotTotalPotency={timelineResult.dotTotalPotency}
         />
       </div>
       <footer style={styles.footer}>

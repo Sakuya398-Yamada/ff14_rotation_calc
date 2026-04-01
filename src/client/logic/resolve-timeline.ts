@@ -7,8 +7,14 @@ import type {
   CharacterStats,
   BuffDefinition,
   ActiveBuff,
+  DoTTick,
+  ActiveDoT,
+  TimelineResult,
 } from "../types/skill";
 import { calcGcd } from "./stat-calc";
+
+/** DoTティック間隔（秒） */
+const DOT_TICK_INTERVAL = 3;
 
 /**
  * 自動生成タイマーの状態。
@@ -83,13 +89,54 @@ function getSpeedMultiplier(
   return multiplier;
 }
 
+/**
+ * アクティブなバフから威力バフの合成倍率を計算する。
+ */
+function getPotencyMultiplier(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): number {
+  let multiplier = 1;
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "potency") {
+        multiplier *= effect.value;
+      }
+    }
+  }
+  return multiplier;
+}
+
+/**
+ * DoTストリーム: 同一スキルIDのDoTの適用履歴を管理する。
+ * FF14のDoTはサーバーティック（3秒間隔）で発動し、再適用時にティックタイマーはリセットされない。
+ * 再適用時は持続時間（endTime）とバフスナップショットのみ更新される。
+ */
+interface DoTStream {
+  skillId: string;
+  icon: string;
+  dotPotency: number;
+  /** 最初の適用時刻（ティックタイマーの基準） */
+  firstAppliedAt: number;
+  /** 現在の終了時刻（再適用で延長される） */
+  currentEndTime: number;
+  /** 適用セグメント: 各適用時点のバフスナップショットを記録 */
+  segments: Array<{
+    appliedAt: number;
+    endTime: number;
+    buffMultiplier: number;
+  }>;
+}
+
 export function resolveTimeline(
   entries: TimelineEntry[],
   skillMap: Map<string, Skill>,
   resources: ResourceDefinition[],
   stats?: CharacterStats,
   buffs?: BuffDefinition[]
-): ResolvedTimelineEntry[] {
+): TimelineResult {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
   const buffDefMap = new Map((buffs ?? []).map((b) => [b.id, b]));
@@ -105,6 +152,8 @@ export function resolveTimeline(
   const autoGenTimers: Record<string, AutoGenTimer> = {};
   // アクティブなバフのリスト
   const currentActiveBuffs: ActiveBuff[] = [];
+  // DoTストリームのマップ（skillId → DoTStream）
+  const dotStreams: Map<string, DoTStream> = new Map();
 
   // リソース初期化
   for (const res of resources) {
@@ -253,6 +302,29 @@ export function resolveTimeline(
       }
     }
 
+    // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
+    if (skill.dotPotency && skill.dotDuration) {
+      const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+      const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
+
+      const existing = dotStreams.get(skill.id);
+      if (existing) {
+        // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
+        existing.currentEndTime = endTime;
+        existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier });
+      } else {
+        // 初回適用: 新規DoTストリーム作成
+        dotStreams.set(skill.id, {
+          skillId: skill.id,
+          icon: skill.icon,
+          dotPotency: skill.dotPotency,
+          firstAppliedAt: startTime,
+          currentEndTime: endTime,
+          segments: [{ appliedAt: startTime, endTime, buffMultiplier }],
+        });
+      }
+    }
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
@@ -264,7 +336,59 @@ export function resolveTimeline(
     });
   }
 
-  return resolved;
+  // DoTティックを計算 & activeDoTsを生成
+  const dotTicks: DoTTick[] = [];
+  let dotTotalPotency = 0;
+  const allDoTs: ActiveDoT[] = [];
+
+  for (const stream of dotStreams.values()) {
+    // activeDoTs生成（タイムライン表示用: 各セグメントをActiveDoTとして記録）
+    for (const seg of stream.segments) {
+      allDoTs.push({
+        skillId: stream.skillId,
+        startTime: seg.appliedAt,
+        endTime: seg.endTime,
+        potency: stream.dotPotency,
+        icon: stream.icon,
+        buffMultiplier: seg.buffMultiplier,
+      });
+    }
+
+    // ティック生成: 最初の適用時刻基準で3秒毎、最終endTimeまで
+    let tickTime = stream.firstAppliedAt + DOT_TICK_INTERVAL;
+    while (tickTime <= stream.currentEndTime) {
+      // このティック時点で有効なセグメントのバフ倍率を取得
+      // （最後に適用されたセグメントで appliedAt <= tickTime のもの）
+      let activeSegment = stream.segments[0];
+      for (const seg of stream.segments) {
+        if (seg.appliedAt <= tickTime) {
+          activeSegment = seg;
+        } else {
+          break;
+        }
+      }
+
+      const potency = Math.floor(stream.dotPotency * activeSegment.buffMultiplier);
+      dotTicks.push({
+        time: Math.round(tickTime * 1000) / 1000,
+        potency,
+        skillId: stream.skillId,
+        icon: stream.icon,
+      });
+      dotTotalPotency += potency;
+      tickTime += DOT_TICK_INTERVAL;
+    }
+  }
+
+  // ティックを時刻順にソート
+  dotTicks.sort((a, b) => a.time - b.time);
+
+  return {
+    entries: resolved,
+    dotTicks,
+    dotTotalPotency,
+    activeDoTs: allDoTs,
+  };
 }
 
 /**

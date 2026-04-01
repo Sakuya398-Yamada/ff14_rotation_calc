@@ -39,6 +39,10 @@ export interface Skill {
   buffApplications?: string[];
   /** 使用時に消費するバフスタック */
   buffConsumptions?: BuffConsumption[];
+  /** DoT威力（1ティックあたり）。未設定の場合はDoTなし */
+  dotPotency?: number;
+  /** DoT持続時間（秒）。dotPotency設定時は必須 */
+  dotDuration?: number;
 }
 
 /** タイムラインに配置されたスキル */
@@ -135,6 +139,46 @@ export interface ActiveBuff {
   endTime: number;
   /** 現在のスタック数（スタック付きバフの場合） */
   stacks?: number;
+}
+
+/** DoTの1ティック情報 */
+export interface DoTTick {
+  /** ティック発生時刻（秒） */
+  time: number;
+  /** ティック威力 */
+  potency: number;
+  /** DoT元スキルのID */
+  skillId: string;
+  /** DoT元スキルのアイコン */
+  icon: string;
+}
+
+/** タイムライン上のアクティブなDoT */
+export interface ActiveDoT {
+  /** DoT元スキルのID */
+  skillId: string;
+  /** DoT適用時刻（秒） */
+  startTime: number;
+  /** DoT終了時刻（秒） */
+  endTime: number;
+  /** 1ティックあたりの威力 */
+  potency: number;
+  /** DoT元スキルのアイコン */
+  icon: string;
+  /** 適用時にスナップショットしたバフ倍率 */
+  buffMultiplier: number;
+}
+
+/** resolveTimelineの計算結果 */
+export interface TimelineResult {
+  /** 各スキルの計算結果 */
+  entries: ResolvedTimelineEntry[];
+  /** DoTティック一覧 */
+  dotTicks: DoTTick[];
+  /** DoT合計威力 */
+  dotTotalPotency: number;
+  /** アクティブDoT期間一覧（タイムライン表示用） */
+  activeDoTs: ActiveDoT[];
 }
 
 /** 時間情報付きタイムラインエントリ（計算結果） */

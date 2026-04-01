@@ -47,6 +47,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: aeroIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    dotPotency: 30,
+    dotDuration: 18,
   },
   {
     id: "stone2",
@@ -65,6 +67,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: aero2Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    dotPotency: 60,
+    dotDuration: 18,
   },
   {
     id: "stone3",
@@ -92,6 +96,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: diaIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    dotPotency: 75,
+    dotDuration: 30,
   },
   {
     id: "glare",
