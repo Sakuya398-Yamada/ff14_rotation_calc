@@ -6,8 +6,7 @@
     "dev": "npx tsx watch src/server/index.ts",
     "dev:client": "npx vite",
     "db:migrate": "npx prisma migrate dev",
-    "db:generate": "npx prisma generate",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:generate": "npx prisma generate"
   },
   "repository": {
     "type": "git",
