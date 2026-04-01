@@ -13,6 +13,9 @@ skills.get("/", async (c) => {
     buffApplications: skill.buffApplications
       ? JSON.parse(skill.buffApplications)
       : undefined,
+    buffConsumptions: skill.buffConsumptions
+      ? JSON.parse(skill.buffConsumptions)
+      : undefined,
   }));
   return c.json(parsed);
 });

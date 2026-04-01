@@ -9,6 +9,14 @@ export interface ResourceChange {
   amount: number;
 }
 
+/** バフスタック消費（スキル使用時） */
+export interface BuffConsumption {
+  /** 消費するバフのID */
+  buffId: string;
+  /** 消費スタック数 */
+  stacks: number;
+}
+
 /** スキルの定義データ */
 export interface Skill {
   /** スキルの一意識別子 */
@@ -29,6 +37,8 @@ export interface Skill {
   resourceChanges?: ResourceChange[];
   /** 使用時に付与するバフのIDリスト */
   buffApplications?: string[];
+  /** 使用時に消費するバフスタック */
+  buffConsumptions?: BuffConsumption[];
 }
 
 /** タイムラインに配置されたスキル */
@@ -111,6 +121,8 @@ export interface BuffDefinition {
   effects: BuffEffect[];
   /** 表示色 */
   color: string;
+  /** スタック付きバフの最大スタック数（未設定の場合はスタックなし） */
+  maxStacks?: number;
 }
 
 /** タイムライン上のアクティブなバフ */
@@ -121,6 +133,8 @@ export interface ActiveBuff {
   startTime: number;
   /** バフ終了時刻（秒） */
   endTime: number;
+  /** 現在のスタック数（スタック付きバフの場合） */
+  stacks?: number;
 }
 
 /** 時間情報付きタイムラインエントリ（計算結果） */
@@ -135,6 +149,8 @@ export interface ResolvedTimelineEntry {
   resourceSnapshot: ResourceSnapshot;
   /** リソース不足のリソースIDリスト */
   resourceErrors: string[];
+  /** バフスタック不足のバフIDリスト */
+  comboErrors: string[];
   /** このスキル使用時にアクティブなバフ一覧 */
   activeBuffs: ActiveBuff[];
 }

@@ -205,6 +205,32 @@ export function resolveTimeline(
       }
     }
 
+    // バフスタック消費チェック & 適用
+    const comboErrors: string[] = [];
+    if (skill.buffConsumptions) {
+      for (const consumption of skill.buffConsumptions) {
+        const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
+        if (!activeBuff || (activeBuff.stacks ?? 0) < consumption.stacks) {
+          comboErrors.push(consumption.buffId);
+        }
+      }
+    }
+
+    // バフスタック消費を適用（エラー時でも適用、0以下にはしない）
+    if (skill.buffConsumptions) {
+      for (const consumption of skill.buffConsumptions) {
+        const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
+        if (activeBuff && activeBuff.stacks !== undefined) {
+          activeBuff.stacks = Math.max(0, activeBuff.stacks - consumption.stacks);
+          // スタック0になったらバフを除去
+          if (activeBuff.stacks === 0) {
+            const idx = currentActiveBuffs.indexOf(activeBuff);
+            if (idx >= 0) currentActiveBuffs.splice(idx, 1);
+          }
+        }
+      }
+    }
+
     // バフ適用: スキルにbuffApplicationsがあればアクティブバフに追加
     if (skill.buffApplications) {
       for (const buffId of skill.buffApplications) {
@@ -217,6 +243,7 @@ export function resolveTimeline(
           buffId,
           startTime,
           endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+          stacks: buffDef.maxStacks,
         };
         if (existingIdx >= 0) {
           currentActiveBuffs[existingIdx] = newBuff;
@@ -232,6 +259,7 @@ export function resolveTimeline(
       startTime,
       resourceSnapshot: snapshot,
       resourceErrors,
+      comboErrors,
       activeBuffs: [...currentActiveBuffs],
     });
   }

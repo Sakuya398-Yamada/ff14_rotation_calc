@@ -24,11 +24,4 @@ export const WHM_RESOURCES: ResourceDefinition[] = [
     maxStacks: 3,
     color: "#ef5350",
   },
-  {
-    id: "sacred-sight",
-    name: "Sacred Sight",
-    shortName: "S.Sight",
-    maxStacks: 3,
-    color: "#ff9800",
-  },
 ];

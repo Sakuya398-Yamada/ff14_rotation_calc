@@ -297,28 +297,71 @@ export function Timeline({
   }, [insertIndex, resolvedEntries, skillMap, getEntryRecastTime]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
+  // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
   const buffTimespans = useMemo(() => {
     const spans: Map<string, ActiveBuff[]> = new Map();
+    const stackableBuffIds = new Set(buffs.filter((b) => b.maxStacks).map((b) => b.id));
+
     for (const entry of resolvedEntries) {
       for (const ab of entry.activeBuffs) {
         if (!spans.has(ab.buffId)) {
           spans.set(ab.buffId, []);
         }
         const list = spans.get(ab.buffId)!;
-        // 同じ開始時刻のバフは重複追加しない
-        if (!list.some((s) => s.startTime === ab.startTime && s.endTime === ab.endTime)) {
-          list.push(ab);
+
+        if (stackableBuffIds.has(ab.buffId)) {
+          // スタック付きバフ: 同じ開始時刻のものは更新しない（初回のみ追加）
+          if (!list.some((s) => s.startTime === ab.startTime)) {
+            list.push({ ...ab });
+          }
+        } else {
+          // 通常バフ: 同じ開始・終了時刻のものは重複追加しない
+          if (!list.some((s) => s.startTime === ab.startTime && s.endTime === ab.endTime)) {
+            list.push(ab);
+          }
         }
       }
     }
-    return spans;
-  }, [resolvedEntries]);
 
-  // リソースエラーがあるエントリのUIDセット
+    // スタック付きバフの実際の終了時刻を算出
+    for (const [buffId, spanList] of spans) {
+      if (!stackableBuffIds.has(buffId)) continue;
+      for (const span of spanList) {
+        let lastSeenTime = span.startTime;
+        for (const entry of resolvedEntries) {
+          const match = entry.activeBuffs.find(
+            (ab) => ab.buffId === buffId && ab.startTime === span.startTime
+          );
+          if (match) {
+            lastSeenTime = entry.startTime;
+          }
+        }
+        // スタック消費で終了した場合、最後に確認されたエントリの時刻を終了時刻とする
+        if (lastSeenTime < span.endTime) {
+          // 次のエントリでバフが消えたか確認
+          const allTimes = resolvedEntries.map((e) => e.startTime).sort((a, b) => a - b);
+          const nextTimeIdx = allTimes.findIndex((t) => t > lastSeenTime);
+          if (nextTimeIdx >= 0) {
+            const nextEntry = resolvedEntries.find((e) => e.startTime === allTimes[nextTimeIdx]);
+            const stillActive = nextEntry?.activeBuffs.some(
+              (ab) => ab.buffId === buffId && ab.startTime === span.startTime
+            );
+            if (!stillActive) {
+              span.endTime = allTimes[nextTimeIdx];
+            }
+          }
+        }
+      }
+    }
+
+    return spans;
+  }, [resolvedEntries, buffs]);
+
+  // リソースエラーまたはコンボエラーがあるエントリのUIDセット
   const entriesWithErrors = useMemo(() => {
     const set = new Set<string>();
     for (const entry of resolvedEntries) {
-      if (entry.resourceErrors.length > 0) {
+      if (entry.resourceErrors.length > 0 || entry.comboErrors.length > 0) {
         set.add(entry.uid);
       }
     }
@@ -425,7 +468,7 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -465,7 +508,7 @@ export function Timeline({
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${hasError ? " ⚠ リソース不足" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -543,6 +586,9 @@ export function Timeline({
                       {spans.map((span, i) => {
                         const left = span.startTime * PX_PER_SEC;
                         const width = (span.endTime - span.startTime) * PX_PER_SEC;
+                        const stacksLabel = buffDef.maxStacks && span.stacks !== undefined
+                          ? ` x${span.stacks}`
+                          : "";
                         return (
                           <div
                             key={i}
@@ -553,7 +599,7 @@ export function Timeline({
                               backgroundColor: `${buffDef.color}30`,
                               borderColor: buffDef.color,
                             }}
-                            title={`${buffDef.name} (${span.startTime.toFixed(2)}s - ${span.endTime.toFixed(2)}s)`}
+                            title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${span.endTime.toFixed(2)}s)`}
                           >
                             <img
                               src={buffDef.icon}
@@ -561,7 +607,7 @@ export function Timeline({
                               style={styles.buffIcon}
                             />
                             <span style={{ ...styles.buffDuration, color: buffDef.color }}>
-                              {buffDef.duration}s
+                              {buffDef.maxStacks ? `x${span.stacks ?? buffDef.maxStacks}` : `${buffDef.duration}s`}
                             </span>
                           </div>
                         );
