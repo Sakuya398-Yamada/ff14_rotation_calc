@@ -20,13 +20,26 @@ export interface BuffConsumption {
   stacks: number;
 }
 
+/** 特性による威力変動 */
+export interface TraitPotencyOverride {
+  /** この特性が適用されるレベル */
+  traitLevel: number;
+  /** 変更後の威力（undefinedの場合は変更なし） */
+  potency?: number;
+  /** 変更後のDoT威力（undefinedの場合は変更なし） */
+  dotPotency?: number;
+}
+
+/** サポートするプレイヤーレベル */
+export type PlayerLevel = 70 | 80 | 90 | 100;
+
 /** スキルの定義データ */
 export interface Skill {
   /** スキルの一意識別子 */
   id: string;
   /** スキル名（日本語） */
   name: string;
-  /** 威力 */
+  /** 威力（基本値。特性適用前） */
   potency: number;
   /** GCD or oGCD */
   type: SkillType;
@@ -38,13 +51,19 @@ export interface Skill {
   recastTime: number;
   /** アニメーションロック（秒）。デフォルト0.65s */
   animationLock: number;
+  /** 習得レベル */
+  acquiredLevel: number;
+  /** このスキルが置き換える元スキルのID */
+  replacesSkillId?: string;
+  /** 特性による威力変動テーブル */
+  traitPotencyOverrides?: TraitPotencyOverride[];
   /** リソース変動（未設定の場合はリソースに影響なし） */
   resourceChanges?: ResourceChange[];
   /** 使用時に付与するバフのIDリスト */
   buffApplications?: string[];
   /** 使用時に消費するバフスタック */
   buffConsumptions?: BuffConsumption[];
-  /** DoT威力（1ティックあたり）。未設定の場合はDoTなし */
+  /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
   dotDuration?: number;
@@ -74,6 +93,8 @@ export interface ResourceDefinition {
   autoGenerateInterval?: number;
   /** 表示色 */
   color: string;
+  /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
+  acquiredLevel?: number;
 }
 
 /** 特定時点のリソース状態 */
@@ -132,6 +153,8 @@ export interface BuffDefinition {
   color: string;
   /** スタック付きバフの最大スタック数（未設定の場合はスタックなし） */
   maxStacks?: number;
+  /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
+  acquiredLevel?: number;
 }
 
 /** タイムライン上のアクティブなバフ */

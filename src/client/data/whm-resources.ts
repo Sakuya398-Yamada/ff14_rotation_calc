@@ -23,5 +23,6 @@ export const WHM_RESOURCES: ResourceDefinition[] = [
     shortName: "B.ﾘﾘｰ",
     maxStacks: 3,
     color: "#ef5350",
+    acquiredLevel: 74,
   },
 ];

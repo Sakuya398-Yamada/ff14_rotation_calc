@@ -6,17 +6,42 @@ import { WHM_ATTACK_SKILLS } from "../data/whm-skills";
 import { WHM_RESOURCES } from "../data/whm-resources";
 import { WHM_BUFFS } from "../data/whm-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
-import type { TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange } from "../types/skill";
+import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
+import type { TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange, PlayerLevel } from "../types/skill";
 
 let nextUid = 1;
 
 export function App() {
-  const skills = WHM_ATTACK_SKILLS;
+  const [level, setLevel] = useState<PlayerLevel>(100);
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
   const [statsEnabled, setStatsEnabled] = useState(false);
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
+
+  // レベルに応じたバフ・リソースをフィルタ
+  const levelBuffs = useMemo(
+    () => getBuffsForLevel(WHM_BUFFS, level),
+    [level]
+  );
+  const levelResources = useMemo(
+    () => getResourcesForLevel(WHM_RESOURCES, level),
+    [level]
+  );
+
+  // レベルに応じたスキルをフィルタ・威力調整
+  const availableBuffIds = useMemo(
+    () => new Set(levelBuffs.map((b) => b.id)),
+    [levelBuffs]
+  );
+  const availableResourceIds = useMemo(
+    () => new Set(levelResources.map((r) => r.id)),
+    [levelResources]
+  );
+  const skills = useMemo(
+    () => getSkillsForLevel(WHM_ATTACK_SKILLS, level, availableBuffIds, availableResourceIds),
+    [level, availableBuffIds, availableResourceIds]
+  );
 
   const skillMap = useMemo(
     () => new Map(skills.map((s) => [s.id, s])),
@@ -24,8 +49,8 @@ export function App() {
   );
 
   const timelineResult = useMemo(
-    () => resolveTimeline(entries, skillMap, WHM_RESOURCES, statsEnabled ? stats : undefined, WHM_BUFFS, untargetableWindows),
-    [entries, skillMap, stats, statsEnabled, untargetableWindows]
+    () => resolveTimeline(entries, skillMap, levelResources, statsEnabled ? stats : undefined, levelBuffs, untargetableWindows),
+    [entries, skillMap, levelResources, stats, statsEnabled, levelBuffs, untargetableWindows]
   );
 
   const resolvedEntries = timelineResult.entries;
@@ -97,6 +122,8 @@ export function App() {
           statsEnabled={statsEnabled}
           onStatsChange={setStats}
           onStatsEnabledChange={setStatsEnabled}
+          level={level}
+          onLevelChange={setLevel}
         />
         <Timeline
           skills={skills}
@@ -104,8 +131,8 @@ export function App() {
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}
           totalPotency={totalPotency}
-          resources={WHM_RESOURCES}
-          buffs={WHM_BUFFS}
+          resources={levelResources}
+          buffs={levelBuffs}
           expectedMultiplier={expectedMultiplier}
           statsEnabled={statsEnabled}
           stats={statsEnabled ? stats : undefined}

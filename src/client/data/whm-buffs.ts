@@ -30,5 +30,6 @@ export const WHM_BUFFS: BuffDefinition[] = [
     effects: [],
     color: "#ffcc00",
     maxStacks: 3,
+    acquiredLevel: 92,
   },
 ];

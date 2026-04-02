@@ -1,6 +1,8 @@
-import type { Skill, CharacterStats } from "../types/skill";
+import type { Skill, CharacterStats, PlayerLevel } from "../types/skill";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
+
+const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
 
 interface SkillPaletteProps {
   skills: Skill[];
@@ -8,6 +10,8 @@ interface SkillPaletteProps {
   statsEnabled: boolean;
   onStatsChange: (stats: CharacterStats) => void;
   onStatsEnabledChange: (enabled: boolean) => void;
+  level: PlayerLevel;
+  onLevelChange: (level: PlayerLevel) => void;
 }
 
 export function SkillPalette({
@@ -16,6 +20,8 @@ export function SkillPalette({
   statsEnabled,
   onStatsChange,
   onStatsEnabledChange,
+  level,
+  onLevelChange,
 }: SkillPaletteProps) {
   const gcdSkills = skills.filter((s) => s.type === "gcd");
   const ogcdSkills = skills.filter((s) => s.type === "ogcd");
@@ -32,9 +38,37 @@ export function SkillPalette({
     onStatsChange({ ...stats, [key]: num });
   };
 
+  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onLevelChange(Number(e.target.value) as PlayerLevel);
+  };
+
   return (
     <div className="custom-scrollbar" style={styles.container}>
       <h2 style={styles.title}>スキルパレット</h2>
+
+      {/* レベル設定 */}
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle}>レベル</h3>
+        <div style={styles.levelRow}>
+          <label style={styles.levelLabel}>Lv.</label>
+          <select
+            value={level}
+            onChange={handleLevelChange}
+            style={styles.levelSelect}
+          >
+            {SUPPORTED_LEVELS.map((lv) => (
+              <option key={lv} value={lv}>
+                {lv}
+              </option>
+            ))}
+          </select>
+        </div>
+        {level < 100 && (
+          <div style={styles.levelWarning}>
+            Lv{level}の威力値は正確でない可能性があります
+          </div>
+        )}
+      </div>
 
       {/* ステータス入力セクション */}
       <div style={styles.section}>
@@ -191,6 +225,37 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#888",
     textTransform: "uppercase" as const,
     letterSpacing: "1px",
+  },
+  levelRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  levelLabel: {
+    fontSize: "14px",
+    fontWeight: "bold",
+    color: "#e0e0e0",
+    flexShrink: 0,
+  },
+  levelSelect: {
+    flex: 1,
+    padding: "6px 8px",
+    fontSize: "14px",
+    backgroundColor: "#16213e",
+    border: "1px solid #444",
+    borderRadius: "4px",
+    color: "#e0e0e0",
+    outline: "none",
+    cursor: "pointer",
+  },
+  levelWarning: {
+    marginTop: "6px",
+    padding: "4px 8px",
+    fontSize: "11px",
+    color: "#ffa726",
+    backgroundColor: "rgba(255, 167, 38, 0.1)",
+    borderRadius: "4px",
+    border: "1px solid rgba(255, 167, 38, 0.3)",
   },
   statHeader: {
     display: "flex",

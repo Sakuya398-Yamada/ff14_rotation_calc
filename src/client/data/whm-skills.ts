@@ -26,10 +26,11 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 白魔道士（WHM）攻撃スキル一覧
- * パッチ7.x準拠の威力値
+ * 威力はジョブガイド準拠（基本値 = 特性適用前）
+ * Lv94特性「White Magic Mastery」による威力変動はtraitPotencyOverridesで定義
  */
 export const WHM_ATTACK_SKILLS: Skill[] = [
-  // === GCD ===
+  // === GCD: ストーン系（単体攻撃魔法チェーン） ===
   {
     id: "stone",
     name: "ストーン",
@@ -39,7 +40,73 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: stoneIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 1,
   },
+  {
+    id: "stone2",
+    name: "ストンラ",
+    potency: 190,
+    type: "gcd",
+    target: "enemy",
+    icon: stone2Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 18,
+    replacesSkillId: "stone",
+  },
+  {
+    id: "stone3",
+    name: "ストンガ",
+    potency: 220,
+    type: "gcd",
+    target: "enemy",
+    icon: stone3Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 54,
+    replacesSkillId: "stone2",
+  },
+  {
+    id: "stone4",
+    name: "ストンジャ",
+    potency: 260,
+    type: "gcd",
+    target: "enemy",
+    icon: stone4Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 64,
+    replacesSkillId: "stone3",
+  },
+  {
+    id: "glare",
+    name: "グレア",
+    potency: 290,
+    type: "gcd",
+    target: "enemy",
+    icon: glareIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 72,
+    replacesSkillId: "stone4",
+  },
+  {
+    id: "glare3",
+    name: "グレアガ",
+    potency: 310,
+    type: "gcd",
+    target: "enemy",
+    icon: glare3Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 82,
+    replacesSkillId: "glare",
+    traitPotencyOverrides: [
+      { traitLevel: 94, potency: 350 },
+    ],
+  },
+
+  // === GCD: エアロ系（DoTチェーン） ===
   {
     id: "aero",
     name: "エアロ",
@@ -51,16 +118,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     dotPotency: 30,
     dotDuration: 18,
-  },
-  {
-    id: "stone2",
-    name: "ストンラ",
-    potency: 190,
-    type: "gcd",
-    target: "enemy",
-    icon: stone2Icon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 4,
   },
   {
     id: "aero2",
@@ -71,74 +129,30 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: aero2Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    dotPotency: 60,
+    dotPotency: 50,
     dotDuration: 18,
-  },
-  {
-    id: "stone3",
-    name: "ストンガ",
-    potency: 220,
-    type: "gcd",
-    target: "enemy",
-    icon: stone3Icon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-  },
-  {
-    id: "stone4",
-    name: "ストンジャ",
-    potency: 260,
-    type: "gcd",
-    target: "enemy",
-    icon: stone4Icon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 46,
+    replacesSkillId: "aero",
   },
   {
     id: "dia",
     name: "ディア",
-    potency: 85,
+    potency: 60,
     type: "gcd",
     target: "enemy",
     icon: diaIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    dotPotency: 75,
+    dotPotency: 60,
     dotDuration: 30,
-  },
-  {
-    id: "glare",
-    name: "グレア",
-    potency: 290,
-    type: "gcd",
-    target: "enemy",
-    icon: glareIcon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-  },
-  {
-    id: "glare3",
-    name: "グレアガ",
-    potency: 350,
-    type: "gcd",
-    target: "enemy",
-    icon: glare3Icon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-  },
-  {
-    id: "glare4",
-    name: "グレアジャ",
-    potency: 640,
-    type: "gcd",
-    target: "enemy",
-    icon: glare4Icon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-    buffConsumptions: [
-      { buffId: "sacred-sight", stacks: 1 },
+    acquiredLevel: 72,
+    replacesSkillId: "aero2",
+    traitPotencyOverrides: [
+      { traitLevel: 94, potency: 85, dotPotency: 85 },
     ],
   },
+
+  // === GCD: ホーリー系（範囲攻撃魔法チェーン） ===
   {
     id: "holy",
     name: "ホーリー",
@@ -148,6 +162,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: holyIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 45,
   },
   {
     id: "holy3",
@@ -158,8 +173,27 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: holy3Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 82,
+    replacesSkillId: "holy",
   },
-  // === リリー関連GCD ===
+
+  // === GCD: グレアジャ（神速魔効果アップ Lv92） ===
+  {
+    id: "glare4",
+    name: "グレアジャ",
+    potency: 640,
+    type: "gcd",
+    target: "enemy",
+    icon: glare4Icon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 92,
+    buffConsumptions: [
+      { buffId: "sacred-sight", stacks: 1 },
+    ],
+  },
+
+  // === GCD: リリー関連 ===
   {
     id: "heart-of-solace",
     name: "ハート・オブ・ソラス",
@@ -169,6 +203,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: afflatus_solaceIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 52,
     resourceChanges: [
       { resourceId: "healing-lily", amount: -1 },
       { resourceId: "blood-lily", amount: 1 },
@@ -183,6 +218,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: afflatus_raptureIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 76,
     resourceChanges: [
       { resourceId: "healing-lily", amount: -1 },
       { resourceId: "blood-lily", amount: 1 },
@@ -191,14 +227,18 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   {
     id: "heart-of-misery",
     name: "ハート・オブ・ミゼリ",
-    potency: 1400,
+    potency: 1240,
     type: "gcd",
     target: "enemy",
     icon: afflatus_miseryIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 74,
     resourceChanges: [
       { resourceId: "blood-lily", amount: -3 },
+    ],
+    traitPotencyOverrides: [
+      { traitLevel: 94, potency: 1400 },
     ],
   },
 
@@ -212,6 +252,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: assizeIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 56,
   },
   {
     id: "presence-of-mind",
@@ -222,6 +263,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: presenceOfMindIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 30,
     buffApplications: ["presence-of-mind", "sacred-sight"],
   },
 ];
