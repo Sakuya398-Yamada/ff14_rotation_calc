@@ -999,6 +999,13 @@ export function Timeline({
                   <div key={`recast-${skillId}`} style={styles.recastLane}>
                     <div style={styles.recastLaneLabel} title={`${label} リキャスト`}>
                       RC
+                      {skill?.icon && (
+                        <img
+                          src={skill.icon}
+                          alt={label}
+                          style={styles.recastLabelIcon}
+                        />
+                      )}
                     </div>
                     <div style={styles.recastLaneContent}>
                       {spans.map((span, i) => {
@@ -1301,6 +1308,10 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "flex-end",
     paddingRight: "8px",
+    position: "sticky" as const,
+    left: 0,
+    zIndex: 6,
+    backgroundColor: "#16213e",
   },
   laneContent: {
     position: "relative",
@@ -1419,6 +1430,10 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap" as const,
     overflow: "hidden",
     textOverflow: "ellipsis",
+    position: "sticky" as const,
+    left: 0,
+    zIndex: 6,
+    backgroundColor: "#16213e",
   },
   resourceLaneContent: {
     position: "relative",
@@ -1470,6 +1485,10 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: "right" as const,
     lineHeight: 1.2,
     overflow: "hidden",
+    position: "sticky" as const,
+    left: 0,
+    zIndex: 6,
+    backgroundColor: "#16213e",
   },
   buffLaneContent: {
     position: "relative",
@@ -1511,6 +1530,10 @@ const styles: Record<string, React.CSSProperties> = {
   rulerLabel: {
     width: LANE_LABEL_WIDTH,
     flexShrink: 0,
+    position: "sticky" as const,
+    left: 0,
+    zIndex: 6,
+    backgroundColor: "#16213e",
   },
   rulerContent: {
     position: "relative",
@@ -1557,6 +1580,10 @@ const styles: Record<string, React.CSSProperties> = {
     paddingRight: "8px",
     whiteSpace: "nowrap" as const,
     overflow: "hidden",
+    position: "sticky" as const,
+    left: 0,
+    zIndex: 6,
+    backgroundColor: "#16213e",
   },
   dotLaneContent: {
     position: "relative",
@@ -1627,6 +1654,18 @@ const styles: Record<string, React.CSSProperties> = {
     paddingRight: "8px",
     whiteSpace: "nowrap" as const,
     overflow: "hidden",
+    position: "sticky" as const,
+    left: 0,
+    zIndex: 6,
+    backgroundColor: "#16213e",
+    gap: "3px",
+  },
+  recastLabelIcon: {
+    width: "16px",
+    height: "16px",
+    borderRadius: "3px",
+    flexShrink: 0,
+    objectFit: "contain" as const,
   },
   recastLaneContent: {
     position: "relative",
