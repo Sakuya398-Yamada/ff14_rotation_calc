@@ -267,6 +267,47 @@ export function Timeline({
     return e.dataTransfer.types.includes("application/skill-type-gcd") ? "gcd" : "ogcd";
   }, []);
 
+  /** GCDエントリのみをフィルタ */
+  const gcdResolvedEntries = useMemo(
+    () => resolvedEntries.filter((entry) => {
+      const skill = skillMap.get(entry.skillId);
+      return skill && skill.type === "gcd";
+    }),
+    [resolvedEntries, skillMap]
+  );
+
+  /** GCDフィルタ済みインデックスを全エントリ上のインデックスに変換 */
+  const mapGcdIndexToCombined = useCallback(
+    (gcdIdx: number): number => {
+      if (gcdIdx >= gcdResolvedEntries.length) {
+        // 末尾に追加: 最後のGCDエントリの直後
+        if (gcdResolvedEntries.length === 0) return resolvedEntries.length;
+        const lastGcd = gcdResolvedEntries[gcdResolvedEntries.length - 1];
+        return resolvedEntries.findIndex((e) => e.uid === lastGcd.uid) + 1;
+      }
+      // gcdIdx番目のGCDエントリの前に挿入
+      const targetEntry = gcdResolvedEntries[gcdIdx];
+      return resolvedEntries.findIndex((e) => e.uid === targetEntry.uid);
+    },
+    [resolvedEntries, gcdResolvedEntries]
+  );
+
+  /**
+   * ドラッグ中のマウス位置から挿入インデックス（resolvedEntries上）を計算する。
+   * GCD: GCDエントリのみで計算し、combined変換（GCDリキャスト境界間に配置）
+   * oGCD: 全エントリで計算（任意の位置に配置）
+   */
+  const calcCombinedInsertIndex = useCallback(
+    (mouseX: number, scrollLeft: number, type: "gcd" | "ogcd"): number => {
+      if (type === "gcd") {
+        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, gcdResolvedEntries, skillMap, getEntryRecastTime);
+        return mapGcdIndexToCombined(gcdIdx);
+      }
+      return calcInsertIndex(mouseX, scrollLeft, resolvedEntries, skillMap, getEntryRecastTime);
+    },
+    [resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, mapGcdIndexToCombined]
+  );
+
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -279,20 +320,13 @@ export function Timeline({
       if (scrollRef.current && resolvedEntries.length > 0) {
         const rect = scrollRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        // 全エントリに対して挿入位置を計算（GCD/oGCD問わず）
-        const idx = calcInsertIndex(
-          mouseX,
-          scrollRef.current.scrollLeft,
-          resolvedEntries,
-          skillMap,
-          getEntryRecastTime
-        );
+        const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
         setInsertIndex(idx);
       } else {
         setInsertIndex(null);
       }
     },
-    [resolvedEntries, skillMap, getEntryRecastTime, detectDragType]
+    [resolvedEntries, detectDragType, calcCombinedInsertIndex]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -316,14 +350,9 @@ export function Timeline({
       if (scrollRef.current && resolvedEntries.length > 0) {
         const rect = scrollRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        // 全エントリに対して挿入位置を計算（GCD/oGCD問わず）
-        const idx = calcInsertIndex(
-          mouseX,
-          scrollRef.current.scrollLeft,
-          resolvedEntries,
-          skillMap,
-          getEntryRecastTime
-        );
+        const skill = skillMap.get(skillId);
+        const type: "gcd" | "ogcd" = skill?.type === "gcd" ? "gcd" : "ogcd";
+        const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
         const isInsertMiddle = idx < resolvedEntries.length;
         if (isInsertMiddle) {
           shouldAutoScrollRef.current = false;
@@ -335,14 +364,32 @@ export function Timeline({
       setInsertIndex(null);
       setDragType(null);
     },
-    [onAddEntry, resolvedEntries, skillMap, getEntryRecastTime]
+    [onAddEntry, resolvedEntries, skillMap, calcCombinedInsertIndex]
   );
 
-  // 挿入インジケーターのX座標（全エントリ上のインデックスで計算）
+  /**
+   * 挿入インジケーターのX座標。
+   * GCD: GCDエントリのみを使って表示位置を計算（GCDリキャスト境界間）
+   * oGCD: 全エントリを使って表示位置を計算
+   */
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
+    if (dragType === "gcd") {
+      // GCD: insertIndex（combined）をGCDフィルタ済みの位置に逆変換してGCDエントリで表示
+      // combined indexが指すエントリがGCDならそのGCDインデックス、そうでなければ直前のGCD
+      let gcdIdx = 0;
+      for (let i = 0; i < gcdResolvedEntries.length; i++) {
+        const combinedPos = resolvedEntries.findIndex((e) => e.uid === gcdResolvedEntries[i].uid);
+        if (combinedPos >= insertIndex) {
+          gcdIdx = i;
+          break;
+        }
+        gcdIdx = i + 1;
+      }
+      return calcInsertIndicatorX(gcdIdx, gcdResolvedEntries, skillMap, getEntryRecastTime);
+    }
     return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
-  }, [insertIndex, dragType, resolvedEntries, skillMap, getEntryRecastTime]);
+  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
