@@ -382,8 +382,12 @@ export function resolveTimeline(
       });
     }
 
-    // ティック生成: 最初の適用時刻基準で3秒毎、最終endTimeまで
-    let tickTime = stream.firstAppliedAt + DOT_TICK_INTERVAL;
+    // ティック生成: サーバーティック（3の倍数秒）に合わせて生成、最終endTimeまで
+    // 付与時刻の直後の3の倍数秒から開始（付与時刻ちょうどは含めない）
+    let tickTime = Math.ceil(stream.firstAppliedAt / DOT_TICK_INTERVAL) * DOT_TICK_INTERVAL;
+    if (tickTime <= stream.firstAppliedAt) {
+      tickTime += DOT_TICK_INTERVAL;
+    }
     while (tickTime <= stream.currentEndTime) {
       // このティック時点で有効なセグメントのバフ倍率を取得
       // （最後に適用されたセグメントで appliedAt <= tickTime のもの）
