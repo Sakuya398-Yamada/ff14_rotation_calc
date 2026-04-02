@@ -370,11 +370,26 @@ export function Timeline({
    * GCD: GCDエントリのみを使って表示位置を計算（GCDリキャスト境界間）
    * oGCD: 全エントリを使って表示位置を計算
    */
+  /**
+   * 挿入位置直前の全エントリの終了時刻（animationLock基準）を算出。
+   * GCDの実行可能時刻は max(GCDリキャスト明け, 直前アクションの硬直明け) なので、
+   * oGCDの硬直がGCDリキャストを超える場合に正しい位置を表示するために必要。
+   */
+  const getActionAvailableAt = useCallback(
+    (combinedInsertIdx: number): number => {
+      if (combinedInsertIdx <= 0) return 0;
+      const prevEntry = resolvedEntries[combinedInsertIdx - 1];
+      if (!prevEntry) return 0;
+      const skill = skillMap.get(prevEntry.skillId);
+      return prevEntry.startTime + (skill?.animationLock ?? 0);
+    },
+    [resolvedEntries, skillMap]
+  );
+
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
     if (dragType === "gcd") {
-      // GCD: insertIndex（combined）をGCDフィルタ済みの位置に逆変換してGCDエントリで表示
-      // combined indexが指すエントリがGCDならそのGCDインデックス、そうでなければ直前のGCD
+      // combined indexからGCDフィルタ済みインデックスに逆変換
       let gcdIdx = 0;
       for (let i = 0; i < gcdResolvedEntries.length; i++) {
         const combinedPos = resolvedEntries.findIndex((e) => e.uid === gcdResolvedEntries[i].uid);
@@ -384,10 +399,17 @@ export function Timeline({
         }
         gcdIdx = i + 1;
       }
-      return calcInsertIndicatorX(gcdIdx, gcdResolvedEntries, skillMap, getEntryRecastTime);
+
+      // GCDエントリベースで基本位置を算出
+      const baseX = calcInsertIndicatorX(gcdIdx, gcdResolvedEntries, skillMap, getEntryRecastTime);
+
+      // 直前の全エントリの硬直明け時刻でクランプ（oGCD硬直がGCDリキャストを超える場合の補正）
+      const actionAvailAt = getActionAvailableAt(insertIndex);
+      const actionAvailX = actionAvailAt * PX_PER_SEC + 4;
+      return Math.max(baseX, actionAvailX);
     }
     return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
-  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime]);
+  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getActionAvailableAt]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
