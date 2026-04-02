@@ -21,6 +21,9 @@ const BUFF_LANE_HEIGHT = 32;
 /** DoTレーンの高さ（px） */
 const DOT_LANE_HEIGHT = 36;
 
+/** リキャストレーンの高さ（px） */
+const RECAST_LANE_HEIGHT = 28;
+
 /** 時間軸の高さ（px） */
 const RULER_HEIGHT = 28;
 
@@ -144,6 +147,7 @@ export function Timeline({
   const [showResources, setShowResources] = useState(true);
   const [showBuffs, setShowBuffs] = useState(true);
   const [showDoTs, setShowDoTs] = useState(true);
+  const [showRecasts, setShowRecasts] = useState(true);
   const [showUntargetableEditor, setShowUntargetableEditor] = useState(false);
   const [showPpsRange, setShowPpsRange] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -231,8 +235,14 @@ export function Timeline({
     for (const w of untargetableWindows) {
       if (w.endTime > maxEnd) maxEnd = w.endTime;
     }
+    // 個別リキャストの終了時刻も考慮
+    for (const spans of cooldownSpans.values()) {
+      for (const span of spans) {
+        if (span.endTime > maxEnd) maxEnd = span.endTime;
+      }
+    }
     return maxEnd;
-  }, [resolvedEntries, skillMap, getEntryRecastTime, activeDoTs, untargetableWindows]);
+  }, [resolvedEntries, skillMap, getEntryRecastTime, activeDoTs, untargetableWindows, cooldownSpans]);
 
   const timelineWidth = Math.max(totalDuration * PX_PER_SEC + 100, 600);
 
@@ -472,6 +482,30 @@ export function Timeline({
     return spans;
   }, [resolvedEntries, buffs]);
 
+  // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
+  const cooldownSpans = useMemo(() => {
+    const spans: Map<string, { startTime: number; endTime: number; skillName: string; icon: string }[]> = new Map();
+    for (const entry of resolvedEntries) {
+      const skill = skillMap.get(entry.skillId);
+      if (!skill || skill.cooldown === undefined) continue;
+      // エラーなしで実行されたスキルのみクールダウンを記録
+      if (entry.recastError || entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError) continue;
+      if (!spans.has(skill.id)) {
+        spans.set(skill.id, []);
+      }
+      spans.get(skill.id)!.push({
+        startTime: entry.startTime,
+        endTime: Math.round((entry.startTime + skill.cooldown) * 1000) / 1000,
+        skillName: skill.name,
+        icon: skill.icon,
+      });
+    }
+    return spans;
+  }, [resolvedEntries, skillMap]);
+
+  // リキャスト付きスキルが存在するか
+  const hasRecastSkills = cooldownSpans.size > 0;
+
   // リソースエラーまたはコンボエラーがあるエントリのUIDセット
   const entriesWithErrors = useMemo(() => {
     const set = new Set<string>();
@@ -515,6 +549,15 @@ export function Timeline({
               title={showBuffs ? "バフ表示を非表示" : "バフ表示を表示"}
             >
               {showBuffs ? "バフ ▼" : "バフ ▶"}
+            </button>
+          )}
+          {hasRecastSkills && (
+            <button
+              style={styles.toggleButton}
+              onClick={() => setShowRecasts((v) => !v)}
+              title={showRecasts ? "リキャスト表示を非表示" : "リキャスト表示を表示"}
+            >
+              {showRecasts ? "リキャスト ▼" : "リキャスト ▶"}
             </button>
           )}
           {resources.length > 0 && (
@@ -915,6 +958,45 @@ export function Timeline({
                             />
                             <span style={{ ...styles.buffDuration, color: buffDef.color }}>
                               {buffDef.maxStacks ? `x${span.stacks ?? buffDef.maxStacks}` : `${buffDef.duration}s`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* リキャストレーン */}
+              {showRecasts && Array.from(cooldownSpans.entries()).map(([skillId, spans]) => {
+                const skill = skillMap.get(skillId);
+                const label = skill?.name ?? skillId;
+                return (
+                  <div key={`recast-${skillId}`} style={styles.recastLane}>
+                    <div style={styles.recastLaneLabel} title={`${label} リキャスト`}>
+                      RC
+                    </div>
+                    <div style={styles.recastLaneContent}>
+                      {spans.map((span, i) => {
+                        const left = span.startTime * PX_PER_SEC;
+                        const width = (span.endTime - span.startTime) * PX_PER_SEC;
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              ...styles.recastBar,
+                              left,
+                              width,
+                            }}
+                            title={`${span.skillName} リキャスト (${span.startTime.toFixed(2)}s - ${span.endTime.toFixed(2)}s / ${skill?.cooldown}s)`}
+                          >
+                            <img
+                              src={span.icon}
+                              alt={span.skillName}
+                              style={styles.recastIcon}
+                            />
+                            <span style={styles.recastDuration}>
+                              {skill?.cooldown}s
                             </span>
                           </div>
                         );
@@ -1483,6 +1565,57 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "8px",
     color: "#a5d6a7",
     whiteSpace: "nowrap" as const,
+  },
+  // リキャストレーン
+  recastLane: {
+    display: "flex",
+    height: RECAST_LANE_HEIGHT,
+    position: "relative",
+    marginBottom: "2px",
+  },
+  recastLaneLabel: {
+    width: LANE_LABEL_WIDTH,
+    flexShrink: 0,
+    fontSize: "11px",
+    color: "#777",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingRight: "8px",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+  },
+  recastLaneContent: {
+    position: "relative",
+    flex: 1,
+    borderBottom: "1px solid rgba(255,255,255,0.05)",
+  },
+  recastBar: {
+    position: "absolute",
+    top: "3px",
+    height: RECAST_LANE_HEIGHT - 6,
+    borderRadius: "4px",
+    border: "1px solid #90caf9",
+    backgroundColor: "rgba(144, 202, 249, 0.12)",
+    display: "flex",
+    alignItems: "center",
+    gap: "3px",
+    paddingLeft: "2px",
+    paddingRight: "6px",
+    overflow: "hidden",
+  },
+  recastIcon: {
+    width: "16px",
+    height: "16px",
+    borderRadius: "3px",
+    flexShrink: 0,
+    objectFit: "contain" as const,
+  },
+  recastDuration: {
+    fontSize: "10px",
+    color: "#90caf9",
+    whiteSpace: "nowrap" as const,
+    flexShrink: 0,
   },
   hint: {
     marginTop: "8px",
