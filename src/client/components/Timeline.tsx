@@ -88,35 +88,10 @@ function calcInsertIndex(
   return resolvedEntries.length;
 }
 
-/**
- * 挿入インジケーターのX座標（px）を算出する。
- */
-function calcInsertIndicatorX(
-  insertIndex: number,
-  resolvedEntries: ResolvedTimelineEntry[],
-  skillMap: Map<string, Skill>,
-  recastFn: (skill: Skill, activeBuffs: ActiveBuff[]) => number
-): number {
-  if (resolvedEntries.length === 0) return 0;
-
-  if (insertIndex <= 0) {
-    // 先頭に挿入
-    return resolvedEntries[0].startTime * PX_PER_SEC - 4;
-  }
-
-  if (insertIndex >= resolvedEntries.length) {
-    // 末尾に挿入
-    const last = resolvedEntries[resolvedEntries.length - 1];
-    const skill = skillMap.get(last.skillId);
-    return (last.startTime + (skill ? recastFn(skill, last.activeBuffs) : 0)) * PX_PER_SEC + 4;
-  }
-
-  // 中間に挿入: 前のエントリの終了位置と次のエントリの開始位置の中間
-  const prevEntry = resolvedEntries[insertIndex - 1];
-  const prevSkill = skillMap.get(prevEntry.skillId);
-  const prevEnd = prevEntry.startTime + (prevSkill ? recastFn(prevSkill, prevEntry.activeBuffs) : 0);
-  const nextStart = resolvedEntries[insertIndex].startTime;
-  return ((prevEnd + nextStart) / 2) * PX_PER_SEC;
+/** タイムラインの各エントリ処理後の状態 */
+interface TimelineState {
+  gcdAvailableAt: number;
+  actionAvailableAt: number;
 }
 
 export function Timeline({
@@ -223,15 +198,6 @@ export function Timeline({
     [buffDefMap]
   );
 
-  /** エントリの「次のアクションが可能になるまでの時間」を返す（oGCD挿入位置計算用） */
-  const getEntryActionLockTime = useCallback(
-    (skill: Skill, activeBuffs: ActiveBuff[]) => {
-      const castTime = getEntryCastTime(skill, activeBuffs);
-      return Math.max(castTime, skill.animationLock);
-    },
-    [getEntryCastTime]
-  );
-
   const gcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   const ogcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   for (const entry of resolvedEntries) {
@@ -243,6 +209,38 @@ export function Timeline({
       ogcdEntries.push({ ...entry, skill });
     }
   }
+
+  /**
+   * 各エントリ処理後のタイムライン状態（gcdAvailableAt, actionAvailableAt）を事前計算。
+   * 挿入インジケーターの正確な位置算出に使用する。
+   * states[i] = entry[i]処理後の状態。挿入位置idxの開始時刻算出にはstates[idx-1]を参照。
+   */
+  const timelineStateAtIndex = useMemo(() => {
+    const states: TimelineState[] = [];
+    let gcdAvailableAt = 0;
+    let actionAvailableAt = 0;
+
+    for (const entry of resolvedEntries) {
+      const skill = skillMap.get(entry.skillId);
+      if (!skill) {
+        states.push({ gcdAvailableAt, actionAvailableAt });
+        continue;
+      }
+
+      if (skill.type === "gcd") {
+        const recast = getEntryRecastTime(skill, entry.activeBuffs);
+        const castTime = getEntryCastTime(skill, entry.activeBuffs);
+        gcdAvailableAt = entry.startTime + recast;
+        actionAvailableAt = entry.startTime + Math.max(castTime, skill.animationLock);
+      } else {
+        actionAvailableAt = entry.startTime + skill.animationLock;
+      }
+
+      states.push({ gcdAvailableAt, actionAvailableAt });
+    }
+
+    return states;
+  }, [resolvedEntries, skillMap, getEntryRecastTime, getEntryCastTime]);
 
   // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
   const cooldownSpans = useMemo(() => {
@@ -431,52 +429,31 @@ export function Timeline({
 
   /**
    * 挿入インジケーターのX座標。
-   * GCD: GCDエントリのみを使って表示位置を計算（GCDリキャスト境界間）
-   * oGCD: 全エントリを使って表示位置を計算
+   * A方式: 挿入後にスキルが実際に配置される位置（最速実行可能時刻）を表示する。
+   * 事前計算済みのtimelineStateAtIndexを使い、resolveTimelineと同じロジックで開始時刻を算出。
    */
-  /**
-   * 挿入位置直前の全エントリの終了時刻（animationLock/castTime基準）を算出。
-   * GCDの実行可能時刻は max(GCDリキャスト明け, 直前アクションの硬直明け) なので、
-   * oGCDの硬直やGCDの詠唱がGCDリキャストを超える場合に正しい位置を表示するために必要。
-   */
-  const getActionAvailableAt = useCallback(
-    (combinedInsertIdx: number): number => {
-      if (combinedInsertIdx <= 0) return 0;
-      const prevEntry = resolvedEntries[combinedInsertIdx - 1];
-      if (!prevEntry) return 0;
-      const skill = skillMap.get(prevEntry.skillId);
-      if (!skill) return 0;
-      const castTime = getEntryCastTime(skill, prevEntry.activeBuffs);
-      return prevEntry.startTime + Math.max(castTime, skill.animationLock);
-    },
-    [resolvedEntries, skillMap, getEntryCastTime]
-  );
-
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
-    if (dragType === "gcd") {
-      // combined indexからGCDフィルタ済みインデックスに逆変換
-      let gcdIdx = 0;
-      for (let i = 0; i < gcdResolvedEntries.length; i++) {
-        const combinedPos = resolvedEntries.findIndex((e) => e.uid === gcdResolvedEntries[i].uid);
-        if (combinedPos >= insertIndex) {
-          gcdIdx = i;
-          break;
-        }
-        gcdIdx = i + 1;
+
+    let startTime: number;
+    if (insertIndex <= 0) {
+      // 先頭に挿入: 時刻0から開始
+      startTime = 0;
+    } else {
+      const prevState = timelineStateAtIndex[insertIndex - 1];
+      if (!prevState) {
+        startTime = 0;
+      } else if (dragType === "gcd") {
+        // GCD: max(GCDリキャスト明け, 直前アクション硬直明け)
+        startTime = Math.max(prevState.gcdAvailableAt, prevState.actionAvailableAt);
+      } else {
+        // oGCD: 直前アクション硬直明け
+        startTime = prevState.actionAvailableAt;
       }
-
-      // GCDエントリベースで基本位置を算出
-      const baseX = calcInsertIndicatorX(gcdIdx, gcdResolvedEntries, skillMap, getEntryRecastTime);
-
-      // 直前の全エントリの硬直明け時刻でクランプ（oGCD硬直がGCDリキャストを超える場合の補正）
-      const actionAvailAt = getActionAvailableAt(insertIndex);
-      const actionAvailX = actionAvailAt * PX_PER_SEC + 4;
-      return Math.max(baseX, actionAvailX);
     }
-    // oGCD挿入: 前エントリの「アクション可能時刻」（castTime/animLock基準）で位置計算
-    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryActionLockTime);
-  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getEntryActionLockTime, getActionAvailableAt]);
+
+    return startTime * PX_PER_SEC;
+  }, [insertIndex, dragType, timelineStateAtIndex]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
@@ -1314,6 +1291,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   laneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "12px",
     fontWeight: "bold",
@@ -1430,6 +1408,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   resourceLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
@@ -1479,6 +1458,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   buffLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
@@ -1567,6 +1547,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dotLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
@@ -1636,6 +1617,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   recastLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
