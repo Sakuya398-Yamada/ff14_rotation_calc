@@ -476,7 +476,7 @@ export function Timeline({
   const entriesWithErrors = useMemo(() => {
     const set = new Set<string>();
     for (const entry of resolvedEntries) {
-      if (entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError) {
+      if (entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError) {
         set.add(entry.uid);
       }
     }
@@ -773,7 +773,7 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -815,7 +815,7 @@ export function Timeline({
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
