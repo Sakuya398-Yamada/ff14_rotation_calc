@@ -267,34 +267,6 @@ export function Timeline({
     return e.dataTransfer.types.includes("application/skill-type-gcd") ? "gcd" : "ogcd";
   }, []);
 
-  /** 指定タイプのエントリのみをフィルタ */
-  const filterEntriesByType = useCallback(
-    (type: "gcd" | "ogcd") => {
-      return resolvedEntries.filter((entry) => {
-        const skill = skillMap.get(entry.skillId);
-        return skill && (type === "gcd" ? skill.type === "gcd" : skill.type !== "gcd");
-      });
-    },
-    [resolvedEntries, skillMap]
-  );
-
-  /** フィルタ済みインデックスを元の resolvedEntries のインデックスに変換 */
-  const mapFilteredIndexToCombined = useCallback(
-    (filteredIdx: number, typedEntries: ResolvedTimelineEntry[]): number => {
-      if (filteredIdx >= typedEntries.length) {
-        // 末尾に追加: 最後の同タイプエントリの直後
-        if (typedEntries.length === 0) return resolvedEntries.length;
-        const lastTyped = typedEntries[typedEntries.length - 1];
-        const combinedIdx = resolvedEntries.findIndex((e) => e.uid === lastTyped.uid);
-        return combinedIdx + 1;
-      }
-      // filteredIdx番目の同タイプエントリの前に挿入
-      const targetEntry = typedEntries[filteredIdx];
-      return resolvedEntries.findIndex((e) => e.uid === targetEntry.uid);
-    },
-    [resolvedEntries]
-  );
-
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -307,11 +279,11 @@ export function Timeline({
       if (scrollRef.current && resolvedEntries.length > 0) {
         const rect = scrollRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        const typedEntries = filterEntriesByType(type);
+        // 全エントリに対して挿入位置を計算（GCD/oGCD問わず）
         const idx = calcInsertIndex(
           mouseX,
           scrollRef.current.scrollLeft,
-          typedEntries,
+          resolvedEntries,
           skillMap,
           getEntryRecastTime
         );
@@ -320,7 +292,7 @@ export function Timeline({
         setInsertIndex(null);
       }
     },
-    [resolvedEntries, skillMap, getEntryRecastTime, detectDragType, filterEntriesByType]
+    [resolvedEntries, skillMap, getEntryRecastTime, detectDragType]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -344,37 +316,33 @@ export function Timeline({
       if (scrollRef.current && resolvedEntries.length > 0) {
         const rect = scrollRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        const skill = skillMap.get(skillId);
-        const type: "gcd" | "ogcd" = skill?.type === "gcd" ? "gcd" : "ogcd";
-        const typedEntries = filterEntriesByType(type);
-        const filteredIdx = calcInsertIndex(
+        // 全エントリに対して挿入位置を計算（GCD/oGCD問わず）
+        const idx = calcInsertIndex(
           mouseX,
           scrollRef.current.scrollLeft,
-          typedEntries,
+          resolvedEntries,
           skillMap,
           getEntryRecastTime
         );
-        const combinedIdx = mapFilteredIndexToCombined(filteredIdx, typedEntries);
-        const isInsertMiddle = combinedIdx < resolvedEntries.length;
+        const isInsertMiddle = idx < resolvedEntries.length;
         if (isInsertMiddle) {
           shouldAutoScrollRef.current = false;
         }
-        onAddEntry(skillId, isInsertMiddle ? combinedIdx : undefined);
+        onAddEntry(skillId, isInsertMiddle ? idx : undefined);
       } else {
         onAddEntry(skillId);
       }
       setInsertIndex(null);
       setDragType(null);
     },
-    [onAddEntry, resolvedEntries, skillMap, getEntryRecastTime, filterEntriesByType, mapFilteredIndexToCombined]
+    [onAddEntry, resolvedEntries, skillMap, getEntryRecastTime]
   );
 
-  // 挿入インジケーターのX座標（タイプ別フィルタ済みエントリで計算）
+  // 挿入インジケーターのX座標（全エントリ上のインデックスで計算）
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
-    const typedEntries = filterEntriesByType(dragType);
-    return calcInsertIndicatorX(insertIndex, typedEntries, skillMap, getEntryRecastTime);
-  }, [insertIndex, dragType, filterEntriesByType, skillMap, getEntryRecastTime]);
+    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
+  }, [insertIndex, dragType, resolvedEntries, skillMap, getEntryRecastTime]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
