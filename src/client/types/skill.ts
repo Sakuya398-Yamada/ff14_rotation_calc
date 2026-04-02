@@ -63,6 +63,8 @@ export interface Skill {
   buffApplications?: string[];
   /** 使用時に消費するバフスタック */
   buffConsumptions?: BuffConsumption[];
+  /** 個別リキャストタイム（秒）。oGCDスキル等の固有クールダウン。未設定の場合はリキャスト制約なし */
+  cooldown?: number;
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
@@ -243,6 +245,8 @@ export interface ResolvedTimelineEntry {
   comboErrors: string[];
   /** ボス離脱中に攻撃したエラー */
   untargetableError: boolean;
+  /** リキャスト中に使用したエラー */
+  recastError: boolean;
   /** このスキル使用時にアクティブなバフ一覧 */
   activeBuffs: ActiveBuff[];
 }

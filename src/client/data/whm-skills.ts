@@ -252,6 +252,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: assizeIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 40,
     acquiredLevel: 56,
   },
   {
@@ -263,6 +264,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     icon: presenceOfMindIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 120,
     acquiredLevel: 30,
     buffApplications: ["presence-of-mind", "sacred-sight"],
   },

@@ -171,6 +171,8 @@ export function resolveTimeline(
   const currentActiveBuffs: ActiveBuff[] = [];
   // DoTストリームのマップ（skillId → DoTStream）
   const dotStreams: Map<string, DoTStream> = new Map();
+  // 個別リキャスト追跡: skillId → 次に使用可能になる時刻
+  const skillCooldownUntil: Map<string, number> = new Map();
 
   // リソース初期化
   for (const res of resources) {
@@ -265,8 +267,12 @@ export function resolveTimeline(
       ? isInUntargetableWindow(startTime, untargetableWindows)
       : false;
 
+    // 個別リキャストチェック: cooldownが設定されているスキルが再使用可能時刻前に使用された場合エラー
+    const cooldownUntil = skillCooldownUntil.get(skill.id);
+    const recastError = skill.cooldown !== undefined && cooldownUntil !== undefined && startTime < cooldownUntil;
+
     // エラー判定: いずれかのエラーがある場合、スキル効果（リソース消費・バフ・DoT）を適用しない
-    const hasError = resourceErrors.length > 0 || comboErrors.length > 0 || untargetableError;
+    const hasError = resourceErrors.length > 0 || comboErrors.length > 0 || untargetableError || recastError;
 
     if (!hasError) {
       // リソース変動を適用
@@ -328,6 +334,11 @@ export function resolveTimeline(
         }
       }
 
+      // 個別リキャストのクールダウン開始
+      if (skill.cooldown !== undefined) {
+        skillCooldownUntil.set(skill.id, Math.round((startTime + skill.cooldown) * 1000) / 1000);
+      }
+
       // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
       if (skill.dotPotency && skill.dotDuration) {
         const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
@@ -360,6 +371,7 @@ export function resolveTimeline(
       resourceErrors,
       comboErrors,
       untargetableError,
+      recastError,
       activeBuffs: [...currentActiveBuffs],
     });
   }
@@ -459,7 +471,7 @@ export function calcPps(
   for (const entry of resolvedEntries) {
     if (entry.startTime >= rangeStart && entry.startTime < rangeEnd) {
       // エラーのあるスキルはダメージ計算対象外
-      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError;
+      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) continue;
       const skill = skillMap.get(entry.skillId);
       directPotency += skill?.potency ?? 0;
@@ -501,7 +513,7 @@ export function getFinalResourceState(
   const state: ResourceSnapshot = { ...last.resourceSnapshot };
 
   // エラーのあるスキルはリソース変動を適用しない
-  const hasError = last.resourceErrors.length > 0 || last.comboErrors.length > 0 || last.untargetableError;
+  const hasError = last.resourceErrors.length > 0 || last.comboErrors.length > 0 || last.untargetableError || last.recastError;
   if (!hasError && skill?.resourceChanges) {
     const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
     for (const change of skill.resourceChanges) {
