@@ -202,6 +202,36 @@ export function Timeline({
     [getRecastTime, buffDefMap]
   );
 
+  /** エントリのアクティブバフを考慮した詠唱時間計算 */
+  const getEntryCastTime = useCallback(
+    (skill: Skill, activeBuffs: ActiveBuff[]) => {
+      if (!skill.castTime) return 0;
+      let cast = skill.castTime;
+      if (skill.type === "gcd" && activeBuffs.length > 0) {
+        for (const ab of activeBuffs) {
+          const def = buffDefMap.get(ab.buffId);
+          if (!def) continue;
+          for (const effect of def.effects) {
+            if (effect.type === "speed") {
+              cast = Math.round(cast * effect.value * 1000) / 1000;
+            }
+          }
+        }
+      }
+      return cast;
+    },
+    [buffDefMap]
+  );
+
+  /** エントリの「次のアクションが可能になるまでの時間」を返す（oGCD挿入位置計算用） */
+  const getEntryActionLockTime = useCallback(
+    (skill: Skill, activeBuffs: ActiveBuff[]) => {
+      const castTime = getEntryCastTime(skill, activeBuffs);
+      return Math.max(castTime, skill.animationLock);
+    },
+    [getEntryCastTime]
+  );
+
   const gcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   const ogcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   for (const entry of resolvedEntries) {
@@ -405,9 +435,9 @@ export function Timeline({
    * oGCD: 全エントリを使って表示位置を計算
    */
   /**
-   * 挿入位置直前の全エントリの終了時刻（animationLock基準）を算出。
+   * 挿入位置直前の全エントリの終了時刻（animationLock/castTime基準）を算出。
    * GCDの実行可能時刻は max(GCDリキャスト明け, 直前アクションの硬直明け) なので、
-   * oGCDの硬直がGCDリキャストを超える場合に正しい位置を表示するために必要。
+   * oGCDの硬直やGCDの詠唱がGCDリキャストを超える場合に正しい位置を表示するために必要。
    */
   const getActionAvailableAt = useCallback(
     (combinedInsertIdx: number): number => {
@@ -415,9 +445,11 @@ export function Timeline({
       const prevEntry = resolvedEntries[combinedInsertIdx - 1];
       if (!prevEntry) return 0;
       const skill = skillMap.get(prevEntry.skillId);
-      return prevEntry.startTime + (skill?.animationLock ?? 0);
+      if (!skill) return 0;
+      const castTime = getEntryCastTime(skill, prevEntry.activeBuffs);
+      return prevEntry.startTime + Math.max(castTime, skill.animationLock);
     },
-    [resolvedEntries, skillMap]
+    [resolvedEntries, skillMap, getEntryCastTime]
   );
 
   const indicatorX = useMemo(() => {
@@ -442,8 +474,9 @@ export function Timeline({
       const actionAvailX = actionAvailAt * PX_PER_SEC + 4;
       return Math.max(baseX, actionAvailX);
     }
-    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
-  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getActionAvailableAt]);
+    // oGCD挿入: 前エントリの「アクション可能時刻」（castTime/animLock基準）で位置計算
+    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryActionLockTime);
+  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getEntryActionLockTime, getActionAvailableAt]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
@@ -781,6 +814,7 @@ export function Timeline({
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
+                    const castTime = getEntryCastTime(entry.skill, entry.activeBuffs);
                     const expectedPot = hasError ? null : (
                       expectedMultiplier !== null && entry.skill.potency > 0
                         ? Math.floor(entry.skill.potency * expectedMultiplier)
@@ -799,6 +833,19 @@ export function Timeline({
                           style={styles.recastBar}
                           title={`リキャスト: ${recast}s`}
                         />
+                        {castTime > 0 && (
+                          <div
+                            style={styles.castTimeBar}
+                            title={`詠唱時間: ${castTime}s`}
+                          >
+                            <div
+                              style={{
+                                ...styles.castTimeFill,
+                                width: (castTime / recast) * 100 + "%",
+                              }}
+                            />
+                          </div>
+                        )}
                         <div
                           style={styles.animLockBar}
                           title={`アニメーションロック: ${entry.skill.animationLock}s`}
@@ -816,7 +863,7 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -1297,6 +1344,20 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     height: "4px",
     backgroundColor: "rgba(100, 149, 237, 0.3)",
+    borderRadius: "2px",
+  },
+  castTimeBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "4px",
+    borderRadius: "2px",
+    overflow: "hidden",
+  },
+  castTimeFill: {
+    height: "100%",
+    backgroundColor: "rgba(255, 183, 77, 0.6)",
     borderRadius: "2px",
   },
   animLockBar: {
