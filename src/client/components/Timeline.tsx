@@ -1291,6 +1291,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   laneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "12px",
     fontWeight: "bold",
@@ -1407,6 +1408,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   resourceLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
@@ -1456,6 +1458,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   buffLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
@@ -1544,6 +1547,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dotLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
@@ -1613,6 +1617,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   recastLaneLabel: {
     width: LANE_LABEL_WIDTH,
+    boxSizing: "border-box" as const,
     flexShrink: 0,
     fontSize: "11px",
     color: "#777",
