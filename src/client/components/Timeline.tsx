@@ -214,6 +214,30 @@ export function Timeline({
     }
   }
 
+  // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
+  const cooldownSpans = useMemo(() => {
+    const spans: Map<string, { startTime: number; endTime: number; skillName: string; icon: string }[]> = new Map();
+    for (const entry of resolvedEntries) {
+      const skill = skillMap.get(entry.skillId);
+      if (!skill || skill.cooldown === undefined) continue;
+      // エラーなしで実行されたスキルのみクールダウンを記録
+      if (entry.recastError || entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError) continue;
+      if (!spans.has(skill.id)) {
+        spans.set(skill.id, []);
+      }
+      spans.get(skill.id)!.push({
+        startTime: entry.startTime,
+        endTime: Math.round((entry.startTime + skill.cooldown) * 1000) / 1000,
+        skillName: skill.name,
+        icon: skill.icon,
+      });
+    }
+    return spans;
+  }, [resolvedEntries, skillMap]);
+
+  // リキャスト付きスキルが存在するか
+  const hasRecastSkills = cooldownSpans.size > 0;
+
   const totalDuration = useMemo(() => {
     if (resolvedEntries.length === 0) return 0;
     let maxEnd = 0;
@@ -481,30 +505,6 @@ export function Timeline({
 
     return spans;
   }, [resolvedEntries, buffs]);
-
-  // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
-  const cooldownSpans = useMemo(() => {
-    const spans: Map<string, { startTime: number; endTime: number; skillName: string; icon: string }[]> = new Map();
-    for (const entry of resolvedEntries) {
-      const skill = skillMap.get(entry.skillId);
-      if (!skill || skill.cooldown === undefined) continue;
-      // エラーなしで実行されたスキルのみクールダウンを記録
-      if (entry.recastError || entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError) continue;
-      if (!spans.has(skill.id)) {
-        spans.set(skill.id, []);
-      }
-      spans.get(skill.id)!.push({
-        startTime: entry.startTime,
-        endTime: Math.round((entry.startTime + skill.cooldown) * 1000) / 1000,
-        skillName: skill.name,
-        icon: skill.icon,
-      });
-    }
-    return spans;
-  }, [resolvedEntries, skillMap]);
-
-  // リキャスト付きスキルが存在するか
-  const hasRecastSkills = cooldownSpans.size > 0;
 
   // リソースエラーまたはコンボエラーがあるエントリのUIDセット
   const entriesWithErrors = useMemo(() => {
