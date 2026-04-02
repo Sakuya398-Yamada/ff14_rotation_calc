@@ -55,13 +55,16 @@ export function App() {
 
   const resolvedEntries = timelineResult.entries;
 
-  const handleAddEntry = useCallback((skillId: string, insertIndex?: number) => {
+  const handleAddEntry = useCallback((skillId: string, insertBeforeUid?: string) => {
     const uid = `entry-${nextUid++}`;
     setEntries((prev) => {
-      if (insertIndex !== undefined && insertIndex >= 0 && insertIndex < prev.length) {
-        const next = [...prev];
-        next.splice(insertIndex, 0, { uid, skillId });
-        return next;
+      if (insertBeforeUid) {
+        const targetIndex = prev.findIndex((e) => e.uid === insertBeforeUid);
+        if (targetIndex >= 0) {
+          const next = [...prev];
+          next.splice(targetIndex, 0, { uid, skillId });
+          return next;
+        }
       }
       return [...prev, { uid, skillId }];
     });
