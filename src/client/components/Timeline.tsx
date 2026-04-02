@@ -280,10 +280,8 @@ export function Timeline({
   const mapGcdIndexToCombined = useCallback(
     (gcdIdx: number): number => {
       if (gcdIdx >= gcdResolvedEntries.length) {
-        // 末尾に追加: 最後のGCDエントリの直後
-        if (gcdResolvedEntries.length === 0) return resolvedEntries.length;
-        const lastGcd = gcdResolvedEntries[gcdResolvedEntries.length - 1];
-        return resolvedEntries.findIndex((e) => e.uid === lastGcd.uid) + 1;
+        // 末尾に追加: 最後のGCD以降のoGCDも含めた全エントリの末尾
+        return resolvedEntries.length;
       }
       // gcdIdx番目のGCDエントリの前に挿入
       const targetEntry = gcdResolvedEntries[gcdIdx];
