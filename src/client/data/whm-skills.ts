@@ -24,8 +24,6 @@ const GCD_RECAST = 2.5;
 /** デフォルトのアニメーションロック（秒） */
 const DEFAULT_ANIMATION_LOCK = 0.65;
 
-/** GCDスキルのデフォルト詠唱時間（秒） */
-const DEFAULT_CAST_TIME = 1.5;
 
 /**
  * 白魔道士（WHM）攻撃スキル一覧
@@ -42,7 +40,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: stoneIcon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 1,
   },
@@ -54,7 +52,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: stone2Icon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 18,
     replacesSkillId: "stone",
@@ -67,7 +65,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: stone3Icon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 54,
     replacesSkillId: "stone2",
@@ -80,7 +78,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: stone4Icon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 64,
     replacesSkillId: "stone3",
@@ -93,7 +91,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: glareIcon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 72,
     replacesSkillId: "stone4",
@@ -106,7 +104,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: glare3Icon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 82,
     replacesSkillId: "glare",
@@ -170,7 +168,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: holyIcon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 45,
   },
@@ -182,7 +180,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     target: "enemy",
     icon: holy3Icon,
     recastTime: GCD_RECAST,
-    castTime: DEFAULT_CAST_TIME,
+    castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 82,
     replacesSkillId: "holy",
