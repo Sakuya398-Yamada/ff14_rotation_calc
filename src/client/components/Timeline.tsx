@@ -267,32 +267,43 @@ export function Timeline({
     return e.dataTransfer.types.includes("application/skill-type-gcd") ? "gcd" : "ogcd";
   }, []);
 
-  /** 指定タイプのエントリのみをフィルタ */
-  const filterEntriesByType = useCallback(
-    (type: "gcd" | "ogcd") => {
-      return resolvedEntries.filter((entry) => {
-        const skill = skillMap.get(entry.skillId);
-        return skill && (type === "gcd" ? skill.type === "gcd" : skill.type !== "gcd");
-      });
-    },
+  /** GCDエントリのみをフィルタ */
+  const gcdResolvedEntries = useMemo(
+    () => resolvedEntries.filter((entry) => {
+      const skill = skillMap.get(entry.skillId);
+      return skill && skill.type === "gcd";
+    }),
     [resolvedEntries, skillMap]
   );
 
-  /** フィルタ済みインデックスを元の resolvedEntries のインデックスに変換 */
-  const mapFilteredIndexToCombined = useCallback(
-    (filteredIdx: number, typedEntries: ResolvedTimelineEntry[]): number => {
-      if (filteredIdx >= typedEntries.length) {
-        // 末尾に追加: 最後の同タイプエントリの直後
-        if (typedEntries.length === 0) return resolvedEntries.length;
-        const lastTyped = typedEntries[typedEntries.length - 1];
-        const combinedIdx = resolvedEntries.findIndex((e) => e.uid === lastTyped.uid);
-        return combinedIdx + 1;
+  /** GCDフィルタ済みインデックスを全エントリ上のインデックスに変換 */
+  const mapGcdIndexToCombined = useCallback(
+    (gcdIdx: number): number => {
+      if (gcdIdx >= gcdResolvedEntries.length) {
+        // 末尾に追加: 最後のGCD以降のoGCDも含めた全エントリの末尾
+        return resolvedEntries.length;
       }
-      // filteredIdx番目の同タイプエントリの前に挿入
-      const targetEntry = typedEntries[filteredIdx];
+      // gcdIdx番目のGCDエントリの前に挿入
+      const targetEntry = gcdResolvedEntries[gcdIdx];
       return resolvedEntries.findIndex((e) => e.uid === targetEntry.uid);
     },
-    [resolvedEntries]
+    [resolvedEntries, gcdResolvedEntries]
+  );
+
+  /**
+   * ドラッグ中のマウス位置から挿入インデックス（resolvedEntries上）を計算する。
+   * GCD: GCDエントリのみで計算し、combined変換（GCDリキャスト境界間に配置）
+   * oGCD: 全エントリで計算（任意の位置に配置）
+   */
+  const calcCombinedInsertIndex = useCallback(
+    (mouseX: number, scrollLeft: number, type: "gcd" | "ogcd"): number => {
+      if (type === "gcd") {
+        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, gcdResolvedEntries, skillMap, getEntryRecastTime);
+        return mapGcdIndexToCombined(gcdIdx);
+      }
+      return calcInsertIndex(mouseX, scrollLeft, resolvedEntries, skillMap, getEntryRecastTime);
+    },
+    [resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, mapGcdIndexToCombined]
   );
 
   const handleDragOver = useCallback(
@@ -307,20 +318,13 @@ export function Timeline({
       if (scrollRef.current && resolvedEntries.length > 0) {
         const rect = scrollRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        const typedEntries = filterEntriesByType(type);
-        const idx = calcInsertIndex(
-          mouseX,
-          scrollRef.current.scrollLeft,
-          typedEntries,
-          skillMap,
-          getEntryRecastTime
-        );
+        const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
         setInsertIndex(idx);
       } else {
         setInsertIndex(null);
       }
     },
-    [resolvedEntries, skillMap, getEntryRecastTime, detectDragType, filterEntriesByType]
+    [resolvedEntries, detectDragType, calcCombinedInsertIndex]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -346,35 +350,66 @@ export function Timeline({
         const mouseX = e.clientX - rect.left;
         const skill = skillMap.get(skillId);
         const type: "gcd" | "ogcd" = skill?.type === "gcd" ? "gcd" : "ogcd";
-        const typedEntries = filterEntriesByType(type);
-        const filteredIdx = calcInsertIndex(
-          mouseX,
-          scrollRef.current.scrollLeft,
-          typedEntries,
-          skillMap,
-          getEntryRecastTime
-        );
-        const combinedIdx = mapFilteredIndexToCombined(filteredIdx, typedEntries);
-        const isInsertMiddle = combinedIdx < resolvedEntries.length;
+        const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
+        const isInsertMiddle = idx < resolvedEntries.length;
         if (isInsertMiddle) {
           shouldAutoScrollRef.current = false;
         }
-        onAddEntry(skillId, isInsertMiddle ? combinedIdx : undefined);
+        onAddEntry(skillId, isInsertMiddle ? idx : undefined);
       } else {
         onAddEntry(skillId);
       }
       setInsertIndex(null);
       setDragType(null);
     },
-    [onAddEntry, resolvedEntries, skillMap, getEntryRecastTime, filterEntriesByType, mapFilteredIndexToCombined]
+    [onAddEntry, resolvedEntries, skillMap, calcCombinedInsertIndex]
   );
 
-  // 挿入インジケーターのX座標（タイプ別フィルタ済みエントリで計算）
+  /**
+   * 挿入インジケーターのX座標。
+   * GCD: GCDエントリのみを使って表示位置を計算（GCDリキャスト境界間）
+   * oGCD: 全エントリを使って表示位置を計算
+   */
+  /**
+   * 挿入位置直前の全エントリの終了時刻（animationLock基準）を算出。
+   * GCDの実行可能時刻は max(GCDリキャスト明け, 直前アクションの硬直明け) なので、
+   * oGCDの硬直がGCDリキャストを超える場合に正しい位置を表示するために必要。
+   */
+  const getActionAvailableAt = useCallback(
+    (combinedInsertIdx: number): number => {
+      if (combinedInsertIdx <= 0) return 0;
+      const prevEntry = resolvedEntries[combinedInsertIdx - 1];
+      if (!prevEntry) return 0;
+      const skill = skillMap.get(prevEntry.skillId);
+      return prevEntry.startTime + (skill?.animationLock ?? 0);
+    },
+    [resolvedEntries, skillMap]
+  );
+
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
-    const typedEntries = filterEntriesByType(dragType);
-    return calcInsertIndicatorX(insertIndex, typedEntries, skillMap, getEntryRecastTime);
-  }, [insertIndex, dragType, filterEntriesByType, skillMap, getEntryRecastTime]);
+    if (dragType === "gcd") {
+      // combined indexからGCDフィルタ済みインデックスに逆変換
+      let gcdIdx = 0;
+      for (let i = 0; i < gcdResolvedEntries.length; i++) {
+        const combinedPos = resolvedEntries.findIndex((e) => e.uid === gcdResolvedEntries[i].uid);
+        if (combinedPos >= insertIndex) {
+          gcdIdx = i;
+          break;
+        }
+        gcdIdx = i + 1;
+      }
+
+      // GCDエントリベースで基本位置を算出
+      const baseX = calcInsertIndicatorX(gcdIdx, gcdResolvedEntries, skillMap, getEntryRecastTime);
+
+      // 直前の全エントリの硬直明け時刻でクランプ（oGCD硬直がGCDリキャストを超える場合の補正）
+      const actionAvailAt = getActionAvailableAt(insertIndex);
+      const actionAvailX = actionAvailAt * PX_PER_SEC + 4;
+      return Math.max(baseX, actionAvailX);
+    }
+    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
+  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getActionAvailableAt]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
