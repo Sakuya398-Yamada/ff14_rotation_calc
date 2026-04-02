@@ -1311,7 +1311,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "sticky" as const,
     left: 0,
     zIndex: 6,
-    backgroundColor: "#16213e",
+    backgroundColor: "#0f0f23",
   },
   laneContent: {
     position: "relative",
@@ -1433,7 +1433,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "sticky" as const,
     left: 0,
     zIndex: 6,
-    backgroundColor: "#16213e",
+    backgroundColor: "#0f0f23",
   },
   resourceLaneContent: {
     position: "relative",
@@ -1488,7 +1488,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "sticky" as const,
     left: 0,
     zIndex: 6,
-    backgroundColor: "#16213e",
+    backgroundColor: "#0f0f23",
   },
   buffLaneContent: {
     position: "relative",
@@ -1533,7 +1533,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "sticky" as const,
     left: 0,
     zIndex: 6,
-    backgroundColor: "#16213e",
+    backgroundColor: "#0f0f23",
   },
   rulerContent: {
     position: "relative",
@@ -1583,7 +1583,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "sticky" as const,
     left: 0,
     zIndex: 6,
-    backgroundColor: "#16213e",
+    backgroundColor: "#0f0f23",
   },
   dotLaneContent: {
     position: "relative",
@@ -1657,7 +1657,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "sticky" as const,
     left: 0,
     zIndex: 6,
-    backgroundColor: "#16213e",
+    backgroundColor: "#0f0f23",
     gap: "3px",
   },
   recastLabelIcon: {
