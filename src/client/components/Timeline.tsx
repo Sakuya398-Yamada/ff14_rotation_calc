@@ -984,7 +984,7 @@ export function Timeline({
                           <div
                             key={i}
                             style={{
-                              ...styles.recastBar,
+                              ...styles.cooldownBar,
                               left,
                               width,
                             }}
@@ -1590,7 +1590,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     borderBottom: "1px solid rgba(255,255,255,0.05)",
   },
-  recastBar: {
+  cooldownBar: {
     position: "absolute",
     top: "3px",
     height: RECAST_LANE_HEIGHT - 6,
