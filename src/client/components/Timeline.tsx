@@ -33,7 +33,7 @@ const RESOURCE_DOT_SIZE = 10;
 interface TimelineProps {
   skills: Skill[];
   resolvedEntries: ResolvedTimelineEntry[];
-  onAddEntry: (skillId: string, insertIndex?: number) => void;
+  onAddEntry: (skillId: string, insertBeforeUid?: string) => void;
   onRemoveEntry: (uid: string) => void;
   totalPotency: number;
   resources: ResourceDefinition[];
@@ -355,7 +355,7 @@ export function Timeline({
         if (isInsertMiddle) {
           shouldAutoScrollRef.current = false;
         }
-        onAddEntry(skillId, isInsertMiddle ? idx : undefined);
+        onAddEntry(skillId, isInsertMiddle ? resolvedEntries[idx].uid : undefined);
       } else {
         onAddEntry(skillId);
       }
