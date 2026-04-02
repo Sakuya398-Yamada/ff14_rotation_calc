@@ -202,12 +202,16 @@ export function resolveTimeline(
         }
       }
 
-      // 速度バフを適用してリキャスト計算
+      // 速度バフを適用してリキャスト・詠唱時間計算
       const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap);
       const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
+      const castTime = skill.castTime
+        ? Math.round(skill.castTime * speedMul * 1000) / 1000
+        : 0;
 
       gcdAvailableAt = startTime + recastTime;
-      actionAvailableAt = startTime + skill.animationLock;
+      // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
+      actionAvailableAt = startTime + Math.max(castTime, skill.animationLock);
     } else {
       startTime = actionAvailableAt;
       startTime = Math.round(startTime * 1000) / 1000;

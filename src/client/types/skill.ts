@@ -63,6 +63,8 @@ export interface Skill {
   buffApplications?: string[];
   /** 使用時に消費するバフスタック */
   buffConsumptions?: BuffConsumption[];
+  /** 詠唱時間（秒）。詠唱中はoGCDスキルを使用できない。未設定の場合はインスタント（詠唱なし） */
+  castTime?: number;
   /** 個別リキャストタイム（秒）。oGCDスキル等の固有クールダウン。未設定の場合はリキャスト制約なし */
   cooldown?: number;
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
