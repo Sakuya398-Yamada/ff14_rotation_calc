@@ -1338,7 +1338,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   castTimeBar: {
     position: "absolute",
-    top: "6px",
+    top: 0,
     left: 0,
     right: 0,
     height: "4px",
