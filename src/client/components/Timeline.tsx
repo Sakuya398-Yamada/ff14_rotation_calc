@@ -223,6 +223,15 @@ export function Timeline({
     [buffDefMap]
   );
 
+  /** エントリの「次のアクションが可能になるまでの時間」を返す（oGCD挿入位置計算用） */
+  const getEntryActionLockTime = useCallback(
+    (skill: Skill, activeBuffs: ActiveBuff[]) => {
+      const castTime = getEntryCastTime(skill, activeBuffs);
+      return Math.max(castTime, skill.animationLock);
+    },
+    [getEntryCastTime]
+  );
+
   const gcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   const ogcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
   for (const entry of resolvedEntries) {
@@ -465,8 +474,9 @@ export function Timeline({
       const actionAvailX = actionAvailAt * PX_PER_SEC + 4;
       return Math.max(baseX, actionAvailX);
     }
-    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryRecastTime);
-  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getActionAvailableAt]);
+    // oGCD挿入: 前エントリの「アクション可能時刻」（castTime/animLock基準）で位置計算
+    return calcInsertIndicatorX(insertIndex, resolvedEntries, skillMap, getEntryActionLockTime);
+  }, [insertIndex, dragType, resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getEntryActionLockTime, getActionAvailableAt]);
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
