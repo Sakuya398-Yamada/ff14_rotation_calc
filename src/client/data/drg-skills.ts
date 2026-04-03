@@ -342,6 +342,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     cooldown: 40,
     acquiredLevel: 6,
     buffApplications: ["life-surge"],
+    traitPotencyOverrides: [
+      { traitLevel: 88, maxCharges: 2 },
+    ],
   },
   {
     id: "lance-charge",
