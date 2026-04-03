@@ -17,6 +17,9 @@ import { calcGcd, calcExpectedMultiplier } from "./stat-calc";
 /** DoTティック間隔（秒） */
 const DOT_TICK_INTERVAL = 3;
 
+/** コンボタイマー（秒）。この時間以上経過するとコンボがリセットされる */
+const COMBO_TIMER = 15;
+
 /**
  * 自動生成タイマーの状態。
  * リソースが最大未満になった時点からタイマーが開始し、
@@ -156,6 +159,31 @@ function consumeGuaranteedCritBuffs(
 }
 
 /**
+ * アクティブなバフからconsumeOnGcd効果を持つバフを自動消費する。
+ * GCDスキル使用時に呼び出され、対象バフを除去する。
+ */
+function consumeOnGcdBuffs(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): void {
+  for (let i = activeBuffs.length - 1; i >= 0; i--) {
+    const def = buffDefMap.get(activeBuffs[i].buffId);
+    if (!def) continue;
+    if (def.effects.some((e) => e.type === "consumeOnGcd")) {
+      const ab = activeBuffs[i];
+      if (ab.stacks !== undefined) {
+        ab.stacks = Math.max(0, ab.stacks - 1);
+        if (ab.stacks === 0) {
+          activeBuffs.splice(i, 1);
+        }
+      } else {
+        activeBuffs.splice(i, 1);
+      }
+    }
+  }
+}
+
+/**
  * アクティブなバフから威力バフの合成倍率を計算する。
  */
 function getPotencyMultiplier(
@@ -239,6 +267,10 @@ export function resolveTimeline(
   // 個別リキャスト追跡: skillId → 次に使用可能になる時刻
   const skillCooldownUntil: Map<string, number> = new Map();
 
+  // コンボ状態追跡
+  let lastComboSkillId: string | null = null;
+  let lastComboTime = -Infinity;
+
   // リソース初期化
   for (const res of resources) {
     const initial = res.initialStacks ?? 0;
@@ -250,13 +282,13 @@ export function resolveTimeline(
   }
 
   for (const entry of entries) {
-    const skill = skillMap.get(entry.skillId);
-    if (!skill) continue;
+    const originalSkill = skillMap.get(entry.skillId);
+    if (!originalSkill) continue;
 
     let startTime: number;
 
-    if (skill.type === "gcd") {
-      const baseRecast = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
+    if (originalSkill.type === "gcd") {
+      const baseRecast = stats ? calcGcd(originalSkill.recastTime, stats) : originalSkill.recastTime;
       startTime = Math.max(gcdAvailableAt, actionAvailableAt);
       startTime = Math.round(startTime * 1000) / 1000;
 
@@ -270,13 +302,13 @@ export function resolveTimeline(
       // 速度バフを適用してリキャスト・詠唱時間計算
       const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap);
       const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
-      const castTime = skill.castTime
-        ? Math.round(skill.castTime * speedMul * 1000) / 1000
+      const castTime = originalSkill.castTime
+        ? Math.round(originalSkill.castTime * speedMul * 1000) / 1000
         : 0;
 
       gcdAvailableAt = startTime + recastTime;
       // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
-      actionAvailableAt = startTime + Math.max(castTime, skill.animationLock);
+      actionAvailableAt = startTime + Math.max(castTime, originalSkill.animationLock);
     } else {
       startTime = actionAvailableAt;
       startTime = Math.round(startTime * 1000) / 1000;
@@ -288,7 +320,23 @@ export function resolveTimeline(
         }
       }
 
-      actionAvailableAt = startTime + skill.animationLock;
+      actionAvailableAt = startTime + originalSkill.animationLock;
+    }
+
+    // 自動変化チェック: バフ条件を満たす場合、変化先スキルに差し替え
+    let skill = originalSkill;
+    let resolvedSkillId = entry.skillId;
+    if (originalSkill.autoTransform) {
+      const transformBuff = currentActiveBuffs.find(
+        (ab) => ab.buffId === originalSkill.autoTransform!.buffId
+      );
+      if (transformBuff) {
+        const transformedSkill = skillMap.get(originalSkill.autoTransform.skillId);
+        if (transformedSkill) {
+          skill = transformedSkill;
+          resolvedSkillId = transformedSkill.id;
+        }
+      }
     }
 
     // 自動生成リソースを時刻に応じて加算
@@ -331,6 +379,20 @@ export function resolveTimeline(
       }
     }
 
+    // WSコンボ判定: comboFromが設定されているGCDスキルのコンボ成否を判定
+    let wsComboError = false;
+    if (skill.comboFrom && skill.type === "gcd") {
+      const comboTimerExpired = (startTime - lastComboTime) >= COMBO_TIMER;
+      const comboMatch = lastComboSkillId !== null && skill.comboFrom.includes(lastComboSkillId);
+      wsComboError = comboTimerExpired || !comboMatch;
+    }
+
+    // コンボ成否に基づく威力決定
+    let resolvedPotency = skill.potency;
+    if (wsComboError && skill.nonComboPotency !== undefined) {
+      resolvedPotency = skill.nonComboPotency;
+    }
+
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
     const untargetableError = skill.target === "enemy" && untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
@@ -340,7 +402,8 @@ export function resolveTimeline(
     const cooldownUntil = skillCooldownUntil.get(skill.id);
     const recastError = skill.cooldown !== undefined && cooldownUntil !== undefined && startTime < cooldownUntil;
 
-    // エラー判定: いずれかのエラーがある場合、スキル効果（リソース消費・バフ・DoT）を適用しない
+    // ハードエラー判定: リソース不足・バフスタック不足・ボス離脱・リキャスト中
+    // （wsComboErrorはハードエラーではない: スキルは実行されるが非コンボ威力になる）
     const hasError = resourceErrors.length > 0 || comboErrors.length > 0 || untargetableError || recastError;
 
     if (!hasError) {
@@ -356,6 +419,27 @@ export function resolveTimeline(
           );
 
           // リソースが最大未満になったら自動生成タイマーを開始
+          if (
+            def.autoGenerateInterval &&
+            resourceState[change.resourceId] < def.maxStacks &&
+            autoGenTimers[change.resourceId].startedAt === null
+          ) {
+            autoGenTimers[change.resourceId].startedAt = startTime;
+          }
+        }
+      }
+
+      // コンボ成立時のみのリソース変動を適用
+      if (!wsComboError && skill.comboResourceChanges) {
+        for (const change of skill.comboResourceChanges) {
+          const def = resourceDefMap.get(change.resourceId);
+          if (!def) continue;
+          const prevValue = resourceState[change.resourceId];
+          resourceState[change.resourceId] = Math.max(
+            0,
+            Math.min(prevValue + change.amount, def.maxStacks)
+          );
+
           if (
             def.autoGenerateInterval &&
             resourceState[change.resourceId] < def.maxStacks &&
@@ -403,13 +487,35 @@ export function resolveTimeline(
         }
       }
 
+      // コンボ成立時のみのバフ適用
+      if (!wsComboError && skill.comboBuffApplications) {
+        for (const buffId of skill.comboBuffApplications) {
+          const buffDef = buffDefMap.get(buffId);
+          if (!buffDef) continue;
+
+          const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+          const newBuff: ActiveBuff = {
+            buffId,
+            startTime,
+            endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+            stacks: buffDef.maxStacks,
+          };
+          if (existingIdx >= 0) {
+            currentActiveBuffs[existingIdx] = newBuff;
+          } else {
+            currentActiveBuffs.push(newBuff);
+          }
+        }
+      }
+
       // 個別リキャストのクールダウン開始
       if (skill.cooldown !== undefined) {
         skillCooldownUntil.set(skill.id, Math.round((startTime + skill.cooldown) * 1000) / 1000);
       }
 
       // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
-      if (skill.dotPotency && skill.dotDuration) {
+      // コンボ不成立時はDoTを適用しない（コンボ成立時の追加効果扱い）
+      if (skill.dotPotency && skill.dotDuration && !wsComboError) {
         const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
         const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
@@ -443,15 +549,31 @@ export function resolveTimeline(
       consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap);
     }
 
+    // GCDスキル実行後、consumeOnGcdバフを自動消費（竜眼等）
+    // 自動変化でバフが既にbuffConsumptionsで消費されていない場合のみ
+    if (!hasError && skill.type === "gcd") {
+      consumeOnGcdBuffs(currentActiveBuffs, buffDefMap);
+    }
+
+    // コンボ状態更新: GCDスキルを使用した場合、コンボ状態を更新
+    // comboFromを持つスキルまたはコンボ系スキルの起点となるスキルはコンボ状態を更新する
+    if (skill.type === "gcd" && !hasError) {
+      lastComboSkillId = resolvedSkillId;
+      lastComboTime = startTime;
+    }
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
+      resolvedSkillId,
+      resolvedPotency,
       startTime,
       resourceSnapshot: snapshot,
       resourceErrors,
       comboErrors,
       untargetableError,
       recastError,
+      wsComboError,
       activeBuffs: [...currentActiveBuffs],
       buffMultiplier,
       critRateBonus,
@@ -515,7 +637,7 @@ export function resolveTimeline(
   // 最後のGCDのリキャスト完了時刻を算出
   let lastGcdEndTime = 0;
   for (const entry of resolved) {
-    const skill = skillMap.get(entry.skillId);
+    const skill = skillMap.get(entry.resolvedSkillId);
     if (!skill || skill.type !== "gcd") continue;
     const baseRecast = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
     const speedMul = getSpeedMultiplier(entry.activeBuffs, buffDefMap);
@@ -535,7 +657,7 @@ export function resolveTimeline(
 
 /**
  * 指定範囲内のPPS（Power Per Second）を計算する。
- * - 直接威力: startTime が範囲内にあるスキルの威力を合算
+ * - 直接威力: startTime が範囲内にあるスキルの威力を合算（resolvedPotencyを使用）
  * - DoT威力: time が範囲内にあるDoTティックの威力を合算
  * - PPS = 合計威力 / 範囲の秒数
  */
@@ -553,11 +675,11 @@ export function calcPps(
   let directPotency = 0;
   for (const entry of resolvedEntries) {
     if (entry.startTime >= rangeStart && entry.startTime < rangeEnd) {
-      // エラーのあるスキルはダメージ計算対象外
+      // ハードエラーのあるスキルはダメージ計算対象外
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) continue;
-      const skill = skillMap.get(entry.skillId);
-      const buffedPotency = Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
+      // resolvedPotencyを使用（コンボ成否・自動変化を反映済み）
+      const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
       const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus);
       directPotency += Math.floor(buffedPotency * entryMul);
     }
@@ -595,7 +717,7 @@ export function getFinalResourceState(
 
   // 最後のエントリのスナップショットにそのスキルの変動を適用したものが最終状態
   const last = resolvedEntries[resolvedEntries.length - 1];
-  const skill = skillMap.get(last.skillId);
+  const skill = skillMap.get(last.resolvedSkillId);
   const state: ResourceSnapshot = { ...last.resourceSnapshot };
 
   // エラーのあるスキルはリソース変動を適用しない

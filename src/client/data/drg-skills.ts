@@ -45,12 +45,13 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 竜騎士（DRG）攻撃スキル一覧
- * 威力はジョブガイド準拠（コンボ時威力を採用、方向指定ボーナスなし）
- * コンボシステムは未実装のため、コンボ条件・非コンボ時威力は定義しない
+ * 威力はジョブガイド準拠（コンボ時威力を基本potencyに採用、方向指定ボーナスなし）
+ * comboFrom: コンボ元スキルIDリスト
+ * nonComboPotency: コンボ不成立時の威力
  */
 export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
-  // GCD: 単体コンボルート1（トゥルースラスト → ボーパルスラスト → フルスラスト）
+  // GCD: 単体コンボルート1（トゥルースラスト → ボーパルスラスト → フルスラスト → 竜牙竜爪 → 雲蒸竜変）
   // ============================================================
   {
     id: "true-thrust",
@@ -62,11 +63,14 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 1,
+    autoTransform: { buffId: "dragons-eye", skillId: "raiden-thrust" },
   },
   {
     id: "vorpal-thrust",
     name: "ボーパルスラスト",
     potency: 280,
+    nonComboPotency: 130,
+    comboFrom: ["true-thrust", "raiden-thrust"],
     type: "gcd",
     target: "enemy",
     icon: vorpalThrustIcon,
@@ -78,6 +82,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "full-thrust",
     name: "フルスラスト",
     potency: 380,
+    nonComboPotency: 100,
+    comboFrom: ["vorpal-thrust"],
     type: "gcd",
     target: "enemy",
     icon: fullThrustIcon,
@@ -89,6 +95,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "fang-and-claw",
     name: "竜牙竜爪",
     potency: 300,
+    nonComboPotency: 140,
+    comboFrom: ["full-thrust", "heavens-thrust"],
     type: "gcd",
     target: "enemy",
     icon: fangAndClawIcon,
@@ -98,12 +106,15 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
 
   // ============================================================
-  // GCD: 単体コンボルート2（トゥルースラスト → ディセムボウル → 桜華狂咲）
+  // GCD: 単体コンボルート2（トゥルースラスト → ディセムボウル → 桜華狂咲 → 竜尾大車輪 → 雲蒸竜変）
   // ============================================================
   {
     id: "disembowel",
     name: "ディセムボウル",
     potency: 250,
+    nonComboPotency: 140,
+    comboFrom: ["true-thrust", "raiden-thrust"],
+    comboBuffApplications: ["power-surge"],
     type: "gcd",
     target: "enemy",
     icon: disembowelIcon,
@@ -115,6 +126,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "chaos-thrust",
     name: "桜華狂咲",
     potency: 220,
+    nonComboPotency: 100,
+    comboFrom: ["disembowel"],
     type: "gcd",
     target: "enemy",
     icon: chaosThrustIcon,
@@ -128,6 +141,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "wheeling-thrust",
     name: "竜尾大車輪",
     potency: 300,
+    nonComboPotency: 140,
+    comboFrom: ["chaos-thrust", "chaotic-spring"],
     type: "gcd",
     target: "enemy",
     icon: wheelingThrustIcon,
@@ -149,13 +164,15 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 64,
+    comboFrom: ["fang-and-claw", "wheeling-thrust"],
+    comboBuffApplications: ["dragons-eye"],
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 460 },
     ],
   },
 
   // ============================================================
-  // GCD: 竜眼系（自動変化スキル、条件付きだがパレットに個別表示）
+  // GCD: 竜眼系（自動変化スキル）
   // ============================================================
   {
     id: "raiden-thrust",
@@ -167,6 +184,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 76,
+    buffConsumptions: [{ buffId: "dragons-eye", stacks: 1 }],
     resourceChanges: [
       { resourceId: "firstminds-focus", amount: 1 },
     ],
@@ -200,11 +218,15 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 40,
+    autoTransform: { buffId: "dragons-eye", skillId: "draconian-fury" },
   },
   {
     id: "sonic-thrust",
     name: "ソニックスラスト",
     potency: 120,
+    nonComboPotency: 100,
+    comboFrom: ["doom-spike", "draconian-fury"],
+    comboBuffApplications: ["power-surge"],
     type: "gcd",
     target: "enemy",
     icon: sonicThrustIcon,
@@ -216,6 +238,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "coerthan-torment",
     name: "クルザントーメント",
     potency: 150,
+    nonComboPotency: 100,
+    comboFrom: ["sonic-thrust"],
+    comboBuffApplications: ["dragons-eye"],
     type: "gcd",
     target: "enemy",
     icon: coerthanTormentIcon,
@@ -233,6 +258,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 82,
+    buffConsumptions: [{ buffId: "dragons-eye", stacks: 1 }],
     resourceChanges: [
       { resourceId: "firstminds-focus", amount: 1 },
     ],
@@ -245,6 +271,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "heavens-thrust",
     name: "ヘヴンスラスト",
     potency: 460,
+    nonComboPotency: 160,
+    comboFrom: ["vorpal-thrust", "lance-barrage"],
     type: "gcd",
     target: "enemy",
     icon: heavensThrustIcon,
@@ -257,6 +285,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "chaotic-spring",
     name: "桜華繚乱",
     potency: 300,
+    nonComboPotency: 140,
+    comboFrom: ["disembowel", "spiral-blow"],
     type: "gcd",
     target: "enemy",
     icon: chaoticSpringIcon,
@@ -271,6 +301,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "lance-barrage",
     name: "スラストラッシュ",
     potency: 340,
+    nonComboPotency: 130,
+    comboFrom: ["true-thrust", "raiden-thrust"],
     type: "gcd",
     target: "enemy",
     icon: lanceBarrageIcon,
@@ -283,6 +315,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     id: "spiral-blow",
     name: "スパイラルブロウ",
     potency: 300,
+    nonComboPotency: 140,
+    comboFrom: ["true-thrust", "raiden-thrust"],
+    comboBuffApplications: ["power-surge"],
     type: "gcd",
     target: "enemy",
     icon: spiralBlowIcon,

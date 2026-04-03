@@ -71,6 +71,21 @@ export interface Skill {
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
   dotDuration?: number;
+  /** コンボ元スキルIDリスト（いずれかの直後に使用するとコンボ成立） */
+  comboFrom?: string[];
+  /** 非コンボ時の威力（コンボ不成立時に適用。未設定の場合はpotencyを使用） */
+  nonComboPotency?: number;
+  /** コンボ成立時のみ付与するバフのIDリスト */
+  comboBuffApplications?: string[];
+  /** コンボ成立時のみ適用するリソース変動 */
+  comboResourceChanges?: ResourceChange[];
+  /** 自動変化条件（指定バフがアクティブ時に別スキルに変化） */
+  autoTransform?: {
+    /** 変化条件となるバフID */
+    buffId: string;
+    /** 変化先スキルID */
+    skillId: string;
+  };
 }
 
 /** タイムラインに配置されたスキル */
@@ -119,7 +134,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "guaranteedCrit";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "guaranteedCrit" | "consumeOnGcd";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -131,6 +146,7 @@ export interface BuffEffect {
    * - potency: 威力乗算倍率（1.1 = 威力×1.1）
    * - critRate: クリティカル発生率加算値（0.1 = +10%）
    * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
+   * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
    * - stat: ステータス加算値
    * - resource: リソース変動量
    */
@@ -237,8 +253,12 @@ export interface TimelineResult {
 export interface ResolvedTimelineEntry {
   /** タイムラインエントリの一意ID */
   uid: string;
-  /** 参照するスキルのID */
+  /** 参照するスキルのID（元のタイムラインエントリのスキルID） */
   skillId: string;
+  /** 実際に使用されたスキルのID（自動変化後。変化なしの場合はskillIdと同じ） */
+  resolvedSkillId: string;
+  /** 実際に適用される威力（コンボ成否・自動変化を反映済み） */
+  resolvedPotency: number;
   /** 開始時刻（秒） */
   startTime: number;
   /** スキル実行前のリソース状態 */
@@ -251,6 +271,8 @@ export interface ResolvedTimelineEntry {
   untargetableError: boolean;
   /** リキャスト中に使用したエラー */
   recastError: boolean;
+  /** WSコンボ不成立（エラーではないがコンボ威力が適用されない） */
+  wsComboError: boolean;
   /** このスキル使用時にアクティブなバフ一覧 */
   activeBuffs: ActiveBuff[];
   /** 威力バフの合成倍率（1.0 = バフなし） */
