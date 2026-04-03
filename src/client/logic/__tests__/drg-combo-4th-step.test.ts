@@ -129,6 +129,40 @@ describe("竜騎士4段目→5段目コンボ（autoTransform）", () => {
     expect(result.entries[4].wsComboError).toBe(false);
   });
 
+  it("ルート1: 竜牙竜爪の後に竜尾大車輪を配置すると雲蒸竜変に自動変化する", () => {
+    const entries = [
+      makeEntry("true-thrust"),
+      makeEntry("vorpal-thrust"),
+      makeEntry("full-thrust"),
+      makeEntry("fang-and-claw"),      // 4段目 → drakesbane-ready付与
+      makeEntry("wheeling-thrust"),    // 5段目 → autoTransformで雲蒸竜変に
+    ];
+
+    const result = resolveTimeline(entries, skillMap, [], undefined, allBuffs);
+
+    expect(result.entries[3].resolvedSkillId).toBe("fang-and-claw");
+    expect(result.entries[3].wsComboError).toBe(false);
+    expect(result.entries[4].resolvedSkillId).toBe("drakesbane");
+    expect(result.entries[4].wsComboError).toBe(false);
+  });
+
+  it("ルート2: 竜尾大車輪の後に竜牙竜爪を配置すると雲蒸竜変に自動変化する", () => {
+    const entries = [
+      makeEntry("true-thrust"),
+      makeEntry("disembowel"),
+      makeEntry("chaos-thrust"),
+      makeEntry("wheeling-thrust"),    // 4段目 → drakesbane-ready付与
+      makeEntry("fang-and-claw"),      // 5段目 → autoTransformで雲蒸竜変に
+    ];
+
+    const result = resolveTimeline(entries, skillMap, [], undefined, allBuffs);
+
+    expect(result.entries[3].resolvedSkillId).toBe("wheeling-thrust");
+    expect(result.entries[3].wsComboError).toBe(false);
+    expect(result.entries[4].resolvedSkillId).toBe("drakesbane");
+    expect(result.entries[4].wsComboError).toBe(false);
+  });
+
   it("コンボ不成立時は雲蒸竜変レディが付与されずautoTransformしない", () => {
     // 竜牙竜爪を非コンボで使用
     const entries = [
