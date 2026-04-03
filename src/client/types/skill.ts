@@ -119,7 +119,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "guaranteedCrit";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -130,6 +130,7 @@ export interface BuffEffect {
    * - speed: GCD乗算倍率（0.8 = GCD×0.8）
    * - potency: 威力乗算倍率（1.1 = 威力×1.1）
    * - critRate: クリティカル発生率加算値（0.1 = +10%）
+   * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
    * - stat: ステータス加算値
    * - resource: リソース変動量
    */
