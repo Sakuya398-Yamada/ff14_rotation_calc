@@ -36,9 +36,7 @@ function CollapsibleSection({ title, defaultOpen = true, children }: Collapsible
 interface SkillPaletteProps {
   skills: Skill[];
   stats: CharacterStats;
-  statsEnabled: boolean;
   onStatsChange: (stats: CharacterStats) => void;
-  onStatsEnabledChange: (enabled: boolean) => void;
   level: PlayerLevel;
   onLevelChange: (level: PlayerLevel) => void;
   selectedJob: JobId;
@@ -48,9 +46,7 @@ interface SkillPaletteProps {
 export function SkillPalette({
   skills,
   stats,
-  statsEnabled,
   onStatsChange,
-  onStatsEnabledChange,
   level,
   onLevelChange,
   selectedJob,
@@ -117,27 +113,7 @@ export function SkillPalette({
 
       {/* ステータス入力セクション */}
       <CollapsibleSection title="ステータス">
-        <div style={styles.statHeader}>
-          <label style={styles.toggleLabel}>
-            <input
-              type="checkbox"
-              checked={statsEnabled}
-              onChange={(e) => onStatsEnabledChange(e.target.checked)}
-              style={styles.checkbox}
-            />
-            <span style={{
-              ...styles.toggleText,
-              color: statsEnabled ? "#4fc3f7" : "#666",
-            }}>
-              {statsEnabled ? "ON" : "OFF"}
-            </span>
-          </label>
-        </div>
-        <div style={{
-          ...styles.statInputs,
-          opacity: statsEnabled ? 1 : 0.4,
-          pointerEvents: statsEnabled ? "auto" : "none",
-        }}>
+        <div style={styles.statInputs}>
           <div style={styles.statRow}>
             <label style={styles.statLabel}>CRT</label>
             <input
@@ -335,30 +311,10 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "4px",
     border: "1px solid rgba(255, 167, 38, 0.3)",
   },
-  statHeader: {
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    marginBottom: "8px",
-  },
-  toggleLabel: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    cursor: "pointer",
-  },
-  checkbox: {
-    cursor: "pointer",
-  },
-  toggleText: {
-    fontSize: "12px",
-    fontWeight: "bold",
-  },
   statInputs: {
     display: "flex",
     flexDirection: "column",
     gap: "6px",
-    transition: "opacity 0.2s",
   },
   statRow: {
     display: "flex",

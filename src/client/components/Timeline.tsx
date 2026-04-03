@@ -41,10 +41,9 @@ interface TimelineProps {
   totalPotency: number;
   resources: ResourceDefinition[];
   buffs: BuffDefinition[];
-  expectedMultiplier: number | null;
-  totalExpectedPotency: number | null;
-  statsEnabled: boolean;
-  stats?: CharacterStats;
+  expectedMultiplier: number;
+  totalExpectedPotency: number;
+  stats: CharacterStats;
   dotTicks: DoTTick[];
   activeDoTs: ActiveDoT[];
   dotTotalPotency: number;
@@ -105,7 +104,6 @@ export function Timeline({
   buffs,
   expectedMultiplier,
   totalExpectedPotency,
-  statsEnabled,
   stats,
   dotTicks,
   activeDoTs,
@@ -607,7 +605,7 @@ export function Timeline({
                 {" "}(DoT: {dotTotalPotency})
               </span>
             )}
-            {totalExpectedPotency !== null && (
+            {totalExpectedPotency > 0 && (
               <span style={styles.expectedPotency}>
                 {" "}(期待値: {totalExpectedPotency})
               </span>

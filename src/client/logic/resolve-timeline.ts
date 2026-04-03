@@ -12,7 +12,7 @@ import type {
   TimelineResult,
   BossUntargetableWindow,
 } from "../types/skill";
-import { calcGcd } from "./stat-calc";
+import { calcGcd, calcExpectedMultiplier } from "./stat-calc";
 
 /** DoTティック間隔（秒） */
 const DOT_TICK_INTERVAL = 3;
@@ -492,7 +492,8 @@ export function calcPps(
   skillMap: Map<string, Skill>,
   dotTicks: DoTTick[],
   rangeStart: number,
-  rangeEnd: number
+  rangeEnd: number,
+  stats: CharacterStats
 ): { pps: number; totalPotency: number; directPotency: number; dotPotency: number } {
   const duration = rangeEnd - rangeStart;
   if (duration <= 0) return { pps: 0, totalPotency: 0, directPotency: 0, dotPotency: 0 };
@@ -504,14 +505,17 @@ export function calcPps(
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) continue;
       const skill = skillMap.get(entry.skillId);
-      directPotency += Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
+      const buffedPotency = Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
+      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus);
+      directPotency += Math.floor(buffedPotency * entryMul);
     }
   }
 
   let dotPotency = 0;
+  const dotMul = calcExpectedMultiplier(stats);
   for (const tick of dotTicks) {
     if (tick.time >= rangeStart && tick.time < rangeEnd) {
-      dotPotency += tick.potency;
+      dotPotency += Math.floor(tick.potency * dotMul);
     }
   }
 
