@@ -97,12 +97,14 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     potency: 300,
     nonComboPotency: 140,
     comboFrom: ["full-thrust", "heavens-thrust"],
+    comboBuffApplications: ["drakesbane-ready"],
     type: "gcd",
     target: "enemy",
     icon: fangAndClawIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 56,
+    autoTransform: { buffId: "drakesbane-ready", skillId: "drakesbane" },
   },
 
   // ============================================================
@@ -143,12 +145,14 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     potency: 300,
     nonComboPotency: 140,
     comboFrom: ["chaos-thrust", "chaotic-spring"],
+    comboBuffApplications: ["drakesbane-ready"],
     type: "gcd",
     target: "enemy",
     icon: wheelingThrustIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 58,
+    autoTransform: { buffId: "drakesbane-ready", skillId: "drakesbane" },
   },
 
   // ============================================================

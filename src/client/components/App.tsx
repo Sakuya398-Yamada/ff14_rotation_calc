@@ -73,14 +73,27 @@ export function App() {
     [jobData.skills, level, availableBuffIds, availableResourceIds]
   );
 
+  // パレット用のフィルタ済みスキルマップ
   const skillMap = useMemo(
     () => new Map(skills.map((s) => [s.id, s])),
     [skills]
   );
 
+  // 全スキルマップ（autoTransform対象等を含む。タイムライン解決・表示用）
+  const allSkillMap = useMemo(() => {
+    const map = new Map(skills.map((s) => [s.id, s]));
+    // パレットからフィルタされたスキル（autoTransform対象・replacesSkillId対象）も追加
+    for (const s of jobData.skills) {
+      if (s.acquiredLevel <= level && !map.has(s.id)) {
+        map.set(s.id, s);
+      }
+    }
+    return map;
+  }, [skills, jobData.skills, level]);
+
   const timelineResult = useMemo(
-    () => resolveTimeline(entries, skillMap, levelResources, stats, levelBuffs, untargetableWindows),
-    [entries, skillMap, levelResources, stats, levelBuffs, untargetableWindows]
+    () => resolveTimeline(entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows),
+    [entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows]
   );
 
   const resolvedEntries = timelineResult.entries;
@@ -131,33 +144,33 @@ export function App() {
     // DoTはスナップショット時のバフ倍率が既に適用済み、基本の期待倍率を掛ける
     const dotExpected = Math.floor(timelineResult.dotTotalPotency * calcExpectedMultiplier(stats));
     return directExpected + dotExpected;
-  }, [stats, resolvedEntries, skillMap, timelineResult.dotTotalPotency]);
+  }, [stats, resolvedEntries, allSkillMap, timelineResult.dotTotalPotency]);
 
   // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
   const overallPps = useMemo(() => {
     if (timelineResult.lastGcdEndTime <= 0) return null;
     return calcPps(
       resolvedEntries,
-      skillMap,
+      allSkillMap,
       timelineResult.dotTicks,
       0,
       timelineResult.lastGcdEndTime,
       stats
     );
-  }, [resolvedEntries, skillMap, timelineResult.dotTicks, timelineResult.lastGcdEndTime, stats]);
+  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.lastGcdEndTime, stats]);
 
   // 範囲選択PPS
   const rangePps = useMemo(() => {
     if (!ppsRange) return null;
     return calcPps(
       resolvedEntries,
-      skillMap,
+      allSkillMap,
       timelineResult.dotTicks,
       ppsRange.startTime,
       ppsRange.endTime,
       stats
     );
-  }, [resolvedEntries, skillMap, timelineResult.dotTicks, ppsRange, stats]);
+  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, ppsRange, stats]);
 
   return (
     <div style={styles.app}>
@@ -177,6 +190,7 @@ export function App() {
         />
         <Timeline
           skills={skills}
+          allSkillMap={allSkillMap}
           resolvedEntries={resolvedEntries}
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}

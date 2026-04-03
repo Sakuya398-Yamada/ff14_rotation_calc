@@ -11,6 +11,7 @@ import dragonfireDiveIcon from "../assets/icons/drg/Dragonfire_Dive.png";
 import nastrondIcon from "../assets/icons/drg/Nastrond.png";
 import stardiverIcon from "../assets/icons/drg/Stardiver.png";
 import starcrossIcon from "../assets/icons/drg/Starcross.png";
+import drakesbaneIcon from "../assets/icons/drg/Drakesbane.png";
 
 /**
  * 竜騎士（DRG）バフ定義
@@ -159,5 +160,21 @@ export const DRG_BUFFS: BuffDefinition[] = [
     color: "#6200ea",
     maxStacks: 1,
     acquiredLevel: 100,
+  },
+  {
+    id: "drakesbane-ready",
+    name: "雲蒸竜変レディ",
+    shortName: "雲蒸\nﾚﾃﾞｨ",
+    icon: drakesbaneIcon,
+    duration: 15,
+    effects: [
+      {
+        type: "consumeOnGcd",
+        value: 1,
+      },
+    ],
+    color: "#795548",
+    maxStacks: 1,
+    acquiredLevel: 64,
   },
 ];
