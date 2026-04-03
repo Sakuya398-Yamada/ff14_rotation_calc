@@ -91,6 +91,26 @@ function getSpeedMultiplier(
 }
 
 /**
+ * アクティブなバフからクリティカル発生率ボーナスを計算する。
+ */
+function getCritRateBonus(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): number {
+  let bonus = 0;
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "critRate") {
+        bonus += effect.value;
+      }
+    }
+  }
+  return bonus;
+}
+
+/**
  * アクティブなバフから威力バフの合成倍率を計算する。
  */
 function getPotencyMultiplier(
@@ -367,6 +387,10 @@ export function resolveTimeline(
       }
     }
 
+    // エラーがない場合のみバフ倍率を適用
+    const buffMultiplier = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+    const critRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
@@ -377,6 +401,8 @@ export function resolveTimeline(
       untargetableError,
       recastError,
       activeBuffs: [...currentActiveBuffs],
+      buffMultiplier,
+      critRateBonus,
     });
   }
 
@@ -478,7 +504,7 @@ export function calcPps(
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) continue;
       const skill = skillMap.get(entry.skillId);
-      directPotency += skill?.potency ?? 0;
+      directPotency += Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
     }
   }
 

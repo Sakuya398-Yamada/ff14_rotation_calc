@@ -119,7 +119,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -129,6 +129,7 @@ export interface BuffEffect {
    * 効果量
    * - speed: GCD乗算倍率（0.8 = GCD×0.8）
    * - potency: 威力乗算倍率（1.1 = 威力×1.1）
+   * - critRate: クリティカル発生率加算値（0.1 = +10%）
    * - stat: ステータス加算値
    * - resource: リソース変動量
    */
@@ -251,4 +252,8 @@ export interface ResolvedTimelineEntry {
   recastError: boolean;
   /** このスキル使用時にアクティブなバフ一覧 */
   activeBuffs: ActiveBuff[];
+  /** 威力バフの合成倍率（1.0 = バフなし） */
+  buffMultiplier: number;
+  /** クリティカル発生率ボーナス（0.0 = バフなし、0.1 = +10%） */
+  critRateBonus: number;
 }

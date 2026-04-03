@@ -1,13 +1,15 @@
 import { useState } from "react";
 import type { Skill, CharacterStats, PlayerLevel } from "../types/skill";
+import type { JobId } from "./App";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
 const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
 
-const JOBS = [
+const JOBS: { id: JobId; name: string }[] = [
   { id: "whm", name: "白魔道士" },
-] as const;
+  { id: "drg", name: "竜騎士" },
+];
 
 interface CollapsibleSectionProps {
   title: string;
@@ -39,6 +41,8 @@ interface SkillPaletteProps {
   onStatsEnabledChange: (enabled: boolean) => void;
   level: PlayerLevel;
   onLevelChange: (level: PlayerLevel) => void;
+  selectedJob: JobId;
+  onJobChange: (jobId: JobId) => void;
 }
 
 export function SkillPalette({
@@ -49,6 +53,8 @@ export function SkillPalette({
   onStatsEnabledChange,
   level,
   onLevelChange,
+  selectedJob,
+  onJobChange,
 }: SkillPaletteProps) {
   const gcdSkills = skills.filter((s) => s.type === "gcd");
   const ogcdSkills = skills.filter((s) => s.type === "ogcd");
@@ -73,7 +79,11 @@ export function SkillPalette({
     <div className="custom-scrollbar" style={styles.container}>
       <div style={styles.titleRow}>
         <h2 style={styles.title}>ジョブパレット</h2>
-        <select style={styles.jobSelect} defaultValue="whm">
+        <select
+          style={styles.jobSelect}
+          value={selectedJob}
+          onChange={(e) => onJobChange(e.target.value as JobId)}
+        >
           {JOBS.map((job) => (
             <option key={job.id} value={job.id}>
               {job.name}

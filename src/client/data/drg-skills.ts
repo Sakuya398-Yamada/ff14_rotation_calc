@@ -1,0 +1,504 @@
+import type { Skill } from "../types/skill";
+
+// === GCD アイコン ===
+import trueThrustIcon from "../assets/icons/drg/True_Thrust.png";
+import vorpalThrustIcon from "../assets/icons/drg/Vorpal_Thrust.png";
+import piercingTalonIcon from "../assets/icons/drg/Piercing_Talon.png";
+import disembowelIcon from "../assets/icons/drg/Disembowel.png";
+import fullThrustIcon from "../assets/icons/drg/Full_Thrust.png";
+import doomSpikeIcon from "../assets/icons/drg/Doom_Spike.png";
+import chaosThrustIcon from "../assets/icons/drg/Chaos_Thrust.png";
+import fangAndClawIcon from "../assets/icons/drg/Fang_and_Claw.png";
+import wheelingThrustIcon from "../assets/icons/drg/Wheeling_Thrust.png";
+import sonicThrustIcon from "../assets/icons/drg/Sonic_Thrust.png";
+import drakesbaneIcon from "../assets/icons/drg/Drakesbane.png";
+import coerthanTormentIcon from "../assets/icons/drg/Coerthan_Torment.png";
+import raidenThrustIcon from "../assets/icons/drg/Raiden_Thrust.png";
+import draconianFuryIcon from "../assets/icons/drg/Draconian_Fury.png";
+import heavensThrustIcon from "../assets/icons/drg/Heavens'_Thrust.png";
+import chaoticSpringIcon from "../assets/icons/drg/Chaotic_Spring.png";
+import lanceBarrageIcon from "../assets/icons/drg/Lance_Barrage.png";
+import spiralBlowIcon from "../assets/icons/drg/Spiral_Blow.png";
+
+// === oGCD アイコン ===
+import lifeSurgeIcon from "../assets/icons/drg/Life_Surge.png";
+import lanceChargeIcon from "../assets/icons/drg/Lance_Charge.png";
+import jumpIcon from "../assets/icons/drg/Jump.png";
+import elusiveJumpIcon from "../assets/icons/drg/Elusive_Jump.png";
+import wingedGlideIcon from "../assets/icons/drg/Winged_Glide.png";
+import dragonfireDiveIcon from "../assets/icons/drg/Dragonfire_Dive.png";
+import battleLitanyIcon from "../assets/icons/drg/Battle_Litany.png";
+import geirskogulIcon from "../assets/icons/drg/Geirskogul.png";
+import mirageDiveIcon from "../assets/icons/drg/Mirage_Dive.png";
+import nastrondIcon from "../assets/icons/drg/Nastrond.png";
+import highJumpIcon from "../assets/icons/drg/High_Jump.png";
+import stardiverIcon from "../assets/icons/drg/Stardiver.png";
+import wyrmwindThrustIcon from "../assets/icons/drg/Wyrmwind_Thrust.png";
+import riseOfTheDragonIcon from "../assets/icons/drg/Rise_of_the_Dragon.png";
+import starcrossIcon from "../assets/icons/drg/Starcross.png";
+
+/** GCDのデフォルトリキャストタイム（秒） */
+const GCD_RECAST = 2.5;
+
+/** デフォルトのアニメーションロック（秒） */
+const DEFAULT_ANIMATION_LOCK = 0.65;
+
+/**
+ * 竜騎士（DRG）攻撃スキル一覧
+ * 威力はジョブガイド準拠（コンボ時威力を採用、方向指定ボーナスなし）
+ * コンボシステムは未実装のため、コンボ条件・非コンボ時威力は定義しない
+ */
+export const DRG_ATTACK_SKILLS: Skill[] = [
+  // ============================================================
+  // GCD: 単体コンボルート1（トゥルースラスト → ボーパルスラスト → フルスラスト）
+  // ============================================================
+  {
+    id: "true-thrust",
+    name: "トゥルースラスト",
+    potency: 230,
+    type: "gcd",
+    target: "enemy",
+    icon: trueThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 1,
+  },
+  {
+    id: "vorpal-thrust",
+    name: "ボーパルスラスト",
+    potency: 280,
+    type: "gcd",
+    target: "enemy",
+    icon: vorpalThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 4,
+  },
+  {
+    id: "full-thrust",
+    name: "フルスラスト",
+    potency: 380,
+    type: "gcd",
+    target: "enemy",
+    icon: fullThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 26,
+  },
+  {
+    id: "fang-and-claw",
+    name: "竜牙竜爪",
+    potency: 300,
+    type: "gcd",
+    target: "enemy",
+    icon: fangAndClawIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 56,
+  },
+
+  // ============================================================
+  // GCD: 単体コンボルート2（トゥルースラスト → ディセムボウル → 桜華狂咲）
+  // ============================================================
+  {
+    id: "disembowel",
+    name: "ディセムボウル",
+    potency: 250,
+    type: "gcd",
+    target: "enemy",
+    icon: disembowelIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 18,
+  },
+  {
+    id: "chaos-thrust",
+    name: "桜華狂咲",
+    potency: 220,
+    type: "gcd",
+    target: "enemy",
+    icon: chaosThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 50,
+    dotPotency: 40,
+    dotDuration: 24,
+  },
+  {
+    id: "wheeling-thrust",
+    name: "竜尾大車輪",
+    potency: 300,
+    type: "gcd",
+    target: "enemy",
+    icon: wheelingThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 58,
+  },
+
+  // ============================================================
+  // GCD: 5段目共通（雲蒸竜変）
+  // ============================================================
+  {
+    id: "drakesbane",
+    name: "雲蒸竜変",
+    potency: 400,
+    type: "gcd",
+    target: "enemy",
+    icon: drakesbaneIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 64,
+    traitPotencyOverrides: [
+      { traitLevel: 94, potency: 460 },
+    ],
+  },
+
+  // ============================================================
+  // GCD: 竜眼系（自動変化スキル、条件付きだがパレットに個別表示）
+  // ============================================================
+  {
+    id: "raiden-thrust",
+    name: "竜眼雷電",
+    potency: 320,
+    type: "gcd",
+    target: "enemy",
+    icon: raidenThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 76,
+    resourceChanges: [
+      { resourceId: "firstminds-focus", amount: 1 },
+    ],
+  },
+
+  // ============================================================
+  // GCD: 遠隔攻撃
+  // ============================================================
+  {
+    id: "piercing-talon",
+    name: "ピアシングタロン",
+    potency: 150,
+    type: "gcd",
+    target: "enemy",
+    icon: piercingTalonIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 15,
+  },
+
+  // ============================================================
+  // GCD: 範囲コンボ（ドゥームスパイク → ソニックスラスト → クルザントーメント）
+  // ============================================================
+  {
+    id: "doom-spike",
+    name: "ドゥームスパイク",
+    potency: 110,
+    type: "gcd",
+    target: "enemy",
+    icon: doomSpikeIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 40,
+  },
+  {
+    id: "sonic-thrust",
+    name: "ソニックスラスト",
+    potency: 120,
+    type: "gcd",
+    target: "enemy",
+    icon: sonicThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 62,
+  },
+  {
+    id: "coerthan-torment",
+    name: "クルザントーメント",
+    potency: 150,
+    type: "gcd",
+    target: "enemy",
+    icon: coerthanTormentIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 72,
+  },
+  {
+    id: "draconian-fury",
+    name: "竜眼蒼穹",
+    potency: 130,
+    type: "gcd",
+    target: "enemy",
+    icon: draconianFuryIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 82,
+    resourceChanges: [
+      { resourceId: "firstminds-focus", amount: 1 },
+    ],
+  },
+
+  // ============================================================
+  // GCD: 特性変化スキル（レベルで元スキルを置き換え）
+  // ============================================================
+  {
+    id: "heavens-thrust",
+    name: "ヘヴンスラスト",
+    potency: 460,
+    type: "gcd",
+    target: "enemy",
+    icon: heavensThrustIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 86,
+    replacesSkillId: "full-thrust",
+  },
+  {
+    id: "chaotic-spring",
+    name: "桜華繚乱",
+    potency: 300,
+    type: "gcd",
+    target: "enemy",
+    icon: chaoticSpringIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 86,
+    replacesSkillId: "chaos-thrust",
+    dotPotency: 45,
+    dotDuration: 24,
+  },
+  {
+    id: "lance-barrage",
+    name: "スラストラッシュ",
+    potency: 340,
+    type: "gcd",
+    target: "enemy",
+    icon: lanceBarrageIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 96,
+    replacesSkillId: "vorpal-thrust",
+  },
+  {
+    id: "spiral-blow",
+    name: "スパイラルブロウ",
+    potency: 300,
+    type: "gcd",
+    target: "enemy",
+    icon: spiralBlowIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 96,
+    replacesSkillId: "disembowel",
+  },
+
+  // ============================================================
+  // oGCD: バフ
+  // ============================================================
+  {
+    id: "life-surge",
+    name: "ライフサージ",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: lifeSurgeIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 40,
+    acquiredLevel: 6,
+    buffApplications: ["life-surge"],
+  },
+  {
+    id: "lance-charge",
+    name: "ランスチャージ",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: lanceChargeIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 60,
+    acquiredLevel: 30,
+    buffApplications: ["lance-charge"],
+  },
+  {
+    id: "battle-litany",
+    name: "バトルリタニー",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: battleLitanyIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 120,
+    acquiredLevel: 52,
+    buffApplications: ["battle-litany"],
+  },
+
+  // ============================================================
+  // oGCD: ジャンプ系攻撃
+  // ============================================================
+  {
+    id: "jump",
+    name: "ジャンプ",
+    potency: 320,
+    type: "ogcd",
+    target: "enemy",
+    icon: jumpIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 30,
+    acquiredLevel: 30,
+  },
+  {
+    id: "high-jump",
+    name: "ハイジャンプ",
+    potency: 400,
+    type: "ogcd",
+    target: "enemy",
+    icon: highJumpIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 30,
+    acquiredLevel: 74,
+    replacesSkillId: "jump",
+  },
+  {
+    id: "mirage-dive",
+    name: "ミラージュダイブ",
+    potency: 380,
+    type: "ogcd",
+    target: "enemy",
+    icon: mirageDiveIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 1,
+    acquiredLevel: 68,
+  },
+  {
+    id: "dragonfire-dive",
+    name: "ドラゴンダイブ",
+    potency: 500,
+    type: "ogcd",
+    target: "enemy",
+    icon: dragonfireDiveIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 120,
+    acquiredLevel: 50,
+  },
+  {
+    id: "rise-of-the-dragon",
+    name: "ドラゴンライズ",
+    potency: 550,
+    type: "ogcd",
+    target: "enemy",
+    icon: riseOfTheDragonIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 1,
+    acquiredLevel: 92,
+  },
+  {
+    id: "stardiver",
+    name: "スターダイバー",
+    potency: 840,
+    type: "ogcd",
+    target: "enemy",
+    icon: stardiverIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 30,
+    acquiredLevel: 80,
+  },
+  {
+    id: "starcross",
+    name: "スタークロッサー",
+    potency: 1000,
+    type: "ogcd",
+    target: "enemy",
+    icon: starcrossIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 1,
+    acquiredLevel: 100,
+  },
+
+  // ============================================================
+  // oGCD: 竜血系攻撃
+  // ============================================================
+  {
+    id: "geirskogul",
+    name: "ゲイルスコグル",
+    potency: 260,
+    type: "ogcd",
+    target: "enemy",
+    icon: geirskogulIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 60,
+    acquiredLevel: 60,
+    buffApplications: ["life-of-the-dragon"],
+    traitPotencyOverrides: [
+      { traitLevel: 90, potency: 280 },
+    ],
+  },
+  {
+    id: "nastrond",
+    name: "ナーストレンド",
+    potency: 600,
+    type: "ogcd",
+    target: "enemy",
+    icon: nastrondIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 2,
+    acquiredLevel: 70,
+    traitPotencyOverrides: [
+      { traitLevel: 90, potency: 720 },
+    ],
+  },
+  {
+    id: "wyrmwind-thrust",
+    name: "天竜点睛",
+    potency: 440,
+    type: "ogcd",
+    target: "enemy",
+    icon: wyrmwindThrustIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 10,
+    acquiredLevel: 90,
+    resourceChanges: [
+      { resourceId: "firstminds-focus", amount: -2 },
+    ],
+  },
+
+  // ============================================================
+  // oGCD: 移動系
+  // ============================================================
+  {
+    id: "elusive-jump",
+    name: "イルーシブジャンプ",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: elusiveJumpIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 30,
+    acquiredLevel: 35,
+  },
+  {
+    id: "winged-glide",
+    name: "ウィンググライド",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: wingedGlideIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 60,
+    acquiredLevel: 45,
+  },
+];

@@ -58,10 +58,12 @@ export function calcGcd(baseGcdSec: number, stats: CharacterStats): number {
  * ステータスを考慮した期待威力倍率を計算する。
  * クリティカルとDHの期待値を掛け合わせた倍率。
  *
- * = (1 + critRate * (critMultiplier - 1)) * (1 + dhRate * (DH_DAMAGE_MULTIPLIER - 1))
+ * = detMul * (1 + critRate * (critMultiplier - 1)) * (1 + dhRate * (DH_DAMAGE_MULTIPLIER - 1))
+ *
+ * @param critRateBonus バフによるクリティカル発生率加算（例: バトルリタニー +0.1）
  */
-export function calcExpectedMultiplier(stats: CharacterStats): number {
-  const critRate = calcCritRate(stats);
+export function calcExpectedMultiplier(stats: CharacterStats, critRateBonus = 0): number {
+  const critRate = Math.min(calcCritRate(stats) + critRateBonus, 1);
   const critMul = calcCritMultiplier(stats);
   const dhRate = calcDhRate(stats);
   const detMul = calcDetMultiplier(stats);

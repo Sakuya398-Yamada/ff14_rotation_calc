@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, PpsRange } from "../types/skill";
-import { calcGcd } from "../logic/stat-calc";
+import { calcGcd, calcExpectedMultiplier } from "../logic/stat-calc";
 import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
@@ -42,6 +42,7 @@ interface TimelineProps {
   resources: ResourceDefinition[];
   buffs: BuffDefinition[];
   expectedMultiplier: number | null;
+  totalExpectedPotency: number | null;
   statsEnabled: boolean;
   stats?: CharacterStats;
   dotTicks: DoTTick[];
@@ -103,6 +104,7 @@ export function Timeline({
   resources,
   buffs,
   expectedMultiplier,
+  totalExpectedPotency,
   statsEnabled,
   stats,
   dotTicks,
@@ -605,9 +607,9 @@ export function Timeline({
                 {" "}(DoT: {dotTotalPotency})
               </span>
             )}
-            {expectedMultiplier !== null && (
+            {totalExpectedPotency !== null && (
               <span style={styles.expectedPotency}>
-                {" "}(期待値: {Math.floor(totalPotency * expectedMultiplier)})
+                {" "}(期待値: {totalExpectedPotency})
               </span>
             )}
             {overallPps !== null && (
@@ -792,9 +794,11 @@ export function Timeline({
                     const hasError = entriesWithErrors.has(entry.uid);
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
                     const castTime = getEntryCastTime(entry.skill, entry.activeBuffs);
+                    const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
+                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
                     const expectedPot = hasError ? null : (
-                      expectedMultiplier !== null && entry.skill.potency > 0
-                        ? Math.floor(entry.skill.potency * expectedMultiplier)
+                      entryExpMul !== null && entry.skill.potency > 0
+                        ? Math.floor(buffedPotency * entryExpMul)
                         : null
                     );
                     return (
@@ -840,7 +844,7 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.skill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.skill.potency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -850,7 +854,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {hasError ? "-" : (expectedPot !== null ? expectedPot : entry.skill.potency)}
+                          {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                         </div>
                       </div>
                     );
@@ -864,9 +868,11 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
+                    const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
+                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
                     const expectedPot = hasError ? null : (
-                      expectedMultiplier !== null && entry.skill.potency > 0
-                        ? Math.floor(entry.skill.potency * expectedMultiplier)
+                      entryExpMul !== null && entry.skill.potency > 0
+                        ? Math.floor(buffedPotency * entryExpMul)
                         : null
                     );
                     return (
@@ -882,7 +888,7 @@ export function Timeline({
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.skill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.skill.potency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -892,7 +898,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {hasError ? "-" : (expectedPot !== null ? expectedPot : entry.skill.potency)}
+                          {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                         </div>
                       </div>
                     );
