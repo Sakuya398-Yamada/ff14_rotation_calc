@@ -410,6 +410,11 @@ export function resolveTimeline(
     // （wsComboErrorはハードエラーではない: スキルは実行されるが非コンボ威力になる）
     const hasError = resourceErrors.length > 0 || comboErrors.length > 0 || untargetableError || recastError;
 
+    // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
+    const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+    const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
+    const critRateBonusBeforeApply = hasError ? 0 : (guaranteedCritBeforeApply ? 1 : getCritRateBonus(currentActiveBuffs, buffDefMap));
+
     if (!hasError) {
       // リソース変動を適用
       if (skill.resourceChanges) {
@@ -534,7 +539,7 @@ export function resolveTimeline(
       // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
       // コンボ不成立時はDoTを適用しない（コンボ成立時の追加効果扱い）
       if (skill.dotPotency && skill.dotDuration && !wsComboError) {
-        const buffMultiplier = getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+        const buffMultiplier = buffMultiplierBeforeApply;
         const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
         const existing = dotStreams.get(skill.id);
@@ -556,11 +561,10 @@ export function resolveTimeline(
       }
     }
 
-    // エラーがない場合のみバフ倍率を適用
-    const buffMultiplier = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
-    // GCDスキルに確定クリティカルバフが適用される場合、クリティカル率を100%にする
-    const guaranteedCrit = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
-    const critRateBonus = hasError ? 0 : (guaranteedCrit ? 1 : getCritRateBonus(currentActiveBuffs, buffDefMap));
+    // バフ適用前に計算済みの値を使用（スキル自身が付与するバフは自分の威力に含めない）
+    const buffMultiplier = buffMultiplierBeforeApply;
+    const guaranteedCrit = guaranteedCritBeforeApply;
+    const critRateBonus = critRateBonusBeforeApply;
 
     // GCDスキル実行後、確定クリティカルバフを自動消費
     if (!hasError && skill.type === "gcd" && guaranteedCrit) {
