@@ -50,6 +50,7 @@ export const DRG_BUFFS: BuffDefinition[] = [
       },
     ],
     color: "#4caf50",
+    maxStacks: 1,
   },
   {
     id: "life-of-the-dragon",

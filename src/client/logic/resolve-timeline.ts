@@ -130,7 +130,9 @@ function hasGuaranteedCrit(
 }
 
 /**
- * アクティブなバフからguaranteedCrit効果を持つバフを除去する（自動消費）。
+ * アクティブなバフからguaranteedCrit効果を持つバフを自動消費する。
+ * スタック付きバフの場合はスタックを1減算し、0になったら除去する。
+ * スタックなしバフの場合は直接除去する。
  */
 function consumeGuaranteedCritBuffs(
   activeBuffs: ActiveBuff[],
@@ -140,7 +142,15 @@ function consumeGuaranteedCritBuffs(
     const def = buffDefMap.get(activeBuffs[i].buffId);
     if (!def) continue;
     if (def.effects.some((e) => e.type === "guaranteedCrit")) {
-      activeBuffs.splice(i, 1);
+      const ab = activeBuffs[i];
+      if (ab.stacks !== undefined) {
+        ab.stacks = Math.max(0, ab.stacks - 1);
+        if (ab.stacks === 0) {
+          activeBuffs.splice(i, 1);
+        }
+      } else {
+        activeBuffs.splice(i, 1);
+      }
     }
   }
 }
