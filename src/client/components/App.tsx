@@ -5,13 +5,35 @@ import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { WHM_ATTACK_SKILLS } from "../data/whm-skills";
 import { WHM_RESOURCES } from "../data/whm-resources";
 import { WHM_BUFFS } from "../data/whm-buffs";
+import { DRG_ATTACK_SKILLS } from "../data/drg-skills";
+import { DRG_RESOURCES } from "../data/drg-resources";
+import { DRG_BUFFS } from "../data/drg-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
-import type { TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange, PlayerLevel } from "../types/skill";
+import type { Skill, BuffDefinition, ResourceDefinition, TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange, PlayerLevel } from "../types/skill";
+
+/** ジョブID */
+export type JobId = "whm" | "drg";
+
+/** ジョブデータ定義 */
+interface JobData {
+  name: string;
+  abbreviation: string;
+  skills: Skill[];
+  buffs: BuffDefinition[];
+  resources: ResourceDefinition[];
+}
+
+/** ジョブデータレジストリ */
+const JOB_DATA: Record<JobId, JobData> = {
+  whm: { name: "白魔道士", abbreviation: "WHM", skills: WHM_ATTACK_SKILLS, buffs: WHM_BUFFS, resources: WHM_RESOURCES },
+  drg: { name: "竜騎士", abbreviation: "DRG", skills: DRG_ATTACK_SKILLS, buffs: DRG_BUFFS, resources: DRG_RESOURCES },
+};
 
 let nextUid = 1;
 
 export function App() {
+  const [selectedJob, setSelectedJob] = useState<JobId>("whm");
   const [level, setLevel] = useState<PlayerLevel>(100);
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
@@ -19,14 +41,23 @@ export function App() {
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
 
+  const jobData = JOB_DATA[selectedJob];
+
+  const handleJobChange = useCallback((jobId: JobId) => {
+    setSelectedJob(jobId);
+    // ジョブ変更時にタイムラインをリセット（異なるジョブのスキルは互換性がない）
+    setEntries([]);
+    setPpsRange(null);
+  }, []);
+
   // レベルに応じたバフ・リソースをフィルタ
   const levelBuffs = useMemo(
-    () => getBuffsForLevel(WHM_BUFFS, level),
-    [level]
+    () => getBuffsForLevel(jobData.buffs, level),
+    [jobData.buffs, level]
   );
   const levelResources = useMemo(
-    () => getResourcesForLevel(WHM_RESOURCES, level),
-    [level]
+    () => getResourcesForLevel(jobData.resources, level),
+    [jobData.resources, level]
   );
 
   // レベルに応じたスキルをフィルタ・威力調整
@@ -39,8 +70,8 @@ export function App() {
     [levelResources]
   );
   const skills = useMemo(
-    () => getSkillsForLevel(WHM_ATTACK_SKILLS, level, availableBuffIds, availableResourceIds),
-    [level, availableBuffIds, availableResourceIds]
+    () => getSkillsForLevel(jobData.skills, level, availableBuffIds, availableResourceIds),
+    [jobData.skills, level, availableBuffIds, availableResourceIds]
   );
 
   const skillMap = useMemo(
@@ -116,7 +147,7 @@ export function App() {
     <div style={styles.app}>
       <header style={styles.header}>
         <h1 style={styles.headerTitle}>FF14 Rotation Calculator</h1>
-        <span style={styles.headerJob}>白魔道士 (WHM)</span>
+        <span style={styles.headerJob}>{jobData.name} ({jobData.abbreviation})</span>
       </header>
       <div style={styles.main}>
         <SkillPalette
@@ -127,6 +158,8 @@ export function App() {
           onStatsEnabledChange={setStatsEnabled}
           level={level}
           onLevelChange={setLevel}
+          selectedJob={selectedJob}
+          onJobChange={handleJobChange}
         />
         <Timeline
           skills={skills}
