@@ -108,10 +108,9 @@ export function App() {
     return resolvedEntries.reduce((sum, entry) => {
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) return sum;
-      const skill = skillMap.get(entry.skillId);
-      return sum + Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
+      return sum + Math.floor(entry.resolvedPotency * entry.buffMultiplier);
     }, 0);
-  }, [resolvedEntries, skillMap]);
+  }, [resolvedEntries]);
 
   const totalPotency = directPotency + timelineResult.dotTotalPotency;
 
@@ -125,8 +124,7 @@ export function App() {
     const directExpected = resolvedEntries.reduce((sum, entry) => {
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) return sum;
-      const skill = skillMap.get(entry.skillId);
-      const buffedPotency = Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
+      const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
       const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus);
       return sum + Math.floor(buffedPotency * entryMul);
     }, 0);

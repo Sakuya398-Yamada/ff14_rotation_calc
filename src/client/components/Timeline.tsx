@@ -198,15 +198,17 @@ export function Timeline({
     [buffDefMap]
   );
 
-  const gcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
-  const ogcdEntries: (ResolvedTimelineEntry & { skill: Skill })[] = [];
+  const gcdEntries: (ResolvedTimelineEntry & { skill: Skill; displaySkill: Skill })[] = [];
+  const ogcdEntries: (ResolvedTimelineEntry & { skill: Skill; displaySkill: Skill })[] = [];
   for (const entry of resolvedEntries) {
     const skill = skillMap.get(entry.skillId);
     if (!skill) continue;
+    // 自動変化後のスキルを表示用に取得（変化なしの場合はskillと同じ）
+    const displaySkill = skillMap.get(entry.resolvedSkillId) ?? skill;
     if (skill.type === "gcd") {
-      gcdEntries.push({ ...entry, skill });
+      gcdEntries.push({ ...entry, skill, displaySkill });
     } else {
-      ogcdEntries.push({ ...entry, skill });
+      ogcdEntries.push({ ...entry, skill, displaySkill });
     }
   }
 
@@ -246,7 +248,7 @@ export function Timeline({
   const cooldownSpans = useMemo(() => {
     const spans: Map<string, { startTime: number; endTime: number; skillName: string; icon: string }[]> = new Map();
     for (const entry of resolvedEntries) {
-      const skill = skillMap.get(entry.skillId);
+      const skill = skillMap.get(entry.resolvedSkillId) ?? skillMap.get(entry.skillId);
       if (!skill || skill.cooldown === undefined) continue;
       // エラーなしで実行されたスキルのみクールダウンを記録
       if (entry.recastError || entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError) continue;
@@ -792,13 +794,14 @@ export function Timeline({
                     const hasError = entriesWithErrors.has(entry.uid);
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
                     const castTime = getEntryCastTime(entry.skill, entry.activeBuffs);
-                    const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
+                    const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
                     const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
                     const expectedPot = hasError ? null : (
-                      entryExpMul !== null && entry.skill.potency > 0
+                      entryExpMul !== null && entry.resolvedPotency > 0
                         ? Math.floor(buffedPotency * entryExpMul)
                         : null
                     );
+                    const isAutoTransformed = entry.resolvedSkillId !== entry.skillId;
                     return (
                       <div
                         key={entry.uid}
@@ -841,17 +844,21 @@ export function Timeline({
                           style={{
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
+                            ...(entry.wsComboError ? styles.skillIconComboWarning : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.skill.potency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
-                            src={entry.skill.icon}
-                            alt={entry.skill.name}
+                            src={entry.displaySkill.icon}
+                            alt={entry.displaySkill.name}
                             style={styles.iconImage}
                           />
                         </div>
-                        <div style={styles.skillPotency}>
+                        <div style={{
+                          ...styles.skillPotency,
+                          ...(entry.wsComboError ? { color: "#ff9800" } : {}),
+                        }}>
                           {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                         </div>
                       </div>
@@ -866,10 +873,10 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
-                    const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
+                    const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
                     const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
                     const expectedPot = hasError ? null : (
-                      entryExpMul !== null && entry.skill.potency > 0
+                      entryExpMul !== null && entry.resolvedPotency > 0
                         ? Math.floor(buffedPotency * entryExpMul)
                         : null
                     );
@@ -886,12 +893,12 @@ export function Timeline({
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.skill.potency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
-                            src={entry.skill.icon}
-                            alt={entry.skill.name}
+                            src={entry.displaySkill.icon}
+                            alt={entry.displaySkill.name}
                             style={styles.iconImage}
                           />
                         </div>
@@ -1381,6 +1388,10 @@ const styles: Record<string, React.CSSProperties> = {
   skillIconError: {
     border: "2px solid #ef5350",
     boxShadow: "0 0 8px rgba(239, 83, 80, 0.6)",
+  },
+  skillIconComboWarning: {
+    border: "2px solid #ff9800",
+    boxShadow: "0 0 8px rgba(255, 152, 0, 0.6)",
   },
   ogcdBlock: {
     position: "absolute",

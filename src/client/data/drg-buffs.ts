@@ -4,6 +4,8 @@ import lanceChargeIcon from "../assets/icons/drg/Lance_Charge.png";
 import battleLitanyIcon from "../assets/icons/drg/Battle_Litany.png";
 import lifeSurgeIcon from "../assets/icons/drg/Life_Surge.png";
 import lifeOfTheDragonIcon from "../assets/icons/drg/traits/Life_of_the_Dragon.png";
+import raidenThrustIcon from "../assets/icons/drg/Raiden_Thrust.png";
+import disembowelIcon from "../assets/icons/drg/Disembowel.png";
 
 /**
  * 竜騎士（DRG）バフ定義
@@ -51,6 +53,37 @@ export const DRG_BUFFS: BuffDefinition[] = [
     ],
     color: "#4caf50",
     maxStacks: 1,
+  },
+  {
+    id: "dragons-eye",
+    name: "竜眼",
+    shortName: "竜眼",
+    icon: raidenThrustIcon,
+    duration: 30,
+    effects: [
+      {
+        type: "consumeOnGcd",
+        value: 1,
+      },
+    ],
+    color: "#e91e63",
+    maxStacks: 1,
+    acquiredLevel: 64,
+  },
+  {
+    id: "power-surge",
+    name: "竜槍",
+    shortName: "竜槍",
+    icon: disembowelIcon,
+    duration: 30,
+    effects: [
+      {
+        type: "potency",
+        value: 1.1,
+      },
+    ],
+    color: "#ff9800",
+    acquiredLevel: 18,
   },
   {
     id: "life-of-the-dragon",
