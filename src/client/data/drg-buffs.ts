@@ -43,7 +43,12 @@ export const DRG_BUFFS: BuffDefinition[] = [
     shortName: "ﾗｲﾌ\nｻｰｼﾞ",
     icon: lifeSurgeIcon,
     duration: 5,
-    effects: [],
+    effects: [
+      {
+        type: "guaranteedCrit",
+        value: 1,
+      },
+    ],
     color: "#4caf50",
   },
   {

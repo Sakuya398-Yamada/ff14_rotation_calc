@@ -111,6 +111,41 @@ function getCritRateBonus(
 }
 
 /**
+ * アクティブなバフに確定クリティカル（guaranteedCrit）効果があるか判定する。
+ */
+function hasGuaranteedCrit(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): boolean {
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "guaranteedCrit") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * アクティブなバフからguaranteedCrit効果を持つバフを除去する（自動消費）。
+ */
+function consumeGuaranteedCritBuffs(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): void {
+  for (let i = activeBuffs.length - 1; i >= 0; i--) {
+    const def = buffDefMap.get(activeBuffs[i].buffId);
+    if (!def) continue;
+    if (def.effects.some((e) => e.type === "guaranteedCrit")) {
+      activeBuffs.splice(i, 1);
+    }
+  }
+}
+
+/**
  * アクティブなバフから威力バフの合成倍率を計算する。
  */
 function getPotencyMultiplier(
@@ -389,7 +424,14 @@ export function resolveTimeline(
 
     // エラーがない場合のみバフ倍率を適用
     const buffMultiplier = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
-    const critRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
+    // GCDスキルに確定クリティカルバフが適用される場合、クリティカル率を100%にする
+    const guaranteedCrit = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
+    const critRateBonus = hasError ? 0 : (guaranteedCrit ? 1 : getCritRateBonus(currentActiveBuffs, buffDefMap));
+
+    // GCDスキル実行後、確定クリティカルバフを自動消費
+    if (!hasError && skill.type === "gcd" && guaranteedCrit) {
+      consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap);
+    }
 
     resolved.push({
       uid: entry.uid,
