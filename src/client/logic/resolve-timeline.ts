@@ -158,30 +158,6 @@ function consumeGuaranteedCritBuffs(
   }
 }
 
-/**
- * アクティブなバフからconsumeOnGcd効果を持つバフを自動消費する。
- * GCDスキル使用時に呼び出され、対象バフを除去する。
- */
-function consumeOnGcdBuffs(
-  activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
-): void {
-  for (let i = activeBuffs.length - 1; i >= 0; i--) {
-    const def = buffDefMap.get(activeBuffs[i].buffId);
-    if (!def) continue;
-    if (def.effects.some((e) => e.type === "consumeOnGcd")) {
-      const ab = activeBuffs[i];
-      if (ab.stacks !== undefined) {
-        ab.stacks = Math.max(0, ab.stacks - 1);
-        if (ab.stacks === 0) {
-          activeBuffs.splice(i, 1);
-        }
-      } else {
-        activeBuffs.splice(i, 1);
-      }
-    }
-  }
-}
 
 /**
  * アクティブなバフから威力バフの合成倍率を計算する。
@@ -402,6 +378,18 @@ export function resolveTimeline(
     const cooldownUntil = skillCooldownUntil.get(skill.id);
     const recastError = skill.cooldown !== undefined && cooldownUntil !== undefined && startTime < cooldownUntil;
 
+    // GCDスキル実行前に、consumeOnGcd対象のバフIDを記録しておく
+    // （スキル実行中に新たに付与されたバフは消費対象外）
+    const consumeOnGcdTargets: string[] = [];
+    if (skill.type === "gcd") {
+      for (const ab of currentActiveBuffs) {
+        const def = buffDefMap.get(ab.buffId);
+        if (def?.effects.some((e) => e.type === "consumeOnGcd")) {
+          consumeOnGcdTargets.push(ab.buffId);
+        }
+      }
+    }
+
     // ハードエラー判定: リソース不足・バフスタック不足・ボス離脱・リキャスト中
     // （wsComboErrorはハードエラーではない: スキルは実行されるが非コンボ威力になる）
     const hasError = resourceErrors.length > 0 || comboErrors.length > 0 || untargetableError || recastError;
@@ -549,10 +537,23 @@ export function resolveTimeline(
       consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap);
     }
 
-    // GCDスキル実行後、consumeOnGcdバフを自動消費（竜眼等）
-    // 自動変化でバフが既にbuffConsumptionsで消費されていない場合のみ
-    if (!hasError && skill.type === "gcd") {
-      consumeOnGcdBuffs(currentActiveBuffs, buffDefMap);
+    // GCDスキル実行後、スキル実行前にアクティブだったconsumeOnGcdバフを消費（竜眼等）
+    // スキル実行中に新規付与されたバフは消費しない
+    if (!hasError && consumeOnGcdTargets.length > 0) {
+      for (const buffId of consumeOnGcdTargets) {
+        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+        if (idx >= 0) {
+          const ab = currentActiveBuffs[idx];
+          if (ab.stacks !== undefined) {
+            ab.stacks = Math.max(0, ab.stacks - 1);
+            if (ab.stacks === 0) {
+              currentActiveBuffs.splice(idx, 1);
+            }
+          } else {
+            currentActiveBuffs.splice(idx, 1);
+          }
+        }
+      }
     }
 
     // コンボ状態更新: GCDスキルを使用した場合、コンボ状態を更新
