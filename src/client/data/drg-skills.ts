@@ -387,6 +387,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 30,
     acquiredLevel: 30,
+    buffApplications: ["dive-ready"],
   },
   {
     id: "high-jump",
@@ -400,6 +401,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     cooldown: 30,
     acquiredLevel: 74,
     replacesSkillId: "jump",
+    buffApplications: ["dive-ready"],
   },
   {
     id: "mirage-dive",
@@ -412,6 +414,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 1,
     acquiredLevel: 68,
+    buffConsumptions: [{ buffId: "dive-ready", stacks: 1 }],
   },
   {
     id: "dragonfire-dive",
@@ -424,6 +427,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 120,
     acquiredLevel: 50,
+    buffApplications: ["dragons-flight"],
   },
   {
     id: "rise-of-the-dragon",
@@ -436,6 +440,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 1,
     acquiredLevel: 92,
+    buffConsumptions: [{ buffId: "dragons-flight", stacks: 1 }],
   },
   {
     id: "stardiver",
@@ -448,6 +453,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 30,
     acquiredLevel: 80,
+    buffConsumptions: [{ buffId: "stardiver-ready", stacks: 1 }],
+    buffApplications: ["starcross-ready"],
   },
   {
     id: "starcross",
@@ -460,6 +467,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 1,
     acquiredLevel: 100,
+    buffConsumptions: [{ buffId: "starcross-ready", stacks: 1 }],
   },
 
   // ============================================================
@@ -476,7 +484,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
     acquiredLevel: 60,
-    buffApplications: ["life-of-the-dragon"],
+    buffApplications: ["life-of-the-dragon", "nastrond-ready", "stardiver-ready"],
     traitPotencyOverrides: [
       { traitLevel: 90, potency: 280 },
     ],
@@ -492,6 +500,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 2,
     acquiredLevel: 70,
+    buffConsumptions: [{ buffId: "nastrond-ready", stacks: 1 }],
     traitPotencyOverrides: [
       { traitLevel: 90, potency: 720 },
     ],

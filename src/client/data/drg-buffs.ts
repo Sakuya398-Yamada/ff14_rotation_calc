@@ -6,6 +6,11 @@ import lifeSurgeIcon from "../assets/icons/drg/Life_Surge.png";
 import lifeOfTheDragonIcon from "../assets/icons/drg/traits/Life_of_the_Dragon.png";
 import raidenThrustIcon from "../assets/icons/drg/Raiden_Thrust.png";
 import disembowelIcon from "../assets/icons/drg/Disembowel.png";
+import mirageDiveIcon from "../assets/icons/drg/Mirage_Dive.png";
+import dragonfireDiveIcon from "../assets/icons/drg/Dragonfire_Dive.png";
+import nastrondIcon from "../assets/icons/drg/Nastrond.png";
+import stardiverIcon from "../assets/icons/drg/Stardiver.png";
+import starcrossIcon from "../assets/icons/drg/Starcross.png";
 
 /**
  * 竜騎士（DRG）バフ定義
@@ -99,5 +104,60 @@ export const DRG_BUFFS: BuffDefinition[] = [
     ],
     color: "#f44336",
     acquiredLevel: 70,
+  },
+  {
+    id: "dive-ready",
+    name: "ダイブレディ",
+    shortName: "ﾀﾞｲﾌﾞ\nﾚﾃﾞｨ",
+    icon: mirageDiveIcon,
+    duration: 15,
+    effects: [],
+    color: "#7c4dff",
+    maxStacks: 1,
+    acquiredLevel: 68,
+  },
+  {
+    id: "dragons-flight",
+    name: "ドラゴンフライト",
+    shortName: "ﾄﾞﾗｺﾞﾝ\nﾌﾗｲﾄ",
+    icon: dragonfireDiveIcon,
+    duration: 30,
+    effects: [],
+    color: "#ff6d00",
+    maxStacks: 1,
+    acquiredLevel: 92,
+  },
+  {
+    id: "nastrond-ready",
+    name: "ナーストレンドレディ",
+    shortName: "ﾅｰｽ\nﾚﾃﾞｨ",
+    icon: nastrondIcon,
+    duration: 20,
+    effects: [],
+    color: "#d50000",
+    maxStacks: 1,
+    acquiredLevel: 70,
+  },
+  {
+    id: "stardiver-ready",
+    name: "スターダイバーレディ",
+    shortName: "ｽﾀﾀﾞｲ\nﾚﾃﾞｨ",
+    icon: stardiverIcon,
+    duration: 20,
+    effects: [],
+    color: "#aa00ff",
+    maxStacks: 1,
+    acquiredLevel: 80,
+  },
+  {
+    id: "starcross-ready",
+    name: "スタークロスレディ",
+    shortName: "ｽﾀｸﾛ\nﾚﾃﾞｨ",
+    icon: starcrossIcon,
+    duration: 20,
+    effects: [],
+    color: "#6200ea",
+    maxStacks: 1,
+    acquiredLevel: 100,
   },
 ];
