@@ -10,6 +10,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
 
   let potency = skill.potency;
   let dotPotency = skill.dotPotency;
+  let maxCharges = skill.maxCharges;
 
   // traitLevelの昇順で適用（低い方から順に上書き）
   const sorted = [...skill.traitPotencyOverrides].sort((a, b) => a.traitLevel - b.traitLevel);
@@ -17,14 +18,15 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     if (level >= override.traitLevel) {
       if (override.potency !== undefined) potency = override.potency;
       if (override.dotPotency !== undefined) dotPotency = override.dotPotency;
+      if (override.maxCharges !== undefined) maxCharges = override.maxCharges;
     }
   }
 
-  if (potency === skill.potency && dotPotency === skill.dotPotency) {
+  if (potency === skill.potency && dotPotency === skill.dotPotency && maxCharges === skill.maxCharges) {
     return skill;
   }
 
-  return { ...skill, potency, dotPotency };
+  return { ...skill, potency, dotPotency, maxCharges };
 }
 
 /**

@@ -28,6 +28,8 @@ export interface TraitPotencyOverride {
   potency?: number;
   /** 変更後のDoT威力（undefinedの場合は変更なし） */
   dotPotency?: number;
+  /** 変更後の最大チャージ数（undefinedの場合は変更なし） */
+  maxCharges?: number;
 }
 
 /** サポートするプレイヤーレベル */
@@ -67,6 +69,8 @@ export interface Skill {
   castTime?: number;
   /** 個別リキャストタイム（秒）。oGCDスキル等の固有クールダウン。未設定の場合はリキャスト制約なし */
   cooldown?: number;
+  /** 最大チャージ数。未設定の場合は1（従来通り1回使用でクールダウン） */
+  maxCharges?: number;
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */

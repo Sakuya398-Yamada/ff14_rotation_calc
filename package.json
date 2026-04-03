@@ -6,7 +6,9 @@
     "dev": "npx tsx watch src/server/index.ts",
     "dev:client": "npx vite",
     "db:migrate": "npx prisma migrate dev",
-    "db:generate": "npx prisma generate"
+    "db:generate": "npx prisma generate",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
@@ -38,6 +40,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3"
+    "vite": "^8.0.3",
+    "vitest": "^4.1.2"
   }
 }

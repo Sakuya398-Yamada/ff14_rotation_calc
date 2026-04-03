@@ -240,8 +240,8 @@ export function resolveTimeline(
   const currentActiveBuffs: ActiveBuff[] = [];
   // DoTストリームのマップ（skillId → DoTStream）
   const dotStreams: Map<string, DoTStream> = new Map();
-  // 個別リキャスト追跡: skillId → 次に使用可能になる時刻
-  const skillCooldownUntil: Map<string, number> = new Map();
+  // チャージ状態追跡: skillId → { charges: 残りチャージ数, nextChargeAt: 次のチャージ回復時刻 }
+  const skillChargeState: Map<string, { charges: number; nextChargeAt: number | null }> = new Map();
 
   // コンボ状態追跡
   let lastComboSkillId: string | null = null;
@@ -374,9 +374,25 @@ export function resolveTimeline(
       ? isInUntargetableWindow(startTime, untargetableWindows)
       : false;
 
-    // 個別リキャストチェック: cooldownが設定されているスキルが再使用可能時刻前に使用された場合エラー
-    const cooldownUntil = skillCooldownUntil.get(skill.id);
-    const recastError = skill.cooldown !== undefined && cooldownUntil !== undefined && startTime < cooldownUntil;
+    // チャージ回復処理 & リキャストチェック
+    let recastError = false;
+    if (skill.cooldown !== undefined) {
+      const maxCharges = skill.maxCharges ?? 1;
+      const state = skillChargeState.get(skill.id);
+      if (state) {
+        // チャージ回復: nextChargeAtからcooldown間隔で回復
+        while (state.nextChargeAt !== null && state.charges < maxCharges && state.nextChargeAt <= startTime) {
+          state.charges++;
+          if (state.charges < maxCharges) {
+            state.nextChargeAt = Math.round((state.nextChargeAt + skill.cooldown) * 1000) / 1000;
+          } else {
+            state.nextChargeAt = null;
+          }
+        }
+        recastError = state.charges <= 0;
+      }
+      // state未登録 = 初回使用 → エラーなし
+    }
 
     // GCDスキル実行前に、consumeOnGcd対象のバフIDを記録しておく
     // （スキル実行中に新たに付与されたバフは消費対象外）
@@ -496,9 +512,23 @@ export function resolveTimeline(
         }
       }
 
-      // 個別リキャストのクールダウン開始
+      // チャージ消費 & クールダウン開始
       if (skill.cooldown !== undefined) {
-        skillCooldownUntil.set(skill.id, Math.round((startTime + skill.cooldown) * 1000) / 1000);
+        const maxCharges = skill.maxCharges ?? 1;
+        const state = skillChargeState.get(skill.id);
+        if (state) {
+          state.charges--;
+          // チャージが最大から減った場合、回復タイマーを開始
+          if (state.nextChargeAt === null) {
+            state.nextChargeAt = Math.round((startTime + skill.cooldown) * 1000) / 1000;
+          }
+        } else {
+          // 初回使用: チャージ状態を初期化（maxCharges - 1 残り）
+          skillChargeState.set(skill.id, {
+            charges: maxCharges - 1,
+            nextChargeAt: Math.round((startTime + skill.cooldown) * 1000) / 1000,
+          });
+        }
       }
 
       // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
