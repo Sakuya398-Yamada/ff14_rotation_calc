@@ -106,11 +106,13 @@ export function App() {
   }, []);
 
   const directPotency = useMemo(() => {
-    return entries.reduce((sum, entry) => {
+    return resolvedEntries.reduce((sum, entry) => {
+      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
+      if (hasError) return sum;
       const skill = skillMap.get(entry.skillId);
-      return sum + (skill?.potency ?? 0);
+      return sum + Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
     }, 0);
-  }, [entries, skillMap]);
+  }, [resolvedEntries, skillMap]);
 
   const totalPotency = directPotency + timelineResult.dotTotalPotency;
 

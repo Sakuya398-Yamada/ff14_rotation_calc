@@ -367,6 +367,9 @@ export function resolveTimeline(
       }
     }
 
+    // エラーがない場合のみバフ倍率を適用
+    const buffMultiplier = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
@@ -377,6 +380,7 @@ export function resolveTimeline(
       untargetableError,
       recastError,
       activeBuffs: [...currentActiveBuffs],
+      buffMultiplier,
     });
   }
 
@@ -478,7 +482,7 @@ export function calcPps(
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) continue;
       const skill = skillMap.get(entry.skillId);
-      directPotency += skill?.potency ?? 0;
+      directPotency += Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
     }
   }
 

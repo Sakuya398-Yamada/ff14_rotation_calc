@@ -251,4 +251,6 @@ export interface ResolvedTimelineEntry {
   recastError: boolean;
   /** このスキル使用時にアクティブなバフ一覧 */
   activeBuffs: ActiveBuff[];
+  /** 威力バフの合成倍率（1.0 = バフなし） */
+  buffMultiplier: number;
 }

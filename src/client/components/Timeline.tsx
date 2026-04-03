@@ -792,9 +792,10 @@ export function Timeline({
                     const hasError = entriesWithErrors.has(entry.uid);
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
                     const castTime = getEntryCastTime(entry.skill, entry.activeBuffs);
+                    const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
                     const expectedPot = hasError ? null : (
                       expectedMultiplier !== null && entry.skill.potency > 0
-                        ? Math.floor(entry.skill.potency * expectedMultiplier)
+                        ? Math.floor(buffedPotency * expectedMultiplier)
                         : null
                     );
                     return (
@@ -840,7 +841,7 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.skill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.skill.potency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -850,7 +851,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {hasError ? "-" : (expectedPot !== null ? expectedPot : entry.skill.potency)}
+                          {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                         </div>
                       </div>
                     );
@@ -864,9 +865,10 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
+                    const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
                     const expectedPot = hasError ? null : (
                       expectedMultiplier !== null && entry.skill.potency > 0
-                        ? Math.floor(entry.skill.potency * expectedMultiplier)
+                        ? Math.floor(buffedPotency * expectedMultiplier)
                         : null
                     );
                     return (
@@ -882,7 +884,7 @@ export function Timeline({
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
                           }}
-                          title={`${entry.skill.name} (威力: ${entry.skill.potency}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.skill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.skill.potency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ コンボ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           onClick={() => handleRemoveEntry(entry.uid)}
                         >
                           <img
@@ -892,7 +894,7 @@ export function Timeline({
                           />
                         </div>
                         <div style={styles.skillPotency}>
-                          {hasError ? "-" : (expectedPot !== null ? expectedPot : entry.skill.potency)}
+                          {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                         </div>
                       </div>
                     );
