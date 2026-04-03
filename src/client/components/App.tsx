@@ -37,7 +37,6 @@ export function App() {
   const [level, setLevel] = useState<PlayerLevel>(100);
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
-  const [statsEnabled, setStatsEnabled] = useState(false);
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
 
@@ -80,8 +79,8 @@ export function App() {
   );
 
   const timelineResult = useMemo(
-    () => resolveTimeline(entries, skillMap, levelResources, statsEnabled ? stats : undefined, levelBuffs, untargetableWindows),
-    [entries, skillMap, levelResources, stats, statsEnabled, levelBuffs, untargetableWindows]
+    () => resolveTimeline(entries, skillMap, levelResources, stats, levelBuffs, untargetableWindows),
+    [entries, skillMap, levelResources, stats, levelBuffs, untargetableWindows]
   );
 
   const resolvedEntries = timelineResult.entries;
@@ -117,13 +116,12 @@ export function App() {
   const totalPotency = directPotency + timelineResult.dotTotalPotency;
 
   const expectedMultiplier = useMemo(
-    () => (statsEnabled ? calcExpectedMultiplier(stats) : null),
-    [stats, statsEnabled]
+    () => calcExpectedMultiplier(stats),
+    [stats]
   );
 
   // per-entryのクリティカル率ボーナスを考慮した合計期待威力
   const totalExpectedPotency = useMemo(() => {
-    if (!statsEnabled) return null;
     const directExpected = resolvedEntries.reduce((sum, entry) => {
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) return sum;
@@ -135,7 +133,7 @@ export function App() {
     // DoTはスナップショット時のバフ倍率が既に適用済み、基本の期待倍率を掛ける
     const dotExpected = Math.floor(timelineResult.dotTotalPotency * calcExpectedMultiplier(stats));
     return directExpected + dotExpected;
-  }, [statsEnabled, stats, resolvedEntries, skillMap, timelineResult.dotTotalPotency]);
+  }, [stats, resolvedEntries, skillMap, timelineResult.dotTotalPotency]);
 
   // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
   const overallPps = useMemo(() => {
@@ -145,9 +143,10 @@ export function App() {
       skillMap,
       timelineResult.dotTicks,
       0,
-      timelineResult.lastGcdEndTime
+      timelineResult.lastGcdEndTime,
+      stats
     );
-  }, [resolvedEntries, skillMap, timelineResult.dotTicks, timelineResult.lastGcdEndTime]);
+  }, [resolvedEntries, skillMap, timelineResult.dotTicks, timelineResult.lastGcdEndTime, stats]);
 
   // 範囲選択PPS
   const rangePps = useMemo(() => {
@@ -157,9 +156,10 @@ export function App() {
       skillMap,
       timelineResult.dotTicks,
       ppsRange.startTime,
-      ppsRange.endTime
+      ppsRange.endTime,
+      stats
     );
-  }, [resolvedEntries, skillMap, timelineResult.dotTicks, ppsRange]);
+  }, [resolvedEntries, skillMap, timelineResult.dotTicks, ppsRange, stats]);
 
   return (
     <div style={styles.app}>
@@ -171,9 +171,7 @@ export function App() {
         <SkillPalette
           skills={skills}
           stats={stats}
-          statsEnabled={statsEnabled}
           onStatsChange={setStats}
-          onStatsEnabledChange={setStatsEnabled}
           level={level}
           onLevelChange={setLevel}
           selectedJob={selectedJob}
@@ -189,8 +187,7 @@ export function App() {
           buffs={levelBuffs}
           expectedMultiplier={expectedMultiplier}
           totalExpectedPotency={totalExpectedPotency}
-          statsEnabled={statsEnabled}
-          stats={statsEnabled ? stats : undefined}
+          stats={stats}
           dotTicks={timelineResult.dotTicks}
           activeDoTs={timelineResult.activeDoTs}
           dotTotalPotency={timelineResult.dotTotalPotency}
