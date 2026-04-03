@@ -1,8 +1,35 @@
+import { useState } from "react";
 import type { Skill, CharacterStats, PlayerLevel } from "../types/skill";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
 const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
+
+const JOBS = [
+  { id: "whm", name: "白魔道士" },
+] as const;
+
+interface CollapsibleSectionProps {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}
+
+function CollapsibleSection({ title, defaultOpen = true, children }: CollapsibleSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={styles.section}>
+      <h3
+        style={styles.collapsibleTitle}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <span style={styles.collapseIcon}>{open ? "▼" : "▶"}</span>
+        {title}
+      </h3>
+      {open && children}
+    </div>
+  );
+}
 
 interface SkillPaletteProps {
   skills: Skill[];
@@ -44,11 +71,19 @@ export function SkillPalette({
 
   return (
     <div className="custom-scrollbar" style={styles.container}>
-      <h2 style={styles.title}>スキルパレット</h2>
+      <div style={styles.titleRow}>
+        <h2 style={styles.title}>ジョブパレット</h2>
+        <select style={styles.jobSelect} defaultValue="whm">
+          {JOBS.map((job) => (
+            <option key={job.id} value={job.id}>
+              {job.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* レベル設定 */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>レベル</h3>
+      <CollapsibleSection title="レベル">
         <div style={styles.levelRow}>
           <label style={styles.levelLabel}>Lv.</label>
           <select
@@ -68,12 +103,11 @@ export function SkillPalette({
             Lv{level}の威力値は正確でない可能性があります
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
       {/* ステータス入力セクション */}
-      <div style={styles.section}>
+      <CollapsibleSection title="ステータス">
         <div style={styles.statHeader}>
-          <h3 style={styles.sectionTitle}>ステータス</h3>
           <label style={styles.toggleLabel}>
             <input
               type="checkbox"
@@ -147,10 +181,9 @@ export function SkillPalette({
             GCD: {calcGcd(2.5, stats).toFixed(2)}s
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>GCD</h3>
+      <CollapsibleSection title="GCD">
         <div style={styles.skillGrid}>
           {gcdSkills.map((skill) => (
             <div
@@ -172,10 +205,9 @@ export function SkillPalette({
             </div>
           ))}
         </div>
-      </div>
+      </CollapsibleSection>
 
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>oGCD</h3>
+      <CollapsibleSection title="oGCD">
         <div style={styles.skillGrid}>
           {ogcdSkills.map((skill) => (
             <div
@@ -197,7 +229,7 @@ export function SkillPalette({
             </div>
           ))}
         </div>
-      </div>
+      </CollapsibleSection>
     </div>
   );
 }
@@ -211,13 +243,49 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: "auto",
     flexShrink: 0,
   },
+  titleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "16px",
+  },
   title: {
-    margin: "0 0 16px 0",
+    margin: 0,
     fontSize: "18px",
     color: "#e0e0e0",
+    flexShrink: 0,
+  },
+  jobSelect: {
+    flex: 1,
+    padding: "4px 6px",
+    fontSize: "13px",
+    backgroundColor: "#16213e",
+    border: "1px solid #444",
+    borderRadius: "4px",
+    color: "#e0e0e0",
+    outline: "none",
+    cursor: "pointer",
+    minWidth: 0,
   },
   section: {
     marginBottom: "20px",
+  },
+  collapsibleTitle: {
+    margin: "0 0 8px 0",
+    fontSize: "14px",
+    color: "#888",
+    textTransform: "uppercase" as const,
+    letterSpacing: "1px",
+    cursor: "pointer",
+    userSelect: "none" as const,
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  },
+  collapseIcon: {
+    fontSize: "10px",
+    width: "12px",
+    display: "inline-block",
   },
   sectionTitle: {
     margin: "0 0 8px 0",
@@ -259,7 +327,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statHeader: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     marginBottom: "8px",
   },
