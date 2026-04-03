@@ -51,7 +51,15 @@ export function getSkillsForLevel(
       .filter((s) => s.replacesSkillId)
       .map((s) => s.replacesSkillId!),
   );
-  const filtered = available.filter((s) => !replacedIds.has(s.id));
+
+  // 3. autoTransformの変換先スキルを除外（パレットには変換元のみ表示）
+  const autoTransformTargetIds = new Set(
+    available
+      .filter((s) => s.autoTransform)
+      .map((s) => s.autoTransform!.skillId),
+  );
+
+  const filtered = available.filter((s) => !replacedIds.has(s.id) && !autoTransformTargetIds.has(s.id));
 
   // 3. 特性による威力変動を適用
   // 4. レベル未満のバフ・リソースへの参照を除外
