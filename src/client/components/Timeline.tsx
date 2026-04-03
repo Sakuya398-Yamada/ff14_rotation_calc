@@ -35,6 +35,7 @@ const RESOURCE_DOT_SIZE = 10;
 
 interface TimelineProps {
   skills: Skill[];
+  allSkillMap: Map<string, Skill>;
   resolvedEntries: ResolvedTimelineEntry[];
   onAddEntry: (skillId: string, insertBeforeUid?: string) => void;
   onRemoveEntry: (uid: string) => void;
@@ -96,6 +97,7 @@ interface TimelineState {
 
 export function Timeline({
   skills,
+  allSkillMap,
   resolvedEntries,
   onAddEntry,
   onRemoveEntry,
@@ -137,10 +139,13 @@ export function Timeline({
     [onRemoveEntry]
   );
 
-  const skillMap = useMemo(
+  // パレット用のスキルマップ（ドラッグ判定用）
+  const paletteSkillMap = useMemo(
     () => new Map(skills.map((s) => [s.id, s])),
     [skills]
   );
+  // 全スキルマップ（autoTransform対象を含む表示・計算用）
+  const skillMap = allSkillMap;
 
   const buffDefMap = useMemo(
     () => new Map(buffs.map((b) => [b.id, b])),
