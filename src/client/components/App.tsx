@@ -121,6 +121,22 @@ export function App() {
     [stats, statsEnabled]
   );
 
+  // per-entryのクリティカル率ボーナスを考慮した合計期待威力
+  const totalExpectedPotency = useMemo(() => {
+    if (!statsEnabled) return null;
+    const directExpected = resolvedEntries.reduce((sum, entry) => {
+      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
+      if (hasError) return sum;
+      const skill = skillMap.get(entry.skillId);
+      const buffedPotency = Math.floor((skill?.potency ?? 0) * entry.buffMultiplier);
+      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus);
+      return sum + Math.floor(buffedPotency * entryMul);
+    }, 0);
+    // DoTはスナップショット時のバフ倍率が既に適用済み、基本の期待倍率を掛ける
+    const dotExpected = Math.floor(timelineResult.dotTotalPotency * calcExpectedMultiplier(stats));
+    return directExpected + dotExpected;
+  }, [statsEnabled, stats, resolvedEntries, skillMap, timelineResult.dotTotalPotency]);
+
   // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
   const overallPps = useMemo(() => {
     if (timelineResult.lastGcdEndTime <= 0) return null;
@@ -172,6 +188,7 @@ export function App() {
           resources={levelResources}
           buffs={levelBuffs}
           expectedMultiplier={expectedMultiplier}
+          totalExpectedPotency={totalExpectedPotency}
           statsEnabled={statsEnabled}
           stats={statsEnabled ? stats : undefined}
           dotTicks={timelineResult.dotTicks}

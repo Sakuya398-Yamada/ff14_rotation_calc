@@ -29,7 +29,12 @@ export const DRG_BUFFS: BuffDefinition[] = [
     shortName: "ﾊﾞﾄﾙ\nﾘﾀﾆｰ",
     icon: battleLitanyIcon,
     duration: 20,
-    effects: [],
+    effects: [
+      {
+        type: "critRate",
+        value: 0.1,
+      },
+    ],
     color: "#2196f3",
   },
   {

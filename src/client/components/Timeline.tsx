@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, PpsRange } from "../types/skill";
-import { calcGcd } from "../logic/stat-calc";
+import { calcGcd, calcExpectedMultiplier } from "../logic/stat-calc";
 import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
@@ -42,6 +42,7 @@ interface TimelineProps {
   resources: ResourceDefinition[];
   buffs: BuffDefinition[];
   expectedMultiplier: number | null;
+  totalExpectedPotency: number | null;
   statsEnabled: boolean;
   stats?: CharacterStats;
   dotTicks: DoTTick[];
@@ -103,6 +104,7 @@ export function Timeline({
   resources,
   buffs,
   expectedMultiplier,
+  totalExpectedPotency,
   statsEnabled,
   stats,
   dotTicks,
@@ -605,9 +607,9 @@ export function Timeline({
                 {" "}(DoT: {dotTotalPotency})
               </span>
             )}
-            {expectedMultiplier !== null && (
+            {totalExpectedPotency !== null && (
               <span style={styles.expectedPotency}>
-                {" "}(期待値: {Math.floor(totalPotency * expectedMultiplier)})
+                {" "}(期待値: {totalExpectedPotency})
               </span>
             )}
             {overallPps !== null && (
@@ -793,9 +795,10 @@ export function Timeline({
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
                     const castTime = getEntryCastTime(entry.skill, entry.activeBuffs);
                     const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
+                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
                     const expectedPot = hasError ? null : (
-                      expectedMultiplier !== null && entry.skill.potency > 0
-                        ? Math.floor(buffedPotency * expectedMultiplier)
+                      entryExpMul !== null && entry.skill.potency > 0
+                        ? Math.floor(buffedPotency * entryExpMul)
                         : null
                     );
                     return (
@@ -866,9 +869,10 @@ export function Timeline({
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
                     const buffedPotency = Math.floor(entry.skill.potency * entry.buffMultiplier);
+                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
                     const expectedPot = hasError ? null : (
-                      expectedMultiplier !== null && entry.skill.potency > 0
-                        ? Math.floor(buffedPotency * expectedMultiplier)
+                      entryExpMul !== null && entry.skill.potency > 0
+                        ? Math.floor(buffedPotency * entryExpMul)
                         : null
                     );
                     return (
