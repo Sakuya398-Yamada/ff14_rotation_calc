@@ -457,6 +457,15 @@ export function resolveTimeline(
       resolvedPotency = Math.floor(fallback + (resolvedPotency - fallback) * anyOfProcRate);
     }
 
+    // potencyScaling: リソース量に応じた威力スケーリング（線形補間）
+    if (skill.potencyScaling) {
+      const { resourceId, minAmount, minPotency, maxAmount, maxPotency } = skill.potencyScaling;
+      const currentAmount = resourceState[resourceId] ?? 0;
+      const clamped = Math.max(minAmount, Math.min(currentAmount, maxAmount));
+      const ratio = (clamped - minAmount) / (maxAmount - minAmount);
+      resolvedPotency = Math.floor(minPotency + (maxPotency - minPotency) * ratio);
+    }
+
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
     const untargetableError = skill.target === "enemy" && untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
@@ -549,6 +558,11 @@ export function resolveTimeline(
             autoGenTimers[change.resourceId].startedAt = startTime;
           }
         }
+      }
+
+      // consumeAllOfResource: 指定リソースを全消費（resourceChangesの消費を上書き）
+      if (skill.consumeAllOfResource) {
+        resourceState[skill.consumeAllOfResource] = 0;
       }
 
       // consumeAllResources: リストされたリソースを全て0にする
@@ -933,6 +947,9 @@ export function getFinalResourceState(
           Math.min(state[change.resourceId] + change.amount, def.maxStacks)
         );
       }
+    }
+    if (skill.consumeAllOfResource) {
+      state[skill.consumeAllOfResource] = 0;
     }
     if (skill.consumeAllResources) {
       for (const resId of skill.consumeAllResources) {
