@@ -418,6 +418,8 @@ export function resolveTimeline(
 
     // buffConsumptionAnyOf: いずれか1つのバフを消費（見つからなければエラー）
     let anyOfPotencyOverride: number | undefined;
+    let anyOfProcRate: number | undefined;
+    let anyOfFallbackPotency: number | undefined;
     let anyOfMatchedBuffId: string | undefined;
     if (skill.buffConsumptionAnyOf) {
       for (const option of skill.buffConsumptionAnyOf) {
@@ -425,6 +427,8 @@ export function resolveTimeline(
         if (activeBuff && (activeBuff.stacks ?? 0) >= option.stacks) {
           anyOfMatchedBuffId = option.buffId;
           anyOfPotencyOverride = option.potency;
+          anyOfProcRate = option.procRate;
+          anyOfFallbackPotency = option.fallbackPotency;
           break;
         }
       }
@@ -446,6 +450,11 @@ export function resolveTimeline(
     let resolvedPotency = anyOfPotencyOverride ?? skill.potency;
     if (wsComboError && skill.nonComboPotency !== undefined) {
       resolvedPotency = skill.nonComboPotency;
+    }
+    // proc確率を期待値として威力に適用: fallbackPotency + (potency - fallbackPotency) * procRate
+    if (anyOfProcRate !== undefined) {
+      const fallback = anyOfFallbackPotency ?? 0;
+      resolvedPotency = Math.floor(fallback + (resolvedPotency - fallback) * anyOfProcRate);
     }
 
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
