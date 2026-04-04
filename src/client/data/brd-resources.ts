@@ -18,6 +18,9 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     maxStacks: 100,
     color: "#ffd700",
     acquiredLevel: 80,
+    autoGenerateInterval: 3,
+    autoGenerateAmount: 5,
+    autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
   },
   {
     id: "coda-mages",
@@ -53,5 +56,7 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     maxStacks: 3,
     color: "#4caf50",
     acquiredLevel: 52,
+    autoGenerateInterval: 3,
+    autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
   },
 ];
