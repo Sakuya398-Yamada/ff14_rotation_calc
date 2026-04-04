@@ -863,7 +863,7 @@ export function Timeline({
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
                     const castTime = getEntryCastTime(entry.skill, entry.activeBuffs);
                     const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
+                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus) : null;
                     const expectedPot = hasError ? null : (
                       entryExpMul !== null && entry.resolvedPotency > 0
                         ? Math.floor(buffedPotency * entryExpMul)
@@ -942,7 +942,7 @@ export function Timeline({
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
                     const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus) : null;
+                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus) : null;
                     const expectedPot = hasError ? null : (
                       entryExpMul !== null && entry.resolvedPotency > 0
                         ? Math.floor(buffedPotency * entryExpMul)
