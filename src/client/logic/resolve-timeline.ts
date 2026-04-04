@@ -683,6 +683,29 @@ export function resolveTimeline(
           });
         }
       }
+
+      // refreshesDots: 指定DoTの効果時間をリセットし、バフスナップショットを再取得
+      if (skill.refreshesDots) {
+        const refreshBuffMultiplier = buffMultiplierBeforeApply;
+        const refreshCritRateBonus = baseCritRateBonus;
+        const refreshDhRateBonus = dhRateBonusBeforeApply;
+        for (const dotSkillId of skill.refreshesDots) {
+          const stream = dotStreams.get(dotSkillId);
+          if (!stream) continue;
+          // 元DoTの持続時間で延長（dotPotency元スキルのdotDurationを参照）
+          const dotSkill = skillMap.get(dotSkillId);
+          if (!dotSkill?.dotDuration) continue;
+          const newEndTime = Math.round((startTime + dotSkill.dotDuration) * 1000) / 1000;
+          stream.currentEndTime = newEndTime;
+          stream.segments.push({
+            appliedAt: startTime,
+            endTime: newEndTime,
+            buffMultiplier: refreshBuffMultiplier,
+            critRateBonus: refreshCritRateBonus,
+            dhRateBonus: refreshDhRateBonus,
+          });
+        }
+      }
     }
 
     // バフ適用前に計算済みの値を使用（スキル自身が付与するバフは自分の威力に含めない）

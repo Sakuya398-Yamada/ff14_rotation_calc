@@ -111,6 +111,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 56,
+    refreshesDots: ["venomous-bite", "caustic-bite", "windbite", "stormbite"],
     buffApplications: ["hawks-eye"],
   },
 

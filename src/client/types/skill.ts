@@ -77,6 +77,8 @@ export interface Skill {
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
   dotDuration?: number;
+  /** 使用時にDoT効果時間をリセットする対象スキルIDリスト（バフスナップショットも再取得） */
+  refreshesDots?: string[];
   /** コンボ元スキルIDリスト（いずれかの直後に使用するとコンボ成立） */
   comboFrom?: string[];
   /** 非コンボ時の威力（コンボ不成立時に適用。未設定の場合はpotencyを使用） */
