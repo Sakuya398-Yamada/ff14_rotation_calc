@@ -121,23 +121,8 @@ export function App() {
     setEntries((prev) => prev.filter((e) => e.uid !== uid));
   }, []);
 
-  const directPotency = useMemo(() => {
-    return resolvedEntries.reduce((sum, entry) => {
-      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
-      if (hasError) return sum;
-      return sum + Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-    }, 0);
-  }, [resolvedEntries]);
-
-  const totalPotency = directPotency + timelineResult.dotTotalPotency;
-
-  const expectedMultiplier = useMemo(
-    () => calcExpectedMultiplier(stats),
-    [stats]
-  );
-
   // per-entryのクリティカル率ボーナスを考慮した合計期待威力
-  const totalExpectedPotency = useMemo(() => {
+  const { totalExpectedPotency, dotExpectedPotency } = useMemo(() => {
     const directExpected = resolvedEntries.reduce((sum, entry) => {
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) return sum;
@@ -150,21 +135,21 @@ export function App() {
       const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
       return sum + Math.floor(tick.potency * dotMul);
     }, 0);
-    return directExpected + dotExpected;
+    return { totalExpectedPotency: directExpected + dotExpected, dotExpectedPotency: dotExpected };
   }, [stats, resolvedEntries, allSkillMap, timelineResult.dotTicks]);
 
-  // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
+  // 全体PPS: 0 〜 タイムライン全体終了まで（DoT最終ティック含む）
   const overallPps = useMemo(() => {
-    if (timelineResult.lastGcdEndTime <= 0) return null;
+    if (timelineResult.timelineEndTime <= 0) return null;
     return calcPps(
       resolvedEntries,
       allSkillMap,
       timelineResult.dotTicks,
       0,
-      timelineResult.lastGcdEndTime,
+      timelineResult.timelineEndTime,
       stats
     );
-  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.lastGcdEndTime, stats]);
+  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, stats]);
 
   // 範囲選択PPS
   const rangePps = useMemo(() => {
@@ -201,15 +186,13 @@ export function App() {
           resolvedEntries={resolvedEntries}
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}
-          totalPotency={totalPotency}
           resources={levelResources}
           buffs={levelBuffs}
-          expectedMultiplier={expectedMultiplier}
           totalExpectedPotency={totalExpectedPotency}
+          dotExpectedPotency={dotExpectedPotency}
           stats={stats}
           dotTicks={timelineResult.dotTicks}
           activeDoTs={timelineResult.activeDoTs}
-          dotTotalPotency={timelineResult.dotTotalPotency}
           untargetableWindows={untargetableWindows}
           onUntargetableWindowsChange={setUntargetableWindows}
           overallPps={overallPps}

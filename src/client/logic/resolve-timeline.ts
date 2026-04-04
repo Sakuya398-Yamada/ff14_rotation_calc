@@ -832,12 +832,17 @@ export function resolveTimeline(
     if (endTime > lastGcdEndTime) lastGcdEndTime = endTime;
   }
 
+  // タイムライン全体の終了時刻（GCD完了 or DoT最終ティックの遅い方）
+  const lastDotTickTime = dotTicks.length > 0 ? dotTicks[dotTicks.length - 1].time : 0;
+  const timelineEndTime = Math.max(lastGcdEndTime, lastDotTickTime);
+
   return {
     entries: resolved,
     dotTicks,
     dotTotalPotency,
     activeDoTs: allDoTs,
     lastGcdEndTime,
+    timelineEndTime,
   };
 }
 
