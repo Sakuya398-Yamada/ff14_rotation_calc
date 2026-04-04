@@ -91,6 +91,8 @@ export interface Skill {
   buffApplicationsByConsumedCount?: string[][];
   /** バフ消費のOR条件（いずれか1つを消費。potency指定時は威力を上書き） */
   buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number }[];
+  /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */
+  requiredBuff?: string;
   /** 自動変化条件（指定バフがアクティブ時に別スキルに変化） */
   autoTransform?: {
     /** 変化条件となるバフID */
