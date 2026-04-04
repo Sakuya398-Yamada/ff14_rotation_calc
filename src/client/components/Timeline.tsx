@@ -122,6 +122,27 @@ export function Timeline({
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [dragType, setDragType] = useState<"gcd" | "ogcd" | null>(null);
   const [showResources, setShowResources] = useState(true);
+
+  // リソースをdisplayGroupでグループ化（同じグループは1行にまとめる）
+  const resourceGroups = useMemo(() => {
+    const groups: { key: string; label: string; resources: typeof resources }[] = [];
+    const seen = new Set<string>();
+    for (const res of resources) {
+      if (res.displayGroup) {
+        if (!seen.has(res.displayGroup)) {
+          seen.add(res.displayGroup);
+          groups.push({
+            key: res.displayGroup,
+            label: res.shortName,
+            resources: resources.filter((r) => r.displayGroup === res.displayGroup),
+          });
+        }
+      } else {
+        groups.push({ key: res.id, label: res.shortName, resources: [res] });
+      }
+    }
+    return groups;
+  }, [resources]);
   const [showBuffs, setShowBuffs] = useState(true);
   const [showDoTs, setShowDoTs] = useState(true);
   const [showRecasts, setShowRecasts] = useState(true);
@@ -959,15 +980,14 @@ export function Timeline({
               </div>
 
               {/* リソースゲージ行 */}
-              {showResources && resources.map((res) => (
-                <div key={res.id} style={styles.resourceLane}>
-                  <div style={{ ...styles.resourceLaneLabel, backgroundColor: labelBg }} title={res.name}>
-                    {res.shortName}
+              {showResources && resourceGroups.map((group) => (
+                <div key={group.key} style={styles.resourceLane}>
+                  <div style={{ ...styles.resourceLaneLabel, backgroundColor: labelBg }} title={group.resources.map((r) => r.name).join(" / ")}>
+                    {group.label}
                   </div>
                   <div style={styles.resourceLaneContent}>
                     {resolvedEntries.map((entry) => {
-                      const count = entry.resourceSnapshot[res.id] ?? 0;
-                      const hasError = entry.resourceErrors.includes(res.id);
+                      const hasError = group.resources.some((r) => entry.resourceErrors.includes(r.id));
                       return (
                         <div
                           key={entry.uid}
@@ -975,24 +995,28 @@ export function Timeline({
                             ...styles.resourceMarker,
                             left: entry.startTime * PX_PER_SEC,
                           }}
-                          title={`${res.name}: ${count}/${res.maxStacks}${hasError ? " (不足)" : ""}`}
+                          title={group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${r.maxStacks}`).join(", ") + (hasError ? " (不足)" : "")}
                         >
-                          {res.maxStacks > 10 ? (
-                            <div style={styles.resourceGauge}>
-                              <div
-                                style={{
-                                  ...styles.resourceGaugeFill,
-                                  width: `${(count / res.maxStacks) * 100}%`,
-                                  backgroundColor: res.color,
-                                }}
-                              />
-                              <span style={styles.resourceGaugeLabel}>{count}</span>
-                            </div>
-                          ) : (
-                            <div style={styles.resourceDots}>
-                              {Array.from({ length: res.maxStacks }, (_, i) => (
+                          <div style={styles.resourceDots}>
+                            {group.resources.flatMap((res) => {
+                              const count = entry.resourceSnapshot[res.id] ?? 0;
+                              if (res.maxStacks > 10) {
+                                return [(
+                                  <div key={res.id} style={styles.resourceGauge}>
+                                    <div
+                                      style={{
+                                        ...styles.resourceGaugeFill,
+                                        width: `${(count / res.maxStacks) * 100}%`,
+                                        backgroundColor: res.color,
+                                      }}
+                                    />
+                                    <span style={styles.resourceGaugeLabel}>{count}</span>
+                                  </div>
+                                )];
+                              }
+                              return Array.from({ length: res.maxStacks }, (_, i) => (
                                 <div
-                                  key={i}
+                                  key={`${res.id}-${i}`}
                                   style={{
                                     ...styles.resourceDot,
                                     backgroundColor:
@@ -1001,9 +1025,9 @@ export function Timeline({
                                         : "rgba(255,255,255,0.15)",
                                   }}
                                 />
-                              ))}
-                            </div>
-                          )}
+                              ));
+                            })}
+                          </div>
                           {hasError && (
                             <div style={styles.resourceErrorMark}>!</div>
                           )}

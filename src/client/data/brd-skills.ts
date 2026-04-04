@@ -267,9 +267,10 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 100,
-    buffConsumptions: [{ buffId: "radiant-encore-ready", stacks: 1 }],
-    resourceChanges: [
-      { resourceId: "coda", amount: -3 },
+    buffConsumptionAnyOf: [
+      { buffId: "radiant-encore-ready-3", stacks: 1, potency: 1100 },
+      { buffId: "radiant-encore-ready-2", stacks: 1, potency: 800 },
+      { buffId: "radiant-encore-ready-1", stacks: 1, potency: 700 },
     ],
   },
 
@@ -411,9 +412,11 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 110,
     acquiredLevel: 90,
-    buffApplications: ["radiant-finale", "radiant-encore-ready"],
-    resourceChanges: [
-      { resourceId: "coda", amount: -3 },
+    consumeAllResources: ["coda-mages", "coda-armys", "coda-wanderers"],
+    buffApplicationsByConsumedCount: [
+      ["radiant-finale-1", "radiant-encore-ready-1"],
+      ["radiant-finale-2", "radiant-encore-ready-2"],
+      ["radiant-finale-3", "radiant-encore-ready-3"],
     ],
   },
 
@@ -433,7 +436,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 30,
     buffApplications: ["mages-ballad"],
     resourceChanges: [
-      { resourceId: "coda", amount: 1 },
+      { resourceId: "coda-mages", amount: 1 },
     ],
   },
   {
@@ -449,7 +452,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 40,
     buffApplications: ["armys-paeon"],
     resourceChanges: [
-      { resourceId: "coda", amount: 1 },
+      { resourceId: "coda-armys", amount: 1 },
     ],
   },
   {
@@ -465,7 +468,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 52,
     buffApplications: ["wanderers-minuet"],
     resourceChanges: [
-      { resourceId: "coda", amount: 1 },
+      { resourceId: "coda-wanderers", amount: 1 },
     ],
   },
 ];

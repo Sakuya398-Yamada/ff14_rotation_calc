@@ -85,6 +85,12 @@ export interface Skill {
   comboBuffApplications?: string[];
   /** コンボ成立時のみ適用するリソース変動 */
   comboResourceChanges?: ResourceChange[];
+  /** 全消費リソースIDリスト（リストされたリソースを全て消費、1つ以上あれば実行可） */
+  consumeAllResources?: string[];
+  /** consumeAllResources消費数に応じたバフ適用テーブル（index 0 = 1個消費時のbuffId[]） */
+  buffApplicationsByConsumedCount?: string[][];
+  /** バフ消費のOR条件（いずれか1つを消費。potency指定時は威力を上書き） */
+  buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number }[];
   /** 自動変化条件（指定バフがアクティブ時に別スキルに変化） */
   autoTransform?: {
     /** 変化条件となるバフID */
@@ -120,6 +126,8 @@ export interface ResourceDefinition {
   color: string;
   /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
   acquiredLevel?: number;
+  /** 表示グループ名（同じグループのリソースは1行にまとめて表示） */
+  displayGroup?: string;
 }
 
 /** 特定時点のリソース状態 */
