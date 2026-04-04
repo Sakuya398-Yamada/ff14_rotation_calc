@@ -91,6 +91,8 @@ export interface Skill {
   consumeAllResources?: string[];
   /** 指定リソースを全消費する（resourceChangesの消費量を上書きし全量消費） */
   consumeAllOfResource?: string;
+  /** リソース量が閾値以上の場合のみ付与するバフ */
+  buffApplicationIfResource?: { resourceId: string; minAmount: number; buffIds: string[] };
   /** リソース消費量に応じた威力スケーリング（線形補間） */
   potencyScaling?: {
     resourceId: string;

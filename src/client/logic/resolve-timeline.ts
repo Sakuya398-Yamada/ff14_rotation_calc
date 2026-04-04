@@ -619,6 +619,29 @@ export function resolveTimeline(
         }
       }
 
+      // buffApplicationIfResource: リソース量条件付きバフ適用（スナップショット値でチェック）
+      if (skill.buffApplicationIfResource) {
+        const { resourceId, minAmount, buffIds } = skill.buffApplicationIfResource;
+        if ((snapshot[resourceId] ?? 0) >= minAmount) {
+          for (const buffId of buffIds) {
+            const buffDef = buffDefMap.get(buffId);
+            if (!buffDef) continue;
+            const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+            const newBuff: ActiveBuff = {
+              buffId,
+              startTime,
+              endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+              stacks: buffDef.maxStacks,
+            };
+            if (existingIdx >= 0) {
+              currentActiveBuffs[existingIdx] = newBuff;
+            } else {
+              currentActiveBuffs.push(newBuff);
+            }
+          }
+        }
+      }
+
       // バフ適用: スキルにbuffApplicationsがあればアクティブバフに追加
       if (skill.buffApplications) {
         for (const buffId of skill.buffApplications) {

@@ -247,7 +247,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
       minAmount: 20, minPotency: 140,
       maxAmount: 100, maxPotency: 700,
     },
-    buffApplications: ["blast-arrow-ready"],
+    buffApplicationIfResource: { resourceId: "soul-voice", minAmount: 80, buffIds: ["blast-arrow-ready"] },
   },
   {
     id: "blast-arrow",
