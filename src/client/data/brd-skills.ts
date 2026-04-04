@@ -328,6 +328,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 1,
     acquiredLevel: 52,
+    requiredBuff: "wanderers-minuet",
     resourceChanges: [
       { resourceId: "repertoire", amount: -3 },
     ],

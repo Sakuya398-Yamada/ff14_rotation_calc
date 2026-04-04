@@ -391,6 +391,14 @@ export function resolveTimeline(
       }
     }
 
+    // requiredBuff: 指定バフがアクティブでなければエラー（バフは消費しない）
+    if (skill.requiredBuff) {
+      const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === skill.requiredBuff);
+      if (!activeBuff) {
+        comboErrors.push(skill.requiredBuff);
+      }
+    }
+
     // buffConsumptionAnyOf: いずれか1つのバフを消費（見つからなければエラー）
     let anyOfPotencyOverride: number | undefined;
     let anyOfMatchedBuffId: string | undefined;
