@@ -132,6 +132,8 @@ export function Timeline({
   const shouldAutoScrollRef = useRef(true);
   /** ドラッグオーバーのrAFスロットリング用 */
   const dragRafRef = useRef<number | null>(null);
+  /** dragenter/dragleaveの子要素間移動を無視するためのカウンター */
+  const dragEnterCountRef = useRef(0);
 
   const handleRemoveEntry = useCallback(
     (uid: string) => {
@@ -387,6 +389,12 @@ export function Timeline({
     [resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToCombined]
   );
 
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragEnterCountRef.current++;
+    setDragOver(true);
+  }, []);
+
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -401,7 +409,6 @@ export function Timeline({
 
       dragRafRef.current = requestAnimationFrame(() => {
         dragRafRef.current = null;
-        setDragOver(true);
         setDragType(type);
 
         if (scrollRef.current && resolvedEntries.length > 0) {
@@ -416,6 +423,9 @@ export function Timeline({
   );
 
   const handleDragLeave = useCallback(() => {
+    dragEnterCountRef.current--;
+    if (dragEnterCountRef.current > 0) return;
+
     if (dragRafRef.current !== null) {
       cancelAnimationFrame(dragRafRef.current);
       dragRafRef.current = null;
@@ -427,6 +437,7 @@ export function Timeline({
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
+      dragEnterCountRef.current = 0;
       if (dragRafRef.current !== null) {
         cancelAnimationFrame(dragRafRef.current);
         dragRafRef.current = null;
@@ -800,6 +811,7 @@ export function Timeline({
           ...styles.dropZone,
           ...(dragOver ? styles.dropZoneActive : {}),
         }}
+        onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
