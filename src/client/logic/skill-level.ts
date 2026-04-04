@@ -9,6 +9,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   }
 
   let potency = skill.potency;
+  let nonComboPotency = skill.nonComboPotency;
   let dotPotency = skill.dotPotency;
   let maxCharges = skill.maxCharges;
 
@@ -17,16 +18,17 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   for (const override of sorted) {
     if (level >= override.traitLevel) {
       if (override.potency !== undefined) potency = override.potency;
+      if (override.nonComboPotency !== undefined) nonComboPotency = override.nonComboPotency;
       if (override.dotPotency !== undefined) dotPotency = override.dotPotency;
       if (override.maxCharges !== undefined) maxCharges = override.maxCharges;
     }
   }
 
-  if (potency === skill.potency && dotPotency === skill.dotPotency && maxCharges === skill.maxCharges) {
+  if (potency === skill.potency && nonComboPotency === skill.nonComboPotency && dotPotency === skill.dotPotency && maxCharges === skill.maxCharges) {
     return skill;
   }
 
-  return { ...skill, potency, dotPotency, maxCharges };
+  return { ...skill, potency, nonComboPotency, dotPotency, maxCharges };
 }
 
 /**

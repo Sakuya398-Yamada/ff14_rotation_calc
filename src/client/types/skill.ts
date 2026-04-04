@@ -26,6 +26,8 @@ export interface TraitPotencyOverride {
   traitLevel: number;
   /** 変更後の威力（undefinedの場合は変更なし） */
   potency?: number;
+  /** 変更後の非コンボ時威力（undefinedの場合は変更なし） */
+  nonComboPotency?: number;
   /** 変更後のDoT威力（undefinedの場合は変更なし） */
   dotPotency?: number;
   /** 変更後の最大チャージ数（undefinedの場合は変更なし） */
