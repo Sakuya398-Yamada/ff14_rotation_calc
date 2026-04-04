@@ -56,7 +56,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     id: "true-thrust",
     name: "トゥルースラスト",
-    potency: 230,
+    potency: 170,
     type: "gcd",
     target: "enemy",
     icon: trueThrustIcon,
@@ -64,12 +64,15 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 1,
     autoTransform: { buffId: "dragons-eye", skillId: "raiden-thrust" },
+    traitPotencyOverrides: [
+      { traitLevel: 76, potency: 230 },
+    ],
   },
   {
     id: "vorpal-thrust",
     name: "ボーパルスラスト",
-    potency: 280,
-    nonComboPotency: 130,
+    potency: 250,
+    nonComboPotency: 100,
     comboFrom: ["true-thrust", "raiden-thrust"],
     type: "gcd",
     target: "enemy",
@@ -77,6 +80,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 4,
+    traitPotencyOverrides: [
+      { traitLevel: 76, potency: 280, nonComboPotency: 130 },
+    ],
   },
   {
     id: "full-thrust",
@@ -113,8 +119,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     id: "disembowel",
     name: "ディセムボウル",
-    potency: 250,
-    nonComboPotency: 140,
+    potency: 210,
+    nonComboPotency: 100,
     comboFrom: ["true-thrust", "raiden-thrust"],
     comboBuffApplications: ["power-surge"],
     type: "gcd",
@@ -123,6 +129,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 18,
+    traitPotencyOverrides: [
+      { traitLevel: 76, potency: 250, nonComboPotency: 140 },
+    ],
   },
   {
     id: "chaos-thrust",
@@ -161,7 +170,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     id: "drakesbane",
     name: "雲蒸竜変",
-    potency: 400,
+    potency: 460,
     type: "gcd",
     target: "enemy",
     icon: drakesbaneIcon,
@@ -171,6 +180,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     comboFrom: ["fang-and-claw", "wheeling-thrust"],
     comboBuffApplications: ["dragons-eye"],
     traitPotencyOverrides: [
+      { traitLevel: 86, potency: 400 },
       { traitLevel: 94, potency: 460 },
     ],
   },
@@ -207,6 +217,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 15,
+    traitPotencyOverrides: [
+      { traitLevel: 76, potency: 200 },
+    ],
   },
 
   // ============================================================
