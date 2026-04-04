@@ -212,6 +212,8 @@ export interface BuffDefinition {
   maxStacks?: number;
   /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
   acquiredLevel?: number;
+  /** 排他グループ名（同グループのバフは1つだけアクティブ。新規適用時に既存を解除） */
+  exclusiveGroup?: string;
 }
 
 /** タイムライン上のアクティブなバフ */

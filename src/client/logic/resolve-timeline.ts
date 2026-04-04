@@ -224,6 +224,23 @@ interface DoTStream {
 }
 
 /**
+ * 排他グループのバフを解除する。新しいバフの適用前に呼び出す。
+ */
+function removeExclusiveGroupBuffs(
+  activeBuffs: ActiveBuff[],
+  buffDef: BuffDefinition,
+  buffDefMap: Map<string, BuffDefinition>
+): void {
+  if (!buffDef.exclusiveGroup) return;
+  for (let i = activeBuffs.length - 1; i >= 0; i--) {
+    const existingDef = buffDefMap.get(activeBuffs[i].buffId);
+    if (existingDef?.exclusiveGroup === buffDef.exclusiveGroup && activeBuffs[i].buffId !== buffDef.id) {
+      activeBuffs.splice(i, 1);
+    }
+  }
+}
+
+/**
  * 指定時刻がボス離脱ウィンドウ内にあるかどうかを判定する。
  */
 function isInUntargetableWindow(
@@ -603,6 +620,7 @@ export function resolveTimeline(
           for (const buffId of buffIds) {
             const buffDef = buffDefMap.get(buffId);
             if (!buffDef) continue;
+            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
             const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
             const newBuff: ActiveBuff = {
               buffId,
@@ -626,6 +644,7 @@ export function resolveTimeline(
           for (const buffId of buffIds) {
             const buffDef = buffDefMap.get(buffId);
             if (!buffDef) continue;
+            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
             const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
             const newBuff: ActiveBuff = {
               buffId,
@@ -648,6 +667,8 @@ export function resolveTimeline(
           const buffDef = buffDefMap.get(buffId);
           if (!buffDef) continue;
 
+          // 排他グループのバフを解除
+          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
           // 同じバフが既にアクティブなら上書き（リフレッシュ）
           const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
           const newBuff: ActiveBuff = {
@@ -670,6 +691,7 @@ export function resolveTimeline(
           const buffDef = buffDefMap.get(buffId);
           if (!buffDef) continue;
 
+          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
           const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
           const newBuff: ActiveBuff = {
             buffId,
