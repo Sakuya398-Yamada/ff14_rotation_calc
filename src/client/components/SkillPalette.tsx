@@ -9,6 +9,7 @@ const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
 const JOBS: { id: JobId; name: string }[] = [
   { id: "whm", name: "白魔道士" },
   { id: "drg", name: "竜騎士" },
+  { id: "brd", name: "詩人" },
 ];
 
 interface CollapsibleSectionProps {
