@@ -955,10 +955,6 @@ export function Timeline({
                                     i < count
                                       ? res.color
                                       : "rgba(255,255,255,0.15)",
-                                  boxShadow:
-                                    i < count
-                                      ? `0 0 4px ${res.color}80`
-                                      : "none",
                                 }}
                               />
                             ))}
