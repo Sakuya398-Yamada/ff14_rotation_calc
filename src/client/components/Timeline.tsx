@@ -1292,7 +1292,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   scrollContainer: {
     overflowX: "auto",
-    overflowY: "hidden",
+    overflowY: "auto",
     flex: 1,
     minHeight: 0,
     padding: "12px 0",
