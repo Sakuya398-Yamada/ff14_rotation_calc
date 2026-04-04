@@ -360,9 +360,19 @@ export function Timeline({
   );
 
   /**
+   * oGCD挿入用の幅関数: アニメーションロックを基準にする。
+   * GCDのリキャスト幅（2.5s）ではなく、アニメーションロック（0.65s）を使うことで、
+   * GCDリキャスト中のウィービング位置を正しく判定する。
+   */
+  const getAnimLockWidth = useCallback(
+    (skill: Skill, _activeBuffs: ActiveBuff[]): number => skill.animationLock,
+    []
+  );
+
+  /**
    * ドラッグ中のマウス位置から挿入インデックス（resolvedEntries上）を計算する。
    * GCD: GCDエントリのみで計算し、combined変換（GCDリキャスト境界間に配置）
-   * oGCD: 全エントリで計算（任意の位置に配置）
+   * oGCD: 全エントリで計算、アニメーションロック基準の中央で判定（ウィービング対応）
    */
   const calcCombinedInsertIndex = useCallback(
     (mouseX: number, scrollLeft: number, type: "gcd" | "ogcd"): number => {
@@ -370,9 +380,9 @@ export function Timeline({
         const gcdIdx = calcInsertIndex(mouseX, scrollLeft, gcdResolvedEntries, skillMap, getEntryRecastTime);
         return mapGcdIndexToCombined(gcdIdx);
       }
-      return calcInsertIndex(mouseX, scrollLeft, resolvedEntries, skillMap, getEntryRecastTime);
+      return calcInsertIndex(mouseX, scrollLeft, resolvedEntries, skillMap, getAnimLockWidth);
     },
-    [resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, mapGcdIndexToCombined]
+    [resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToCombined]
   );
 
   const handleDragOver = useCallback(
