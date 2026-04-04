@@ -274,6 +274,8 @@ export interface TimelineResult {
   activeDoTs: ActiveDoT[];
   /** 最後のGCDスキルのリキャスト完了時刻 */
   lastGcdEndTime: number;
+  /** タイムライン全体の終了時刻（GCD完了 or DoT最終ティックの遅い方） */
+  timelineEndTime: number;
 }
 
 /** 時間情報付きタイムラインエントリ（計算結果） */

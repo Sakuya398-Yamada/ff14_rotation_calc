@@ -138,18 +138,18 @@ export function App() {
     return { totalExpectedPotency: directExpected + dotExpected, dotExpectedPotency: dotExpected };
   }, [stats, resolvedEntries, allSkillMap, timelineResult.dotTicks]);
 
-  // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
+  // 全体PPS: 0 〜 タイムライン全体終了まで（DoT最終ティック含む）
   const overallPps = useMemo(() => {
-    if (timelineResult.lastGcdEndTime <= 0) return null;
+    if (timelineResult.timelineEndTime <= 0) return null;
     return calcPps(
       resolvedEntries,
       allSkillMap,
       timelineResult.dotTicks,
       0,
-      timelineResult.lastGcdEndTime,
+      timelineResult.timelineEndTime,
       stats
     );
-  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.lastGcdEndTime, stats]);
+  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, stats]);
 
   // 範囲選択PPS
   const rangePps = useMemo(() => {
