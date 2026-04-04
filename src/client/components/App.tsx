@@ -121,21 +121,6 @@ export function App() {
     setEntries((prev) => prev.filter((e) => e.uid !== uid));
   }, []);
 
-  const directPotency = useMemo(() => {
-    return resolvedEntries.reduce((sum, entry) => {
-      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
-      if (hasError) return sum;
-      return sum + Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-    }, 0);
-  }, [resolvedEntries]);
-
-  const totalPotency = directPotency + timelineResult.dotTotalPotency;
-
-  const expectedMultiplier = useMemo(
-    () => calcExpectedMultiplier(stats),
-    [stats]
-  );
-
   // per-entryのクリティカル率ボーナスを考慮した合計期待威力
   const totalExpectedPotency = useMemo(() => {
     const directExpected = resolvedEntries.reduce((sum, entry) => {
@@ -201,15 +186,12 @@ export function App() {
           resolvedEntries={resolvedEntries}
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}
-          totalPotency={totalPotency}
           resources={levelResources}
           buffs={levelBuffs}
-          expectedMultiplier={expectedMultiplier}
           totalExpectedPotency={totalExpectedPotency}
           stats={stats}
           dotTicks={timelineResult.dotTicks}
           activeDoTs={timelineResult.activeDoTs}
-          dotTotalPotency={timelineResult.dotTotalPotency}
           untargetableWindows={untargetableWindows}
           onUntargetableWindowsChange={setUntargetableWindows}
           overallPps={overallPps}

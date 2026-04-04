@@ -39,15 +39,12 @@ interface TimelineProps {
   resolvedEntries: ResolvedTimelineEntry[];
   onAddEntry: (skillId: string, insertBeforeUid?: string) => void;
   onRemoveEntry: (uid: string) => void;
-  totalPotency: number;
   resources: ResourceDefinition[];
   buffs: BuffDefinition[];
-  expectedMultiplier: number;
   totalExpectedPotency: number;
   stats: CharacterStats;
   dotTicks: DoTTick[];
   activeDoTs: ActiveDoT[];
-  dotTotalPotency: number;
   untargetableWindows: BossUntargetableWindow[];
   onUntargetableWindowsChange: (windows: BossUntargetableWindow[]) => void;
   overallPps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
@@ -101,15 +98,12 @@ export function Timeline({
   resolvedEntries,
   onAddEntry,
   onRemoveEntry,
-  totalPotency,
   resources,
   buffs,
-  expectedMultiplier,
   totalExpectedPotency,
   stats,
   dotTicks,
   activeDoTs,
-  dotTotalPotency,
   untargetableWindows,
   onUntargetableWindowsChange,
   overallPps,
@@ -668,16 +662,10 @@ export function Timeline({
             {showPpsRange ? "PPS範囲 ▼" : "PPS範囲 ▶"}
           </button>
           <div style={styles.potencyDisplay}>
-            合計威力: <span style={styles.potencyValue}>{totalPotency}</span>
-            {dotTotalPotency > 0 && (
-              <span style={styles.dotPotencyLabel}>
-                {" "}(DoT: {dotTotalPotency})
-              </span>
-            )}
             {totalExpectedPotency > 0 && (
-              <span style={styles.expectedPotency}>
-                {" "}(期待値: {totalExpectedPotency})
-              </span>
+              <>
+                期待威力: <span style={styles.potencyValue}>{totalExpectedPotency}</span>
+              </>
             )}
             {overallPps !== null && (
               <span style={styles.ppsDisplay}>
@@ -1336,10 +1324,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "bold",
     color: "#ffd700",
   },
-  expectedPotency: {
-    fontSize: "14px",
-    color: "#4fc3f7",
-  },
   dropZone: {
     flex: 1,
     display: "flex",
@@ -1677,10 +1661,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#777",
     marginTop: "2px",
     whiteSpace: "nowrap" as const,
-  },
-  dotPotencyLabel: {
-    fontSize: "13px",
-    color: "#a5d6a7",
   },
   // DoTレーン
   dotLane: {
