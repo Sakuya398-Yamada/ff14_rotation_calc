@@ -138,12 +138,12 @@ export function App() {
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) return sum;
       const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus);
+      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
       return sum + Math.floor(buffedPotency * entryMul);
     }, 0);
-    // DoTはティックごとにスナップショット済みのcritRateBonusを適用
+    // DoTはティックごとにスナップショット済みのcritRateBonus・dhRateBonusを適用
     const dotExpected = timelineResult.dotTicks.reduce((sum, tick) => {
-      const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus);
+      const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
       return sum + Math.floor(tick.potency * dotMul);
     }, 0);
     return directExpected + dotExpected;
