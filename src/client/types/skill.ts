@@ -205,6 +205,8 @@ export interface DoTTick {
   skillId: string;
   /** DoT元スキルのアイコン */
   icon: string;
+  /** スナップショット時のクリティカル発生率ボーナス（0.0 = なし、0.1 = +10%） */
+  critRateBonus: number;
 }
 
 /** タイムライン上のアクティブなDoT */

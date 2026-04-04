@@ -197,6 +197,7 @@ interface DoTStream {
     appliedAt: number;
     endTime: number;
     buffMultiplier: number;
+    critRateBonus: number;
   }>;
 }
 
@@ -540,13 +541,14 @@ export function resolveTimeline(
       // コンボ不成立時はDoTを適用しない（コンボ成立時の追加効果扱い）
       if (skill.dotPotency && skill.dotDuration && !wsComboError) {
         const buffMultiplier = buffMultiplierBeforeApply;
+        const dotCritRateBonus = critRateBonusBeforeApply;
         const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
         const existing = dotStreams.get(skill.id);
         if (existing) {
           // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
           existing.currentEndTime = endTime;
-          existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier });
+          existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier, critRateBonus: dotCritRateBonus });
         } else {
           // 初回適用: 新規DoTストリーム作成
           dotStreams.set(skill.id, {
@@ -555,7 +557,7 @@ export function resolveTimeline(
             dotPotency: skill.dotPotency,
             firstAppliedAt: startTime,
             currentEndTime: endTime,
-            segments: [{ appliedAt: startTime, endTime, buffMultiplier }],
+            segments: [{ appliedAt: startTime, endTime, buffMultiplier, critRateBonus: dotCritRateBonus }],
           });
         }
       }
@@ -659,6 +661,7 @@ export function resolveTimeline(
           potency,
           skillId: stream.skillId,
           icon: stream.icon,
+          critRateBonus: activeSegment.critRateBonus,
         });
         dotTotalPotency += potency;
       }
@@ -721,9 +724,9 @@ export function calcPps(
   }
 
   let dotPotency = 0;
-  const dotMul = calcExpectedMultiplier(stats);
   for (const tick of dotTicks) {
     if (tick.time >= rangeStart && tick.time < rangeEnd) {
+      const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus);
       dotPotency += Math.floor(tick.potency * dotMul);
     }
   }
