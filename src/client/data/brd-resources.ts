@@ -14,7 +14,7 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
   {
     id: "soul-voice",
     name: "ソウルボイス",
-    shortName: "ｿｳﾙﾎﾞｲｽ",
+    shortName: "ｿｳﾙ\nﾎﾞｲｽ",
     maxStacks: 100,
     color: "#ffd700",
     acquiredLevel: 80,
