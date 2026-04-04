@@ -186,6 +186,7 @@ export function SkillPalette({
                 src={skill.icon}
                 alt={skill.name}
                 style={styles.skillIcon}
+                draggable={false}
               />
               <div style={styles.skillInfo}>
                 <div style={styles.skillName}>{skill.name}</div>
@@ -210,6 +211,7 @@ export function SkillPalette({
                 src={skill.icon}
                 alt={skill.name}
                 style={styles.skillIcon}
+                draggable={false}
               />
               <div style={styles.skillInfo}>
                 <div style={styles.skillName}>{skill.name}</div>
@@ -382,6 +384,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   skillInfo: {
     minWidth: 0,
+    pointerEvents: "none" as const,
   },
   skillName: {
     fontSize: "13px",
