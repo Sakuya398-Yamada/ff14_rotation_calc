@@ -435,7 +435,10 @@ export function resolveTimeline(
     // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
     const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
     const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
-    const critRateBonusBeforeApply = hasError ? 0 : (guaranteedCritBeforeApply ? 1 : getCritRateBonus(currentActiveBuffs, buffDefMap));
+    // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
+    const baseCritRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
+    // 直接ダメージ用: guaranteedCritの場合は100%に上書き
+    const critRateBonusBeforeApply = guaranteedCritBeforeApply ? 1 : baseCritRateBonus;
     const dhRateBonusBeforeApply = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
 
     if (!hasError) {
@@ -563,7 +566,7 @@ export function resolveTimeline(
       // コンボ不成立時はDoTを適用しない（コンボ成立時の追加効果扱い）
       if (skill.dotPotency && skill.dotDuration && !wsComboError) {
         const buffMultiplier = buffMultiplierBeforeApply;
-        const dotCritRateBonus = critRateBonusBeforeApply;
+        const dotCritRateBonus = baseCritRateBonus;
         const dotDhRateBonus = dhRateBonusBeforeApply;
         const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
