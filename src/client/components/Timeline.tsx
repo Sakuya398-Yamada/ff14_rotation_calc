@@ -977,20 +977,33 @@ export function Timeline({
                           }}
                           title={`${res.name}: ${count}/${res.maxStacks}${hasError ? " (不足)" : ""}`}
                         >
-                          <div style={styles.resourceDots}>
-                            {Array.from({ length: res.maxStacks }, (_, i) => (
+                          {res.maxStacks > 10 ? (
+                            <div style={styles.resourceGauge}>
                               <div
-                                key={i}
                                 style={{
-                                  ...styles.resourceDot,
-                                  backgroundColor:
-                                    i < count
-                                      ? res.color
-                                      : "rgba(255,255,255,0.15)",
+                                  ...styles.resourceGaugeFill,
+                                  width: `${(count / res.maxStacks) * 100}%`,
+                                  backgroundColor: res.color,
                                 }}
                               />
-                            ))}
-                          </div>
+                              <span style={styles.resourceGaugeLabel}>{count}</span>
+                            </div>
+                          ) : (
+                            <div style={styles.resourceDots}>
+                              {Array.from({ length: res.maxStacks }, (_, i) => (
+                                <div
+                                  key={i}
+                                  style={{
+                                    ...styles.resourceDot,
+                                    backgroundColor:
+                                      i < count
+                                        ? res.color
+                                        : "rgba(255,255,255,0.15)",
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
                           {hasError && (
                             <div style={styles.resourceErrorMark}>!</div>
                           )}
@@ -1511,6 +1524,30 @@ const styles: Record<string, React.CSSProperties> = {
   resourceDots: {
     display: "flex",
     gap: "3px",
+  },
+  resourceGauge: {
+    position: "relative",
+    width: 40,
+    height: RESOURCE_DOT_SIZE,
+    borderRadius: RESOURCE_DOT_SIZE / 2,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    overflow: "hidden",
+  },
+  resourceGaugeFill: {
+    height: "100%",
+    borderRadius: RESOURCE_DOT_SIZE / 2,
+    transition: "width 0.2s",
+  },
+  resourceGaugeLabel: {
+    position: "absolute" as const,
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "8px",
+    fontWeight: "bold",
+    color: "#fff",
+    textShadow: "0 0 2px rgba(0,0,0,0.8)",
   },
   resourceDot: {
     width: RESOURCE_DOT_SIZE,
