@@ -130,6 +130,8 @@ export function Timeline({
   const scrollRef = useRef<HTMLDivElement>(null);
   /** 末尾追加時のみ自動スクロールするためのフラグ */
   const shouldAutoScrollRef = useRef(true);
+  /** ドラッグオーバーのrAFスロットリング用 */
+  const dragRafRef = useRef<number | null>(null);
 
   const handleRemoveEntry = useCallback(
     (uid: string) => {
@@ -389,31 +391,46 @@ export function Timeline({
     (e: React.DragEvent) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
-      setDragOver(true);
+
+      // rAFでスロットリング: 前フレームの更新がまだ処理中なら新しいリクエストをスキップ
+      if (dragRafRef.current !== null) return;
 
       const type = detectDragType(e);
-      setDragType(type);
+      const mouseX = scrollRef.current ? e.clientX - scrollRef.current.getBoundingClientRect().left : 0;
+      const scrollLeft = scrollRef.current?.scrollLeft ?? 0;
 
-      if (scrollRef.current && resolvedEntries.length > 0) {
-        const rect = scrollRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
-        setInsertIndex(idx);
-      } else {
-        setInsertIndex(null);
-      }
+      dragRafRef.current = requestAnimationFrame(() => {
+        dragRafRef.current = null;
+        setDragOver(true);
+        setDragType(type);
+
+        if (scrollRef.current && resolvedEntries.length > 0) {
+          const idx = calcCombinedInsertIndex(mouseX, scrollLeft, type);
+          setInsertIndex(idx);
+        } else {
+          setInsertIndex(null);
+        }
+      });
     },
     [resolvedEntries, detectDragType, calcCombinedInsertIndex]
   );
 
   const handleDragLeave = useCallback(() => {
+    if (dragRafRef.current !== null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
     setDragOver(false);
     setInsertIndex(null);
     setDragType(null);
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
+    (e: React.DragEvent<HTMLDivElement>) => {
+      if (dragRafRef.current !== null) {
+        cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = null;
+      }
       e.preventDefault();
       setDragOver(false);
 
