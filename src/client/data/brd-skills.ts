@@ -73,7 +73,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 2,
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 600 },
-      { buffId: "hawks-eye", stacks: 1, procRate: 0.35 },
+      { buffId: "hawks-eye", stacks: 1, procRate: 0.35, fallbackPotency: 160 },
     ],
   },
   {
@@ -164,7 +164,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     replacesSkillId: "straight-shot",
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 840 },
-      { buffId: "hawks-eye", stacks: 1, procRate: 0.35 },
+      { buffId: "hawks-eye", stacks: 1, procRate: 0.35, fallbackPotency: 220 },
     ],
   },
   {
@@ -208,7 +208,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 72,
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 300 },
-      { buffId: "hawks-eye", stacks: 1, procRate: 0.35 },
+      { buffId: "hawks-eye", stacks: 1, procRate: 0.35, fallbackPotency: 140 },
     ],
   },
   {
