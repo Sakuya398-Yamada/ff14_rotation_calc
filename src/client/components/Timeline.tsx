@@ -489,6 +489,9 @@ export function Timeline({
     return startTime * PX_PER_SEC;
   }, [insertIndex, dragType, timelineStateAtIndex]);
 
+  // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
+  const labelBg = dragOver ? "#15142a" : "#0f0f23";
+
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
   const buffTimespans = useMemo(() => {
@@ -820,7 +823,7 @@ export function Timeline({
 
               {/* GCD行 */}
               <div style={styles.lane}>
-                <div style={styles.laneLabel}>GCD</div>
+                <div style={{ ...styles.laneLabel, backgroundColor: labelBg }}>GCD</div>
                 <div style={styles.laneContent}>
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
@@ -901,7 +904,7 @@ export function Timeline({
 
               {/* oGCD行 */}
               <div style={styles.lane}>
-                <div style={styles.laneLabel}>oGCD</div>
+                <div style={{ ...styles.laneLabel, backgroundColor: labelBg }}>oGCD</div>
                 <div style={styles.laneContent}>
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
@@ -946,7 +949,7 @@ export function Timeline({
               {/* リソースゲージ行 */}
               {showResources && resources.map((res) => (
                 <div key={res.id} style={styles.resourceLane}>
-                  <div style={styles.resourceLaneLabel} title={res.name}>
+                  <div style={{ ...styles.resourceLaneLabel, backgroundColor: labelBg }} title={res.name}>
                     {res.shortName}
                   </div>
                   <div style={styles.resourceLaneContent}>
@@ -992,7 +995,7 @@ export function Timeline({
                 if (!spans || spans.length === 0) return null;
                 return (
                   <div key={buffDef.id} style={styles.buffLane}>
-                    <div style={styles.buffLaneLabel} title={buffDef.name}>
+                    <div style={{ ...styles.buffLaneLabel, backgroundColor: labelBg }} title={buffDef.name}>
                       {buffDef.shortName}
                     </div>
                     <div style={styles.buffLaneContent}>
@@ -1036,7 +1039,7 @@ export function Timeline({
                 const label = skill?.name ?? skillId;
                 return (
                   <div key={`recast-${skillId}`} style={styles.recastLane}>
-                    <div style={styles.recastLaneLabel} title={`${label} リキャスト`}>
+                    <div style={{ ...styles.recastLaneLabel, backgroundColor: labelBg }} title={`${label} リキャスト`}>
                       RC
                       {skill?.icon && (
                         <img
@@ -1094,7 +1097,7 @@ export function Timeline({
 
                   return (
                     <div key={`dot-${skillId}`} style={styles.dotLane}>
-                      <div style={styles.dotLaneLabel} title={`${label} DoT`}>
+                      <div style={{ ...styles.dotLaneLabel, backgroundColor: labelBg }} title={`${label} DoT`}>
                         DoT
                       </div>
                       <div style={styles.dotLaneContent}>
@@ -1207,7 +1210,7 @@ export function Timeline({
 
               {/* 時間軸ルーラー */}
               <div style={styles.ruler}>
-                <div style={styles.rulerLabel} />
+                <div style={{ ...styles.rulerLabel, backgroundColor: labelBg }} />
                 <div style={styles.rulerContent}>
                   {rulerTicks.map((t) => {
                     const isMajor = t % 1 === 0;
