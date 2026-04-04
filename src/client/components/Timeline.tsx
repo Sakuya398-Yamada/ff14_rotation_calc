@@ -132,6 +132,8 @@ export function Timeline({
   const shouldAutoScrollRef = useRef(true);
   /** ドラッグオーバーのrAFスロットリング用 */
   const dragRafRef = useRef<number | null>(null);
+  /** dragenter/dragleaveの子要素間移動を無視するためのカウンター */
+  const dragEnterCountRef = useRef(0);
 
   const handleRemoveEntry = useCallback(
     (uid: string) => {
@@ -387,6 +389,12 @@ export function Timeline({
     [resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToCombined]
   );
 
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragEnterCountRef.current++;
+    setDragOver(true);
+  }, []);
+
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -401,7 +409,6 @@ export function Timeline({
 
       dragRafRef.current = requestAnimationFrame(() => {
         dragRafRef.current = null;
-        setDragOver(true);
         setDragType(type);
 
         if (scrollRef.current && resolvedEntries.length > 0) {
@@ -416,6 +423,9 @@ export function Timeline({
   );
 
   const handleDragLeave = useCallback(() => {
+    dragEnterCountRef.current--;
+    if (dragEnterCountRef.current > 0) return;
+
     if (dragRafRef.current !== null) {
       cancelAnimationFrame(dragRafRef.current);
       dragRafRef.current = null;
@@ -427,6 +437,7 @@ export function Timeline({
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
+      dragEnterCountRef.current = 0;
       if (dragRafRef.current !== null) {
         cancelAnimationFrame(dragRafRef.current);
         dragRafRef.current = null;
@@ -488,6 +499,9 @@ export function Timeline({
 
     return startTime * PX_PER_SEC;
   }, [insertIndex, dragType, timelineStateAtIndex]);
+
+  // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
+  const labelBg = dragOver ? "#1b1921" : "#0f0f23";
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
@@ -797,6 +811,7 @@ export function Timeline({
           ...styles.dropZone,
           ...(dragOver ? styles.dropZoneActive : {}),
         }}
+        onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -820,7 +835,7 @@ export function Timeline({
 
               {/* GCD行 */}
               <div style={styles.lane}>
-                <div style={styles.laneLabel}>GCD</div>
+                <div style={{ ...styles.laneLabel, backgroundColor: labelBg }}>GCD</div>
                 <div style={styles.laneContent}>
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
@@ -901,7 +916,7 @@ export function Timeline({
 
               {/* oGCD行 */}
               <div style={styles.lane}>
-                <div style={styles.laneLabel}>oGCD</div>
+                <div style={{ ...styles.laneLabel, backgroundColor: labelBg }}>oGCD</div>
                 <div style={styles.laneContent}>
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
@@ -946,7 +961,7 @@ export function Timeline({
               {/* リソースゲージ行 */}
               {showResources && resources.map((res) => (
                 <div key={res.id} style={styles.resourceLane}>
-                  <div style={styles.resourceLaneLabel} title={res.name}>
+                  <div style={{ ...styles.resourceLaneLabel, backgroundColor: labelBg }} title={res.name}>
                     {res.shortName}
                   </div>
                   <div style={styles.resourceLaneContent}>
@@ -992,7 +1007,7 @@ export function Timeline({
                 if (!spans || spans.length === 0) return null;
                 return (
                   <div key={buffDef.id} style={styles.buffLane}>
-                    <div style={styles.buffLaneLabel} title={buffDef.name}>
+                    <div style={{ ...styles.buffLaneLabel, backgroundColor: labelBg }} title={buffDef.name}>
                       {buffDef.shortName}
                     </div>
                     <div style={styles.buffLaneContent}>
@@ -1036,7 +1051,7 @@ export function Timeline({
                 const label = skill?.name ?? skillId;
                 return (
                   <div key={`recast-${skillId}`} style={styles.recastLane}>
-                    <div style={styles.recastLaneLabel} title={`${label} リキャスト`}>
+                    <div style={{ ...styles.recastLaneLabel, backgroundColor: labelBg }} title={`${label} リキャスト`}>
                       RC
                       {skill?.icon && (
                         <img
@@ -1094,7 +1109,7 @@ export function Timeline({
 
                   return (
                     <div key={`dot-${skillId}`} style={styles.dotLane}>
-                      <div style={styles.dotLaneLabel} title={`${label} DoT`}>
+                      <div style={{ ...styles.dotLaneLabel, backgroundColor: labelBg }} title={`${label} DoT`}>
                         DoT
                       </div>
                       <div style={styles.dotLaneContent}>
@@ -1207,7 +1222,7 @@ export function Timeline({
 
               {/* 時間軸ルーラー */}
               <div style={styles.ruler}>
-                <div style={styles.rulerLabel} />
+                <div style={{ ...styles.rulerLabel, backgroundColor: labelBg }} />
                 <div style={styles.rulerContent}>
                   {rulerTicks.map((t) => {
                     const isMajor = t % 1 === 0;
