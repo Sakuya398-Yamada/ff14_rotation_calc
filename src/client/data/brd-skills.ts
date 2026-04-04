@@ -71,7 +71,10 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 2,
-    buffConsumptions: [{ buffId: "hawks-eye", stacks: 1 }],
+    buffConsumptionAnyOf: [
+      { buffId: "barrage", stacks: 1 },
+      { buffId: "hawks-eye", stacks: 1 },
+    ],
   },
   {
     id: "venomous-bite",
@@ -159,7 +162,10 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 70,
     replacesSkillId: "straight-shot",
-    buffConsumptions: [{ buffId: "hawks-eye", stacks: 1 }],
+    buffConsumptionAnyOf: [
+      { buffId: "barrage", stacks: 1 },
+      { buffId: "hawks-eye", stacks: 1 },
+    ],
   },
   {
     id: "burst-shot",
@@ -200,7 +206,10 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 72,
-    buffConsumptions: [{ buffId: "hawks-eye", stacks: 1 }],
+    buffConsumptionAnyOf: [
+      { buffId: "barrage", stacks: 1 },
+      { buffId: "hawks-eye", stacks: 1 },
+    ],
   },
   {
     id: "ladonsbite",
