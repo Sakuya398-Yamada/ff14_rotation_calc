@@ -12,7 +12,7 @@ const JOBS: { id: JobId; name: string }[] = [
 ];
 
 interface CollapsibleSectionProps {
-  title: string;
+  title: React.ReactNode;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }
@@ -89,7 +89,7 @@ export function SkillPalette({
       </div>
 
       {/* レベル設定 */}
-      <CollapsibleSection title="レベル（アルファ版）" defaultOpen={false}>
+      <CollapsibleSection title={<>レベル<span style={{ textTransform: "none" }}>（α版）</span></>} defaultOpen={false}>
         <div style={styles.alphaNotice}>
           他レベルでのスキルの有無・威力は保証されていません
         </div>
