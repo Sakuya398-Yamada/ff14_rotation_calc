@@ -239,9 +239,15 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 80,
     resourceChanges: [
-      { resourceId: "soul-voice", amount: -100 },
+      { resourceId: "soul-voice", amount: -20 },
     ],
-    buffApplications: ["blast-arrow-ready"],
+    consumeAllOfResource: "soul-voice",
+    potencyScaling: {
+      resourceId: "soul-voice",
+      minAmount: 20, minPotency: 140,
+      maxAmount: 100, maxPotency: 700,
+    },
+    buffApplicationIfResource: { resourceId: "soul-voice", minAmount: 80, buffIds: ["blast-arrow-ready"] },
   },
   {
     id: "blast-arrow",

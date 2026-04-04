@@ -457,6 +457,15 @@ export function resolveTimeline(
       resolvedPotency = Math.floor(fallback + (resolvedPotency - fallback) * anyOfProcRate);
     }
 
+    // potencyScaling: リソース量に応じた威力スケーリング（線形補間）
+    if (skill.potencyScaling) {
+      const { resourceId, minAmount, minPotency, maxAmount, maxPotency } = skill.potencyScaling;
+      const currentAmount = resourceState[resourceId] ?? 0;
+      const clamped = Math.max(minAmount, Math.min(currentAmount, maxAmount));
+      const ratio = (clamped - minAmount) / (maxAmount - minAmount);
+      resolvedPotency = Math.floor(minPotency + (maxPotency - minPotency) * ratio);
+    }
+
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
     const untargetableError = skill.target === "enemy" && untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
@@ -551,6 +560,11 @@ export function resolveTimeline(
         }
       }
 
+      // consumeAllOfResource: 指定リソースを全消費（resourceChangesの消費を上書き）
+      if (skill.consumeAllOfResource) {
+        resourceState[skill.consumeAllOfResource] = 0;
+      }
+
       // consumeAllResources: リストされたリソースを全て0にする
       if (skill.consumeAllResources) {
         for (const resId of skill.consumeAllResources) {
@@ -586,6 +600,29 @@ export function resolveTimeline(
       if (skill.buffApplicationsByConsumedCount && consumeAllCount > 0) {
         const buffIds = skill.buffApplicationsByConsumedCount[consumeAllCount - 1];
         if (buffIds) {
+          for (const buffId of buffIds) {
+            const buffDef = buffDefMap.get(buffId);
+            if (!buffDef) continue;
+            const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+            const newBuff: ActiveBuff = {
+              buffId,
+              startTime,
+              endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+              stacks: buffDef.maxStacks,
+            };
+            if (existingIdx >= 0) {
+              currentActiveBuffs[existingIdx] = newBuff;
+            } else {
+              currentActiveBuffs.push(newBuff);
+            }
+          }
+        }
+      }
+
+      // buffApplicationIfResource: リソース量条件付きバフ適用（スナップショット値でチェック）
+      if (skill.buffApplicationIfResource) {
+        const { resourceId, minAmount, buffIds } = skill.buffApplicationIfResource;
+        if ((snapshot[resourceId] ?? 0) >= minAmount) {
           for (const buffId of buffIds) {
             const buffDef = buffDefMap.get(buffId);
             if (!buffDef) continue;
@@ -933,6 +970,9 @@ export function getFinalResourceState(
           Math.min(state[change.resourceId] + change.amount, def.maxStacks)
         );
       }
+    }
+    if (skill.consumeAllOfResource) {
+      state[skill.consumeAllOfResource] = 0;
     }
     if (skill.consumeAllResources) {
       for (const resId of skill.consumeAllResources) {
