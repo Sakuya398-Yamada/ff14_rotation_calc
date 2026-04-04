@@ -490,7 +490,7 @@ export function Timeline({
   }, [insertIndex, dragType, timelineStateAtIndex]);
 
   // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
-  const labelBg = dragOver ? "#15142a" : "#0f0f23";
+  const labelBg = dragOver ? "#1b1921" : "#0f0f23";
 
   // タイムライン上の全バフ期間を収集（重複排除）
   // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
