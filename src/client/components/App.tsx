@@ -122,7 +122,7 @@ export function App() {
   }, []);
 
   // per-entryのクリティカル率ボーナスを考慮した合計期待威力
-  const totalExpectedPotency = useMemo(() => {
+  const { totalExpectedPotency, dotExpectedPotency } = useMemo(() => {
     const directExpected = resolvedEntries.reduce((sum, entry) => {
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) return sum;
@@ -135,7 +135,7 @@ export function App() {
       const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
       return sum + Math.floor(tick.potency * dotMul);
     }, 0);
-    return directExpected + dotExpected;
+    return { totalExpectedPotency: directExpected + dotExpected, dotExpectedPotency: dotExpected };
   }, [stats, resolvedEntries, allSkillMap, timelineResult.dotTicks]);
 
   // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
@@ -189,6 +189,7 @@ export function App() {
           resources={levelResources}
           buffs={levelBuffs}
           totalExpectedPotency={totalExpectedPotency}
+          dotExpectedPotency={dotExpectedPotency}
           stats={stats}
           dotTicks={timelineResult.dotTicks}
           activeDoTs={timelineResult.activeDoTs}

@@ -42,6 +42,7 @@ interface TimelineProps {
   resources: ResourceDefinition[];
   buffs: BuffDefinition[];
   totalExpectedPotency: number;
+  dotExpectedPotency: number;
   stats: CharacterStats;
   dotTicks: DoTTick[];
   activeDoTs: ActiveDoT[];
@@ -101,6 +102,7 @@ export function Timeline({
   resources,
   buffs,
   totalExpectedPotency,
+  dotExpectedPotency,
   stats,
   dotTicks,
   activeDoTs,
@@ -665,6 +667,11 @@ export function Timeline({
             {totalExpectedPotency > 0 && (
               <>
                 期待威力: <span style={styles.potencyValue}>{totalExpectedPotency}</span>
+                {dotExpectedPotency > 0 && (
+                  <span style={{ fontSize: "13px", color: "#a5d6a7" }}>
+                    {" "}(DoT: {dotExpectedPotency})
+                  </span>
+                )}
               </>
             )}
             {overallPps !== null && (
