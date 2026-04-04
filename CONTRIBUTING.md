@@ -66,11 +66,10 @@ Claude CodeがIssueの内容を読み取り、以下を行います。
 
 | type | 用途 | 派生元 | マージ先 |
 |------|------|--------|---------|
-| `feature` | 新機能開発 | develop | develop |
-| `fix` | バグ修正 | develop | develop |
-| `hotfix` | 緊急修正 | main | main, develop |
-| `refactor` | リファクタリング | develop | develop |
-| `docs` | ドキュメント | develop | develop |
+| `feature` | 新機能開発 | main | main |
+| `fix` | バグ修正 | main | main |
+| `refactor` | リファクタリング | main | main |
+| `docs` | ドキュメント | main | main |
 
 ### コミットメッセージ
 
