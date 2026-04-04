@@ -124,6 +124,10 @@ export interface ResourceDefinition {
   initialStacks?: number;
   /** 自動生成の間隔（秒）。未設定の場合は自動生成なし */
   autoGenerateInterval?: number;
+  /** 自動生成1回あたりの増加量（デフォルト1） */
+  autoGenerateAmount?: number;
+  /** 自動生成条件: 指定バフのいずれかがアクティブ時のみ自動生成する */
+  autoGenerateWhileBuff?: string[];
   /** 表示色 */
   color: string;
   /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */

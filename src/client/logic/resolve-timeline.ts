@@ -39,7 +39,8 @@ function processAutoGen(
   currentValue: number,
   maxStacks: number,
   interval: number,
-  timer: AutoGenTimer
+  timer: AutoGenTimer,
+  amount: number = 1
 ): number {
   if (timer.startedAt === null) return currentValue;
 
@@ -49,7 +50,7 @@ function processAutoGen(
   while (value < maxStacks) {
     const nextTick = timerTime + interval;
     if (nextTick > currentTime) break;
-    value = Math.min(value + 1, maxStacks);
+    value = Math.min(value + amount, maxStacks);
     timerTime = nextTick;
   }
 
@@ -274,8 +275,8 @@ export function resolveTimeline(
     const initial = res.initialStacks ?? 0;
     resourceState[res.id] = initial;
     autoGenTimers[res.id] = {
-      // 初期値が最大未満ならタイマー開始（t=0から）
-      startedAt: res.autoGenerateInterval && initial < res.maxStacks ? 0 : null,
+      // 初期値が最大未満ならタイマー開始（t=0から）。バフ条件付きの場合はバフ取得まで待つ
+      startedAt: res.autoGenerateInterval && !res.autoGenerateWhileBuff && initial < res.maxStacks ? 0 : null,
     };
   }
 
@@ -340,12 +341,28 @@ export function resolveTimeline(
     // 自動生成リソースを時刻に応じて加算
     for (const res of resources) {
       if (res.autoGenerateInterval) {
+        // autoGenerateWhileBuff: 指定バフのいずれかがアクティブ時のみ自動生成
+        if (res.autoGenerateWhileBuff) {
+          const hasRequiredBuff = res.autoGenerateWhileBuff.some(
+            (buffId) => currentActiveBuffs.some((ab) => ab.buffId === buffId)
+          );
+          if (!hasRequiredBuff) {
+            // バフ非アクティブ → タイマー停止
+            autoGenTimers[res.id].startedAt = null;
+            continue;
+          }
+          // バフアクティブだがタイマー未開始 → タイマー開始
+          if (autoGenTimers[res.id].startedAt === null && resourceState[res.id] < res.maxStacks) {
+            autoGenTimers[res.id].startedAt = startTime;
+          }
+        }
         resourceState[res.id] = processAutoGen(
           startTime,
           resourceState[res.id],
           res.maxStacks,
           res.autoGenerateInterval,
-          autoGenTimers[res.id]
+          autoGenTimers[res.id],
+          res.autoGenerateAmount ?? 1
         );
       }
     }

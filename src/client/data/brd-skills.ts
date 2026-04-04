@@ -316,6 +316,10 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 15,
     acquiredLevel: 54,
+    resourceChanges: [
+      { resourceId: "repertoire", amount: 1 },
+      { resourceId: "soul-voice", amount: 5 },
+    ],
   },
   {
     id: "pitch-perfect",
