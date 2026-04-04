@@ -18,7 +18,7 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     maxStacks: 100,
     color: "#ffd700",
     acquiredLevel: 80,
-    autoGenerateInterval: 3,
+    autoGenerateInterval: 3.75,
     autoGenerateAmount: 5,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
   },
@@ -56,7 +56,7 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     maxStacks: 3,
     color: "#4caf50",
     acquiredLevel: 52,
-    autoGenerateInterval: 3,
+    autoGenerateInterval: 3.75,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
   },
 ];
