@@ -1145,10 +1145,12 @@ export function Timeline({
                               ...styles.dotTickMarker,
                               left: tick.time * PX_PER_SEC,
                             }}
-                            title={`DoTティック: ${tick.potency}威力 @ ${tick.time.toFixed(2)}s`}
+                            title={`DoTティック: ${tick.potency}威力${tick.critRateBonus > 0 || tick.dhRateBonus > 0 ? ` (CRT+${Math.round(tick.critRateBonus * 100)}%${tick.dhRateBonus > 0 ? ` DH+${Math.round(tick.dhRateBonus * 100)}%` : ""})` : ""} @ ${tick.time.toFixed(2)}s${stats ? ` / 期待値: ${Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus))}` : ""}`}
                           >
                             <div style={styles.dotTickLine} />
-                            <div style={styles.dotTickPotency}>{tick.potency}</div>
+                            <div style={styles.dotTickPotency}>
+                              {stats ? Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus)) : tick.potency}
+                            </div>
                           </div>
                         ))}
                       </div>

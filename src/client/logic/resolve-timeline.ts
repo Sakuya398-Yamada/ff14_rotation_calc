@@ -114,6 +114,26 @@ function getCritRateBonus(
 }
 
 /**
+ * アクティブなバフからダイレクトヒット発生率ボーナスを計算する。
+ */
+function getDhRateBonus(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): number {
+  let bonus = 0;
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "dhRate") {
+        bonus += effect.value;
+      }
+    }
+  }
+  return bonus;
+}
+
+/**
  * アクティブなバフに確定クリティカル（guaranteedCrit）効果があるか判定する。
  */
 function hasGuaranteedCrit(
@@ -197,6 +217,8 @@ interface DoTStream {
     appliedAt: number;
     endTime: number;
     buffMultiplier: number;
+    critRateBonus: number;
+    dhRateBonus: number;
   }>;
 }
 
@@ -413,7 +435,11 @@ export function resolveTimeline(
     // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
     const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
     const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
-    const critRateBonusBeforeApply = hasError ? 0 : (guaranteedCritBeforeApply ? 1 : getCritRateBonus(currentActiveBuffs, buffDefMap));
+    // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
+    const baseCritRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
+    // 直接ダメージ用: guaranteedCritの場合は100%に上書き
+    const critRateBonusBeforeApply = guaranteedCritBeforeApply ? 1 : baseCritRateBonus;
+    const dhRateBonusBeforeApply = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
 
     if (!hasError) {
       // リソース変動を適用
@@ -540,13 +566,15 @@ export function resolveTimeline(
       // コンボ不成立時はDoTを適用しない（コンボ成立時の追加効果扱い）
       if (skill.dotPotency && skill.dotDuration && !wsComboError) {
         const buffMultiplier = buffMultiplierBeforeApply;
+        const dotCritRateBonus = baseCritRateBonus;
+        const dotDhRateBonus = dhRateBonusBeforeApply;
         const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
         const existing = dotStreams.get(skill.id);
         if (existing) {
           // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
           existing.currentEndTime = endTime;
-          existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier });
+          existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier, critRateBonus: dotCritRateBonus, dhRateBonus: dotDhRateBonus });
         } else {
           // 初回適用: 新規DoTストリーム作成
           dotStreams.set(skill.id, {
@@ -555,7 +583,7 @@ export function resolveTimeline(
             dotPotency: skill.dotPotency,
             firstAppliedAt: startTime,
             currentEndTime: endTime,
-            segments: [{ appliedAt: startTime, endTime, buffMultiplier }],
+            segments: [{ appliedAt: startTime, endTime, buffMultiplier, critRateBonus: dotCritRateBonus, dhRateBonus: dotDhRateBonus }],
           });
         }
       }
@@ -565,6 +593,7 @@ export function resolveTimeline(
     const buffMultiplier = buffMultiplierBeforeApply;
     const guaranteedCrit = guaranteedCritBeforeApply;
     const critRateBonus = critRateBonusBeforeApply;
+    const dhRateBonus = dhRateBonusBeforeApply;
 
     // GCDスキル実行後、確定クリティカルバフを自動消費
     if (!hasError && skill.type === "gcd" && guaranteedCrit) {
@@ -612,6 +641,7 @@ export function resolveTimeline(
       activeBuffs: [...currentActiveBuffs],
       buffMultiplier,
       critRateBonus,
+      dhRateBonus,
     });
   }
 
@@ -659,6 +689,8 @@ export function resolveTimeline(
           potency,
           skillId: stream.skillId,
           icon: stream.icon,
+          critRateBonus: activeSegment.critRateBonus,
+          dhRateBonus: activeSegment.dhRateBonus,
         });
         dotTotalPotency += potency;
       }
@@ -715,15 +747,15 @@ export function calcPps(
       if (hasError) continue;
       // resolvedPotencyを使用（コンボ成否・自動変化を反映済み）
       const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus);
+      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
       directPotency += Math.floor(buffedPotency * entryMul);
     }
   }
 
   let dotPotency = 0;
-  const dotMul = calcExpectedMultiplier(stats);
   for (const tick of dotTicks) {
     if (tick.time >= rangeStart && tick.time < rangeEnd) {
+      const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
       dotPotency += Math.floor(tick.potency * dotMul);
     }
   }

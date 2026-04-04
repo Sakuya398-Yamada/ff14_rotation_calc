@@ -138,13 +138,16 @@ export function App() {
       const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
       if (hasError) return sum;
       const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus);
+      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
       return sum + Math.floor(buffedPotency * entryMul);
     }, 0);
-    // DoTはスナップショット時のバフ倍率が既に適用済み、基本の期待倍率を掛ける
-    const dotExpected = Math.floor(timelineResult.dotTotalPotency * calcExpectedMultiplier(stats));
+    // DoTはティックごとにスナップショット済みのcritRateBonus・dhRateBonusを適用
+    const dotExpected = timelineResult.dotTicks.reduce((sum, tick) => {
+      const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
+      return sum + Math.floor(tick.potency * dotMul);
+    }, 0);
     return directExpected + dotExpected;
-  }, [stats, resolvedEntries, allSkillMap, timelineResult.dotTotalPotency]);
+  }, [stats, resolvedEntries, allSkillMap, timelineResult.dotTicks]);
 
   // 全体PPS: 0 〜 最後のGCDリキャスト完了まで（DoTは最終GCDまでで打ち切り）
   const overallPps = useMemo(() => {

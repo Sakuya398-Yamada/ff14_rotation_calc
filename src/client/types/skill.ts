@@ -138,7 +138,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "guaranteedCrit" | "consumeOnGcd";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "consumeOnGcd";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -149,6 +149,7 @@ export interface BuffEffect {
    * - speed: GCD乗算倍率（0.8 = GCD×0.8）
    * - potency: 威力乗算倍率（1.1 = 威力×1.1）
    * - critRate: クリティカル発生率加算値（0.1 = +10%）
+   * - dhRate: ダイレクトヒット発生率加算値（0.1 = +10%）
    * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
    * - stat: ステータス加算値
@@ -205,6 +206,10 @@ export interface DoTTick {
   skillId: string;
   /** DoT元スキルのアイコン */
   icon: string;
+  /** スナップショット時のクリティカル発生率ボーナス（0.0 = なし、0.1 = +10%） */
+  critRateBonus: number;
+  /** スナップショット時のダイレクトヒット発生率ボーナス（0.0 = なし、0.1 = +10%） */
+  dhRateBonus: number;
 }
 
 /** タイムライン上のアクティブなDoT */
@@ -283,4 +288,6 @@ export interface ResolvedTimelineEntry {
   buffMultiplier: number;
   /** クリティカル発生率ボーナス（0.0 = バフなし、0.1 = +10%） */
   critRateBonus: number;
+  /** ダイレクトヒット発生率ボーナス（0.0 = バフなし、0.1 = +10%） */
+  dhRateBonus: number;
 }

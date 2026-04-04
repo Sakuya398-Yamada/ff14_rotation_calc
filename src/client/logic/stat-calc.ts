@@ -61,11 +61,12 @@ export function calcGcd(baseGcdSec: number, stats: CharacterStats): number {
  * = detMul * (1 + critRate * (critMultiplier - 1)) * (1 + dhRate * (DH_DAMAGE_MULTIPLIER - 1))
  *
  * @param critRateBonus バフによるクリティカル発生率加算（例: バトルリタニー +0.1）
+ * @param dhRateBonus バフによるダイレクトヒット発生率加算
  */
-export function calcExpectedMultiplier(stats: CharacterStats, critRateBonus = 0): number {
+export function calcExpectedMultiplier(stats: CharacterStats, critRateBonus = 0, dhRateBonus = 0): number {
   const critRate = Math.min(calcCritRate(stats) + critRateBonus, 1);
   const critMul = calcCritMultiplier(stats);
-  const dhRate = calcDhRate(stats);
+  const dhRate = Math.min(calcDhRate(stats) + dhRateBonus, 1);
   const detMul = calcDetMultiplier(stats);
   return detMul * (1 + critRate * (critMul - 1)) * (1 + dhRate * (DH_DAMAGE_MULTIPLIER - 1));
 }
