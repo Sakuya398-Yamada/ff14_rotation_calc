@@ -366,6 +366,20 @@ export function resolveTimeline(
       }
     }
 
+    // consumeAllResources: リストされたリソースのうち1つ以上が必要
+    let consumeAllCount = 0;
+    if (skill.consumeAllResources) {
+      for (const resId of skill.consumeAllResources) {
+        if ((resourceState[resId] ?? 0) > 0) {
+          consumeAllCount++;
+        }
+      }
+      if (consumeAllCount === 0) {
+        // 全て0 → エラー（先頭リソースIDをエラーとして報告）
+        resourceErrors.push(skill.consumeAllResources[0]);
+      }
+    }
+
     // バフスタック消費チェック
     const comboErrors: string[] = [];
     if (skill.buffConsumptions) {
@@ -374,6 +388,24 @@ export function resolveTimeline(
         if (!activeBuff || (activeBuff.stacks ?? 0) < consumption.stacks) {
           comboErrors.push(consumption.buffId);
         }
+      }
+    }
+
+    // buffConsumptionAnyOf: いずれか1つのバフを消費（見つからなければエラー）
+    let anyOfPotencyOverride: number | undefined;
+    let anyOfMatchedBuffId: string | undefined;
+    if (skill.buffConsumptionAnyOf) {
+      for (const option of skill.buffConsumptionAnyOf) {
+        const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === option.buffId);
+        if (activeBuff && (activeBuff.stacks ?? 0) >= option.stacks) {
+          anyOfMatchedBuffId = option.buffId;
+          anyOfPotencyOverride = option.potency;
+          break;
+        }
+      }
+      if (!anyOfMatchedBuffId) {
+        // いずれのバフも見つからない → エラー
+        comboErrors.push(skill.buffConsumptionAnyOf[0].buffId);
       }
     }
 
@@ -386,7 +418,7 @@ export function resolveTimeline(
     }
 
     // コンボ成否に基づく威力決定
-    let resolvedPotency = skill.potency;
+    let resolvedPotency = anyOfPotencyOverride ?? skill.potency;
     if (wsComboError && skill.nonComboPotency !== undefined) {
       resolvedPotency = skill.nonComboPotency;
     }
@@ -485,6 +517,13 @@ export function resolveTimeline(
         }
       }
 
+      // consumeAllResources: リストされたリソースを全て0にする
+      if (skill.consumeAllResources) {
+        for (const resId of skill.consumeAllResources) {
+          resourceState[resId] = 0;
+        }
+      }
+
       // バフスタック消費を適用
       if (skill.buffConsumptions) {
         for (const consumption of skill.buffConsumptions) {
@@ -495,6 +534,38 @@ export function resolveTimeline(
             if (activeBuff.stacks === 0) {
               const idx = currentActiveBuffs.indexOf(activeBuff);
               if (idx >= 0) currentActiveBuffs.splice(idx, 1);
+            }
+          }
+        }
+      }
+
+      // buffConsumptionAnyOf: マッチしたバフを消費
+      if (anyOfMatchedBuffId) {
+        const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === anyOfMatchedBuffId);
+        if (activeBuff) {
+          const idx = currentActiveBuffs.indexOf(activeBuff);
+          if (idx >= 0) currentActiveBuffs.splice(idx, 1);
+        }
+      }
+
+      // buffApplicationsByConsumedCount: consumeAllResourcesの消費数に応じたバフ適用
+      if (skill.buffApplicationsByConsumedCount && consumeAllCount > 0) {
+        const buffIds = skill.buffApplicationsByConsumedCount[consumeAllCount - 1];
+        if (buffIds) {
+          for (const buffId of buffIds) {
+            const buffDef = buffDefMap.get(buffId);
+            if (!buffDef) continue;
+            const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+            const newBuff: ActiveBuff = {
+              buffId,
+              startTime,
+              endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+              stacks: buffDef.maxStacks,
+            };
+            if (existingIdx >= 0) {
+              currentActiveBuffs[existingIdx] = newBuff;
+            } else {
+              currentActiveBuffs.push(newBuff);
             }
           }
         }
@@ -789,15 +860,22 @@ export function getFinalResourceState(
 
   // エラーのあるスキルはリソース変動を適用しない
   const hasError = last.resourceErrors.length > 0 || last.comboErrors.length > 0 || last.untargetableError || last.recastError;
-  if (!hasError && skill?.resourceChanges) {
-    const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
-    for (const change of skill.resourceChanges) {
-      const def = resourceDefMap.get(change.resourceId);
-      if (!def) continue;
-      state[change.resourceId] = Math.max(
-        0,
-        Math.min(state[change.resourceId] + change.amount, def.maxStacks)
-      );
+  if (!hasError && skill) {
+    if (skill.resourceChanges) {
+      const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
+      for (const change of skill.resourceChanges) {
+        const def = resourceDefMap.get(change.resourceId);
+        if (!def) continue;
+        state[change.resourceId] = Math.max(
+          0,
+          Math.min(state[change.resourceId] + change.amount, def.maxStacks)
+        );
+      }
+    }
+    if (skill.consumeAllResources) {
+      for (const resId of skill.consumeAllResources) {
+        state[resId] = 0;
+      }
     }
   }
 
