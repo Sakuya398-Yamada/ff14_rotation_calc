@@ -464,7 +464,10 @@ export function resolveTimeline(
     if (skill.buffConsumptions) {
       for (const consumption of skill.buffConsumptions) {
         const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
-        if (!activeBuff || (activeBuff.stacks ?? 0) < consumption.stacks) {
+        if (!activeBuff) {
+          comboErrors.push(consumption.buffId);
+        } else if (activeBuff.stacks !== undefined && activeBuff.stacks < consumption.stacks) {
+          // スタック付きバフはスタック数チェック。スタックなしバフは存在すればOK
           comboErrors.push(consumption.buffId);
         }
       }
@@ -641,10 +644,16 @@ export function resolveTimeline(
       if (skill.buffConsumptions) {
         for (const consumption of skill.buffConsumptions) {
           const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
-          if (activeBuff && activeBuff.stacks !== undefined) {
-            activeBuff.stacks = Math.max(0, activeBuff.stacks - consumption.stacks);
-            // スタック0になったらバフを除去
-            if (activeBuff.stacks === 0) {
+          if (activeBuff) {
+            if (activeBuff.stacks !== undefined) {
+              activeBuff.stacks = Math.max(0, activeBuff.stacks - consumption.stacks);
+              // スタック0になったらバフを除去
+              if (activeBuff.stacks === 0) {
+                const idx = currentActiveBuffs.indexOf(activeBuff);
+                if (idx >= 0) currentActiveBuffs.splice(idx, 1);
+              }
+            } else {
+              // スタックなしバフは直接除去
               const idx = currentActiveBuffs.indexOf(activeBuff);
               if (idx >= 0) currentActiveBuffs.splice(idx, 1);
             }
