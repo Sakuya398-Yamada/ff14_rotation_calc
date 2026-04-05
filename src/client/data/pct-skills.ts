@@ -52,6 +52,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["aetherhues-2"],
     autoTransform: [
       { buffId: "subtractive-palette", skillId: "blizzard-in-cyan" },
+      { buffId: "aetherhues-3", skillId: "water-in-blue" },
       { buffId: "aetherhues-2", skillId: "aero-in-green" },
     ],
   },
@@ -107,7 +108,10 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["aetherhues-2"],
     buffConsumptions: [{ buffId: "subtractive-palette", stacks: 1 }],
     requiredBuff: "subtractive-palette",
-    autoTransform: { buffId: "aetherhues-2", skillId: "stone-in-yellow" },
+    autoTransform: [
+      { buffId: "aetherhues-3", skillId: "thunder-in-magenta" },
+      { buffId: "aetherhues-2", skillId: "stone-in-yellow" },
+    ],
   },
   {
     id: "stone-in-yellow",
