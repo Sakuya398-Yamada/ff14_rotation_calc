@@ -163,6 +163,11 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 50,
     requiredBuff: "hammer-combo-ready",
     buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }],
+    buffApplications: ["hammer-brush-ready"],
+    autoTransform: [
+      { buffId: "hammer-polish-ready", skillId: "polishing-hammer" },
+      { buffId: "hammer-brush-ready", skillId: "hammer-brush" },
+    ],
     traitPotencyOverrides: [
       { traitLevel: 54, potency: 420 },
       { traitLevel: 84, potency: 500 },
@@ -180,9 +185,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 86,
-    comboFrom: ["hammer-stamp"],
     requiredBuff: "hammer-combo-ready",
-    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }],
+    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }, { buffId: "hammer-brush-ready", stacks: 1 }],
+    buffApplications: ["hammer-polish-ready"],
   },
   {
     id: "polishing-hammer",
@@ -194,9 +199,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 86,
-    comboFrom: ["hammer-brush"],
     requiredBuff: "hammer-combo-ready",
-    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }],
+    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }, { buffId: "hammer-polish-ready", stacks: 1 }],
   },
 
   // ============================================================

@@ -71,6 +71,24 @@ export const PCT_BUFFS: BuffDefinition[] = [
     ],
     color: "#ffb74d",
   },
+  {
+    id: "hammer-brush-ready",
+    name: "ハンマーブラッシュ実行可",
+    shortName: "ﾌﾞﾗｯｼｭ\nReady",
+    icon: hammerStampIcon,
+    duration: 30,
+    effects: [],
+    color: "#ffcc80",
+  },
+  {
+    id: "hammer-polish-ready",
+    name: "ハンマーポリッシュ実行可",
+    shortName: "ﾎﾟﾘｯｼｭ\nReady",
+    icon: hammerStampIcon,
+    duration: 30,
+    effects: [],
+    color: "#ffe0b2",
+  },
 
   // ============================================================
   // イマジンスカイ関連

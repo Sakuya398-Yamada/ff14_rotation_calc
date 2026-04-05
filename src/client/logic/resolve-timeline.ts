@@ -160,11 +160,13 @@ function hasGuaranteedCrit(
  */
 function consumeGuaranteedCritBuffs(
   activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  skipBuffIds?: Set<string>
 ): void {
   for (let i = activeBuffs.length - 1; i >= 0; i--) {
     const def = buffDefMap.get(activeBuffs[i].buffId);
     if (!def) continue;
+    if (skipBuffIds?.has(activeBuffs[i].buffId)) continue;
     if (def.effects.some((e) => e.type === "guaranteedCrit")) {
       const ab = activeBuffs[i];
       if (ab.stacks !== undefined) {
@@ -206,11 +208,13 @@ function hasGuaranteedDh(
  */
 function consumeGuaranteedDhBuffs(
   activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  skipBuffIds?: Set<string>
 ): void {
   for (let i = activeBuffs.length - 1; i >= 0; i--) {
     const def = buffDefMap.get(activeBuffs[i].buffId);
     if (!def) continue;
+    if (skipBuffIds?.has(activeBuffs[i].buffId)) continue;
     if (def.effects.some((e) => e.type === "guaranteedDh")) {
       const ab = activeBuffs[i];
       if (ab.stacks !== undefined) {
@@ -851,14 +855,19 @@ export function resolveTimeline(
     const critRateBonus = critRateBonusBeforeApply;
     const dhRateBonus = dhRateBonusBeforeApply;
 
-    // GCDスキル実行後、確定クリティカルバフを自動消費
+    // buffConsumptionsで既に消費されたバフIDを収集（二重消費防止）
+    const consumedByBuffConsumptions = new Set(
+      skill.buffConsumptions?.map((c) => c.buffId) ?? []
+    );
+
+    // GCDスキル実行後、確定クリティカルバフを自動消費（buffConsumptionsで消費済みのバフはスキップ）
     if (!hasError && skill.type === "gcd" && guaranteedCrit) {
-      consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap);
+      consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap, consumedByBuffConsumptions);
     }
 
-    // GCDスキル実行後、確定ダイレクトヒットバフを自動消費
+    // GCDスキル実行後、確定ダイレクトヒットバフを自動消費（buffConsumptionsで消費済みのバフはスキップ）
     if (!hasError && skill.type === "gcd" && guaranteedDhBeforeApply) {
-      consumeGuaranteedDhBuffs(currentActiveBuffs, buffDefMap);
+      consumeGuaranteedDhBuffs(currentActiveBuffs, buffDefMap, consumedByBuffConsumptions);
     }
 
     // GCDスキル実行後、スキル実行前にアクティブだったconsumeOnGcdバフを消費（竜眼等）
