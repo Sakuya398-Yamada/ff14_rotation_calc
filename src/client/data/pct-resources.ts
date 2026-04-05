@@ -23,6 +23,7 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     maxStacks: 5,
     color: "#ffffff",
     acquiredLevel: 15,
+    displayGroup: "paint",
   },
   {
     id: "black-paint",
@@ -31,6 +32,7 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     maxStacks: 1,
     color: "#424242",
     acquiredLevel: 90,
+    displayGroup: "paint",
   },
 
   // ============================================================

@@ -477,6 +477,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 60,
     resourceChanges: [
       { resourceId: "palette-gauge", amount: -50 },
+      { resourceId: "white-paint", amount: -1 },
       { resourceId: "black-paint", amount: 1 },
     ],
     buffApplications: ["subtractive-palette", "color-inversion"],
