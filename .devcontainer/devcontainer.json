@@ -3,6 +3,8 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "remoteUser": "node",
+  "containerUser": "node",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
