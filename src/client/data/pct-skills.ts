@@ -25,7 +25,7 @@ import clawedMuseIcon from "../assets/icons/pct/Clawed_Muse.png";
 import fangedMuseIcon from "../assets/icons/pct/Fanged_Muse.png";
 import mogOfTheAgesIcon from "../assets/icons/pct/Mog_of_the_Ages.png";
 import retributionOfTheMadeenIcon from "../assets/icons/pct/Retribution_of_the_Madeen.png";
-import steelMuseIcon from "../assets/icons/pct/Steel_Muse.png";
+import strikingMuseIcon from "../assets/icons/pct/Striking_Muse.png";
 import subtractivePaletteIcon from "../assets/icons/pct/Subtractive_Palette.png";
 import starryMuseIcon from "../assets/icons/pct/Starry_Muse.png";
 
@@ -439,7 +439,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     potency: 0,
     type: "ogcd",
     target: "self",
-    icon: steelMuseIcon,
+    icon: strikingMuseIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
