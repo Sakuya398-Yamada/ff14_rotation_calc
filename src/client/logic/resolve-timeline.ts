@@ -384,18 +384,30 @@ export function resolveTimeline(
       actionAvailableAt = startTime + originalSkill.animationLock;
     }
 
-    // 自動変化チェック: バフ条件を満たす場合、変化先スキルに差し替え
+    // 自動変化チェック: バフ条件を満たす場合、変化先スキルに差し替え（チェーン対応）
     let skill = originalSkill;
     let resolvedSkillId = entry.skillId;
-    if (originalSkill.autoTransform) {
-      const transformBuff = currentActiveBuffs.find(
-        (ab) => ab.buffId === originalSkill.autoTransform!.buffId
-      );
-      if (transformBuff) {
-        const transformedSkill = skillMap.get(originalSkill.autoTransform.skillId);
-        if (transformedSkill) {
-          skill = transformedSkill;
-          resolvedSkillId = transformedSkill.id;
+    {
+      let current = originalSkill;
+      let transformed = true;
+      while (transformed) {
+        transformed = false;
+        if (!current.autoTransform) break;
+        const transforms = Array.isArray(current.autoTransform)
+          ? current.autoTransform
+          : [current.autoTransform];
+        for (const t of transforms) {
+          const hasBuff = currentActiveBuffs.some((ab) => ab.buffId === t.buffId);
+          if (hasBuff) {
+            const next = skillMap.get(t.skillId);
+            if (next) {
+              skill = next;
+              resolvedSkillId = next.id;
+              current = next;
+              transformed = true;
+            }
+            break; // 先頭一致で確定（優先度順）
+          }
         }
       }
     }

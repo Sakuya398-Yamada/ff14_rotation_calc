@@ -107,13 +107,16 @@ export interface Skill {
   buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number; procRate?: number; fallbackPotency?: number }[];
   /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */
   requiredBuff?: string;
-  /** 自動変化条件（指定バフがアクティブ時に別スキルに変化） */
+  /** 自動変化条件（指定バフがアクティブ時に別スキルに変化。配列の場合は先頭から優先チェック） */
   autoTransform?: {
     /** 変化条件となるバフID */
     buffId: string;
     /** 変化先スキルID */
     skillId: string;
-  };
+  } | {
+    buffId: string;
+    skillId: string;
+  }[];
 }
 
 /** タイムラインに配置されたスキル */

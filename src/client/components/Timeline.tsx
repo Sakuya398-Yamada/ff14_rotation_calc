@@ -525,9 +525,9 @@ export function Timeline({
   const buffTimespans = useMemo(() => {
     const spans: Map<string, ActiveBuff[]> = new Map();
     const stackableBuffIds = new Set(buffs.filter((b) => b.maxStacks).map((b) => b.id));
-    const exclusiveGroupBuffIds = new Set(buffs.filter((b) => b.exclusiveGroup).map((b) => b.id));
-    // 早期終了の可能性があるバフ（スタック消費 or 排他グループによる解除）
-    const earlyTerminationBuffIds = new Set([...stackableBuffIds, ...exclusiveGroupBuffIds]);
+    // 全バフを早期終了チェック対象（スタック消費、排他グループ、buffConsumptions等）
+    const allBuffIds = new Set(buffs.map((b) => b.id));
+    const earlyTerminationBuffIds = allBuffIds;
 
     for (const entry of resolvedEntries) {
       for (const ab of entry.activeBuffs) {

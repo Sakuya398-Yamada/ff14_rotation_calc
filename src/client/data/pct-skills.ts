@@ -50,7 +50,10 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     castTime: 1.5,
     acquiredLevel: 1,
     buffApplications: ["aetherhues-2"],
-    autoTransform: { buffId: "subtractive-palette", skillId: "blizzard-in-cyan" },
+    autoTransform: [
+      { buffId: "subtractive-palette", skillId: "blizzard-in-cyan" },
+      { buffId: "aetherhues-2", skillId: "aero-in-green" },
+    ],
   },
   {
     id: "aero-in-green",
@@ -66,6 +69,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["aetherhues-3"],
     buffConsumptions: [{ buffId: "aetherhues-2", stacks: 1 }],
     requiredBuff: "aetherhues-2",
+    autoTransform: { buffId: "aetherhues-3", skillId: "water-in-blue" },
   },
   {
     id: "water-in-blue",
@@ -103,6 +107,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["aetherhues-2"],
     buffConsumptions: [{ buffId: "subtractive-palette", stacks: 1 }],
     requiredBuff: "subtractive-palette",
+    autoTransform: { buffId: "aetherhues-2", skillId: "stone-in-yellow" },
   },
   {
     id: "stone-in-yellow",
@@ -118,6 +123,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["aetherhues-3"],
     buffConsumptions: [{ buffId: "aetherhues-2", stacks: 1 }, { buffId: "subtractive-palette", stacks: 1 }],
     requiredBuff: "aetherhues-2",
+    autoTransform: { buffId: "aetherhues-3", skillId: "thunder-in-magenta" },
   },
   {
     id: "thunder-in-magenta",
