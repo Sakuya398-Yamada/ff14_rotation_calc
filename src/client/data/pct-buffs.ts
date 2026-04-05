@@ -154,6 +154,37 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
 
   // ============================================================
+  // アニマルステップ追跡
+  // ============================================================
+  {
+    id: "wing-muse-ready",
+    name: "イマジンウィング実行可",
+    shortName: "ｳｨﾝｸﾞ\nReady",
+    icon: mogOfTheAgesIcon,
+    duration: 120,
+    effects: [],
+    color: "#a5d6a7",
+  },
+  {
+    id: "claw-muse-ready",
+    name: "イマジンクロー実行可",
+    shortName: "ｸﾛｰ\nReady",
+    icon: mogOfTheAgesIcon,
+    duration: 120,
+    effects: [],
+    color: "#81c784",
+  },
+  {
+    id: "fang-muse-ready",
+    name: "イマジンファング実行可",
+    shortName: "ﾌｧﾝｸﾞ\nReady",
+    icon: mogOfTheAgesIcon,
+    duration: 120,
+    effects: [],
+    color: "#66bb6a",
+  },
+
+  // ============================================================
   // シンボル系
   // ============================================================
   {

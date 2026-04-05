@@ -347,7 +347,12 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
     ],
-    buffApplications: ["moogle-symbol"],
+    buffApplications: ["wing-muse-ready"],
+    autoTransform: [
+      { buffId: "fang-muse-ready", skillId: "fanged-muse" },
+      { buffId: "claw-muse-ready", skillId: "clawed-muse" },
+      { buffId: "wing-muse-ready", skillId: "winged-muse" },
+    ],
     traitPotencyOverrides: [
       { traitLevel: 54, potency: 700 },
       { traitLevel: 84, potency: 800 },
@@ -368,6 +373,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
     ],
+    buffConsumptions: [{ buffId: "wing-muse-ready", stacks: 1 }],
+    buffApplications: ["moogle-symbol", "claw-muse-ready"],
     traitPotencyOverrides: [
       { traitLevel: 54, potency: 700 },
       { traitLevel: 84, potency: 800 },
@@ -388,6 +395,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
     ],
+    buffConsumptions: [{ buffId: "claw-muse-ready", stacks: 1 }],
+    buffApplications: ["fang-muse-ready"],
   },
   {
     id: "fanged-muse",
@@ -404,6 +413,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
     ],
+    buffConsumptions: [{ buffId: "fang-muse-ready", stacks: 1 }],
     buffApplications: ["madeen-symbol"],
   },
 
