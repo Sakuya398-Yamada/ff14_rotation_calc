@@ -11,12 +11,15 @@ import { DRG_BUFFS } from "../data/drg-buffs";
 import { BRD_ATTACK_SKILLS } from "../data/brd-skills";
 import { BRD_RESOURCES } from "../data/brd-resources";
 import { BRD_BUFFS } from "../data/brd-buffs";
+import { PCT_ATTACK_SKILLS } from "../data/pct-skills";
+import { PCT_RESOURCES } from "../data/pct-resources";
+import { PCT_BUFFS } from "../data/pct-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
 import type { Skill, BuffDefinition, ResourceDefinition, TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange, PlayerLevel } from "../types/skill";
 
 /** ジョブID */
-export type JobId = "whm" | "drg" | "brd";
+export type JobId = "whm" | "drg" | "brd" | "pct";
 
 /** ジョブデータ定義 */
 interface JobData {
@@ -32,6 +35,7 @@ const JOB_DATA: Record<JobId, JobData> = {
   whm: { name: "白魔道士", abbreviation: "WHM", skills: WHM_ATTACK_SKILLS, buffs: WHM_BUFFS, resources: WHM_RESOURCES },
   drg: { name: "竜騎士", abbreviation: "DRG", skills: DRG_ATTACK_SKILLS, buffs: DRG_BUFFS, resources: DRG_RESOURCES },
   brd: { name: "詩人", abbreviation: "BRD", skills: BRD_ATTACK_SKILLS, buffs: BRD_BUFFS, resources: BRD_RESOURCES },
+  pct: { name: "ピクトマンサー", abbreviation: "PCT", skills: PCT_ATTACK_SKILLS, buffs: PCT_BUFFS, resources: PCT_RESOURCES },
 };
 
 let nextUid = 1;

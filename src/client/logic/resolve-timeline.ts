@@ -160,11 +160,13 @@ function hasGuaranteedCrit(
  */
 function consumeGuaranteedCritBuffs(
   activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  skipBuffIds?: Set<string>
 ): void {
   for (let i = activeBuffs.length - 1; i >= 0; i--) {
     const def = buffDefMap.get(activeBuffs[i].buffId);
     if (!def) continue;
+    if (skipBuffIds?.has(activeBuffs[i].buffId)) continue;
     if (def.effects.some((e) => e.type === "guaranteedCrit")) {
       const ab = activeBuffs[i];
       if (ab.stacks !== undefined) {
@@ -179,6 +181,53 @@ function consumeGuaranteedCritBuffs(
   }
 }
 
+
+/**
+ * アクティブなバフに確定ダイレクトヒット（guaranteedDh）効果があるか判定する。
+ */
+function hasGuaranteedDh(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): boolean {
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "guaranteedDh") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * アクティブなバフからguaranteedDh効果を持つバフを自動消費する。
+ * スタック付きバフの場合はスタックを1減算し、0になったら除去する。
+ * スタックなしバフの場合は直接除去する。
+ */
+function consumeGuaranteedDhBuffs(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>,
+  skipBuffIds?: Set<string>
+): void {
+  for (let i = activeBuffs.length - 1; i >= 0; i--) {
+    const def = buffDefMap.get(activeBuffs[i].buffId);
+    if (!def) continue;
+    if (skipBuffIds?.has(activeBuffs[i].buffId)) continue;
+    if (def.effects.some((e) => e.type === "guaranteedDh")) {
+      const ab = activeBuffs[i];
+      if (ab.stacks !== undefined) {
+        ab.stacks = Math.max(0, ab.stacks - 1);
+        if (ab.stacks === 0) {
+          activeBuffs.splice(i, 1);
+        }
+      } else {
+        activeBuffs.splice(i, 1);
+      }
+    }
+  }
+}
 
 /**
  * アクティブなバフから威力バフの合成倍率を計算する。
@@ -339,18 +388,30 @@ export function resolveTimeline(
       actionAvailableAt = startTime + originalSkill.animationLock;
     }
 
-    // 自動変化チェック: バフ条件を満たす場合、変化先スキルに差し替え
+    // 自動変化チェック: バフ条件を満たす場合、変化先スキルに差し替え（チェーン対応）
     let skill = originalSkill;
     let resolvedSkillId = entry.skillId;
-    if (originalSkill.autoTransform) {
-      const transformBuff = currentActiveBuffs.find(
-        (ab) => ab.buffId === originalSkill.autoTransform!.buffId
-      );
-      if (transformBuff) {
-        const transformedSkill = skillMap.get(originalSkill.autoTransform.skillId);
-        if (transformedSkill) {
-          skill = transformedSkill;
-          resolvedSkillId = transformedSkill.id;
+    {
+      let current = originalSkill;
+      let transformed = true;
+      while (transformed) {
+        transformed = false;
+        if (!current.autoTransform) break;
+        const transforms = Array.isArray(current.autoTransform)
+          ? current.autoTransform
+          : [current.autoTransform];
+        for (const t of transforms) {
+          const hasBuff = currentActiveBuffs.some((ab) => ab.buffId === t.buffId);
+          if (hasBuff) {
+            const next = skillMap.get(t.skillId);
+            if (next) {
+              skill = next;
+              resolvedSkillId = next.id;
+              current = next;
+              transformed = true;
+            }
+            break; // 先頭一致で確定（優先度順）
+          }
         }
       }
     }
@@ -419,7 +480,10 @@ export function resolveTimeline(
     if (skill.buffConsumptions) {
       for (const consumption of skill.buffConsumptions) {
         const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
-        if (!activeBuff || (activeBuff.stacks ?? 0) < consumption.stacks) {
+        if (!activeBuff) {
+          comboErrors.push(consumption.buffId);
+        } else if (activeBuff.stacks !== undefined && activeBuff.stacks < consumption.stacks) {
+          // スタック付きバフはスタック数チェック。スタックなしバフは存在すればOK
           comboErrors.push(consumption.buffId);
         }
       }
@@ -527,11 +591,14 @@ export function resolveTimeline(
     // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
     const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
     const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
+    const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedDh(currentActiveBuffs, buffDefMap);
     // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
     const baseCritRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
     // 直接ダメージ用: guaranteedCritの場合は100%に上書き
     const critRateBonusBeforeApply = guaranteedCritBeforeApply ? 1 : baseCritRateBonus;
-    const dhRateBonusBeforeApply = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
+    const baseDhRateBonus = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
+    // 直接ダメージ用: guaranteedDhの場合は100%に上書き
+    const dhRateBonusBeforeApply = guaranteedDhBeforeApply ? 1 : baseDhRateBonus;
 
     if (!hasError) {
       // リソース変動を適用
@@ -593,10 +660,16 @@ export function resolveTimeline(
       if (skill.buffConsumptions) {
         for (const consumption of skill.buffConsumptions) {
           const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
-          if (activeBuff && activeBuff.stacks !== undefined) {
-            activeBuff.stacks = Math.max(0, activeBuff.stacks - consumption.stacks);
-            // スタック0になったらバフを除去
-            if (activeBuff.stacks === 0) {
+          if (activeBuff) {
+            if (activeBuff.stacks !== undefined) {
+              activeBuff.stacks = Math.max(0, activeBuff.stacks - consumption.stacks);
+              // スタック0になったらバフを除去
+              if (activeBuff.stacks === 0) {
+                const idx = currentActiveBuffs.indexOf(activeBuff);
+                if (idx >= 0) currentActiveBuffs.splice(idx, 1);
+              }
+            } else {
+              // スタックなしバフは直接除去
               const idx = currentActiveBuffs.indexOf(activeBuff);
               if (idx >= 0) currentActiveBuffs.splice(idx, 1);
             }
@@ -782,9 +855,19 @@ export function resolveTimeline(
     const critRateBonus = critRateBonusBeforeApply;
     const dhRateBonus = dhRateBonusBeforeApply;
 
-    // GCDスキル実行後、確定クリティカルバフを自動消費
+    // buffConsumptionsで既に消費されたバフIDを収集（二重消費防止）
+    const consumedByBuffConsumptions = new Set(
+      skill.buffConsumptions?.map((c) => c.buffId) ?? []
+    );
+
+    // GCDスキル実行後、確定クリティカルバフを自動消費（buffConsumptionsで消費済みのバフはスキップ）
     if (!hasError && skill.type === "gcd" && guaranteedCrit) {
-      consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap);
+      consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap, consumedByBuffConsumptions);
+    }
+
+    // GCDスキル実行後、確定ダイレクトヒットバフを自動消費（buffConsumptionsで消費済みのバフはスキップ）
+    if (!hasError && skill.type === "gcd" && guaranteedDhBeforeApply) {
+      consumeGuaranteedDhBuffs(currentActiveBuffs, buffDefMap, consumedByBuffConsumptions);
     }
 
     // GCDスキル実行後、スキル実行前にアクティブだったconsumeOnGcdバフを消費（竜眼等）
