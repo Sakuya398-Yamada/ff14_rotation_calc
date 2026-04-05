@@ -181,6 +181,51 @@ function consumeGuaranteedCritBuffs(
 
 
 /**
+ * アクティブなバフに確定ダイレクトヒット（guaranteedDh）効果があるか判定する。
+ */
+function hasGuaranteedDh(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): boolean {
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type === "guaranteedDh") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * アクティブなバフからguaranteedDh効果を持つバフを自動消費する。
+ * スタック付きバフの場合はスタックを1減算し、0になったら除去する。
+ * スタックなしバフの場合は直接除去する。
+ */
+function consumeGuaranteedDhBuffs(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): void {
+  for (let i = activeBuffs.length - 1; i >= 0; i--) {
+    const def = buffDefMap.get(activeBuffs[i].buffId);
+    if (!def) continue;
+    if (def.effects.some((e) => e.type === "guaranteedDh")) {
+      const ab = activeBuffs[i];
+      if (ab.stacks !== undefined) {
+        ab.stacks = Math.max(0, ab.stacks - 1);
+        if (ab.stacks === 0) {
+          activeBuffs.splice(i, 1);
+        }
+      } else {
+        activeBuffs.splice(i, 1);
+      }
+    }
+  }
+}
+
+/**
  * アクティブなバフから威力バフの合成倍率を計算する。
  */
 function getPotencyMultiplier(
@@ -527,11 +572,14 @@ export function resolveTimeline(
     // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
     const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
     const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
+    const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedDh(currentActiveBuffs, buffDefMap);
     // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
     const baseCritRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
     // 直接ダメージ用: guaranteedCritの場合は100%に上書き
     const critRateBonusBeforeApply = guaranteedCritBeforeApply ? 1 : baseCritRateBonus;
-    const dhRateBonusBeforeApply = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
+    const baseDhRateBonus = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
+    // 直接ダメージ用: guaranteedDhの場合は100%に上書き
+    const dhRateBonusBeforeApply = guaranteedDhBeforeApply ? 1 : baseDhRateBonus;
 
     if (!hasError) {
       // リソース変動を適用
@@ -785,6 +833,11 @@ export function resolveTimeline(
     // GCDスキル実行後、確定クリティカルバフを自動消費
     if (!hasError && skill.type === "gcd" && guaranteedCrit) {
       consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap);
+    }
+
+    // GCDスキル実行後、確定ダイレクトヒットバフを自動消費
+    if (!hasError && skill.type === "gcd" && guaranteedDhBeforeApply) {
+      consumeGuaranteedDhBuffs(currentActiveBuffs, buffDefMap);
     }
 
     // GCDスキル実行後、スキル実行前にアクティブだったconsumeOnGcdバフを消費（竜眼等）

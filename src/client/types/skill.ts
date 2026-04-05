@@ -168,7 +168,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "consumeOnGcd";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -181,6 +181,7 @@ export interface BuffEffect {
    * - critRate: クリティカル発生率加算値（0.1 = +10%）
    * - dhRate: ダイレクトヒット発生率加算値（0.1 = +10%）
    * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
+   * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
    * - stat: ステータス加算値
    * - resource: リソース変動量
