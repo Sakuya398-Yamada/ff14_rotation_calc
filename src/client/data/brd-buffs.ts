@@ -111,6 +111,7 @@ export const BRD_BUFFS: BuffDefinition[] = [
     ],
     color: "#9c27b0",
     acquiredLevel: 30,
+    exclusiveGroup: "song",
   },
   {
     id: "armys-paeon",
@@ -126,6 +127,7 @@ export const BRD_BUFFS: BuffDefinition[] = [
     ],
     color: "#ff9800",
     acquiredLevel: 40,
+    exclusiveGroup: "song",
   },
   {
     id: "wanderers-minuet",
@@ -141,6 +143,7 @@ export const BRD_BUFFS: BuffDefinition[] = [
     ],
     color: "#4caf50",
     acquiredLevel: 52,
+    exclusiveGroup: "song",
   },
 
   // ============================================================

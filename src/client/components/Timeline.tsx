@@ -525,6 +525,9 @@ export function Timeline({
   const buffTimespans = useMemo(() => {
     const spans: Map<string, ActiveBuff[]> = new Map();
     const stackableBuffIds = new Set(buffs.filter((b) => b.maxStacks).map((b) => b.id));
+    const exclusiveGroupBuffIds = new Set(buffs.filter((b) => b.exclusiveGroup).map((b) => b.id));
+    // 早期終了の可能性があるバフ（スタック消費 or 排他グループによる解除）
+    const earlyTerminationBuffIds = new Set([...stackableBuffIds, ...exclusiveGroupBuffIds]);
 
     for (const entry of resolvedEntries) {
       for (const ab of entry.activeBuffs) {
@@ -547,9 +550,9 @@ export function Timeline({
       }
     }
 
-    // スタック付きバフの実際の終了時刻を算出
+    // スタック消費 or 排他グループ解除によるバフの実際の終了時刻を算出
     for (const [buffId, spanList] of spans) {
-      if (!stackableBuffIds.has(buffId)) continue;
+      if (!earlyTerminationBuffIds.has(buffId)) continue;
       for (const span of spanList) {
         let lastSeenTime = span.startTime;
         for (const entry of resolvedEntries) {
