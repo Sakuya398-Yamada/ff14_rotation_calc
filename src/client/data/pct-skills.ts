@@ -27,7 +27,7 @@ import mogOfTheAgesIcon from "../assets/icons/pct/Mog_of_the_Ages.png";
 import retributionOfTheMadeenIcon from "../assets/icons/pct/Retribution_of_the_Madeen.png";
 import steelMuseIcon from "../assets/icons/pct/Steel_Muse.png";
 import subtractivePaletteIcon from "../assets/icons/pct/Subtractive_Palette.png";
-import scenicMuseIcon from "../assets/icons/pct/Scenic_Muse.png";
+import starryMuseIcon from "../assets/icons/pct/Starry_Muse.png";
 
 /** GCDリキャスト（秒） */
 const GCD_RECAST = 2.5;
@@ -481,7 +481,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     potency: 0,
     type: "ogcd",
     target: "self",
-    icon: scenicMuseIcon,
+    icon: starryMuseIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 120,
