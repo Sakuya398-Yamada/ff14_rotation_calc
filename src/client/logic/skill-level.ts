@@ -58,7 +58,10 @@ export function getSkillsForLevel(
   const autoTransformTargetIds = new Set(
     available
       .filter((s) => s.autoTransform)
-      .map((s) => s.autoTransform!.skillId),
+      .flatMap((s) => {
+        const at = s.autoTransform!;
+        return Array.isArray(at) ? at.map((t) => t.skillId) : [at.skillId];
+      }),
   );
 
   const filtered = available.filter((s) => !replacedIds.has(s.id) && !autoTransformTargetIds.has(s.id));
