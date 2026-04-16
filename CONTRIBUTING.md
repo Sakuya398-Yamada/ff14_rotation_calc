@@ -101,6 +101,43 @@ npm test
 
 ---
 
+## CI / Cloudflare Pages テスト配信
+
+`main` ブランチへのpushとPRで `.github/workflows/ci.yml` が自動起動し、以下を実行します。
+
+- **全イベント**: 依存インストール → Prismaクライアント生成 → `tsc --noEmit` による型チェック → `npm test` → `vite build` → ビルド成果物をArtifactとしてアップロード
+- **`main` へのpush（および `workflow_dispatch`）時のみ**: Artifactを取得して Cloudflare Pages プロジェクト `ff14-rotation-calc` へ `wrangler pages deploy` でデプロイ
+
+> 現時点では Cloudflare Pages は **テスト配信用途**。本番の外部公開層としての利用はユーザー数拡大後に切り替える想定です（`.claude/rules/tech-stack.md` 参照）。
+
+### 必要な GitHub Secrets
+
+CIが Cloudflare Pages へデプロイするには、リポジトリの **Settings → Secrets and variables → Actions** に以下を登録してください。
+
+| Secret名 | 内容 | 取得元 |
+|---------|------|-------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン（`Cloudflare Pages:Edit` 権限を付与） | Cloudflare ダッシュボード → My Profile → API Tokens |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウントID | Cloudflare ダッシュボード → 右サイドバーの `Account ID` |
+
+### Cloudflare Pages プロジェクトの事前作成
+
+初回デプロイ前に、Cloudflare ダッシュボードで以下の Pages プロジェクトを作成してください。
+
+- **プロジェクト名**: `ff14-rotation-calc`
+- **Production branch**: `main`
+- **ビルド設定**: 「Direct Upload」（CIからのデプロイのためCloudflare側でのビルドは不要）
+
+### CI動作確認手順
+
+1. 上記 Secrets を登録
+2. Cloudflare Pages プロジェクトを作成
+3. このリポジトリの `main` へ何らかの変更をマージ、または Actions タブから `CI` ワークフローを `workflow_dispatch` で起動
+4. `test` ジョブと `deploy-pages` ジョブが緑になり、Cloudflare Pages の `*.pages.dev` URL で配信内容を確認できること
+
+> **注意**: Cloudflare Pages は静的ファイルのみを配信するため、`/api/*`（Hono バックエンド）は Pages 上では動作しません。API を含む動作確認はローカル開発環境か、オンプレUbuntu上の本番系で行ってください。
+
+---
+
 ## Claude Code 環境
 
 このリポジトリには Claude Code 用の構成が含まれています：

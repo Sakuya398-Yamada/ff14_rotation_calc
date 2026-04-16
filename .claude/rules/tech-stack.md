@@ -12,7 +12,9 @@
 | DB | SQLite | Prismaで抽象化（クラウド移行時にPostgreSQL等に切替可） |
 | ORM | Prisma | 型安全なDB操作 |
 | テスト | Vitest | `npm test` で実行 |
-| デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare |
+| CI | GitHub Actions | `.github/workflows/ci.yml`（型チェック・テスト・ビルド・Pages配信） |
+| テスト配信 | Cloudflare Pages | `main` push時にフロントエンドビルドを配信（プロジェクト名: `ff14-rotation-calc`） |
+| 本番デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare（CDN/DNS層） |
 
 ## 開発環境
 
