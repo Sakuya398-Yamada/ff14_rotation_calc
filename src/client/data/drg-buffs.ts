@@ -12,6 +12,7 @@ import nastrondIcon from "../assets/icons/drg/Nastrond.png";
 import stardiverIcon from "../assets/icons/drg/Stardiver.png";
 import starcrossIcon from "../assets/icons/drg/Starcross.png";
 import drakesbaneIcon from "../assets/icons/drg/Drakesbane.png";
+import piercingTalonIcon from "../assets/icons/drg/Piercing_Talon.png";
 
 /**
  * 竜騎士（DRG）バフ定義
@@ -176,5 +177,16 @@ export const DRG_BUFFS: BuffDefinition[] = [
     color: "#795548",
     maxStacks: 1,
     acquiredLevel: 64,
+  },
+  {
+    id: "enhanced-piercing-talon",
+    name: "エンハンスドピアシングタロン",
+    shortName: "PT\n強化",
+    icon: piercingTalonIcon,
+    duration: 15,
+    effects: [],
+    color: "#00bcd4",
+    maxStacks: 1,
+    acquiredLevel: 76,
   },
 ];

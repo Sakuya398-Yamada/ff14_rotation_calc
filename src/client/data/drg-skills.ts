@@ -220,6 +220,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 76, potency: 200 },
     ],
+    conditionalPotencyBuffs: [
+      { buffId: "enhanced-piercing-talon", potency: 350 },
+    ],
   },
 
   // ============================================================
@@ -552,6 +555,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 30,
     acquiredLevel: 35,
+    buffApplications: ["enhanced-piercing-talon"],
   },
   {
     id: "winged-glide",
