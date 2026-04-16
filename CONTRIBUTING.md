@@ -101,6 +101,47 @@ npm test
 
 ---
 
+## CI / Cloudflare Pages テスト配信
+
+品質チェック（CI）とテスト配信（Cloudflare Pages）を分担しています：
+
+- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `vite build` を実行
+- **デプロイ (Cloudflare Pages Git連携)**: Cloudflare Pages 側のGit連携がリポジトリの push / PR を検知し、Cloudflare 上で自動的にビルド＆デプロイ（GitHub Secrets や API トークンは不要）
+
+> 現時点では Cloudflare Pages は **テスト配信用途**。本番の外部公開層としての利用はユーザー数拡大後に切り替える想定です（`.claude/rules/tech-stack.md` 参照）。
+
+### Cloudflare Pages プロジェクトの作成（初回のみ）
+
+1. [Cloudflare ダッシュボード](https://dash.cloudflare.com/) にログイン
+2. 左メニュー **Workers & Pages** → **Create application** → **Pages** タブ → **Connect to Git** を選択
+3. GitHubで認証し、`ff14_rotation_calc` リポジトリを選択して **Begin setup**
+4. 以下のビルド設定を入力：
+   - **Project name**: `ff14-rotation-calc`
+   - **Production branch**: `main`
+   - **Framework preset**: `None`
+   - **Build command**: `npm ci && npx vite build`
+   - **Build output directory**: `dist/client`
+   - **Root directory (advanced)**: 空欄のまま
+5. **Environment variables (advanced)** を展開し、Production と Preview の両方に次を追加：
+   - Variable name: `NODE_VERSION` / Value: `22`
+6. **Save and Deploy** で初回ビルドを開始
+
+これで以後、`main` への push は本番（`https://ff14-rotation-calc.pages.dev`）に、PR は preview URL に自動デプロイされます。
+
+### 動作確認手順
+
+1. 初回ビルドが成功し、`https://ff14-rotation-calc.pages.dev` でフロントエンドが表示されることを確認
+2. 本PRまたは以降のPRで、Cloudflare Pagesから `Deploy Preview` コメントが付き、preview URLで確認できること
+3. GitHub Actions 側（`Test & Build` ジョブ）も緑で通っていること
+
+### トラブルシューティング
+
+- **ビルド失敗（`npm ci`）**: Cloudflare Pages が package-lock.json の Node バージョンと合わない可能性。環境変数 `NODE_VERSION=22` が設定されているか確認
+- **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`npx vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
+- **API (/api/*) が404**: 想定通り。Cloudflare Pages は静的ファイルのみを配信するため、Hono バックエンドは Pages では動作しない。API を含む動作確認はローカル or オンプレUbuntu本番側で行う
+
+---
+
 ## Claude Code 環境
 
 このリポジトリには Claude Code 用の構成が含まれています：
