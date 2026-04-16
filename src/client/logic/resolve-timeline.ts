@@ -519,6 +519,20 @@ export function resolveTimeline(
       }
     }
 
+    // conditionalPotencyBuffs: バフがあれば威力を上書きしバフを消費（なければ通常威力、エラーにしない）
+    let conditionalPotencyOverride: number | undefined;
+    let conditionalMatchedBuffId: string | undefined;
+    if (skill.conditionalPotencyBuffs) {
+      for (const option of skill.conditionalPotencyBuffs) {
+        const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === option.buffId);
+        if (activeBuff) {
+          conditionalMatchedBuffId = option.buffId;
+          conditionalPotencyOverride = option.potency;
+          break;
+        }
+      }
+    }
+
     // WSコンボ判定: comboFromが設定されているGCDスキルのコンボ成否を判定
     let wsComboError = false;
     if (skill.comboFrom && skill.type === "gcd") {
@@ -528,7 +542,7 @@ export function resolveTimeline(
     }
 
     // コンボ成否に基づく威力決定
-    let resolvedPotency = anyOfPotencyOverride ?? skill.potency;
+    let resolvedPotency = anyOfPotencyOverride ?? conditionalPotencyOverride ?? skill.potency;
     if (wsComboError && skill.nonComboPotency !== undefined) {
       resolvedPotency = skill.nonComboPotency;
     }
@@ -680,6 +694,15 @@ export function resolveTimeline(
       // buffConsumptionAnyOf: マッチしたバフを消費
       if (anyOfMatchedBuffId) {
         const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === anyOfMatchedBuffId);
+        if (activeBuff) {
+          const idx = currentActiveBuffs.indexOf(activeBuff);
+          if (idx >= 0) currentActiveBuffs.splice(idx, 1);
+        }
+      }
+
+      // conditionalPotencyBuffs: マッチしたバフを消費
+      if (conditionalMatchedBuffId) {
+        const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === conditionalMatchedBuffId);
         if (activeBuff) {
           const idx = currentActiveBuffs.indexOf(activeBuff);
           if (idx >= 0) currentActiveBuffs.splice(idx, 1);
