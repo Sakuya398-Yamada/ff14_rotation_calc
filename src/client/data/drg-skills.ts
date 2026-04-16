@@ -290,7 +290,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     id: "heavens-thrust",
     name: "ヘヴンスラスト",
-    potency: 460,
+    potency: 400,
     nonComboPotency: 160,
     comboFrom: ["vorpal-thrust", "lance-barrage"],
     type: "gcd",
@@ -300,6 +300,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 86,
     replacesSkillId: "full-thrust",
+    traitPotencyOverrides: [
+      { traitLevel: 94, potency: 460 },
+    ],
   },
   {
     id: "chaotic-spring",
