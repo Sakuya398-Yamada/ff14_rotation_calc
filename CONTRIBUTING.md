@@ -155,4 +155,38 @@ npm test
 └── skills/      # スラッシュ起動可能なスキル（/issue-start, /dev-plan）
 ```
 
+加えて、リポジトリ直下の `.mcp.json` に Claude Code が読み込む MCP サーバー（Playwright 等）を定義しています。
+
 詳細は `CLAUDE.md` を参照してください。
+
+---
+
+## MCP サーバー（Playwright による UI 視覚検証）
+
+リポジトリルートの `.mcp.json` に Playwright MCP (`@playwright/mcp`) を登録しており、Claude Code セッションから `browser_navigate` / `browser_snapshot` / `browser_click` 等のツールでフロントエンドの UI を操作・キャプチャできます。
+
+### 初回セットアップ
+
+Chromium バイナリをダウンロードしておきます（Playwright MCP の初回起動時に `npx` が自動で `@playwright/mcp` を取得するため、別途インストールは不要）。
+
+```bash
+# 開発コンテナ内で1回だけ実行
+npx playwright install chromium
+```
+
+> Dev Container を新規ビルドした場合は再度実行が必要です。
+
+### 利用フロー
+
+1. 別ターミナルでフロントエンドを起動：
+   ```bash
+   npm run dev:client
+   ```
+2. Claude Code セッションから MCP ツールを呼び出す（例）：
+   - `browser_navigate` で `http://localhost:5173` を開く
+   - `browser_snapshot` でアクセシビリティツリー／スクリーンショットを取得
+   - `browser_click` でスキルボタン等を操作
+
+### 接続確認
+
+Claude Code セッションで `ToolSearch` に `playwright` や `browser_navigate` を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は `.mcp.json` のパスと `@playwright/mcp` のインストール可否を確認してください。

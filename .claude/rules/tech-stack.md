@@ -15,6 +15,7 @@
 | CI | GitHub Actions | `.github/workflows/ci.yml`（型チェック・テスト・ビルド検証） |
 | テスト配信 | Cloudflare Pages（Git連携） | Pages 自身が repo を監視しフロントエンドを自動ビルド＆配信（プロジェクト名: `ff14-rotation-calc`、トークン不要） |
 | 本番デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare（CDN/DNS層） |
+| UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッションから `browser_navigate` 等でフロントエンド操作・スクリーンショット取得（リポジトリ直下 `.mcp.json` に登録） |
 
 ## 開発環境
 
