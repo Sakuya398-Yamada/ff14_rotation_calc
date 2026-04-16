@@ -103,38 +103,42 @@ npm test
 
 ## CI / Cloudflare Pages テスト配信
 
-`main` ブランチへのpushとPRで `.github/workflows/ci.yml` が自動起動し、以下を実行します。
+品質チェック（CI）とテスト配信（Cloudflare Pages）を分担しています：
 
-- **全イベント**: 依存インストール → Prismaクライアント生成 → `tsc --noEmit` による型チェック → `npm test` → `vite build` → ビルド成果物をArtifactとしてアップロード
-- **`main` へのpush（および `workflow_dispatch`）時のみ**: Artifactを取得して Cloudflare Pages プロジェクト `ff14-rotation-calc` へ `wrangler pages deploy` でデプロイ
+- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `vite build` を実行
+- **デプロイ (Cloudflare Pages Git連携)**: Cloudflare Pages 側のGit連携がリポジトリの push / PR を検知し、Cloudflare 上で自動的にビルド＆デプロイ（GitHub Secrets や API トークンは不要）
 
 > 現時点では Cloudflare Pages は **テスト配信用途**。本番の外部公開層としての利用はユーザー数拡大後に切り替える想定です（`.claude/rules/tech-stack.md` 参照）。
 
-### 必要な GitHub Secrets
+### Cloudflare Pages プロジェクトの作成（初回のみ）
 
-CIが Cloudflare Pages へデプロイするには、リポジトリの **Settings → Secrets and variables → Actions** に以下を登録してください。
+1. [Cloudflare ダッシュボード](https://dash.cloudflare.com/) にログイン
+2. 左メニュー **Workers & Pages** → **Create application** → **Pages** タブ → **Connect to Git** を選択
+3. GitHubで認証し、`ff14_rotation_calc` リポジトリを選択して **Begin setup**
+4. 以下のビルド設定を入力：
+   - **Project name**: `ff14-rotation-calc`
+   - **Production branch**: `main`
+   - **Framework preset**: `None`
+   - **Build command**: `npm ci && npx vite build`
+   - **Build output directory**: `dist/client`
+   - **Root directory (advanced)**: 空欄のまま
+5. **Environment variables (advanced)** を展開し、Production と Preview の両方に次を追加：
+   - Variable name: `NODE_VERSION` / Value: `22`
+6. **Save and Deploy** で初回ビルドを開始
 
-| Secret名 | 内容 | 取得元 |
-|---------|------|-------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン（`Cloudflare Pages:Edit` 権限を付与） | Cloudflare ダッシュボード → My Profile → API Tokens |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウントID | Cloudflare ダッシュボード → 右サイドバーの `Account ID` |
+これで以後、`main` への push は本番（`https://ff14-rotation-calc.pages.dev`）に、PR は preview URL に自動デプロイされます。
 
-### Cloudflare Pages プロジェクトの事前作成
+### 動作確認手順
 
-初回デプロイ前に、Cloudflare ダッシュボードで以下の Pages プロジェクトを作成してください。
+1. 初回ビルドが成功し、`https://ff14-rotation-calc.pages.dev` でフロントエンドが表示されることを確認
+2. 本PRまたは以降のPRで、Cloudflare Pagesから `Deploy Preview` コメントが付き、preview URLで確認できること
+3. GitHub Actions 側（`Test & Build` ジョブ）も緑で通っていること
 
-- **プロジェクト名**: `ff14-rotation-calc`
-- **Production branch**: `main`
-- **ビルド設定**: 「Direct Upload」（CIからのデプロイのためCloudflare側でのビルドは不要）
+### トラブルシューティング
 
-### CI動作確認手順
-
-1. 上記 Secrets を登録
-2. Cloudflare Pages プロジェクトを作成
-3. このリポジトリの `main` へ何らかの変更をマージ、または Actions タブから `CI` ワークフローを `workflow_dispatch` で起動
-4. `test` ジョブと `deploy-pages` ジョブが緑になり、Cloudflare Pages の `*.pages.dev` URL で配信内容を確認できること
-
-> **注意**: Cloudflare Pages は静的ファイルのみを配信するため、`/api/*`（Hono バックエンド）は Pages 上では動作しません。API を含む動作確認はローカル開発環境か、オンプレUbuntu上の本番系で行ってください。
+- **ビルド失敗（`npm ci`）**: Cloudflare Pages が package-lock.json の Node バージョンと合わない可能性。環境変数 `NODE_VERSION=22` が設定されているか確認
+- **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`npx vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
+- **API (/api/*) が404**: 想定通り。Cloudflare Pages は静的ファイルのみを配信するため、Hono バックエンドは Pages では動作しない。API を含む動作確認はローカル or オンプレUbuntu本番側で行う
 
 ---
 
