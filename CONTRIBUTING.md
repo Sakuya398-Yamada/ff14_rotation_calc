@@ -1,5 +1,7 @@
 # 開発ガイド
 
+このファイルは**人間の開発者向け**のクイックスタートガイドです。Claude Code 向けの詳細規約は `CLAUDE.md` および `.claude/rules/*.md` を参照してください。
+
 ## 開発方式
 
 本プロジェクトはIssue駆動開発を採用しています。
@@ -7,7 +9,7 @@
 - **ユーザー**がGitHub Issueを作成し、要件や仕様を定義する
 - **Claude Code**がIssueの内容に基づいてコーディングを行う
 - 設計書・定義書などのドキュメントはIssueに紐づけて管理する
-- Claude Codeは必要に応じてIssueに情報を記載し、過去のIssueから情報を参照する
+- Claude Code は必要に応じてIssueに情報を記載し、過去のIssueから情報を参照する
 
 ## 開発フロー
 
@@ -21,7 +23,7 @@
 
 ### 1. Issue作成（ユーザー）
 
-ユーザーがGitHub上でIssueを作成します。Issueには以下を含めてください。
+GitHub上でIssueを作成します。Issueには以下を含めてください。
 
 - **背景・目的**: なぜこの作業が必要か
 - **要件**: やること／やらないこと
@@ -31,7 +33,7 @@
 
 ### 2. Claude Code起動 & Issue指定（ユーザー）
 
-ユーザーがClaude Codeを起動し、作業対象のIssueを指定します。
+Claude Code を起動し、作業対象のIssueを指定します。
 
 ```
 /issue-start #<番号>
@@ -39,10 +41,10 @@
 
 ### 3. ブランチ作成 & 実装（Claude Code）
 
-Claude CodeがIssueの内容を読み取り、以下を行います。
+Claude Code がIssueの内容を読み取り、以下を行います。
 
 1. Issueの要件・設計・定義、および関連する過去のIssueを確認
-2. 規約に沿ったブランチを作成
+2. 規約に沿ったブランチを作成（hooks による自動検証あり）
 3. 実装を進める
 4. 必要に応じてIssueにコメントで進捗や技術的な情報を記載
 
@@ -56,65 +58,22 @@ Claude CodeがIssueの内容を読み取り、以下を行います。
 
 ---
 
-## 規約
+## 規約の参照先
 
-### ブランチ命名規則
+詳細は以下のファイルを参照してください：
 
-```
-<type>/#<issue番号>-<説明>
-```
-
-| type | 用途 | 派生元 | マージ先 |
-|------|------|--------|---------|
-| `feature` | 新機能開発 | main | main |
-| `fix` | バグ修正 | main | main |
-| `refactor` | リファクタリング | main | main |
-| `docs` | ドキュメント | main | main |
-
-### コミットメッセージ
-
-```
-<type>: <内容> #<issue番号>
-```
-
-| type | 説明 |
-|------|------|
-| `feat` | 新機能追加 |
-| `fix` | バグ修正 |
-| `refactor` | リファクタリング |
-| `test` | テスト追加・修正 |
-| `docs` | ドキュメント |
-| `chore` | ビルド・設定変更 |
-
-### Issueラベル
-
-| ラベル | 説明 |
-|--------|------|
-| `feature` | 新機能 |
-| `bug` | バグ |
-| `refactor` | リファクタリング |
-| `docs` | ドキュメント |
-| `question` | 要確認・議論 |
-| `priority:high` / `medium` / `low` | 優先度 |
+| 内容 | ファイル |
+|------|---------|
+| ブランチ命名・コミットメッセージ・PR・Issue規約 | `.claude/rules/git-conventions.md` |
+| TypeScript / React / Hono / Prisma のコーディング規約 | `.claude/rules/coding-standards.md` |
+| 技術スタック・npmスクリプト・インフラ構成 | `.claude/rules/tech-stack.md` |
+| Issue駆動開発の Phase別手順 | `.claude/skills/issue-start/SKILL.md` |
 
 ---
 
-## 技術スタック
+## ローカル開発
 
-| レイヤー | 技術 |
-|---------|------|
-| 言語 | TypeScript（フロント・バック統一） |
-| フロントエンド | React + Vite |
-| バックエンド | Hono (Node.js) |
-| DB | SQLite（Prismaで抽象化） |
-| ORM | Prisma |
-| デプロイ | pm2 or systemd + Nginx + Cloudflare |
-
-### 開発環境
-
-WSL上に**開発コンテナ（Dev Container）**を作成して開発します。コンテナ内にNode.js、SQLite等の依存がすべて含まれるため、ローカル環境への個別インストールは不要です。
-
-### ローカル開発
+WSL上の **開発コンテナ（Dev Container）** で開発します。コンテナ内に Node.js、SQLite等の依存がすべて含まれるため、ローカル環境への個別インストールは不要です。
 
 ```bash
 # 開発コンテナ内で実行
@@ -128,24 +87,31 @@ npm run db:generate
 # DBマイグレーション適用
 npm run db:migrate
 
-# 初期データ投入
-npm run db:seed
-
 # バックエンドサーバー起動（port 3000）
 npm run dev
 
 # フロントエンド開発サーバー起動（port 5173）
 npm run dev:client
+
+# テスト実行
+npm test
 ```
 
-### npmスクリプト一覧
+> **Note**: 開発時はバックエンド (`npm run dev`) とフロントエンド (`npm run dev:client`) を別ターミナルで同時に起動してください。Vite開発サーバーは `/api/*` への要求をバックエンド (port 3000) にプロキシします。
 
-| コマンド | 説明 |
-|---------|------|
-| `npm run dev` | Honoバックエンドサーバー起動（port 3000） |
-| `npm run dev:client` | Viteフロントエンド開発サーバー起動（port 5173） |
-| `npm run db:migrate` | Prismaマイグレーション適用 |
-| `npm run db:generate` | Prismaクライアント生成 |
-| `npm run db:seed` | 初期データ（スキルデータ）の投入 |
+---
 
-> **Note**: 開発時はバックエンド（`npm run dev`）とフロントエンド（`npm run dev:client`）を別ターミナルで同時に起動してください。Vite開発サーバーは `/api/*` へのリクエストをバックエンド（port 3000）にプロキシします。
+## Claude Code 環境
+
+このリポジトリには Claude Code 用の構成が含まれています：
+
+```
+.claude/
+├── agents/      # サブエージェント定義（code-explorer, code-architect, code-reviewer）
+├── rules/       # CLAUDE.md から @import される詳細規約
+├── hooks/       # PreToolUse / SessionStart 用シェルスクリプト
+├── settings.json # フック設定
+└── skills/      # スラッシュ起動可能なスキル（/issue-start, /dev-plan）
+```
+
+詳細は `CLAUDE.md` を参照してください。
