@@ -214,8 +214,8 @@ export interface BuffDefinition {
   shortName: string;
   /** アイコン画像のパス */
   icon: string;
-  /** 効果時間（秒） */
-  duration: number;
+  /** 効果時間（秒）。null は永続（特定スキルで消費されるまで持続） */
+  duration: number | null;
   /** バフの効果リスト */
   effects: BuffEffect[];
   /** 表示色 */

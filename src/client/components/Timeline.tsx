@@ -326,8 +326,9 @@ export function Timeline({
       if (!skill) continue;
       const end = entry.startTime + getEntryRecastTime(skill, entry.activeBuffs);
       if (end > maxEnd) maxEnd = end;
-      // バフ終了時刻も考慮
+      // バフ終了時刻も考慮（永続バフ= endTime が Infinity はタイムライン幅に影響させない）
       for (const ab of entry.activeBuffs) {
+        if (!Number.isFinite(ab.endTime)) continue;
         if (ab.endTime > maxEnd) maxEnd = ab.endTime;
       }
     }
@@ -1115,11 +1116,20 @@ export function Timeline({
                     </div>
                     <div style={styles.buffLaneContent}>
                       {spans.map((span, i) => {
+                        // 永続バフ（endTime = Infinity）はタイムライン末尾でキャップ
+                        const isPermanent = !Number.isFinite(span.endTime);
+                        const effectiveEnd = isPermanent ? totalDuration : span.endTime;
                         const left = span.startTime * PX_PER_SEC;
-                        const width = (span.endTime - span.startTime) * PX_PER_SEC;
+                        const width = Math.max(0, (effectiveEnd - span.startTime) * PX_PER_SEC);
                         const stacksLabel = buffDef.maxStacks && span.stacks !== undefined
                           ? ` x${span.stacks}`
                           : "";
+                        const endTimeLabel = isPermanent ? "∞" : `${span.endTime.toFixed(2)}s`;
+                        const durationLabel = buffDef.maxStacks
+                          ? `x${span.stacks ?? buffDef.maxStacks}`
+                          : buffDef.duration === null
+                            ? "∞"
+                            : `${buffDef.duration}s`;
                         return (
                           <div
                             key={i}
@@ -1130,7 +1140,7 @@ export function Timeline({
                               backgroundColor: `${buffDef.color}30`,
                               borderColor: buffDef.color,
                             }}
-                            title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${span.endTime.toFixed(2)}s)`}
+                            title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${endTimeLabel})`}
                           >
                             <img
                               src={buffDef.icon}
@@ -1138,7 +1148,7 @@ export function Timeline({
                               style={styles.buffIcon}
                             />
                             <span style={{ ...styles.buffDuration, color: buffDef.color }}>
-                              {buffDef.maxStacks ? `x${span.stacks ?? buffDef.maxStacks}` : `${buffDef.duration}s`}
+                              {durationLabel}
                             </span>
                           </div>
                         );

@@ -21,6 +21,15 @@ const DOT_TICK_INTERVAL = 3;
 const COMBO_TIMER = 15;
 
 /**
+ * バフの終了時刻を算出する。
+ * duration: null は永続バフを意味し、Infinity を返すことで時間経過では失効しない。
+ */
+function computeBuffEndTime(startTime: number, duration: number | null): number {
+  if (duration === null) return Number.POSITIVE_INFINITY;
+  return Math.round((startTime + duration) * 1000) / 1000;
+}
+
+/**
  * 自動生成タイマーの状態。
  * リソースが最大未満になった時点からタイマーが開始し、
  * interval秒経過ごとに1つ生成される。最大に達するとタイマー停止。
@@ -792,7 +801,7 @@ export function resolveTimeline(
             const newBuff: ActiveBuff = {
               buffId,
               startTime,
-              endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+              endTime: computeBuffEndTime(startTime, buffDef.duration),
               stacks: buffDef.maxStacks,
             };
             if (existingIdx >= 0) {
@@ -816,7 +825,7 @@ export function resolveTimeline(
             const newBuff: ActiveBuff = {
               buffId,
               startTime,
-              endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+              endTime: computeBuffEndTime(startTime, buffDef.duration),
               stacks: buffDef.maxStacks,
             };
             if (existingIdx >= 0) {
@@ -841,7 +850,7 @@ export function resolveTimeline(
           const newBuff: ActiveBuff = {
             buffId,
             startTime,
-            endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+            endTime: computeBuffEndTime(startTime, buffDef.duration),
             stacks: buffDef.maxStacks,
           };
           if (existingIdx >= 0) {
@@ -863,7 +872,7 @@ export function resolveTimeline(
           const newBuff: ActiveBuff = {
             buffId,
             startTime,
-            endTime: Math.round((startTime + buffDef.duration) * 1000) / 1000,
+            endTime: computeBuffEndTime(startTime, buffDef.duration),
             stacks: buffDef.maxStacks,
           };
           if (existingIdx >= 0) {
