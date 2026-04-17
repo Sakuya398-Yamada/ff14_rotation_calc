@@ -26,6 +26,9 @@ env/
 node_modules/
 npm-debug.log*
 
+# Playwright MCP runtime output
+.playwright-mcp/
+
 # Environment
 .env
 .env.local
