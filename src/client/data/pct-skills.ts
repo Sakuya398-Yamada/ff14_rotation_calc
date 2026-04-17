@@ -271,7 +271,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: rainbowDripIcon,
-    recastTime: GCD_RECAST,
+    recastTime: 6,
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 4,
     acquiredLevel: 92,
