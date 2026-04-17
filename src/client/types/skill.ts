@@ -10,6 +10,13 @@ export interface ResourceChange {
   resourceId: string;
   /** 変動量（正で獲得、負で消費） */
   amount: number;
+  /**
+   * 残量が不足する場合に「エラー化せず、この変動自体をスキップする」フラグ。
+   * 1スキル内に複数のフラグ付き変動がある場合はアトミックに連動し、
+   * そのうち 1 つでも負変動の残量不足が検知されれば、フラグ付きの全変動（正負問わず）を一括スキップする。
+   * 例: サブトラクティブパレットの WP-1 / BP+1 — WP が 0 なら両方とも適用されない。
+   */
+  skipIfInsufficient?: boolean;
 }
 
 /** バフスタック消費（スキル使用時） */
@@ -230,6 +237,15 @@ export interface BuffDefinition {
   exclusiveGroup?: string;
   /** バフ消失時にリソースを別リソースへ移し替える（例: 色調反転消失時にBP→WP） */
   onExpireResourceTransfer?: {
+    fromResourceId: string;
+    toResourceId: string;
+  };
+  /**
+   * バフ付与中のリソース獲得（正の ResourceChange）を別リソースへ振り替える。
+   * 例: 色調反転中にホワイトペイントの獲得をブラックペイントへ付け替える。
+   * 負の ResourceChange（消費）には影響しない。
+   */
+  redirectResourceGain?: {
     fromResourceId: string;
     toResourceId: string;
   };

@@ -53,6 +53,8 @@ export const PCT_BUFFS: BuffDefinition[] = [
     duration: null,
     effects: [],
     color: "#546e7a",
+    // 色調反転中は WP の獲得を BP へ振り替える（枠内でのペイント色変化）
+    redirectResourceGain: { fromResourceId: "white-paint", toResourceId: "black-paint" },
   },
 
   // ============================================================
