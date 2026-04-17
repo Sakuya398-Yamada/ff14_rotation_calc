@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, PpsRange } from "../types/skill";
 import { calcGcd, calcExpectedMultiplier } from "../logic/stat-calc";
+import { computeBuffTimespans } from "../logic/buff-timespans";
 import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
@@ -545,69 +546,11 @@ export function Timeline({
   // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
   const labelBg = dragOver ? "#1b1921" : "#0f0f23";
 
-  // タイムライン上の全バフ期間を収集（重複排除）
-  // スタック付きバフの場合、スタックが0になった時点でバフ終了とみなす
-  const buffTimespans = useMemo(() => {
-    const spans: Map<string, ActiveBuff[]> = new Map();
-    const stackableBuffIds = new Set(buffs.filter((b) => b.maxStacks).map((b) => b.id));
-    // 全バフを早期終了チェック対象（スタック消費、排他グループ、buffConsumptions等）
-    const allBuffIds = new Set(buffs.map((b) => b.id));
-    const earlyTerminationBuffIds = allBuffIds;
-
-    for (const entry of resolvedEntries) {
-      for (const ab of entry.activeBuffs) {
-        if (!spans.has(ab.buffId)) {
-          spans.set(ab.buffId, []);
-        }
-        const list = spans.get(ab.buffId)!;
-
-        if (stackableBuffIds.has(ab.buffId)) {
-          // スタック付きバフ: 同じ開始時刻のものは更新しない（初回のみ追加）
-          if (!list.some((s) => s.startTime === ab.startTime)) {
-            list.push({ ...ab });
-          }
-        } else {
-          // 通常バフ: 同じ開始・終了時刻のものは重複追加しない
-          if (!list.some((s) => s.startTime === ab.startTime && s.endTime === ab.endTime)) {
-            list.push(ab);
-          }
-        }
-      }
-    }
-
-    // スタック消費 or 排他グループ解除によるバフの実際の終了時刻を算出
-    for (const [buffId, spanList] of spans) {
-      if (!earlyTerminationBuffIds.has(buffId)) continue;
-      for (const span of spanList) {
-        let lastSeenTime = span.startTime;
-        for (const entry of resolvedEntries) {
-          const match = entry.activeBuffs.find(
-            (ab) => ab.buffId === buffId && ab.startTime === span.startTime
-          );
-          if (match) {
-            lastSeenTime = entry.startTime;
-          }
-        }
-        // スタック消費で終了した場合、最後に確認されたエントリの時刻を終了時刻とする
-        if (lastSeenTime < span.endTime) {
-          // 次のエントリでバフが消えたか確認
-          const allTimes = resolvedEntries.map((e) => e.startTime).sort((a, b) => a - b);
-          const nextTimeIdx = allTimes.findIndex((t) => t > lastSeenTime);
-          if (nextTimeIdx >= 0) {
-            const nextEntry = resolvedEntries.find((e) => e.startTime === allTimes[nextTimeIdx]);
-            const stillActive = nextEntry?.activeBuffs.some(
-              (ab) => ab.buffId === buffId && ab.startTime === span.startTime
-            );
-            if (!stillActive) {
-              span.endTime = allTimes[nextTimeIdx];
-            }
-          }
-        }
-      }
-    }
-
-    return spans;
-  }, [resolvedEntries, buffs]);
+  // タイムライン上の全バフ期間を収集（重複排除）。消費・排他解除時は実際に消えた時刻へクランプする
+  const buffTimespans = useMemo(
+    () => computeBuffTimespans(resolvedEntries, buffs),
+    [resolvedEntries, buffs],
+  );
 
   // リソースエラーまたはコンボエラーがあるエントリのUIDセット
   const entriesWithErrors = useMemo(() => {
