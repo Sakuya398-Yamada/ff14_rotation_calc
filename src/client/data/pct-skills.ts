@@ -494,6 +494,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { resourceId: "white-paint", amount: -1 },
       { resourceId: "black-paint", amount: 1 },
     ],
+    // subtractive-ready バフ中はパレットゲージ50消費をスキップしバフを優先消費（イマジンスカイ後の発動条件緩和）
+    buffSkippableResource: { buffId: "subtractive-ready", resourceId: "palette-gauge" },
     buffApplications: ["subtractive-palette", "color-inversion"],
   },
 
