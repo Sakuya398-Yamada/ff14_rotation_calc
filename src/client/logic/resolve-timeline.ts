@@ -587,6 +587,7 @@ export function resolveTimeline(
     }
 
     // スキル実行前のリソーススナップショット
+    // （buffApplicationIfResource の閾値判定など、消費前の値が必要な処理で参照する）
     const snapshot: ResourceSnapshot = { ...resourceState };
 
     // buffSkippableResource: 指定バフがアクティブなら resourceChanges の該当リソース消費をスキップ
@@ -1074,13 +1075,17 @@ export function resolveTimeline(
       lastComboTime = startTime;
     }
 
+    // スキル実行後のリソーススナップショット（UI表示・最終状態計算用）
+    // エラー時は resourceState が変動していないため snapshot と同値になる
+    const snapshotAfter: ResourceSnapshot = { ...resourceState };
+
     resolved.push({
       uid: entry.uid,
       skillId: entry.skillId,
       resolvedSkillId,
       resolvedPotency,
       startTime,
-      resourceSnapshot: snapshot,
+      resourceSnapshot: snapshotAfter,
       resourceErrors,
       comboErrors,
       untargetableError,
@@ -1219,46 +1224,3 @@ export function calcPps(
   return { pps, totalPotency, directPotency, dotPotency };
 }
 
-/**
- * タイムライン末尾（最後のスキル実行後）のリソース状態を計算する。
- */
-export function getFinalResourceState(
-  resolvedEntries: ResolvedTimelineEntry[],
-  skillMap: Map<string, Skill>,
-  resources: ResourceDefinition[],
-  buffs: BuffDefinition[]
-): ResourceSnapshot {
-  if (resolvedEntries.length === 0) {
-    const snapshot: ResourceSnapshot = {};
-    for (const res of resources) {
-      snapshot[res.id] = res.initialStacks ?? 0;
-    }
-    return snapshot;
-  }
-
-  // 最後のエントリのスナップショットにそのスキルの変動を適用したものが最終状態
-  const last = resolvedEntries[resolvedEntries.length - 1];
-  const skill = skillMap.get(last.resolvedSkillId);
-  const state: ResourceSnapshot = { ...last.resourceSnapshot };
-
-  // エラーのあるスキルはリソース変動を適用しない
-  const hasError = last.resourceErrors.length > 0 || last.comboErrors.length > 0 || last.untargetableError || last.recastError;
-  if (!hasError && skill) {
-    if (skill.resourceChanges) {
-      const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
-      const buffDefMap = new Map(buffs.map((b) => [b.id, b]));
-      const redirected = applyBuffRedirects(skill.resourceChanges, last.activeBuffs, buffDefMap, resourceDefMap);
-      applyResourceChanges(state, redirected, resourceDefMap, resources);
-    }
-    if (skill.consumeAllOfResource) {
-      state[skill.consumeAllOfResource] = 0;
-    }
-    if (skill.consumeAllResources) {
-      for (const resId of skill.consumeAllResources) {
-        state[resId] = 0;
-      }
-    }
-  }
-
-  return state;
-}
