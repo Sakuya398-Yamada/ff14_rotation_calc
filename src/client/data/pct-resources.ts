@@ -24,6 +24,7 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     color: "#ffffff",
     acquiredLevel: 15,
     displayGroup: "paint",
+    stacksPerRow: 3,
   },
   {
     id: "black-paint",

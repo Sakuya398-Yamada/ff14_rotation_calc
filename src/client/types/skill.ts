@@ -153,6 +153,8 @@ export interface ResourceDefinition {
   acquiredLevel?: number;
   /** 表示グループ名（同じグループのリソースは1行にまとめて表示） */
   displayGroup?: string;
+  /** ドット1行あたりのスタック数（未設定の場合はmaxStacksを1行で表示。maxStacksがこの値を超える場合は複数行に折り返される） */
+  stacksPerRow?: number;
 }
 
 /** 特定時点のリソース状態 */
