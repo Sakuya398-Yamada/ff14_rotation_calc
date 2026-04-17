@@ -32,6 +32,7 @@ const LANE_LABEL_WIDTH = 52;
 
 /** リソースドットのサイズ（px） */
 const RESOURCE_DOT_SIZE = 10;
+const RESOURCE_DOT_GAP = 3;
 
 interface TimelineProps {
   skills: Skill[];
@@ -1013,12 +1014,13 @@ export function Timeline({
                                 );
                               }
                               const stacksPerRow = res.stacksPerRow ?? res.maxStacks;
+                              const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
                               return (
                                 <div
                                   key={res.id}
                                   style={{
                                     ...styles.resourceDotGrid,
-                                    gridTemplateColumns: `repeat(${stacksPerRow}, ${RESOURCE_DOT_SIZE}px)`,
+                                    width: gridWidth,
                                   }}
                                 >
                                   {Array.from({ length: res.maxStacks }, (_, i) => (
@@ -1556,8 +1558,10 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "3px",
   },
   resourceDotGrid: {
-    display: "grid",
-    gap: "3px",
+    display: "flex",
+    flexWrap: "wrap" as const,
+    justifyContent: "center",
+    gap: `${RESOURCE_DOT_GAP}px`,
   },
   resourceGauge: {
     position: "relative",
