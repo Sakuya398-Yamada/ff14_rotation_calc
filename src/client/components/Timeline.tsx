@@ -41,6 +41,7 @@ interface TimelineProps {
   resolvedEntries: ResolvedTimelineEntry[];
   onAddEntry: (skillId: string, insertBeforeUid?: string) => void;
   onRemoveEntry: (uid: string) => void;
+  onMoveEntry: (uid: string, insertBeforeUid?: string) => void;
   resources: ResourceDefinition[];
   buffs: BuffDefinition[];
   totalExpectedPotency: number;
@@ -101,6 +102,7 @@ export function Timeline({
   resolvedEntries,
   onAddEntry,
   onRemoveEntry,
+  onMoveEntry,
   resources,
   buffs,
   totalExpectedPotency,
@@ -119,6 +121,10 @@ export function Timeline({
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [dragType, setDragType] = useState<"gcd" | "ogcd" | null>(null);
+  /** タイムライン内ドラッグ中のエントリUID（null = パレットドラッグ中 or 非ドラッグ） */
+  const [draggingEntryUid, setDraggingEntryUid] = useState<string | null>(null);
+  /** 削除ドロップエリア上にカーソルがあるか */
+  const [overDeleteZone, setOverDeleteZone] = useState(false);
   const [showResources, setShowResources] = useState(true);
 
   // リソースをdisplayGroupでグループ化（同じグループは1行にまとめる）
@@ -176,14 +182,6 @@ export function Timeline({
   const dragRafRef = useRef<number | null>(null);
   /** dragenter/dragleaveの子要素間移動を無視するためのカウンター */
   const dragEnterCountRef = useRef(0);
-
-  const handleRemoveEntry = useCallback(
-    (uid: string) => {
-      shouldAutoScrollRef.current = false;
-      onRemoveEntry(uid);
-    },
-    [onRemoveEntry]
-  );
 
   // パレット用のスキルマップ（ドラッグ判定用）
   const paletteSkillMap = useMemo(
@@ -383,6 +381,67 @@ export function Timeline({
     return e.dataTransfer.types.includes("application/skill-type-gcd") ? "gcd" : "ogcd";
   }, []);
 
+  /** ドラッグ元を検出（タイムライン内エントリのD&D か、パレットからの新規追加か） */
+  const detectDragSource = useCallback((e: React.DragEvent): "timeline" | "palette" => {
+    return e.dataTransfer.types.includes("application/timeline-entry-uid") ? "timeline" : "palette";
+  }, []);
+
+  const handleEntryDragStart = useCallback(
+    (e: React.DragEvent<HTMLDivElement>, entry: { uid: string; skillId: string }, skill: Skill) => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("application/timeline-entry-uid", entry.uid);
+      e.dataTransfer.setData("application/skill-id", entry.skillId);
+      e.dataTransfer.setData(`application/skill-type-${skill.type}`, "1");
+      setDraggingEntryUid(entry.uid);
+    },
+    []
+  );
+
+  const handleEntryDragEnd = useCallback(() => {
+    setDraggingEntryUid(null);
+    setOverDeleteZone(false);
+    setInsertIndex(null);
+    setDragType(null);
+    dragEnterCountRef.current = 0;
+    if (dragRafRef.current !== null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+  }, []);
+
+  const handleDeleteZoneDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (!e.dataTransfer.types.includes("application/timeline-entry-uid")) return;
+    setOverDeleteZone(true);
+  }, []);
+
+  const handleDeleteZoneDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("application/timeline-entry-uid")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleDeleteZoneDragLeave = useCallback(() => {
+    setOverDeleteZone(false);
+  }, []);
+
+  const handleDeleteZoneDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const uid = e.dataTransfer.getData("application/timeline-entry-uid");
+      setOverDeleteZone(false);
+      setDraggingEntryUid(null);
+      setInsertIndex(null);
+      setDragType(null);
+      if (uid) {
+        shouldAutoScrollRef.current = false;
+        onRemoveEntry(uid);
+      }
+    },
+    [onRemoveEntry]
+  );
+
   /** GCDエントリのみをフィルタ */
   const gcdResolvedEntries = useMemo(
     () => resolvedEntries.filter((entry) => {
@@ -488,31 +547,51 @@ export function Timeline({
       e.preventDefault();
       setDragOver(false);
 
+      const source = detectDragSource(e);
       const skillId = e.dataTransfer.getData("application/skill-id");
       if (!skillId) {
         setInsertIndex(null);
         setDragType(null);
+        setDraggingEntryUid(null);
         return;
       }
 
-      if (scrollRef.current && resolvedEntries.length > 0) {
-        const rect = scrollRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const skill = skillMap.get(skillId);
-        const type: "gcd" | "ogcd" = skill?.type === "gcd" ? "gcd" : "ogcd";
-        const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
-        const isInsertMiddle = idx < resolvedEntries.length;
-        if (isInsertMiddle) {
-          shouldAutoScrollRef.current = false;
+      const skill = skillMap.get(skillId);
+      const type: "gcd" | "ogcd" = skill?.type === "gcd" ? "gcd" : "ogcd";
+
+      if (source === "timeline") {
+        const movingUid = e.dataTransfer.getData("application/timeline-entry-uid");
+        if (movingUid && scrollRef.current && resolvedEntries.length > 0) {
+          const rect = scrollRef.current.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
+          const targetEntry = idx < resolvedEntries.length ? resolvedEntries[idx] : undefined;
+          // 同位置（直後のエントリが自分自身）へのドロップは no-op
+          if (!targetEntry || targetEntry.uid !== movingUid) {
+            shouldAutoScrollRef.current = false;
+            onMoveEntry(movingUid, targetEntry?.uid);
+          }
         }
-        onAddEntry(skillId, isInsertMiddle ? resolvedEntries[idx].uid : undefined);
       } else {
-        onAddEntry(skillId);
+        if (scrollRef.current && resolvedEntries.length > 0) {
+          const rect = scrollRef.current.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
+          const isInsertMiddle = idx < resolvedEntries.length;
+          if (isInsertMiddle) {
+            shouldAutoScrollRef.current = false;
+          }
+          onAddEntry(skillId, isInsertMiddle ? resolvedEntries[idx].uid : undefined);
+        } else {
+          onAddEntry(skillId);
+        }
       }
+
       setInsertIndex(null);
       setDragType(null);
+      setDraggingEntryUid(null);
     },
-    [onAddEntry, resolvedEntries, skillMap, calcCombinedInsertIndex]
+    [onAddEntry, onMoveEntry, resolvedEntries, skillMap, calcCombinedInsertIndex, detectDragSource]
   );
 
   /**
@@ -879,14 +958,18 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                             ...(entry.wsComboError ? styles.skillIconComboWarning : {}),
+                            ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                           }}
                           title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
-                          onClick={() => handleRemoveEntry(entry.uid)}
+                          draggable
+                          onDragStart={(e) => handleEntryDragStart(e, entry, entry.skill)}
+                          onDragEnd={handleEntryDragEnd}
                         >
                           <img
                             src={entry.displaySkill.icon}
                             alt={entry.displaySkill.name}
                             style={styles.iconImage}
+                            draggable={false}
                           />
                         </div>
                         <div style={{
@@ -926,14 +1009,18 @@ export function Timeline({
                           style={{
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
+                            ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                           }}
                           title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
-                          onClick={() => handleRemoveEntry(entry.uid)}
+                          draggable
+                          onDragStart={(e) => handleEntryDragStart(e, entry, entry.skill)}
+                          onDragEnd={handleEntryDragEnd}
                         >
                           <img
                             src={entry.displaySkill.icon}
                             alt={entry.displaySkill.name}
                             style={styles.iconImage}
+                            draggable={false}
                           />
                         </div>
                         <div style={styles.skillPotency}>
@@ -1307,7 +1394,25 @@ export function Timeline({
         )}
       </div>
 
-      <div style={styles.hint}>クリックでスキルを削除</div>
+      <div style={styles.hint}>
+        タイムライン上のスキルをドラッグで並び替え／画面下部のエリアにドロップで削除
+      </div>
+
+      {draggingEntryUid !== null && (
+        <div
+          style={{
+            ...styles.deleteDropZone,
+            ...(overDeleteZone ? styles.deleteDropZoneActive : {}),
+          }}
+          onDragEnter={handleDeleteZoneDragEnter}
+          onDragOver={handleDeleteZoneDragOver}
+          onDragLeave={handleDeleteZoneDragLeave}
+          onDrop={handleDeleteZoneDrop}
+        >
+          <div style={styles.deleteDropZoneIcon} aria-hidden>×</div>
+          <div style={styles.deleteDropZoneLabel}>ここにドロップして削除</div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1476,7 +1581,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: ICON_SIZE,
     borderRadius: "6px",
     overflow: "hidden",
-    cursor: "pointer",
+    cursor: "grab",
     border: "1px solid rgba(255,255,255,0.2)",
     marginTop: "8px",
     flexShrink: 0,
@@ -1490,6 +1595,9 @@ const styles: Record<string, React.CSSProperties> = {
     border: "2px solid #ff9800",
     boxShadow: "0 0 8px rgba(255, 152, 0, 0.6)",
   },
+  skillIconDragging: {
+    opacity: 0.3,
+  },
   ogcdBlock: {
     position: "absolute",
     top: "8px",
@@ -1502,7 +1610,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: ICON_SIZE - 4,
     borderRadius: "50%",
     overflow: "hidden",
-    cursor: "pointer",
+    cursor: "grab",
     border: "1px solid rgba(255,255,255,0.2)",
     flexShrink: 0,
     transition: "opacity 0.15s",
@@ -1510,6 +1618,9 @@ const styles: Record<string, React.CSSProperties> = {
   ogcdIconError: {
     border: "2px solid #ef5350",
     boxShadow: "0 0 8px rgba(239, 83, 80, 0.6)",
+  },
+  ogcdIconDragging: {
+    opacity: 0.3,
   },
   iconImage: {
     width: "100%",
@@ -1845,6 +1956,46 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "12px",
     color: "#555",
     textAlign: "center" as const,
+  },
+  deleteDropZone: {
+    position: "fixed" as const,
+    bottom: 32,
+    left: "50%",
+    transform: "translateX(-50%)",
+    minWidth: 260,
+    padding: "14px 28px",
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "rgba(211, 47, 47, 0.85)",
+    color: "#fff",
+    border: "2px dashed rgba(255, 255, 255, 0.5)",
+    borderRadius: 12,
+    boxShadow: "0 6px 24px rgba(0, 0, 0, 0.5)",
+    fontSize: 14,
+    fontWeight: "bold" as const,
+    zIndex: 1000,
+    userSelect: "none" as const,
+    transition: "transform 0.15s, background-color 0.15s, border-color 0.15s",
+  },
+  deleteDropZoneActive: {
+    backgroundColor: "rgba(211, 47, 47, 1)",
+    borderColor: "rgba(255, 255, 255, 0.95)",
+    transform: "translateX(-50%) scale(1.06)",
+  },
+  deleteDropZoneIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+    lineHeight: 1,
+  },
+  deleteDropZoneLabel: {
+    whiteSpace: "nowrap" as const,
   },
   // ボス離脱エディタ
   untargetableEditor: {

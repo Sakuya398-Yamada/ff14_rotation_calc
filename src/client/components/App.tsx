@@ -125,6 +125,22 @@ export function App() {
     setEntries((prev) => prev.filter((e) => e.uid !== uid));
   }, []);
 
+  const handleMoveEntry = useCallback((uid: string, insertBeforeUid?: string) => {
+    if (insertBeforeUid === uid) return;
+    setEntries((prev) => {
+      const fromIdx = prev.findIndex((e) => e.uid === uid);
+      if (fromIdx < 0) return prev;
+      const entry = prev[fromIdx];
+      const without = [...prev.slice(0, fromIdx), ...prev.slice(fromIdx + 1)];
+      if (insertBeforeUid) {
+        const toIdx = without.findIndex((e) => e.uid === insertBeforeUid);
+        if (toIdx < 0) return prev;
+        return [...without.slice(0, toIdx), entry, ...without.slice(toIdx)];
+      }
+      return [...without, entry];
+    });
+  }, []);
+
   // per-entryのクリティカル率ボーナスを考慮した合計期待威力
   const { totalExpectedPotency, dotExpectedPotency } = useMemo(() => {
     const directExpected = resolvedEntries.reduce((sum, entry) => {
@@ -190,6 +206,7 @@ export function App() {
           resolvedEntries={resolvedEntries}
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}
+          onMoveEntry={handleMoveEntry}
           resources={levelResources}
           buffs={levelBuffs}
           totalExpectedPotency={totalExpectedPotency}
