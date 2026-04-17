@@ -105,6 +105,8 @@ export interface Skill {
   buffApplicationsByConsumedCount?: string[][];
   /** バフ消費のOR条件（いずれか1つを消費。potency指定時は威力を上書き、procRate+fallbackPotency指定時は期待値を計算） */
   buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number; procRate?: number; fallbackPotency?: number }[];
+  /** 指定バフがアクティブな場合、resourceChangesの特定リソース消費をスキップしバフを1スタック消費する（バフ優先消費） */
+  buffSkippableResource?: { buffId: string; resourceId: string };
   /** 指定バフがアクティブなら威力を上書きしバフを消費する。バフ未付与時は通常威力で実行（エラーにならない） */
   conditionalPotencyBuffs?: { buffId: string; potency: number }[];
   /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */

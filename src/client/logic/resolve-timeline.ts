@@ -550,11 +550,24 @@ export function resolveTimeline(
     // スキル実行前のリソーススナップショット
     const snapshot: ResourceSnapshot = { ...resourceState };
 
+    // buffSkippableResource: 指定バフがアクティブなら resourceChanges の該当リソース消費をスキップ
+    // （バフ優先消費。下の resourceChanges 適用時・バフ消費時にも参照される）
+    let skippedResourceId: string | null = null;
+    if (skill.buffSkippableResource) {
+      const hasBuff = currentActiveBuffs.some(
+        (ab) => ab.buffId === skill.buffSkippableResource!.buffId
+      );
+      if (hasBuff) {
+        skippedResourceId = skill.buffSkippableResource.resourceId;
+      }
+    }
+
     // リソース不足チェック
     const resourceErrors: string[] = [];
     if (skill.resourceChanges) {
       for (const change of skill.resourceChanges) {
         if (change.amount < 0) {
+          if (skippedResourceId !== null && change.resourceId === skippedResourceId) continue;
           const required = Math.abs(change.amount);
           if (resourceState[change.resourceId] < required) {
             resourceErrors.push(change.resourceId);
@@ -728,9 +741,29 @@ export function resolveTimeline(
         }
       };
 
-      // リソース変動を適用
+      // リソース変動を適用（buffSkippableResource でスキップ対象になった負の変動は除外）
       if (skill.resourceChanges) {
-        applyResourceChanges(resourceState, skill.resourceChanges, resourceDefMap, resources, onResourceApplied);
+        const changes = skippedResourceId !== null
+          ? skill.resourceChanges.filter(
+              (c) => !(c.resourceId === skippedResourceId && c.amount < 0)
+            )
+          : skill.resourceChanges;
+        applyResourceChanges(resourceState, changes, resourceDefMap, resources, onResourceApplied);
+      }
+
+      // buffSkippableResource: リソース消費をスキップした分、バフを1スタック消費
+      if (skippedResourceId !== null && skill.buffSkippableResource) {
+        const buffId = skill.buffSkippableResource.buffId;
+        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+        if (idx >= 0) {
+          const ab = currentActiveBuffs[idx];
+          if (ab.stacks !== undefined) {
+            ab.stacks = Math.max(0, ab.stacks - 1);
+            if (ab.stacks === 0) currentActiveBuffs.splice(idx, 1);
+          } else {
+            currentActiveBuffs.splice(idx, 1);
+          }
+        }
       }
 
       // コンボ成立時のみのリソース変動を適用
