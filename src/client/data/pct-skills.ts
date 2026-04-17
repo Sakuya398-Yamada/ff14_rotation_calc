@@ -492,8 +492,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 60,
     resourceChanges: [
       { resourceId: "palette-gauge", amount: -50 },
-      { resourceId: "white-paint", amount: -1 },
-      { resourceId: "black-paint", amount: 1 },
+      // WP→BP は枠内の色変化。WP=0 でもエラーにせず、WP/BP とも変動なしで実行可
+      { resourceId: "white-paint", amount: -1, skipIfInsufficient: true },
+      { resourceId: "black-paint", amount: 1, skipIfInsufficient: true },
     ],
     // subtractive-ready バフ中はパレットゲージ50消費をスキップしバフを優先消費（イマジンスカイ後の発動条件緩和）
     buffSkippableResource: { buffId: "subtractive-ready", resourceId: "palette-gauge" },

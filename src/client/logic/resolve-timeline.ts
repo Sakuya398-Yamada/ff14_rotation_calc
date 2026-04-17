@@ -2,6 +2,7 @@ import type {
   Skill,
   TimelineEntry,
   ResolvedTimelineEntry,
+  ResourceChange,
   ResourceDefinition,
   ResourceSnapshot,
   CharacterStats,
@@ -387,25 +388,63 @@ function expireBuffs(
 }
 
 /**
+ * 正の ResourceChange について、アクティブバフの redirectResourceGain に従って振替先リソースに書き換える。
+ * 負の変動はそのまま返す。未登録の toResourceId へのリダイレクトは無視する（onExpireResourceTransfer と同様に安全側倒し）。
+ */
+function applyBuffRedirects(
+  changes: ResourceChange[],
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>,
+  resourceDefMap: Map<string, ResourceDefinition>
+): ResourceChange[] {
+  if (activeBuffs.length === 0) return changes;
+  const redirectMap = new Map<string, string>();
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def?.redirectResourceGain) continue;
+    const { fromResourceId, toResourceId } = def.redirectResourceGain;
+    if (!resourceDefMap.has(toResourceId)) continue;
+    redirectMap.set(fromResourceId, toResourceId);
+  }
+  if (redirectMap.size === 0) return changes;
+  return changes.map((c) => {
+    if (c.amount <= 0) return c;
+    const to = redirectMap.get(c.resourceId);
+    return to ? { ...c, resourceId: to } : c;
+  });
+}
+
+/**
  * resourceChanges を 2 パス（負→正）で適用することで、配列の並び順に結果が依存しないようにする。
  * 例: WP=5 の状態で [{WP:-1}, {BP:+1}] と [{BP:+1}, {WP:-1}] は同じ結果（WP=4, BP=1）。
  * 正変動を先に評価すると groupMaxStacks キャップで BP が詰まれず 0 のままになる問題を避ける。
+ *
+ * skipIfInsufficient フラグ付き変動は一括でアトミックに処理する:
+ *   フラグ付きの負変動のうち 1 つでも残量不足があれば、フラグ付きの全変動（正負問わず）を一括スキップする。
  */
 function applyResourceChanges(
   resourceState: ResourceSnapshot,
-  changes: { resourceId: string; amount: number }[],
+  changes: ResourceChange[],
   resourceDefMap: Map<string, ResourceDefinition>,
   resources: ResourceDefinition[],
   onApplied?: (def: ResourceDefinition) => void
 ): void {
-  for (const change of changes) {
+  const skipFlagged = changes.some(
+    (c) =>
+      c.skipIfInsufficient === true &&
+      c.amount < 0 &&
+      (resourceState[c.resourceId] ?? 0) < Math.abs(c.amount)
+  );
+  const effective = skipFlagged ? changes.filter((c) => !c.skipIfInsufficient) : changes;
+
+  for (const change of effective) {
     if (change.amount >= 0) continue;
     const def = resourceDefMap.get(change.resourceId);
     if (!def) continue;
     applyResourceChange(resourceState, def, change.amount, resources);
     onApplied?.(def);
   }
-  for (const change of changes) {
+  for (const change of effective) {
     if (change.amount < 0) continue;
     const def = resourceDefMap.get(change.resourceId);
     if (!def) continue;
@@ -567,6 +606,7 @@ export function resolveTimeline(
     if (skill.resourceChanges) {
       for (const change of skill.resourceChanges) {
         if (change.amount < 0) {
+          if (change.skipIfInsufficient) continue;
           if (skippedResourceId !== null && change.resourceId === skippedResourceId) continue;
           const required = Math.abs(change.amount);
           if (resourceState[change.resourceId] < required) {
@@ -743,12 +783,13 @@ export function resolveTimeline(
 
       // リソース変動を適用（buffSkippableResource でスキップ対象になった負の変動は除外）
       if (skill.resourceChanges) {
-        const changes = skippedResourceId !== null
+        const filtered = skippedResourceId !== null
           ? skill.resourceChanges.filter(
               (c) => !(c.resourceId === skippedResourceId && c.amount < 0)
             )
           : skill.resourceChanges;
-        applyResourceChanges(resourceState, changes, resourceDefMap, resources, onResourceApplied);
+        const redirected = applyBuffRedirects(filtered, currentActiveBuffs, buffDefMap, resourceDefMap);
+        applyResourceChanges(resourceState, redirected, resourceDefMap, resources, onResourceApplied);
       }
 
       // buffSkippableResource: リソース消費をスキップした分、バフを1スタック消費
@@ -768,7 +809,8 @@ export function resolveTimeline(
 
       // コンボ成立時のみのリソース変動を適用
       if (!wsComboError && skill.comboResourceChanges) {
-        applyResourceChanges(resourceState, skill.comboResourceChanges, resourceDefMap, resources, onResourceApplied);
+        const comboRedirected = applyBuffRedirects(skill.comboResourceChanges, currentActiveBuffs, buffDefMap, resourceDefMap);
+        applyResourceChanges(resourceState, comboRedirected, resourceDefMap, resources, onResourceApplied);
       }
 
       // consumeAllOfResource: 指定リソースを全消費（resourceChangesの消費を上書き）
@@ -1183,7 +1225,8 @@ export function calcPps(
 export function getFinalResourceState(
   resolvedEntries: ResolvedTimelineEntry[],
   skillMap: Map<string, Skill>,
-  resources: ResourceDefinition[]
+  resources: ResourceDefinition[],
+  buffs: BuffDefinition[]
 ): ResourceSnapshot {
   if (resolvedEntries.length === 0) {
     const snapshot: ResourceSnapshot = {};
@@ -1203,7 +1246,9 @@ export function getFinalResourceState(
   if (!hasError && skill) {
     if (skill.resourceChanges) {
       const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
-      applyResourceChanges(state, skill.resourceChanges, resourceDefMap, resources);
+      const buffDefMap = new Map(buffs.map((b) => [b.id, b]));
+      const redirected = applyBuffRedirects(skill.resourceChanges, last.activeBuffs, buffDefMap, resourceDefMap);
+      applyResourceChanges(state, redirected, resourceDefMap, resources);
     }
     if (skill.consumeAllOfResource) {
       state[skill.consumeAllOfResource] = 0;
