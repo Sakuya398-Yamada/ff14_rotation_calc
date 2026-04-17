@@ -155,6 +155,10 @@ export interface ResourceDefinition {
   displayGroup?: string;
   /** ドット1行あたりのスタック数（未設定の場合はmaxStacksを1行で表示。maxStacksがこの値を超える場合は複数行に折り返される） */
   stacksPerRow?: number;
+  /** displayGroup内のリソース合計スタック数の上限（同グループ内で合計がこの値を超えないようキャップ） */
+  groupMaxStacks?: number;
+  /** 同一displayGroup内でドット表示時の描画優先順位（昇順）。小さいほどスロットの先頭に埋められる */
+  displayGroupPriority?: number;
 }
 
 /** 特定時点のリソース状態 */
@@ -222,6 +226,11 @@ export interface BuffDefinition {
   acquiredLevel?: number;
   /** 排他グループ名（同グループのバフは1つだけアクティブ。新規適用時に既存を解除） */
   exclusiveGroup?: string;
+  /** バフ消失時にリソースを別リソースへ移し替える（例: 色調反転消失時にBP→WP） */
+  onExpireResourceTransfer?: {
+    fromResourceId: string;
+    toResourceId: string;
+  };
 }
 
 /** タイムライン上のアクティブなバフ */
