@@ -33,7 +33,8 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     name: "ブラックペイント",
     shortName: "BP",
     maxStacks: 5,
-    color: "#424242",
+    // 空きスロット色 rgba(255,255,255,0.15) (≈ #333344) と区別するため、ほぼ純黒にする
+    color: "#1a1a1a",
     acquiredLevel: 90,
     displayGroup: "paint",
     groupMaxStacks: 5,

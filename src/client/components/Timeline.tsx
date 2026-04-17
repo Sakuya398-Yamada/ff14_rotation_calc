@@ -1646,6 +1646,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: RESOURCE_DOT_SIZE,
     height: RESOURCE_DOT_SIZE,
     borderRadius: "50%",
+    // 背景色が濃いため、暗色リソース（BP 等）が空きスロットや背景と同化しないよう輪郭を付ける
+    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.25)",
     transition: "background-color 0.2s",
   },
   resourceErrorMark: {
