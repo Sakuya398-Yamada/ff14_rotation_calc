@@ -468,7 +468,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     id: "stardiver",
     name: "スターダイバー",
-    potency: 840,
+    potency: 720,
     type: "ogcd",
     target: "enemy",
     icon: stardiverIcon,
@@ -478,6 +478,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 80,
     buffConsumptions: [{ buffId: "stardiver-ready", stacks: 1 }],
     buffApplications: ["starcross-ready"],
+    traitPotencyOverrides: [
+      { traitLevel: 94, potency: 840 },
+    ],
   },
   {
     id: "starcross",
