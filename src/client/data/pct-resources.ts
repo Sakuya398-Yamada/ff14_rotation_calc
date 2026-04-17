@@ -25,15 +25,19 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     acquiredLevel: 15,
     displayGroup: "paint",
     stacksPerRow: 3,
+    groupMaxStacks: 5,
+    displayGroupPriority: 2,
   },
   {
     id: "black-paint",
     name: "ブラックペイント",
     shortName: "BP",
-    maxStacks: 1,
+    maxStacks: 5,
     color: "#424242",
     acquiredLevel: 90,
     displayGroup: "paint",
+    groupMaxStacks: 5,
+    displayGroupPriority: 1,
   },
 
   // ============================================================

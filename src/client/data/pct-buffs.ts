@@ -53,6 +53,12 @@ export const PCT_BUFFS: BuffDefinition[] = [
     duration: 120,
     effects: [],
     color: "#546e7a",
+    // 色調反転は本来永続バフだが、本ツールは永続バフ未実装のため duration: 120 で近似している。
+    // バフ消失時に BP を WP に戻すことで、時間経過後もペイント枠が失われない状態を維持する。
+    onExpireResourceTransfer: {
+      fromResourceId: "black-paint",
+      toResourceId: "white-paint",
+    },
   },
 
   // ============================================================

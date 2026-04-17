@@ -304,6 +304,107 @@ function isInUntargetableWindow(
   return false;
 }
 
+/**
+ * 同一 displayGroup 内の他リソース合計を取得する（groupMaxStacks キャップ判定用）。
+ */
+function getGroupOtherSum(
+  resourceState: ResourceSnapshot,
+  def: ResourceDefinition,
+  resources: ResourceDefinition[]
+): number {
+  if (!def.displayGroup) return 0;
+  let sum = 0;
+  for (const r of resources) {
+    if (r.id === def.id) continue;
+    if (r.displayGroup === def.displayGroup) {
+      sum += resourceState[r.id] ?? 0;
+    }
+  }
+  return sum;
+}
+
+/**
+ * リソースに変動量を適用する。
+ * 個別の maxStacks に加え、displayGroup で groupMaxStacks が設定されていれば
+ * グループ合計も上限に収まるようキャップする。
+ */
+function applyResourceChange(
+  resourceState: ResourceSnapshot,
+  def: ResourceDefinition,
+  amount: number,
+  resources: ResourceDefinition[]
+): void {
+  const prev = resourceState[def.id] ?? 0;
+  let next = Math.max(0, Math.min(prev + amount, def.maxStacks));
+  if (def.groupMaxStacks !== undefined && amount > 0) {
+    const otherSum = getGroupOtherSum(resourceState, def, resources);
+    const groupRoom = Math.max(0, def.groupMaxStacks - otherSum);
+    next = Math.min(next, groupRoom);
+    // すでに groupRoom を超過していた既存値は減らさない（現状維持）
+    if (next < prev) next = prev;
+  }
+  resourceState[def.id] = next;
+}
+
+/**
+ * アクティブバフから期限切れのものを除去する。
+ * 消失対象バフに onExpireResourceTransfer が設定されていれば、
+ * from→to へリソースを移し替える（色調反転消失時に BP→WP 戻しなど）。
+ */
+function expireBuffs(
+  activeBuffs: ActiveBuff[],
+  currentTime: number,
+  buffDefMap: Map<string, BuffDefinition>,
+  resourceState: ResourceSnapshot,
+  resourceDefMap: Map<string, ResourceDefinition>,
+  resources: ResourceDefinition[]
+): void {
+  for (let i = activeBuffs.length - 1; i >= 0; i--) {
+    if (activeBuffs[i].endTime <= currentTime) {
+      const buffId = activeBuffs[i].buffId;
+      activeBuffs.splice(i, 1);
+      const def = buffDefMap.get(buffId);
+      if (!def?.onExpireResourceTransfer) continue;
+      const { fromResourceId, toResourceId } = def.onExpireResourceTransfer;
+      if (!resourceDefMap.has(fromResourceId)) continue;
+      const toDef = resourceDefMap.get(toResourceId);
+      if (!toDef) continue;
+      const amount = resourceState[fromResourceId] ?? 0;
+      if (amount <= 0) continue;
+      resourceState[fromResourceId] = 0;
+      applyResourceChange(resourceState, toDef, amount, resources);
+    }
+  }
+}
+
+/**
+ * resourceChanges を 2 パス（負→正）で適用することで、配列の並び順に結果が依存しないようにする。
+ * 例: WP=5 の状態で [{WP:-1}, {BP:+1}] と [{BP:+1}, {WP:-1}] は同じ結果（WP=4, BP=1）。
+ * 正変動を先に評価すると groupMaxStacks キャップで BP が詰まれず 0 のままになる問題を避ける。
+ */
+function applyResourceChanges(
+  resourceState: ResourceSnapshot,
+  changes: { resourceId: string; amount: number }[],
+  resourceDefMap: Map<string, ResourceDefinition>,
+  resources: ResourceDefinition[],
+  onApplied?: (def: ResourceDefinition) => void
+): void {
+  for (const change of changes) {
+    if (change.amount >= 0) continue;
+    const def = resourceDefMap.get(change.resourceId);
+    if (!def) continue;
+    applyResourceChange(resourceState, def, change.amount, resources);
+    onApplied?.(def);
+  }
+  for (const change of changes) {
+    if (change.amount < 0) continue;
+    const def = resourceDefMap.get(change.resourceId);
+    if (!def) continue;
+    applyResourceChange(resourceState, def, change.amount, resources);
+    onApplied?.(def);
+  }
+}
+
 export function resolveTimeline(
   entries: TimelineEntry[],
   skillMap: Map<string, Skill>,
@@ -357,12 +458,8 @@ export function resolveTimeline(
       startTime = Math.max(gcdAvailableAt, actionAvailableAt);
       startTime = Math.round(startTime * 1000) / 1000;
 
-      // 期限切れバフを除去
-      for (let i = currentActiveBuffs.length - 1; i >= 0; i--) {
-        if (currentActiveBuffs[i].endTime <= startTime) {
-          currentActiveBuffs.splice(i, 1);
-        }
-      }
+      // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
+      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
 
       // 速度バフを適用してリキャスト・詠唱時間計算
       const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap);
@@ -378,12 +475,8 @@ export function resolveTimeline(
       startTime = actionAvailableAt;
       startTime = Math.round(startTime * 1000) / 1000;
 
-      // 期限切れバフを除去
-      for (let i = currentActiveBuffs.length - 1; i >= 0; i--) {
-        if (currentActiveBuffs[i].endTime <= startTime) {
-          currentActiveBuffs.splice(i, 1);
-        }
-      }
+      // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
+      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
 
       actionAvailableAt = startTime + originalSkill.animationLock;
     }
@@ -615,47 +708,25 @@ export function resolveTimeline(
     const dhRateBonusBeforeApply = guaranteedDhBeforeApply ? 1 : baseDhRateBonus;
 
     if (!hasError) {
+      const onResourceApplied = (def: ResourceDefinition) => {
+        // リソースが最大未満になったら自動生成タイマーを開始
+        if (
+          def.autoGenerateInterval &&
+          resourceState[def.id] < def.maxStacks &&
+          autoGenTimers[def.id].startedAt === null
+        ) {
+          autoGenTimers[def.id].startedAt = startTime;
+        }
+      };
+
       // リソース変動を適用
       if (skill.resourceChanges) {
-        for (const change of skill.resourceChanges) {
-          const def = resourceDefMap.get(change.resourceId);
-          if (!def) continue;
-          const prevValue = resourceState[change.resourceId];
-          resourceState[change.resourceId] = Math.max(
-            0,
-            Math.min(prevValue + change.amount, def.maxStacks)
-          );
-
-          // リソースが最大未満になったら自動生成タイマーを開始
-          if (
-            def.autoGenerateInterval &&
-            resourceState[change.resourceId] < def.maxStacks &&
-            autoGenTimers[change.resourceId].startedAt === null
-          ) {
-            autoGenTimers[change.resourceId].startedAt = startTime;
-          }
-        }
+        applyResourceChanges(resourceState, skill.resourceChanges, resourceDefMap, resources, onResourceApplied);
       }
 
       // コンボ成立時のみのリソース変動を適用
       if (!wsComboError && skill.comboResourceChanges) {
-        for (const change of skill.comboResourceChanges) {
-          const def = resourceDefMap.get(change.resourceId);
-          if (!def) continue;
-          const prevValue = resourceState[change.resourceId];
-          resourceState[change.resourceId] = Math.max(
-            0,
-            Math.min(prevValue + change.amount, def.maxStacks)
-          );
-
-          if (
-            def.autoGenerateInterval &&
-            resourceState[change.resourceId] < def.maxStacks &&
-            autoGenTimers[change.resourceId].startedAt === null
-          ) {
-            autoGenTimers[change.resourceId].startedAt = startTime;
-          }
-        }
+        applyResourceChanges(resourceState, skill.comboResourceChanges, resourceDefMap, resources, onResourceApplied);
       }
 
       // consumeAllOfResource: 指定リソースを全消費（resourceChangesの消費を上書き）
@@ -1090,14 +1161,7 @@ export function getFinalResourceState(
   if (!hasError && skill) {
     if (skill.resourceChanges) {
       const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
-      for (const change of skill.resourceChanges) {
-        const def = resourceDefMap.get(change.resourceId);
-        if (!def) continue;
-        state[change.resourceId] = Math.max(
-          0,
-          Math.min(state[change.resourceId] + change.amount, def.maxStacks)
-        );
-      }
+      applyResourceChanges(state, skill.resourceChanges, resourceDefMap, resources);
     }
     if (skill.consumeAllOfResource) {
       state[skill.consumeAllOfResource] = 0;

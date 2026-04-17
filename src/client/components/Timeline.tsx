@@ -122,20 +122,43 @@ export function Timeline({
 
   // リソースをdisplayGroupでグループ化（同じグループは1行にまとめる）
   const resourceGroups = useMemo(() => {
-    const groups: { key: string; label: string; resources: typeof resources }[] = [];
+    const groups: {
+      key: string;
+      label: string;
+      resources: typeof resources;
+      /** displayGroupPriority 昇順で並べたリソース（統合スロット描画時の充填順） */
+      sortedResources: typeof resources;
+      /** グループ合計の最大スタック数（統合スロット描画する場合のみ設定） */
+      groupMaxStacks?: number;
+      /** 統合スロット描画時の1行あたりドット数 */
+      stacksPerRow?: number;
+    }[] = [];
     const seen = new Set<string>();
     for (const res of resources) {
       if (res.displayGroup) {
         if (!seen.has(res.displayGroup)) {
           seen.add(res.displayGroup);
+          const groupResources = resources.filter((r) => r.displayGroup === res.displayGroup);
+          const groupMaxStacks = groupResources.find((r) => r.groupMaxStacks !== undefined)?.groupMaxStacks;
+          const sortedResources = groupMaxStacks !== undefined
+            ? [...groupResources].sort(
+                (a, b) => (a.displayGroupPriority ?? Number.MAX_SAFE_INTEGER) - (b.displayGroupPriority ?? Number.MAX_SAFE_INTEGER)
+              )
+            : groupResources;
+          const stacksPerRow = groupMaxStacks !== undefined
+            ? sortedResources.find((r) => r.stacksPerRow !== undefined)?.stacksPerRow
+            : undefined;
           groups.push({
             key: res.displayGroup,
             label: res.shortName,
-            resources: resources.filter((r) => r.displayGroup === res.displayGroup),
+            resources: groupResources,
+            sortedResources,
+            groupMaxStacks,
+            stacksPerRow,
           });
         }
       } else {
-        groups.push({ key: res.id, label: res.shortName, resources: [res] });
+        groups.push({ key: res.id, label: res.shortName, resources: [res], sortedResources: [res] });
       }
     }
     return groups;
@@ -994,10 +1017,42 @@ export function Timeline({
                             ...styles.resourceMarker,
                             left: entry.startTime * PX_PER_SEC,
                           }}
-                          title={group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${r.maxStacks}`).join(", ") + (hasError ? " (不足)" : "")}
+                          title={
+                            group.groupMaxStacks !== undefined
+                              ? group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}`).join(" / ") +
+                                ` (合計 ${group.resources.reduce((s, r) => s + (entry.resourceSnapshot[r.id] ?? 0), 0)}/${group.groupMaxStacks})` +
+                                (hasError ? " (不足)" : "")
+                              : group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${r.maxStacks}`).join(", ") +
+                                (hasError ? " (不足)" : "")
+                          }
                         >
                           <div style={styles.resourceDots}>
-                            {group.resources.map((res) => {
+                            {group.groupMaxStacks !== undefined ? (() => {
+                              // 統合スロット描画: displayGroupPriority 昇順でスロットを埋め、残りは空ドット
+                              const groupMax = group.groupMaxStacks;
+                              const slotColors: string[] = [];
+                              for (const res of group.sortedResources) {
+                                const count = entry.resourceSnapshot[res.id] ?? 0;
+                                for (let i = 0; i < count && slotColors.length < groupMax; i++) {
+                                  slotColors.push(res.color);
+                                }
+                              }
+                              while (slotColors.length < groupMax) {
+                                slotColors.push("rgba(255,255,255,0.15)");
+                              }
+                              const stacksPerRow = group.stacksPerRow ?? groupMax;
+                              const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
+                              return (
+                                <div style={{ ...styles.resourceDotGrid, width: gridWidth }}>
+                                  {slotColors.map((color, i) => (
+                                    <div
+                                      key={i}
+                                      style={{ ...styles.resourceDot, backgroundColor: color }}
+                                    />
+                                  ))}
+                                </div>
+                              );
+                            })() : group.resources.map((res) => {
                               const count = entry.resourceSnapshot[res.id] ?? 0;
                               if (res.maxStacks > 10) {
                                 return (
