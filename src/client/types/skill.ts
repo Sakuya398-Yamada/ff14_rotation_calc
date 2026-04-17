@@ -339,7 +339,7 @@ export interface ResolvedTimelineEntry {
   resolvedPotency: number;
   /** 開始時刻（秒） */
   startTime: number;
-  /** スキル実行前のリソース状態 */
+  /** スキル実行後のリソース状態（消費・獲得・バフ由来の自動消費すべて反映済み） */
   resourceSnapshot: ResourceSnapshot;
   /** リソース不足のリソースIDリスト */
   resourceErrors: string[];
