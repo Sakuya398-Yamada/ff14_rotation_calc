@@ -239,6 +239,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { resourceId: "black-paint", amount: -1 },
     ],
     requiredBuff: "color-inversion",
+    buffConsumptions: [{ buffId: "color-inversion", stacks: 1 }],
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 940 },
     ],
