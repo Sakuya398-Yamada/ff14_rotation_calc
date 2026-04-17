@@ -32,6 +32,7 @@ const LANE_LABEL_WIDTH = 52;
 
 /** リソースドットのサイズ（px） */
 const RESOURCE_DOT_SIZE = 10;
+const RESOURCE_DOT_GAP = 3;
 
 interface TimelineProps {
   skills: Skill[];
@@ -996,10 +997,10 @@ export function Timeline({
                           title={group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${r.maxStacks}`).join(", ") + (hasError ? " (不足)" : "")}
                         >
                           <div style={styles.resourceDots}>
-                            {group.resources.flatMap((res) => {
+                            {group.resources.map((res) => {
                               const count = entry.resourceSnapshot[res.id] ?? 0;
                               if (res.maxStacks > 10) {
-                                return [(
+                                return (
                                   <div key={res.id} style={styles.resourceGauge}>
                                     <div
                                       style={{
@@ -1010,20 +1011,32 @@ export function Timeline({
                                     />
                                     <span style={styles.resourceGaugeLabel}>{count}</span>
                                   </div>
-                                )];
+                                );
                               }
-                              return Array.from({ length: res.maxStacks }, (_, i) => (
+                              const stacksPerRow = res.stacksPerRow ?? res.maxStacks;
+                              const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
+                              return (
                                 <div
-                                  key={`${res.id}-${i}`}
+                                  key={res.id}
                                   style={{
-                                    ...styles.resourceDot,
-                                    backgroundColor:
-                                      i < count
-                                        ? res.color
-                                        : "rgba(255,255,255,0.15)",
+                                    ...styles.resourceDotGrid,
+                                    width: gridWidth,
                                   }}
-                                />
-                              ));
+                                >
+                                  {Array.from({ length: res.maxStacks }, (_, i) => (
+                                    <div
+                                      key={`${res.id}-${i}`}
+                                      style={{
+                                        ...styles.resourceDot,
+                                        backgroundColor:
+                                          i < count
+                                            ? res.color
+                                            : "rgba(255,255,255,0.15)",
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              );
                             })}
                           </div>
                           {hasError && (
@@ -1541,7 +1554,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   resourceDots: {
     display: "flex",
+    alignItems: "center",
     gap: "3px",
+  },
+  resourceDotGrid: {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    justifyContent: "center",
+    gap: `${RESOURCE_DOT_GAP}px`,
   },
   resourceGauge: {
     position: "relative",
