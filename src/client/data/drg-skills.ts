@@ -534,7 +534,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     id: "wyrmwind-thrust",
     name: "天竜点睛",
-    potency: 440,
+    potency: 420,
     type: "ogcd",
     target: "enemy",
     icon: wyrmwindThrustIcon,
@@ -544,6 +544,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 90,
     resourceChanges: [
       { resourceId: "firstminds-focus", amount: -2 },
+    ],
+    traitPotencyOverrides: [
+      { traitLevel: 94, potency: 440 },
     ],
   },
 
