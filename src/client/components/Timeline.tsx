@@ -915,17 +915,23 @@ export function Timeline({
                         : null
                     );
                     const isAutoTransformed = entry.resolvedSkillId !== entry.skillId;
+                    // castTime > recast の場合は次 GCD が打てるのは castTime 後（resolve-timeline.ts と整合）。
+                    // skillBlock の幅を max(castTime, recast) に拡張し、各バーを blockDuration 基準で割合計算する。
+                    const blockDuration = Math.max(castTime, recast);
                     return (
                       <div
                         key={entry.uid}
                         style={{
                           ...styles.skillBlock,
                           left: entry.startTime * PX_PER_SEC,
-                          width: recast * PX_PER_SEC,
+                          width: blockDuration * PX_PER_SEC,
                         }}
                       >
                         <div
-                          style={styles.recastBar}
+                          style={{
+                            ...styles.recastBar,
+                            width: (recast / blockDuration) * 100 + "%",
+                          }}
                           title={`リキャスト: ${recast}s`}
                         />
                         {castTime > 0 && (
@@ -936,7 +942,7 @@ export function Timeline({
                             <div
                               style={{
                                 ...styles.castTimeFill,
-                                width: (castTime / recast) * 100 + "%",
+                                width: (castTime / blockDuration) * 100 + "%",
                               }}
                             />
                           </div>
@@ -949,7 +955,7 @@ export function Timeline({
                             style={{
                               ...styles.animLockFill,
                               width:
-                                (entry.skill.animationLock / recast) * 100 + "%",
+                                (entry.skill.animationLock / blockDuration) * 100 + "%",
                             }}
                           />
                         </div>
@@ -1543,7 +1549,6 @@ const styles: Record<string, React.CSSProperties> = {
     position: "absolute",
     top: 0,
     left: 0,
-    right: 0,
     height: "4px",
     backgroundColor: "rgba(100, 149, 237, 0.3)",
     borderRadius: "2px",
