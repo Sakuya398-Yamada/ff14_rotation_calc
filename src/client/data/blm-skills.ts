@@ -27,6 +27,7 @@ import manafontIcon from "../assets/icons/blm/Manafont.png";
 import triplecastIcon from "../assets/icons/blm/Triplecast.png";
 import leyLinesIcon from "../assets/icons/blm/Ley_Lines.png";
 import transposeIcon from "../assets/icons/blm/Transpose.png";
+import amplifierIcon from "../assets/icons/blm/Amplifier.png";
 
 /** GCDリキャスト（秒） */
 const GCD_RECAST = 2.5;
@@ -487,5 +488,22 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     // という実機挙動の近似として、UB1 を付与してサンダーヘッドを更新する
     // （スキル回し的には切替目的で使用され、精密計算上の威力影響は軽微）
     buffApplications: ["umbral-ice-1", "thunderhead"],
+  },
+  {
+    id: "amplifier",
+    name: "アンプリファイア",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: amplifierIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 120,
+    acquiredLevel: 86,
+    // 実機では AF/UB 中のみ使用可。本ツールでは OR 条件の requiredBuff 機構が無いため、
+    // 使用判定はユーザー側に委ね、ポリグロット +1 の効果のみを反映する
+    resourceChanges: [
+      { resourceId: "polyglot", amount: 1 },
+    ],
   },
 ];
