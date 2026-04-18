@@ -30,7 +30,6 @@ const FIRE_SKILL_IDS = [
   "fire-3",
   "fire-4",
   "high-fire-2",
-  "high-fire-2-plus",
   "despair",
   "flare-star",
 ];

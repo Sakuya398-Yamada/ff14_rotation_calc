@@ -235,9 +235,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 58,
     // UB 中のみ使用可
     requiredBuff: "umbral-ice-3",
+    // UB3 中の使用が前提のため MP 消費は 0 として扱う（resourceChanges 省略）
     resourceChanges: [
-      // UB3 中は MP 消費 0（実機仕様）。ツール上は定数で表現
-      { resourceId: "mp", amount: 0 },
       { resourceId: "umbral-heart", amount: 3 },
     ],
     buffApplications: ["umbral-ice-3"],
