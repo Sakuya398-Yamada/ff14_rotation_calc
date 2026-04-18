@@ -211,6 +211,13 @@ export interface BuffEffect {
   statKey?: keyof CharacterStats;
   /** resourceバフの対象リソースID */
   resourceId?: string;
+  /**
+   * このエフェクトを適用するスキルIDのホワイトリスト（potency 等の対象スキル限定バフ用）。
+   * 未設定の場合は全スキルに適用される。
+   * 例: AF3は「ファイア系」限定で威力+80%、「ブリザド系」限定で威力-30% など、
+   * 同一バフが複数スキル群に異なる倍率を適用するケースで使用する。
+   */
+  appliesToSkillIds?: string[];
 }
 
 /** バフ・デバフの定義 */

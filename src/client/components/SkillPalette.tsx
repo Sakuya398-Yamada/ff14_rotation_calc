@@ -11,6 +11,7 @@ const JOBS: { id: JobId; name: string }[] = [
   { id: "drg", name: "竜騎士" },
   { id: "brd", name: "詩人" },
   { id: "pct", name: "ピクトマンサー" },
+  { id: "blm", name: "黒魔道士" },
 ];
 
 interface CollapsibleSectionProps {
