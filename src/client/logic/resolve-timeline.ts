@@ -241,19 +241,24 @@ function consumeGuaranteedDhBuffs(
 
 /**
  * アクティブなバフから威力バフの合成倍率を計算する。
+ * targetSkillId が指定されている場合、appliesToSkillIds に
+ * 該当スキルIDが含まれないエフェクトは除外する（対象スキル限定バフ）。
  */
 function getPotencyMultiplier(
   activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  targetSkillId?: string
 ): number {
   let multiplier = 1;
   for (const ab of activeBuffs) {
     const def = buffDefMap.get(ab.buffId);
     if (!def) continue;
     for (const effect of def.effects) {
-      if (effect.type === "potency") {
-        multiplier *= effect.value;
+      if (effect.type !== "potency") continue;
+      if (effect.appliesToSkillIds && targetSkillId !== undefined) {
+        if (!effect.appliesToSkillIds.includes(targetSkillId)) continue;
       }
+      multiplier *= effect.value;
     }
   }
   return multiplier;
@@ -759,7 +764,8 @@ export function resolveTimeline(
     const hasError = resourceErrors.length > 0 || comboErrors.length > 0 || untargetableError || recastError;
 
     // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
-    const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap);
+    // 解決後のスキルIDを渡すことで、対象スキル限定バフ（appliesToSkillIds）を正しくフィルタする
+    const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap, resolvedSkillId);
     const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
     const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedDh(currentActiveBuffs, buffDefMap);
     // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
