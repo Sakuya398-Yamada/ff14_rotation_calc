@@ -63,5 +63,7 @@ export const BLM_RESOURCES: ResourceDefinition[] = [
     maxStacks: 6,
     color: "#ffca28",
     acquiredLevel: 100,
+    // 6 ドットを横一列にすると挟み込みで被るため 3×2 レイアウトにする
+    stacksPerRow: 3,
   },
 ];
