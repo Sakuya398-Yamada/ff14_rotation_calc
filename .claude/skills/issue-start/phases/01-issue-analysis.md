@@ -11,7 +11,12 @@ Issueの内容を十分に把握してから実装に入ることが重要。曖
 3. 関連する過去のIssue（本文中のリンクや関連ラベル）があれば参照する
 4. **【MCP: Brave Search】** IssueがFF14のスキルデータやゲーム仕様に関わる場合、`brave_web_search` で公式ジョブガイドや関連情報を検索し、実装に必要な数値・仕様を収集する
    - 検索例: `"FF14 竜騎士 ジョブガイド スキル一覧"`, `"FFXIV dragoon job guide skill potency"`
-   - MCP未接続時はスキップし、ユーザーに手動確認を依頼する
+   - **利用前の準備**: `ToolSearch query: "select:brave_web_search"` でスキーマをロード
+   - **未接続・未設定時のフォールバック**:
+     1. `ToolSearch` で `No matching deferred tools found` が返る → `BRAVE_API_KEY` 未設定または stdio 起動失敗。詳細は `.claude/rules/mcp-setup.md` 参照
+     2. 組み込みの `WebSearch` ツールで代替検索を試みる（スキーマは `ToolSearch query: "select:WebSearch"` でロード）
+     3. それでも必要な情報が得られない場合、実装に必要な数値・仕様をユーザーに直接確認する
+   - フロー全体を止めず、情報源を明示した上で次フェーズに進む
 5. 以下のチェックリストでIssueの記載内容を検証する
 
 ## 必須チェックリスト
