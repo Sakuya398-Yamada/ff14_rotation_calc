@@ -277,6 +277,26 @@ export function Timeline({
     return resolveTimeline(filteredRaw, skillMap, resources, stats, buffs, untargetableWindows).entries;
   }, [resolvedEntries, draggingEntryUid, skillMap, resources, stats, buffs, untargetableWindows]);
 
+  /**
+   * マウス位置と突き合わせる用の「見えている並び」。
+   * タイムライン内D&D中は、画面に表示されているエントリは元の resolvedEntries の
+   * startTime で配置されている（ドラッグ中エントリは半透明で残り、他は動かない）。
+   * 一方 insertionResolvedEntries は「ドラッグ中エントリを除いた並びで再 resolve」した結果で、
+   * 後続エントリの startTime が前詰めで左に寄っている。
+   *
+   * マウス位置は「見えている並び」に対するユーザー操作なので、calcInsertIndex での
+   * 中央時刻判定は insertionResolvedEntries ではなくこの「見えている並び」で行う必要がある。
+   * （insertionResolvedEntries で判定すると、マウスが見えている C-D 間にある時に
+   *   論理上の D（=前詰めで C の右隣）より右と判定されてしまい、挿入位置が 1 つ右にズレる）
+   *
+   * 一方で uid 順序は insertionResolvedEntries と一致するため、calcInsertIndex が返す
+   * idx は insertionResolvedEntries にもそのまま使える（indicatorX / drop target 特定）。
+   */
+  const visibleEntriesForInsert = useMemo(() => {
+    if (draggingEntryUid === null) return resolvedEntries;
+    return resolvedEntries.filter((e) => e.uid !== draggingEntryUid);
+  }, [resolvedEntries, draggingEntryUid]);
+
   // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
   const cooldownSpans = useMemo(() => {
     const spans: Map<string, { startTime: number; endTime: number; skillName: string; icon: string }[]> = new Map();
@@ -439,6 +459,18 @@ export function Timeline({
     [insertionResolvedEntries, skillMap]
   );
 
+  /**
+   * マウス位置判定用 GCD-only エントリ（見えている並び準拠）。
+   * uid 順序は insertionGcdResolvedEntries と一致するため idx は互換。
+   */
+  const visibleGcdEntriesForInsert = useMemo(
+    () => visibleEntriesForInsert.filter((entry) => {
+      const skill = skillMap.get(entry.skillId);
+      return skill && skill.type === "gcd";
+    }),
+    [visibleEntriesForInsert, skillMap]
+  );
+
   /** GCDフィルタ済みインデックスを挿入用エントリリスト上のインデックスに変換 */
   const mapGcdIndexToInsertion = useCallback(
     (gcdIdx: number): number => {
@@ -465,20 +497,21 @@ export function Timeline({
 
   /**
    * ドラッグ中のマウス位置から挿入インデックス（insertionResolvedEntries上）を計算する。
-   * タイムライン内D&D中はドラッグ中エントリを除外した並びで計算するため、
-   * 返されるインデックスは insertionResolvedEntries 上の位置を示す（ドロップ後の配置と一致）。
+   * マウス位置は「見えている並び」（resolvedEntries の startTime 準拠）に対する操作なので、
+   * 中央時刻の比較は visibleEntriesForInsert / visibleGcdEntriesForInsert で行う。
+   * 返される idx は uid 順序を揃えてあるので insertionResolvedEntries にもそのまま使える。
    * GCD: GCDエントリのみで計算し、insertion変換（GCDリキャスト境界間に配置）
    * oGCD: 全エントリで計算、アニメーションロック基準の中央で判定（ウィービング対応）
    */
   const calcCombinedInsertIndex = useCallback(
     (mouseX: number, scrollLeft: number, type: "gcd" | "ogcd"): number => {
       if (type === "gcd") {
-        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, insertionGcdResolvedEntries, skillMap, getEntryRecastTime);
+        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, visibleGcdEntriesForInsert, skillMap, getEntryRecastTime);
         return mapGcdIndexToInsertion(gcdIdx);
       }
-      return calcInsertIndex(mouseX, scrollLeft, insertionResolvedEntries, skillMap, getAnimLockWidth);
+      return calcInsertIndex(mouseX, scrollLeft, visibleEntriesForInsert, skillMap, getAnimLockWidth);
     },
-    [insertionResolvedEntries, insertionGcdResolvedEntries, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToInsertion]
+    [visibleEntriesForInsert, visibleGcdEntriesForInsert, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToInsertion]
   );
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
