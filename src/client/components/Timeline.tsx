@@ -262,36 +262,53 @@ export function Timeline({
   }
 
   /**
-   * 各エントリ処理後のタイムライン状態（gcdAvailableAt, actionAvailableAt）を事前計算。
+   * 挿入位置計算用の resolvedEntries。
+   * タイムライン内D&D中はドラッグ中のエントリを除外し、ドロップ後の並びを基準にする。
+   * これにより挿入インジケーターと実際のドロップ結果が一致する。
+   */
+  const insertionResolvedEntries = useMemo(
+    () => (draggingEntryUid !== null
+      ? resolvedEntries.filter((e) => e.uid !== draggingEntryUid)
+      : resolvedEntries),
+    [resolvedEntries, draggingEntryUid]
+  );
+
+  /**
+   * 挿入位置計算用: insertionResolvedEntries の各エントリ処理後の状態を事前計算。
    * 挿入インジケーターの正確な位置算出に使用する。
+   * ドラッグ中エントリを除外した並びで startTime を再計算するため、
+   * resolveTimeline と同じタイミング規則（GCD: max(gcdAvailable, actionAvailable), oGCD: actionAvailable）を適用。
    * states[i] = entry[i]処理後の状態。挿入位置idxの開始時刻算出にはstates[idx-1]を参照。
    */
-  const timelineStateAtIndex = useMemo(() => {
+  const insertionTimelineStateAtIndex = useMemo(() => {
     const states: TimelineState[] = [];
     let gcdAvailableAt = 0;
     let actionAvailableAt = 0;
 
-    for (const entry of resolvedEntries) {
+    for (const entry of insertionResolvedEntries) {
       const skill = skillMap.get(entry.skillId);
       if (!skill) {
         states.push({ gcdAvailableAt, actionAvailableAt });
         continue;
       }
 
+      let startTime: number;
       if (skill.type === "gcd") {
+        startTime = Math.max(gcdAvailableAt, actionAvailableAt);
         const recast = getEntryRecastTime(skill, entry.activeBuffs);
         const castTime = getEntryCastTime(skill, entry.activeBuffs);
-        gcdAvailableAt = entry.startTime + recast;
-        actionAvailableAt = entry.startTime + Math.max(castTime, skill.animationLock);
+        gcdAvailableAt = startTime + recast;
+        actionAvailableAt = startTime + Math.max(castTime, skill.animationLock);
       } else {
-        actionAvailableAt = entry.startTime + skill.animationLock;
+        startTime = actionAvailableAt;
+        actionAvailableAt = startTime + skill.animationLock;
       }
 
       states.push({ gcdAvailableAt, actionAvailableAt });
     }
 
     return states;
-  }, [resolvedEntries, skillMap, getEntryRecastTime, getEntryCastTime]);
+  }, [insertionResolvedEntries, skillMap, getEntryRecastTime, getEntryCastTime]);
 
   // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
   const cooldownSpans = useMemo(() => {
@@ -442,27 +459,31 @@ export function Timeline({
     [onRemoveEntry]
   );
 
-  /** GCDエントリのみをフィルタ */
-  const gcdResolvedEntries = useMemo(
-    () => resolvedEntries.filter((entry) => {
+  /**
+   * 挿入位置計算用の GCDエントリ（タイムライン内D&D中はドラッグ中エントリを除外）。
+   * ドラッグ中エントリを含めるとインデックス計算や no-op 判定でズレが生じるため、
+   * 挿入計算は必ずこの除外版を参照する。
+   */
+  const insertionGcdResolvedEntries = useMemo(
+    () => insertionResolvedEntries.filter((entry) => {
       const skill = skillMap.get(entry.skillId);
       return skill && skill.type === "gcd";
     }),
-    [resolvedEntries, skillMap]
+    [insertionResolvedEntries, skillMap]
   );
 
-  /** GCDフィルタ済みインデックスを全エントリ上のインデックスに変換 */
-  const mapGcdIndexToCombined = useCallback(
+  /** GCDフィルタ済みインデックスを挿入用エントリリスト上のインデックスに変換 */
+  const mapGcdIndexToInsertion = useCallback(
     (gcdIdx: number): number => {
-      if (gcdIdx >= gcdResolvedEntries.length) {
-        // 末尾に追加: 最後のGCD以降のoGCDも含めた全エントリの末尾
-        return resolvedEntries.length;
+      if (gcdIdx >= insertionGcdResolvedEntries.length) {
+        // 末尾に追加: 最後のGCD以降のoGCDも含めた末尾
+        return insertionResolvedEntries.length;
       }
       // gcdIdx番目のGCDエントリの前に挿入
-      const targetEntry = gcdResolvedEntries[gcdIdx];
-      return resolvedEntries.findIndex((e) => e.uid === targetEntry.uid);
+      const targetEntry = insertionGcdResolvedEntries[gcdIdx];
+      return insertionResolvedEntries.findIndex((e) => e.uid === targetEntry.uid);
     },
-    [resolvedEntries, gcdResolvedEntries]
+    [insertionResolvedEntries, insertionGcdResolvedEntries]
   );
 
   /**
@@ -476,19 +497,21 @@ export function Timeline({
   );
 
   /**
-   * ドラッグ中のマウス位置から挿入インデックス（resolvedEntries上）を計算する。
-   * GCD: GCDエントリのみで計算し、combined変換（GCDリキャスト境界間に配置）
+   * ドラッグ中のマウス位置から挿入インデックス（insertionResolvedEntries上）を計算する。
+   * タイムライン内D&D中はドラッグ中エントリを除外した並びで計算するため、
+   * 返されるインデックスは insertionResolvedEntries 上の位置を示す（ドロップ後の配置と一致）。
+   * GCD: GCDエントリのみで計算し、insertion変換（GCDリキャスト境界間に配置）
    * oGCD: 全エントリで計算、アニメーションロック基準の中央で判定（ウィービング対応）
    */
   const calcCombinedInsertIndex = useCallback(
     (mouseX: number, scrollLeft: number, type: "gcd" | "ogcd"): number => {
       if (type === "gcd") {
-        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, gcdResolvedEntries, skillMap, getEntryRecastTime);
-        return mapGcdIndexToCombined(gcdIdx);
+        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, insertionGcdResolvedEntries, skillMap, getEntryRecastTime);
+        return mapGcdIndexToInsertion(gcdIdx);
       }
-      return calcInsertIndex(mouseX, scrollLeft, resolvedEntries, skillMap, getAnimLockWidth);
+      return calcInsertIndex(mouseX, scrollLeft, insertionResolvedEntries, skillMap, getAnimLockWidth);
     },
-    [resolvedEntries, gcdResolvedEntries, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToCombined]
+    [insertionResolvedEntries, insertionGcdResolvedEntries, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToInsertion]
   );
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -513,7 +536,7 @@ export function Timeline({
         dragRafRef.current = null;
         setDragType(type);
 
-        if (scrollRef.current && resolvedEntries.length > 0) {
+        if (scrollRef.current && insertionResolvedEntries.length > 0) {
           const idx = calcCombinedInsertIndex(mouseX, scrollLeft, type);
           setInsertIndex(idx);
         } else {
@@ -521,7 +544,7 @@ export function Timeline({
         }
       });
     },
-    [resolvedEntries, detectDragType, calcCombinedInsertIndex]
+    [insertionResolvedEntries, detectDragType, calcCombinedInsertIndex]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -561,27 +584,26 @@ export function Timeline({
 
       if (source === "timeline") {
         const movingUid = e.dataTransfer.getData("application/timeline-entry-uid");
-        if (movingUid && scrollRef.current && resolvedEntries.length > 0) {
+        if (movingUid && scrollRef.current && insertionResolvedEntries.length > 0) {
           const rect = scrollRef.current.getBoundingClientRect();
           const mouseX = e.clientX - rect.left;
           const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
-          const targetEntry = idx < resolvedEntries.length ? resolvedEntries[idx] : undefined;
-          // 同位置（直後のエントリが自分自身）へのドロップは no-op
-          if (!targetEntry || targetEntry.uid !== movingUid) {
-            shouldAutoScrollRef.current = false;
-            onMoveEntry(movingUid, targetEntry?.uid);
-          }
+          // insertionResolvedEntries はドラッグ中エントリを除外しているため、
+          // ここで得られる targetEntry が自分自身になることはない（= 不要な no-op 判定が消える）
+          const targetEntry = idx < insertionResolvedEntries.length ? insertionResolvedEntries[idx] : undefined;
+          shouldAutoScrollRef.current = false;
+          onMoveEntry(movingUid, targetEntry?.uid);
         }
       } else {
-        if (scrollRef.current && resolvedEntries.length > 0) {
+        if (scrollRef.current && insertionResolvedEntries.length > 0) {
           const rect = scrollRef.current.getBoundingClientRect();
           const mouseX = e.clientX - rect.left;
           const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
-          const isInsertMiddle = idx < resolvedEntries.length;
+          const isInsertMiddle = idx < insertionResolvedEntries.length;
           if (isInsertMiddle) {
             shouldAutoScrollRef.current = false;
           }
-          onAddEntry(skillId, isInsertMiddle ? resolvedEntries[idx].uid : undefined);
+          onAddEntry(skillId, isInsertMiddle ? insertionResolvedEntries[idx].uid : undefined);
         } else {
           onAddEntry(skillId);
         }
@@ -591,13 +613,14 @@ export function Timeline({
       setDragType(null);
       setDraggingEntryUid(null);
     },
-    [onAddEntry, onMoveEntry, resolvedEntries, skillMap, calcCombinedInsertIndex, detectDragSource]
+    [onAddEntry, onMoveEntry, insertionResolvedEntries, skillMap, calcCombinedInsertIndex, detectDragSource]
   );
 
   /**
    * 挿入インジケーターのX座標。
    * A方式: 挿入後にスキルが実際に配置される位置（最速実行可能時刻）を表示する。
-   * 事前計算済みのtimelineStateAtIndexを使い、resolveTimelineと同じロジックで開始時刻を算出。
+   * insertionTimelineStateAtIndex は「ドラッグ中エントリを除外した並び」で計算済みなので、
+   * insertIndex も同じ除外済みインデックスとして扱う（ドロップ後の実配置と一致する）。
    */
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
@@ -607,7 +630,7 @@ export function Timeline({
       // 先頭に挿入: 時刻0から開始
       startTime = 0;
     } else {
-      const prevState = timelineStateAtIndex[insertIndex - 1];
+      const prevState = insertionTimelineStateAtIndex[insertIndex - 1];
       if (!prevState) {
         startTime = 0;
       } else if (dragType === "gcd") {
@@ -620,7 +643,7 @@ export function Timeline({
     }
 
     return startTime * PX_PER_SEC;
-  }, [insertIndex, dragType, timelineStateAtIndex]);
+  }, [insertIndex, dragType, insertionTimelineStateAtIndex]);
 
   // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
   const labelBg = dragOver ? "#1b1921" : "#0f0f23";
