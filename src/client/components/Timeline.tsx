@@ -523,7 +523,10 @@ export function Timeline({
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
+      // ドラッグ元（パレット=copy / タイムライン内並び替え=move）に合わせる。
+      // effectAllowed（dragstart で "copy" or "move" を設定）と dropEffect が不一致だと
+      // ブラウザが drop を拒否し、handleDrop が発火せず並び替えが無言で失敗する。
+      e.dataTransfer.dropEffect = detectDragSource(e) === "timeline" ? "move" : "copy";
 
       // rAFでスロットリング: 前フレームの更新がまだ処理中なら新しいリクエストをスキップ
       if (dragRafRef.current !== null) return;
@@ -544,7 +547,7 @@ export function Timeline({
         }
       });
     },
-    [insertionResolvedEntries, detectDragType, calcCombinedInsertIndex]
+    [insertionResolvedEntries, detectDragType, detectDragSource, calcCombinedInsertIndex]
   );
 
   const handleDragLeave = useCallback(() => {
