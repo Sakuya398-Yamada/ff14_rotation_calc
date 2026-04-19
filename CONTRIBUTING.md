@@ -169,14 +169,31 @@ npm test
 
 ### 初回セットアップ
 
-Chromium バイナリをダウンロードしておきます（Playwright MCP の初回起動時に `npx` が自動で `@playwright/mcp` を取得するため、別途インストールは不要）。
+`@playwright/mcp@latest` は `--browser` 引数で `chrome | firefox | webkit | msedge` のみを受け付け、旧 `chromium` 指定は廃止されています。本プロジェクトの `.mcp.json` では `--executable-path` を使って、DevContainer にプリインストールされている Playwright 公式 Chromium を直接指す構成になっています。
+
+```jsonc
+// .mcp.json（抜粋）
+"args": [
+  "-y",
+  "@playwright/mcp@latest",
+  "--executable-path",
+  "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+]
+```
+
+DevContainer 内では事前に以下が満たされている前提です：
+
+- 環境変数 `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` が設定されている
+- `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` が存在する（Playwright 公式 Chromium）
+
+上記が無い／バージョンが異なる環境では、以下のいずれかで配備します：
 
 ```bash
-# 開発コンテナ内で1回だけ実行
+# 開発コンテナ内で1回だけ実行（PLAYWRIGHT_BROWSERS_PATH 設定下で）
 npx playwright install chromium
 ```
 
-> Dev Container を新規ビルドした場合は再度実行が必要です。
+> Dev Container を新規ビルドした場合は再度実行が必要です。インストール後に `.mcp.json` の `--executable-path` が実在するバイナリを指しているかを確認してください（バージョンディレクトリ名が変わる場合があります）。
 
 ### 利用フロー
 
@@ -191,4 +208,8 @@ npx playwright install chromium
 
 ### 接続確認
 
-Claude Code セッションで `ToolSearch` に `playwright` や `browser_navigate` を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は `.mcp.json` のパスと `@playwright/mcp` のインストール可否を確認してください。
+Claude Code セッションで `ToolSearch` に `playwright` や `browser_navigate` を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は以下を確認してください：
+
+- `.mcp.json` の `--executable-path` が実在するバイナリを指しているか
+- `@playwright/mcp` が `npx` で取得可能か
+- `browser_navigate` 実行時に `Browser "chrome-for-testing" is not installed` が出る場合、`--executable-path` が効いていない（古い設定で MCP サーバーが起動している）可能性があるためセッション再起動を試みる

@@ -47,10 +47,10 @@ browser_take_screenshot                   # 必要なら画像も保存
 
 | 症状 | 原因 | 対処 |
 |------|------|------|
-| `Chromium distribution 'chrome' is not found at /opt/google/chrome/chrome` | `.mcp.json` の `--browser chromium` が欠落、またはセッションが古い設定で起動している | `.mcp.json` を確認 → Claude Code セッションを再起動 |
+| `Browser "chrome-for-testing" is not installed` | `.mcp.json` の `--executable-path` が欠落し、`@playwright/mcp@latest` が `chrome-for-testing` にフォールバックしている（旧 `--browser chromium` は廃止済み） | `.mcp.json` に `--executable-path /opt/pw-browsers/chromium-1194/chrome-linux/chrome` が入っているか確認 → Claude Code セッションを再起動 |
 | `InputValidationError` / ツールが呼べない | ToolSearch 未実行でスキーマが未ロード | `ToolSearch select:<tool_name>` で先にロード |
 | `browser_navigate` でタイムアウト／接続拒否 | Vite が起動していない・ポート違い | `npm run dev:client` のログで `http://localhost:5173/` を確認 |
-| Chromium 自体が無い | Dev Container 新規構築直後 | `npx playwright install chromium` を実行 |
+| `--executable-path` で指定したパスに Chromium が無い | `/opt/pw-browsers/chromium-1194` 未配備（新規 DevContainer 直後など） | 環境側で `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` のもと `npx playwright install chromium` を実行して `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` を用意 |
 | 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
 
 ## 切断時の再接続手順（Claude 向け）
@@ -88,5 +88,6 @@ UI 検証を始めようとして切断を検知したら、**自己判断で復
 
 ## 参考
 
-- MCP 登録: リポジトリ直下 `.mcp.json`（`--browser chromium` 必須）
+- MCP 登録: リポジトリ直下 `.mcp.json`（`--executable-path /opt/pw-browsers/chromium-1194/chrome-linux/chrome` 必須。`@playwright/mcp@latest` では `--browser chromium` が廃止されているため `--executable-path` でプリインストール済み Chromium を直接指す）
+- 前提環境: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` が設定され、同パス配下に Playwright 公式 Chromium（`chromium-1194/chrome-linux/chrome`）が配備されていること
 - 人間向けセットアップ: `CONTRIBUTING.md` 「MCP サーバー（Playwright による UI 視覚検証）」
