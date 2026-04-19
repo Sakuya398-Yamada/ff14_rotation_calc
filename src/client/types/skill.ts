@@ -366,4 +366,8 @@ export interface ResolvedTimelineEntry {
   critRateBonus: number;
   /** ダイレクトヒット発生率ボーナス（0.0 = バフなし、0.1 = +10%） */
   dhRateBonus: number;
+  /** このエントリ実行後、次のGCDが使用可能になる時刻（秒） */
+  gcdAvailableAt: number;
+  /** このエントリ実行後、次のアクション（GCD/oGCD問わず）が使用可能になる時刻（秒） */
+  actionAvailableAt: number;
 }
