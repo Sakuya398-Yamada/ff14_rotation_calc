@@ -1101,6 +1101,8 @@ export function resolveTimeline(
       buffMultiplier,
       critRateBonus,
       dhRateBonus,
+      gcdAvailableAt,
+      actionAvailableAt,
     });
   }
 

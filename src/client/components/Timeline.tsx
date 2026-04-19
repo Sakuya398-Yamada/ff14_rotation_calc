@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, PpsRange } from "../types/skill";
 import { calcGcd, calcExpectedMultiplier } from "../logic/stat-calc";
 import { computeBuffTimespans } from "../logic/buff-timespans";
+import { resolveTimeline } from "../logic/resolve-timeline";
 import "./timeline.css";
 
 /** 1秒あたりのピクセル数 */
@@ -88,12 +89,6 @@ function calcInsertIndex(
 
   // 末尾に追加
   return resolvedEntries.length;
-}
-
-/** タイムラインの各エントリ処理後の状態 */
-interface TimelineState {
-  gcdAvailableAt: number;
-  actionAvailableAt: number;
 }
 
 export function Timeline({
@@ -263,52 +258,24 @@ export function Timeline({
 
   /**
    * 挿入位置計算用の resolvedEntries。
-   * タイムライン内D&D中はドラッグ中のエントリを除外し、ドロップ後の並びを基準にする。
-   * これにより挿入インジケーターと実際のドロップ結果が一致する。
+   * - パレットからのD&D（draggingEntryUid === null）: resolvedEntries をそのまま再利用。
+   *   既に App.tsx の resolveTimeline が計算した startTime / 各エントリの post-entry state
+   *   （gcdAvailableAt / actionAvailableAt）をそのまま使う。
+   * - タイムライン内D&D（draggingEntryUid !== null）: ドラッグ中エントリを除外した
+   *   生エントリ列で resolveTimeline を再実行する。これにより「ドロップ後の並び」における
+   *   各エントリの startTime と post-entry state が正確に得られ、パレットD&D時と
+   *   同一アルゴリズムで算出されるため、インジケーター位置が必ず一致する。
+   *
+   * 再実行コストは draggingEntryUid 変化時のみ（ドラッグ開始/終了）で、
+   * drag over の rAF コールバック内では useMemo のキャッシュを参照するだけ。
    */
-  const insertionResolvedEntries = useMemo(
-    () => (draggingEntryUid !== null
-      ? resolvedEntries.filter((e) => e.uid !== draggingEntryUid)
-      : resolvedEntries),
-    [resolvedEntries, draggingEntryUid]
-  );
-
-  /**
-   * 挿入位置計算用: insertionResolvedEntries の各エントリ処理後の状態を事前計算。
-   * 挿入インジケーターの正確な位置算出に使用する。
-   * ドラッグ中エントリを除外した並びで startTime を再計算するため、
-   * resolveTimeline と同じタイミング規則（GCD: max(gcdAvailable, actionAvailable), oGCD: actionAvailable）を適用。
-   * states[i] = entry[i]処理後の状態。挿入位置idxの開始時刻算出にはstates[idx-1]を参照。
-   */
-  const insertionTimelineStateAtIndex = useMemo(() => {
-    const states: TimelineState[] = [];
-    let gcdAvailableAt = 0;
-    let actionAvailableAt = 0;
-
-    for (const entry of insertionResolvedEntries) {
-      const skill = skillMap.get(entry.skillId);
-      if (!skill) {
-        states.push({ gcdAvailableAt, actionAvailableAt });
-        continue;
-      }
-
-      let startTime: number;
-      if (skill.type === "gcd") {
-        startTime = Math.max(gcdAvailableAt, actionAvailableAt);
-        const recast = getEntryRecastTime(skill, entry.activeBuffs);
-        const castTime = getEntryCastTime(skill, entry.activeBuffs);
-        gcdAvailableAt = startTime + recast;
-        actionAvailableAt = startTime + Math.max(castTime, skill.animationLock);
-      } else {
-        startTime = actionAvailableAt;
-        actionAvailableAt = startTime + skill.animationLock;
-      }
-
-      states.push({ gcdAvailableAt, actionAvailableAt });
-    }
-
-    return states;
-  }, [insertionResolvedEntries, skillMap, getEntryRecastTime, getEntryCastTime]);
+  const insertionResolvedEntries = useMemo(() => {
+    if (draggingEntryUid === null) return resolvedEntries;
+    const filteredRaw = resolvedEntries
+      .filter((e) => e.uid !== draggingEntryUid)
+      .map((e) => ({ uid: e.uid, skillId: e.skillId }));
+    return resolveTimeline(filteredRaw, skillMap, resources, stats, buffs, untargetableWindows).entries;
+  }, [resolvedEntries, draggingEntryUid, skillMap, resources, stats, buffs, untargetableWindows]);
 
   // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
   const cooldownSpans = useMemo(() => {
@@ -622,8 +589,9 @@ export function Timeline({
   /**
    * 挿入インジケーターのX座標。
    * A方式: 挿入後にスキルが実際に配置される位置（最速実行可能時刻）を表示する。
-   * insertionTimelineStateAtIndex は「ドラッグ中エントリを除外した並び」で計算済みなので、
-   * insertIndex も同じ除外済みインデックスとして扱う（ドロップ後の実配置と一致する）。
+   * insertionResolvedEntries は「ドラッグ中エントリを除外した並び」で resolveTimeline を
+   * 再実行した結果（パレットD&D時は resolvedEntries そのもの）なので、
+   * 各エントリの post-entry state を gcdAvailableAt / actionAvailableAt から直接参照できる。
    */
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
@@ -633,20 +601,20 @@ export function Timeline({
       // 先頭に挿入: 時刻0から開始
       startTime = 0;
     } else {
-      const prevState = insertionTimelineStateAtIndex[insertIndex - 1];
-      if (!prevState) {
+      const prevEntry = insertionResolvedEntries[insertIndex - 1];
+      if (!prevEntry) {
         startTime = 0;
       } else if (dragType === "gcd") {
         // GCD: max(GCDリキャスト明け, 直前アクション硬直明け)
-        startTime = Math.max(prevState.gcdAvailableAt, prevState.actionAvailableAt);
+        startTime = Math.max(prevEntry.gcdAvailableAt, prevEntry.actionAvailableAt);
       } else {
         // oGCD: 直前アクション硬直明け
-        startTime = prevState.actionAvailableAt;
+        startTime = prevEntry.actionAvailableAt;
       }
     }
 
     return startTime * PX_PER_SEC;
-  }, [insertIndex, dragType, insertionTimelineStateAtIndex]);
+  }, [insertIndex, dragType, insertionResolvedEntries]);
 
   // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
   const labelBg = dragOver ? "#1b1921" : "#0f0f23";

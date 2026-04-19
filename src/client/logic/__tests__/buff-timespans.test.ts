@@ -29,6 +29,8 @@ function makeEntry(startTime: number, activeBuffs: ActiveBuff[]): ResolvedTimeli
     buffMultiplier: 1,
     critRateBonus: 0,
     dhRateBonus: 0,
+    gcdAvailableAt: startTime,
+    actionAvailableAt: startTime,
   };
 }
 
