@@ -51,6 +51,36 @@ browser_take_screenshot                   # 必要なら画像も保存
 | `InputValidationError` / ツールが呼べない | ToolSearch 未実行でスキーマが未ロード | `ToolSearch select:<tool_name>` で先にロード |
 | `browser_navigate` でタイムアウト／接続拒否 | Vite が起動していない・ポート違い | `npm run dev:client` のログで `http://localhost:5173/` を確認 |
 | Chromium 自体が無い | Dev Container 新規構築直後 | `npx playwright install chromium` を実行 |
+| 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
+
+## 切断時の再接続手順（Claude 向け）
+
+Playwright MCP は stdio サーバーのため、HTTP/SSE サーバーと違って **Claude Code の自動再接続対象外** になり得る。セッション開始時は `<system-reminder>` で deferred tools が列挙されるが、長時間放置すると `The following deferred tools are no longer available (their MCP server disconnected)` が飛んできて、それ以降 `ToolSearch` でも見つからない状態になる。
+
+### Claude 側で取るべきアクション
+
+UI 検証を始めようとして切断を検知したら、**自己判断で復旧を試みる → だめならユーザーに具体的な指示を返す**。
+
+1. **まず `/mcp` 相当の状態確認をユーザーに依頼**:
+   ```
+   Playwright MCP が切断されています。`/mcp` を実行して playwright サーバーの状態を確認し、`failed` 表示なら画面の指示で Retry してください。
+   ```
+   `/mcp` はスラッシュコマンドなので Claude からは直接実行できない。ユーザー操作が必要。
+
+2. **Retry でも戻らない／`/mcp` が使えない環境の場合**: セッション再起動を依頼
+   ```
+   セッションを再起動してください（CLI なら exit → 再入、Web なら新規セッション）。再起動後、.mcp.json が再読み込みされて playwright が再接続されます。
+   ```
+
+3. **再接続後の初期化**: スキーマを再ロードする必要がある
+   ```
+   ToolSearch query: "select:mcp__playwright__browser_navigate,mcp__playwright__browser_snapshot,mcp__playwright__browser_click"
+   ```
+   セッション再起動後は deferred tool 一覧がリセットされているため、初回利用前に必ず `ToolSearch` で再ロードする。
+
+### フォールバック方針
+
+復旧に時間がかかる／ユーザーが手動再起動できない状況では、**UI 検証を飛ばさず「未検証」であることを完了報告に明記**する。`npm run build` / `tsc --noEmit` / `npm test` が通っているだけでは「機能の正しさ」は保証できない旨を添える。
 
 ## ランタイム生成物
 
