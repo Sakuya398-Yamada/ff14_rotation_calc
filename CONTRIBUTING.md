@@ -69,6 +69,7 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 | ブランチ命名・コミットメッセージ・PR・Issue規約 | `.claude/rules/git-conventions.md` |
 | TypeScript / React / Hono / Prisma のコーディング規約 | `.claude/rules/coding-standards.md` |
 | 技術スタック・npmスクリプト・インフラ構成 | `.claude/rules/tech-stack.md` |
+| Claude Code のコード読解方針（Stream idle timeout 対策） | `.claude/rules/context-efficiency.md` |
 | Issue駆動開発の Phase別手順 | `.claude/skills/issue-start/SKILL.md` |
 
 ---

@@ -44,6 +44,17 @@ Group issues by severity (**Critical** vs **Important**). If no high-confidence 
 
 Structure your response for maximum actionability — developers should know exactly what to fix and why.
 
+## Output Budget (DEFAULT)
+
+呼び出し側のプロンプトで上限が指定されていない場合、以下を既定値とする。Stream idle timeout を避けるため、これを超えないようにする：
+
+- **総量**: レビュー全体で 300 行以内、Markdown で 5,000 文字以内
+- **1 件あたり**: 概要 1〜2 行＋該当 `file:line`＋修正提案 5 行以内
+- **コード引用**: 指摘対象の該当行前後 5 行までに限定し、広範な貼付けは避ける
+- **ファイル読解**: diff に現れない箇所は必要時のみ局所読みする（500 行超は `offset`/`limit` 必須）
+
+呼び出し側のプロンプトで上限指定がある場合はそちらを優先する。
+
 ## Project Context
 
 - Stack: TypeScript (`strict: true`) + React + Vite + Hono + Prisma + SQLite
