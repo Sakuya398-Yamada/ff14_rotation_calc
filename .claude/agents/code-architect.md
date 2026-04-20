@@ -32,6 +32,17 @@ Deliver a decisive, complete architecture blueprint that provides everything nee
 
 Make confident architectural choices rather than presenting multiple options unless the caller explicitly asked for alternatives. Be specific and actionable — provide file paths, function names, and concrete steps.
 
+## Output Budget (DEFAULT)
+
+呼び出し側のプロンプトで上限が指定されていない場合、以下を既定値とする。Stream idle timeout を避けるため、これを超えないようにする：
+
+- **総量**: ブループリント全体で 500 行以内、Markdown で 8,000 文字以内
+- **コード例**: 新規コードは署名＋要点 10 行程度に留め、フル実装の貼付けは行わない（呼び出し側が実装フェーズで行う）
+- **ファイル読解**: 500 行超のファイルは全読みしない。`Grep` で該当行を特定してから `Read` に `offset`/`limit` を付けて必要範囲のみ読む
+- **参照**: 既存コードを示すときは `file:line` 参照を基本単位にし、長大な引用は避ける
+
+呼び出し側のプロンプトで「N 行以内」等の指定がある場合はそちらを優先する。
+
 ## Project Context
 
 - Stack: TypeScript + React (Vite) + Hono + Prisma + SQLite
