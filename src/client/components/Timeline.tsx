@@ -621,10 +621,18 @@ export function Timeline({
 
   /**
    * 挿入インジケーターのX座標。
-   * A方式: 挿入後にスキルが実際に配置される位置（最速実行可能時刻）を表示する。
-   * insertionResolvedEntries は「ドラッグ中エントリを除外した並び」で resolveTimeline を
-   * 再実行した結果（パレットD&D時は resolvedEntries そのもの）なので、
-   * 各エントリの post-entry state を gcdAvailableAt / actionAvailableAt から直接参照できる。
+   * 画面に描画されているエントリアイコンと同じ座標系で描画する必要があるため、
+   * 「見えている並び」(visibleEntriesForInsert) の post-entry state を使う。
+   *
+   * insertionResolvedEntries（= ドラッグ中エントリを除いて再 resolve した結果）は
+   * ドラッグ中エントリが抜けた分、後続エントリの startTime / gcdAvailableAt が前詰めされており、
+   * これを indicatorX に使うと画面上のアイコンより 1 スロット分左にズレてしまう
+   * （特に末尾側へドラッグした際に顕著で、最右スロットにインジケーターが出ない症状を引き起こす）。
+   *
+   * 一方 visibleEntriesForInsert は元 resolvedEntries をドラッグ中エントリだけフィルタした並びで、
+   * 各エントリの startTime / gcdAvailableAt / actionAvailableAt は画面描画に使われている値と同一。
+   * calcInsertIndex も visibleEntriesForInsert を基準に idx を決めているので、
+   * idx と indicatorX の座標系が完全に一致する。
    */
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
@@ -634,7 +642,7 @@ export function Timeline({
       // 先頭に挿入: 時刻0から開始
       startTime = 0;
     } else {
-      const prevEntry = insertionResolvedEntries[insertIndex - 1];
+      const prevEntry = visibleEntriesForInsert[insertIndex - 1];
       if (!prevEntry) {
         startTime = 0;
       } else if (dragType === "gcd") {
@@ -647,7 +655,7 @@ export function Timeline({
     }
 
     return startTime * PX_PER_SEC;
-  }, [insertIndex, dragType, insertionResolvedEntries]);
+  }, [insertIndex, dragType, visibleEntriesForInsert]);
 
   // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
   const labelBg = dragOver ? "#1b1921" : "#0f0f23";
