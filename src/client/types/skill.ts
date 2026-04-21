@@ -188,7 +188,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -203,6 +203,7 @@ export interface BuffEffect {
    * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
    * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
+   * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費）
    * - stat: ステータス加算値
    * - resource: リソース変動量
    */
@@ -370,4 +371,11 @@ export interface ResolvedTimelineEntry {
   gcdAvailableAt: number;
   /** このエントリ実行後、次のアクション（GCD/oGCD問わず）が使用可能になる時刻（秒） */
   actionAvailableAt: number;
+  /**
+   * 実行時に適用された詠唱時間（秒）。
+   * 速度バフ・instantCast バフ（三連魔・ファイアスターター等）を反映済み。
+   * 非詠唱スキル・oGCDでは 0。
+   * UI 側で activeBuffs を再解釈しなくても、この値を直接描画できる。
+   */
+  castTime: number;
 }

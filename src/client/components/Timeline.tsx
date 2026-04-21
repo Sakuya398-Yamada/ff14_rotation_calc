@@ -221,27 +221,6 @@ export function Timeline({
     [getRecastTime, buffDefMap]
   );
 
-  /** エントリのアクティブバフを考慮した詠唱時間計算 */
-  const getEntryCastTime = useCallback(
-    (skill: Skill, activeBuffs: ActiveBuff[]) => {
-      if (!skill.castTime) return 0;
-      let cast = skill.castTime;
-      if (skill.type === "gcd" && activeBuffs.length > 0) {
-        for (const ab of activeBuffs) {
-          const def = buffDefMap.get(ab.buffId);
-          if (!def) continue;
-          for (const effect of def.effects) {
-            if (effect.type === "speed") {
-              cast = Math.round(cast * effect.value * 1000) / 1000;
-            }
-          }
-        }
-      }
-      return cast;
-    },
-    [buffDefMap]
-  );
-
   const gcdEntries: (ResolvedTimelineEntry & { skill: Skill; displaySkill: Skill })[] = [];
   const ogcdEntries: (ResolvedTimelineEntry & { skill: Skill; displaySkill: Skill })[] = [];
   for (const entry of resolvedEntries) {
@@ -941,7 +920,7 @@ export function Timeline({
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
                     const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
-                    const castTime = getEntryCastTime(entry.skill, entry.activeBuffs);
+                    const castTime = entry.castTime;
                     const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
                     const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus) : null;
                     const expectedPot = hasError ? null : (

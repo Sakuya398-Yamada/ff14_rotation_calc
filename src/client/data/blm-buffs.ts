@@ -163,7 +163,8 @@ export const BLM_BUFFS: BuffDefinition[] = [
     shortName: "ﾌｧｲｱ\nｽﾀｰﾀｰ",
     icon: fire3Icon,
     duration: null,
-    effects: [],
+    // 次のファイガ詠唱を Instant 化（実スキル側の補正は別途対応。本バフは詠唱時間 0 化のみ担う）
+    effects: [{ type: "instantCast", value: 0 }],
     color: "#ff7043",
     acquiredLevel: 2,
   },
@@ -178,7 +179,8 @@ export const BLM_BUFFS: BuffDefinition[] = [
     icon: triplecastIcon,
     duration: 15,
     maxStacks: 3,
-    effects: [],
+    // 詠唱時間を持つ次 3 発の GCD を Instant 化
+    effects: [{ type: "instantCast", value: 0 }],
     color: "#ffee58",
     acquiredLevel: 66,
   },
