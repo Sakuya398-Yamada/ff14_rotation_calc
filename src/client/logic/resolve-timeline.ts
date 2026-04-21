@@ -105,6 +105,21 @@ function getSpeedMultiplier(
 }
 
 /**
+ * アクティブなバフに詠唱破棄（instantCast）効果を持つものが含まれるか判定する。
+ */
+function hasInstantCastBuff(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): boolean {
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    if (def.effects.some((e) => e.type === "instantCast")) return true;
+  }
+  return false;
+}
+
+/**
  * アクティブなバフからクリティカル発生率ボーナスを計算する。
  */
 function getCritRateBonus(
@@ -505,6 +520,7 @@ export function resolveTimeline(
     if (!originalSkill) continue;
 
     let startTime: number;
+    let resolvedCastTime = 0;
 
     if (originalSkill.type === "gcd") {
       const baseRecast = stats ? calcGcd(originalSkill.recastTime, stats) : originalSkill.recastTime;
@@ -517,13 +533,17 @@ export function resolveTimeline(
       // 速度バフを適用してリキャスト・詠唱時間計算
       const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap);
       const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
-      const castTime = originalSkill.castTime
+      // instantCast バフがアクティブなら詠唱時間を 0 に上書きする（三連魔・ファイアスターター等）
+      const instantCast = originalSkill.castTime
+        ? hasInstantCastBuff(currentActiveBuffs, buffDefMap)
+        : false;
+      resolvedCastTime = originalSkill.castTime && !instantCast
         ? Math.round(originalSkill.castTime * speedMul * 1000) / 1000
         : 0;
 
       gcdAvailableAt = startTime + recastTime;
       // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
-      actionAvailableAt = startTime + Math.max(castTime, originalSkill.animationLock);
+      actionAvailableAt = startTime + Math.max(resolvedCastTime, originalSkill.animationLock);
     } else {
       startTime = actionAvailableAt;
       startTime = Math.round(startTime * 1000) / 1000;
@@ -755,6 +775,18 @@ export function resolveTimeline(
         const def = buffDefMap.get(ab.buffId);
         if (def?.effects.some((e) => e.type === "consumeOnGcd")) {
           consumeOnGcdTargets.push(ab.buffId);
+        }
+      }
+    }
+
+    // 詠唱時間を持つGCDスキル実行前に、instantCast対象のバフIDを記録しておく
+    // （非詠唱GCD・oGCDでは消費しない。スキル実行中に新たに付与されたバフも消費対象外）
+    const instantCastTargets: string[] = [];
+    if (skill.type === "gcd" && originalSkill.castTime && originalSkill.castTime > 0) {
+      for (const ab of currentActiveBuffs) {
+        const def = buffDefMap.get(ab.buffId);
+        if (def?.effects.some((e) => e.type === "instantCast")) {
+          instantCastTargets.push(ab.buffId);
         }
       }
     }
@@ -1074,6 +1106,25 @@ export function resolveTimeline(
       }
     }
 
+    // 詠唱GCD実行後、スキル実行前にアクティブだったinstantCastバフを消費（三連魔・ファイアスターター等）
+    // スキル実行中に新規付与されたバフは消費しない
+    if (!hasError && instantCastTargets.length > 0) {
+      for (const buffId of instantCastTargets) {
+        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+        if (idx >= 0) {
+          const ab = currentActiveBuffs[idx];
+          if (ab.stacks !== undefined) {
+            ab.stacks = Math.max(0, ab.stacks - 1);
+            if (ab.stacks === 0) {
+              currentActiveBuffs.splice(idx, 1);
+            }
+          } else {
+            currentActiveBuffs.splice(idx, 1);
+          }
+        }
+      }
+    }
+
     // コンボ状態更新: GCDスキルを使用した場合、コンボ状態を更新
     // comboFromを持つスキルまたはコンボ系スキルの起点となるスキルはコンボ状態を更新する
     if (skill.type === "gcd" && !hasError) {
@@ -1103,6 +1154,7 @@ export function resolveTimeline(
       dhRateBonus,
       gcdAvailableAt,
       actionAvailableAt,
+      castTime: resolvedCastTime,
     });
   }
 
