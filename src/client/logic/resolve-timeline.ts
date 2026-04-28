@@ -129,6 +129,25 @@ function hasInstantCastBuff(
 }
 
 /**
+ * 詠唱 GCD で消費する instantCast バフを 1 つ選ぶ。
+ * 1. 単発バフ（maxStacks 未定義）を優先（例: 迅速魔・ファイアスターター）
+ * 2. すべてスタック式の場合は最初の候補（バフ取得順 = 配列順）を返す
+ * 呼び出し側で candidateBuffIds が空でないことを保証しているため、必ず 1 件返す。
+ */
+function pickInstantCastBuffId(
+  candidateBuffIds: string[],
+  buffDefMap: Map<string, BuffDefinition>
+): string {
+  for (const buffId of candidateBuffIds) {
+    const def = buffDefMap.get(buffId);
+    if (def && def.maxStacks === undefined) {
+      return buffId;
+    }
+  }
+  return candidateBuffIds[0];
+}
+
+/**
  * アクティブなバフからクリティカル発生率ボーナスを計算する。
  */
 function getCritRateBonus(
@@ -784,21 +803,32 @@ export function resolveTimeline(
     // - consumeOnGcd: 全 GCD スキル実行後に消費
     // - instantCast: 詠唱時間 > 0 の GCD スキル実行後にのみ消費（非詠唱 GCD / oGCD では消費しない）
     //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（例: firestarter は fire-3 限定）
+    //   複数の instantCast バフが同時アクティブな場合は 1 発につき 1 つだけ消費する
+    //   （例: 迅速魔 + 三連魔 → 迅速魔のみ消費、三連魔は据え置き）
     const consumeBuffTargets = new Set<string>();
     if (skill.type === "gcd") {
       const isCastingGcd = !!originalSkill.castTime && originalSkill.castTime > 0;
+      const instantCastCandidates: string[] = [];
       for (const ab of currentActiveBuffs) {
         const def = buffDefMap.get(ab.buffId);
         if (!def) continue;
         const hasConsumeOnGcd = def.effects.some((e) => e.type === "consumeOnGcd");
-        const hasInstantCast = isCastingGcd && def.effects.some((e) => {
-          if (e.type !== "instantCast") return false;
-          if (e.appliesToSkillIds && !e.appliesToSkillIds.includes(originalSkill.id)) return false;
-          return true;
-        });
-        if (hasConsumeOnGcd || hasInstantCast) {
+        if (hasConsumeOnGcd) {
           consumeBuffTargets.add(ab.buffId);
         }
+        if (isCastingGcd) {
+          const hasInstantCast = def.effects.some((e) => {
+            if (e.type !== "instantCast") return false;
+            if (e.appliesToSkillIds && !e.appliesToSkillIds.includes(originalSkill.id)) return false;
+            return true;
+          });
+          if (hasInstantCast) {
+            instantCastCandidates.push(ab.buffId);
+          }
+        }
+      }
+      if (instantCastCandidates.length > 0) {
+        consumeBuffTargets.add(pickInstantCastBuffId(instantCastCandidates, buffDefMap));
       }
     }
 
