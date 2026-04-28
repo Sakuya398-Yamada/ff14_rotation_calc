@@ -8,6 +8,7 @@ import starPrismIcon from "../assets/icons/pct/Star_Prism.png";
 import starryMuseIcon from "../assets/icons/pct/Starry_Muse.png";
 import rainbowDripIcon from "../assets/icons/pct/Rainbow_Drip.png";
 import mogOfTheAgesIcon from "../assets/icons/pct/Mog_of_the_Ages.png";
+import swiftcastIcon from "../assets/icons/pct/role_actions/Swiftcast.png";
 
 export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
@@ -206,5 +207,15 @@ export const PCT_BUFFS: BuffDefinition[] = [
     duration: null,
     effects: [],
     color: "#e57373",
+  },
+  {
+    id: "swiftcast",
+    name: "迅速魔",
+    shortName: "迅速魔",
+    icon: swiftcastIcon,
+    duration: 10,
+    effects: [{ type: "instantCast", value: 0 }],
+    color: "#80deea",
+    acquiredLevel: 18,
   },
 ];
