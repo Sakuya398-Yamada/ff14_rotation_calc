@@ -436,6 +436,71 @@ function expireBuffs(
 }
 
 /**
+ * アクティブバフの `resourceCostMultiplier` 効果に従って、スキルのリソース消費（負の ResourceChange）を動的に書き換える。
+ *
+ * 用途: BLM の AF 中ファイア系 MP 消費 ×2（アンブラルハートで打ち消し）、UB 中ブリザド系 MP 消費 0 化。
+ *
+ * 処理:
+ * - アクティブバフの effects から `resourceCostMultiplier` 型を抽出し、`appliesToSkillIds` で絞り込み
+ * - 同一 resourceId に対する倍率は乗算で集約（AF/UB は exclusiveGroup 排他なので実質単独）
+ * - 倍率が 1 を超え、`negatedByResource` 指定があり対象リソース残量が足りる場合、倍率を 1 に戻して当該リソースを消費する追加 ResourceChange を末尾に付与
+ * - 入力 changes の負変動のうち resourceId が一致するものは amount に倍率を掛けて返す
+ *
+ * 正変動には作用しない。
+ */
+function applyBuffResourceCostMultipliers(
+  changes: ResourceChange[],
+  skillId: string,
+  activeBuffs: ActiveBuff[],
+  resourceState: ResourceSnapshot,
+  buffDefMap: Map<string, BuffDefinition>
+): ResourceChange[] {
+  if (activeBuffs.length === 0) return changes;
+
+  const multipliers = new Map<string, number>();
+  const negationConsumptions: ResourceChange[] = [];
+  // 同じ打ち消しリソースを複数バフが奪い合う場合に備え、消費可能残量を追跡する
+  const negationRemaining = new Map<string, number>();
+
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const eff of def.effects) {
+      if (eff.type !== "resourceCostMultiplier") continue;
+      if (!eff.resourceId) continue;
+      if (eff.appliesToSkillIds && !eff.appliesToSkillIds.includes(skillId)) continue;
+
+      let multiplier = eff.value;
+
+      if (multiplier > 1 && eff.negatedByResource) {
+        const negResId = eff.negatedByResource.resourceId;
+        const consumeAmount = eff.negatedByResource.consumeAmount;
+        const remaining = negationRemaining.get(negResId) ?? (resourceState[negResId] ?? 0);
+        if (remaining >= consumeAmount) {
+          multiplier = 1;
+          negationRemaining.set(negResId, remaining - consumeAmount);
+          negationConsumptions.push({ resourceId: negResId, amount: -consumeAmount });
+        }
+      }
+
+      const prev = multipliers.get(eff.resourceId) ?? 1;
+      multipliers.set(eff.resourceId, prev * multiplier);
+    }
+  }
+
+  if (multipliers.size === 0 && negationConsumptions.length === 0) return changes;
+
+  const scaled = changes.map((c) => {
+    if (c.amount >= 0) return c;
+    const m = multipliers.get(c.resourceId);
+    if (m === undefined || m === 1) return c;
+    return { ...c, amount: c.amount * m };
+  });
+
+  return negationConsumptions.length > 0 ? [...scaled, ...negationConsumptions] : scaled;
+}
+
+/**
  * 正の ResourceChange について、アクティブバフの redirectResourceGain に従って振替先リソースに書き換える。
  * 負の変動はそのまま返す。未登録の toResourceId へのリダイレクトは無視する（onExpireResourceTransfer と同様に安全側倒し）。
  */
@@ -656,10 +721,22 @@ export function resolveTimeline(
       }
     }
 
+    // バフの resourceCostMultiplier 効果でリソース消費量を動的にスケールしたものを以降で使用する
+    // （リソース不足判定・実適用の両方が同じ実効値を参照するように、ここで一度だけ計算する）
+    const effectiveResourceChanges = skill.resourceChanges
+      ? applyBuffResourceCostMultipliers(
+          skill.resourceChanges,
+          skill.id,
+          currentActiveBuffs,
+          resourceState,
+          buffDefMap
+        )
+      : undefined;
+
     // リソース不足チェック
     const resourceErrors: string[] = [];
-    if (skill.resourceChanges) {
-      for (const change of skill.resourceChanges) {
+    if (effectiveResourceChanges) {
+      for (const change of effectiveResourceChanges) {
         if (change.amount < 0) {
           if (change.skipIfInsufficient) continue;
           if (skippedResourceId !== null && change.resourceId === skippedResourceId) continue;
@@ -862,12 +939,13 @@ export function resolveTimeline(
       };
 
       // リソース変動を適用（buffSkippableResource でスキップ対象になった負の変動は除外）
-      if (skill.resourceChanges) {
+      // 上で計算済みの effectiveResourceChanges（バフによるコスト倍率を反映済み）を使う
+      if (effectiveResourceChanges) {
         const filtered = skippedResourceId !== null
-          ? skill.resourceChanges.filter(
+          ? effectiveResourceChanges.filter(
               (c) => !(c.resourceId === skippedResourceId && c.amount < 0)
             )
-          : skill.resourceChanges;
+          : effectiveResourceChanges;
         const redirected = applyBuffRedirects(filtered, currentActiveBuffs, buffDefMap, resourceDefMap);
         applyResourceChanges(resourceState, redirected, resourceDefMap, resources, onResourceApplied);
       }

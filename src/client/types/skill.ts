@@ -188,7 +188,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -206,11 +206,12 @@ export interface BuffEffect {
    * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費）
    * - stat: ステータス加算値
    * - resource: リソース変動量
+   * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
    */
   value: number;
   /** statバフの対象ステータスキー */
   statKey?: keyof CharacterStats;
-  /** resourceバフの対象リソースID */
+  /** resource / resourceCostMultiplier バフの対象リソースID */
   resourceId?: string;
   /**
    * このエフェクトを適用するスキルIDのホワイトリスト（potency 等の対象スキル限定バフ用）。
@@ -219,6 +220,12 @@ export interface BuffEffect {
    * 同一バフが複数スキル群に異なる倍率を適用するケースで使用する。
    */
   appliesToSkillIds?: string[];
+  /**
+   * resourceCostMultiplier 専用: 指定リソースが消費可能な量だけ残っていれば倍率を打ち消す。
+   * 打ち消し成立時はそのリソースを消費する（例: BLMのアンブラルハートでAF中のMP2倍化を打ち消す）。
+   * 倍率が等倍以下（multiplier ≤ 1）の場合は打ち消し処理は行わない。
+   */
+  negatedByResource?: { resourceId: string; consumeAmount: number };
 }
 
 /** バフ・デバフの定義 */
