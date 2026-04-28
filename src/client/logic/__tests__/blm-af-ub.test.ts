@@ -204,7 +204,7 @@ describe("BLM: AF/UB 段階進行", () => {
     expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
-  it("AF 中の通常ファイアは MP を 800 消費する（UH 無し時）", () => {
+  it("AF1 中の通常ファイアは MP を 1600 消費する（基本 800 × AF 倍率 2、UH 無し時）", () => {
     const result = resolveTimeline(
       [entry("fire"), entry("fire")],
       skillMap,
