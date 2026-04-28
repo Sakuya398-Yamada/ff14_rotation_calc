@@ -183,7 +183,14 @@ describe("BLM: フレアスターとアストラルソウル", () => {
   });
 
   it("ファイジャ 6 発でアストラルソウル 6 蓄積後、フレアスターを使うと正常に実行される", () => {
-    const entries: TimelineEntry[] = [entry("fire-3")];
+    // AF3 中のファイジャは MP 消費 2 倍 (-1600) になるため、UH なしでは 6 連射すると MP が
+    // 不足する。事前に blizzard-3 → blizzard-4 で UB3 経由 UH 3 を確保し、最初の 3 発を
+    // UH で打ち消して MP 切れを回避する（実機の標準ローテーションに近い形）。
+    const entries: TimelineEntry[] = [
+      entry("blizzard-3"),
+      entry("blizzard-4"),
+      entry("fire-3"),
+    ];
     for (let i = 0; i < 6; i++) entries.push(entry("fire-4"));
     entries.push(entry("flare-star"));
 
@@ -197,5 +204,110 @@ describe("BLM: フレアスターとアストラルソウル", () => {
     const flareStarEntry = result.entries[result.entries.length - 1];
     expect(flareStarEntry.resourceErrors).toEqual([]);
     expect(flareStarEntry.resourceSnapshot["astral-soul"]).toBe(0);
+  });
+});
+
+describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
+  it("AF 外のファイアは MP を基本コスト 800 だけ消費する", () => {
+    const result = resolveTimeline(
+      [entry("fire")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    expect(result.entries[0].resourceErrors).toEqual([]);
+    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000 - 800);
+  });
+
+  it("AF 中のファイア系は MP 消費が 2 倍になる（UH なし時）", () => {
+    // fire-3 で AF3 付与 → fire-4: AF3 中なので MP -800 が -1600 になる
+    const result = resolveTimeline(
+      [entry("fire-3"), entry("fire-4")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    expect(result.entries[1].resourceErrors).toEqual([]);
+    // fire-3 で MP -2000 (AF未付与のため等倍) → 8000
+    // fire-4 で AF3 中、UH なしで MP -1600 → 6400
+    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000 - 2000);
+    expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000 - 2000 - 1600);
+  });
+
+  it("AF 中でも UH があればファイア系の MP 消費は基本コストに戻り、UH を 1 消費する", () => {
+    // blizzard-3 (UB3 付与) → blizzard-4 (UH 3 付与) → fire-3 (AF3 付与) → fire-4 (UH 消費)
+    const result = resolveTimeline(
+      [entry("blizzard-3"), entry("blizzard-4"), entry("fire-3"), entry("fire-4")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const fire4Entry = result.entries[3];
+    expect(fire4Entry.resourceErrors).toEqual([]);
+    // fire-4 直前は UH=3, MP=10000-800-0-2000=7200
+    // fire-4 で UH 1 消費して MP -800（倍化打ち消し）
+    expect(fire4Entry.resourceSnapshot["mp"]).toBe(10000 - 800 - 0 - 2000 - 800);
+    expect(fire4Entry.resourceSnapshot["umbral-heart"]).toBe(2);
+  });
+
+  it("UB 中のブリザド系の MP 消費は 0 になる", () => {
+    // blizzard で UB1 付与 → blizzard-3 で UB3 付与（UB1 中なのでブリザガの MP -800 は 0 になる）
+    const result = resolveTimeline(
+      [entry("blizzard"), entry("blizzard-3")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    expect(result.entries[1].resourceErrors).toEqual([]);
+    // blizzard: UB 未付与なので MP +400 回復、初期 10000 上限なので 10000 維持
+    // blizzard-3: UB1 中なので MP -800 が 0 になる → 10000 維持
+    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000);
+    expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB 中でも UB を付与する側のスキル（fire-3）には MP 倍率は適用されない", () => {
+    // blizzard で UB1 → fire-3 (UB 中だが FIRE 系なので UB の resourceCostMultiplier 対象外)
+    const result = resolveTimeline(
+      [entry("blizzard"), entry("fire-3")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    // fire-3 は通常通り MP -2000 消費（UB の倍率は BLIZZARD_SKILL_IDS のみに適用）
+    expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000 - 2000);
+  });
+
+  it("AF 中でも UH が足りなければ MP は 2 倍消費される（UH 残量 0 の場合は打ち消し不成立）", () => {
+    // blizzard-4 で UH 3 を確保し、fire-3 → fire-4 × 4 で UH を使い切る
+    const entries: TimelineEntry[] = [
+      entry("blizzard-3"),
+      entry("blizzard-4"),
+      entry("fire-3"),
+      entry("fire-4"),
+      entry("fire-4"),
+      entry("fire-4"),
+      entry("fire-4"),
+    ];
+    const result = resolveTimeline(
+      entries,
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    // 最後の fire-4: UH 0 なので MP -1600（打ち消されない）
+    // 4 発目直前の MP = 10000 - 800(blizzard-3) - 0(blizzard-4) - 2000(fire-3) - 800×3(fire-4×3、UH打ち消し)
+    //                 = 10000 - 800 - 2000 - 2400 = 4800
+    // 4 発目で MP -1600 → 3200
+    const lastFire4 = result.entries[result.entries.length - 1];
+    expect(lastFire4.resourceErrors).toEqual([]);
+    expect(lastFire4.resourceSnapshot["mp"]).toBe(3200);
+    expect(lastFire4.resourceSnapshot["umbral-heart"]).toBe(0);
   });
 });

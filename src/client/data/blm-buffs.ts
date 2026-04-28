@@ -52,6 +52,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // ============================================================
   // アストラルファイア（AF）: ファイア系威力増、ブリザド系威力減
   // ============================================================
+  // AF 中はファイア系の MP 消費が 2 倍になる。アンブラルハートが残っていれば 1 消費して打ち消す
   {
     id: "astral-fire-1",
     name: "アストラルファイア I",
@@ -63,6 +64,13 @@ export const BLM_BUFFS: BuffDefinition[] = [
       { type: "potency", value: 1.4, appliesToSkillIds: FIRE_SKILL_IDS },
       { type: "potency", value: 0.9, appliesToSkillIds: BLIZZARD_SKILL_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
+      {
+        type: "resourceCostMultiplier",
+        value: 2,
+        resourceId: "mp",
+        appliesToSkillIds: FIRE_SKILL_IDS,
+        negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
+      },
     ],
     color: "#ef5350",
     acquiredLevel: 2,
@@ -78,6 +86,13 @@ export const BLM_BUFFS: BuffDefinition[] = [
       { type: "potency", value: 1.6, appliesToSkillIds: FIRE_SKILL_IDS },
       { type: "potency", value: 0.8, appliesToSkillIds: BLIZZARD_SKILL_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
+      {
+        type: "resourceCostMultiplier",
+        value: 2,
+        resourceId: "mp",
+        appliesToSkillIds: FIRE_SKILL_IDS,
+        negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
+      },
     ],
     color: "#e53935",
     acquiredLevel: 2,
@@ -93,6 +108,13 @@ export const BLM_BUFFS: BuffDefinition[] = [
       { type: "potency", value: 1.8, appliesToSkillIds: FIRE_SKILL_IDS },
       { type: "potency", value: 0.7, appliesToSkillIds: BLIZZARD_SKILL_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
+      {
+        type: "resourceCostMultiplier",
+        value: 2,
+        resourceId: "mp",
+        appliesToSkillIds: FIRE_SKILL_IDS,
+        negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
+      },
     ],
     color: "#c62828",
     acquiredLevel: 2,
@@ -102,6 +124,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // アンブラルブリザード（UB）: ファイア系威力減、ブリザド系は等倍
   // （7.x ではアイス側に倍率ボーナスはなく、MP 回復・MP 消費 0 が主効果）
   // ============================================================
+  // UB 中はブリザド系の MP 消費が 0 になる（#209 では段階別倍率（UB1:50%/UB2:25%）は簡易対応で全段階 0、別Issue #210 で対応）
   {
     id: "umbral-ice-1",
     name: "アンブラルブリザード I",
@@ -112,6 +135,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
     effects: [
       { type: "potency", value: 0.9, appliesToSkillIds: FIRE_SKILL_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLIZZARD_SKILL_IDS },
     ],
     color: "#42a5f5",
     acquiredLevel: 1,
@@ -126,6 +150,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
     effects: [
       { type: "potency", value: 0.8, appliesToSkillIds: FIRE_SKILL_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLIZZARD_SKILL_IDS },
     ],
     color: "#1e88e5",
     acquiredLevel: 1,
@@ -140,6 +165,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
     effects: [
       { type: "potency", value: 0.7, appliesToSkillIds: FIRE_SKILL_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLIZZARD_SKILL_IDS },
     ],
     color: "#1565c0",
     acquiredLevel: 1,
