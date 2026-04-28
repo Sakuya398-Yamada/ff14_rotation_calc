@@ -169,6 +169,170 @@ describe("BLM: マナフォント", () => {
   });
 });
 
+describe("BLM: AF/UB 段階進行", () => {
+  it("ファイア連打で AF1→AF2→AF3 と段階進行する", () => {
+    const result = resolveTimeline(
+      [entry("fire"), entry("fire"), entry("fire"), entry("fire")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    // 1発目: AF1
+    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
+    // 2発目: AF2
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-2")).toBe(true);
+    // 3発目: AF3
+    expect(result.entries[2].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
+    // 4発目: AF3 維持
+    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
+  });
+
+  it("ブリザド連打で UB1→UB2→UB3 と段階進行する", () => {
+    const result = resolveTimeline(
+      [entry("blizzard"), entry("blizzard"), entry("blizzard"), entry("blizzard")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
+    expect(result.entries[2].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("AF 中の通常ファイアは MP を 800 消費する（UH 無し時）", () => {
+    const result = resolveTimeline(
+      [entry("fire"), entry("fire")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    // AF1 中の 2 発目ファイア: 基本 800 × AF 倍率 2 = 1600 消費
+    const mpBefore = result.entries[0].resourceSnapshot["mp"];
+    const mpAfter = result.entries[1].resourceSnapshot["mp"];
+    expect(mpBefore - mpAfter).toBe(1600);
+  });
+});
+
+describe("BLM: UB 段階別 MP 回復", () => {
+  // MP は最大値 10000 にキャップされるため、回復量を観測するには事前に MP を消費しておく必要がある。
+  // 共通シーケンス: fire-3（AF3 で MP -2000）→ despair（MP 全消費）→ transpose（AF→UB1）以降で UB を進める。
+  it("UB1 中の通常ブリザドは UB2 へ進めつつ MP を 2500 回復する", () => {
+    const result = resolveTimeline(
+      [entry("fire-3"), entry("despair"), entry("transpose"), entry("blizzard")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[2].resourceSnapshot["mp"];
+    const after = result.entries[3].resourceSnapshot["mp"];
+    expect(after - before).toBe(2500);
+    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
+  });
+
+  it("UB2 中の通常ブリザドは UB3 へ進めつつ MP を 5000 回復する", () => {
+    const result = resolveTimeline(
+      [
+        entry("fire-3"),
+        entry("despair"),
+        entry("transpose"),
+        entry("blizzard"),
+        entry("blizzard"),
+      ],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[3].resourceSnapshot["mp"];
+    const after = result.entries[4].resourceSnapshot["mp"];
+    expect(after - before).toBe(5000);
+    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB3 中の通常ブリザドは UB3 を維持しつつ MP を全回復させる", () => {
+    // blizzard-3（ブリザガ、UB3 直接付与、MP -800）→ blizzard（UB3 stay、MP +10000 cap）
+    const result = resolveTimeline(
+      [entry("blizzard-3"), entry("blizzard")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[0].resourceSnapshot["mp"];
+    const after = result.entries[1].resourceSnapshot["mp"];
+    // UB3 stay は +10000（最大値 10000 にキャップされるため、MP は最大値到達）
+    expect(before).toBeLessThan(10000);
+    expect(after).toBe(10000);
+    // UB3 が維持されていること（UB1 にリセットされない）
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB 外（AF 中）のブリザドは UB1 を付与するが MP は回復しない", () => {
+    // fire-3（AF3、MP -2000）→ blizzard（AF3 中は通常 blizzard、UB1 付与、MP 変化なし）
+    const result = resolveTimeline(
+      [entry("fire-3"), entry("blizzard")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[0].resourceSnapshot["mp"];
+    const after = result.entries[1].resourceSnapshot["mp"];
+    expect(after - before).toBe(0);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(false);
+  });
+
+  it("AF/UB 外で初手ブリザドを撃った場合、MP は変化せず UB1 のみ付与される", () => {
+    const result = resolveTimeline(
+      [entry("blizzard")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    // 初期 MP（10000）から変化しない
+    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000);
+    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+  });
+});
+
+describe("BLM: トランスポーズの逆状態切替", () => {
+  it("AF 中のトランスは UB1 へ切り替わる", () => {
+    const result = resolveTimeline(
+      [entry("fire-3"), entry("transpose")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(false);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+  });
+
+  it("UB 中のトランスは AF1 へ切り替わる", () => {
+    const result = resolveTimeline(
+      [entry("blizzard-3"), entry("transpose")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(false);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
+  });
+});
+
 describe("BLM: フレアスターとアストラルソウル", () => {
   it("アストラルソウル 6 が無い状態でフレアスターを使うと resourceErrors が発生する", () => {
     const result = resolveTimeline(

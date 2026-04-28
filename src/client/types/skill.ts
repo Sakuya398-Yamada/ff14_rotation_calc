@@ -128,6 +128,8 @@ export interface Skill {
     buffId: string;
     skillId: string;
   }[];
+  /** UI上で非表示にするか（autoTransform の変化先専用スキル等で使用） */
+  hidden?: boolean;
 }
 
 /** タイムラインに配置されたスキル */
