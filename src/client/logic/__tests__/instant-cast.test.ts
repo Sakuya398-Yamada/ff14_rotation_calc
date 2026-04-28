@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
 import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
+import { WHM_ATTACK_SKILLS } from "../../data/whm-skills";
+import { WHM_BUFFS } from "../../data/whm-buffs";
+import { PCT_ATTACK_SKILLS } from "../../data/pct-skills";
+import { PCT_BUFFS } from "../../data/pct-buffs";
+import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
+import { BLM_BUFFS } from "../../data/blm-buffs";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
@@ -191,4 +197,44 @@ describe("instantCast バフ（詠唱破棄）", () => {
 
     expect(result.entries[1].castTime).toBe(0);
   });
+});
+
+describe("迅速魔（Swiftcast）統合スモークテスト", () => {
+  it.each([
+    { job: "WHM", skills: WHM_ATTACK_SKILLS, buffs: WHM_BUFFS, castSkillId: "stone" },
+    { job: "PCT", skills: PCT_ATTACK_SKILLS, buffs: PCT_BUFFS, castSkillId: "fire-in-red" },
+    { job: "BLM", skills: BLM_ATTACK_SKILLS, buffs: BLM_BUFFS, castSkillId: "fire-3" },
+  ])(
+    "$job: 迅速魔バフ中の次の詠唱GCDは castTime=0 で発動し、消費後は通常詠唱に戻る",
+    ({ skills, buffs, castSkillId }) => {
+      const skillMap = new Map(skills.map((s) => [s.id, s]));
+      const swiftcastSkill = skills.find((s) => s.id === "swiftcast");
+      const castSpell = skills.find((s) => s.id === castSkillId);
+      const swiftcastBuff = buffs.find((b) => b.id === "swiftcast");
+
+      expect(swiftcastSkill).toBeDefined();
+      expect(castSpell).toBeDefined();
+      expect(castSpell!.castTime ?? 0).toBeGreaterThan(0);
+      expect(swiftcastBuff).toBeDefined();
+      expect(swiftcastBuff!.duration).toBe(10);
+      expect(swiftcastBuff!.effects.some((e) => e.type === "instantCast")).toBe(true);
+
+      const result = resolveTimeline(
+        [makeEntry("swiftcast"), makeEntry(castSkillId), makeEntry(castSkillId)],
+        skillMap,
+        [],
+        undefined,
+        buffs
+      );
+
+      // 1発目の詠唱GCDはInstant化
+      expect(result.entries[1].castTime).toBe(0);
+      // 消費後は通常詠唱に戻る（speedバフ等は付与していないので castTime はそのまま）
+      expect(result.entries[2].castTime).toBeCloseTo(castSpell!.castTime!, 3);
+      // 2発目時点で swiftcast バフは消費済み
+      expect(
+        result.entries[2].activeBuffs.some((ab) => ab.buffId === "swiftcast")
+      ).toBe(false);
+    }
+  );
 });

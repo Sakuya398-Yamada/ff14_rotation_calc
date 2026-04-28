@@ -28,6 +28,7 @@ import triplecastIcon from "../assets/icons/blm/Triplecast.png";
 import leyLinesIcon from "../assets/icons/blm/Ley_Lines.png";
 import transposeIcon from "../assets/icons/blm/Transpose.png";
 import amplifierIcon from "../assets/icons/blm/Amplifier.png";
+import swiftcastIcon from "../assets/icons/blm/role_actions/Swiftcast.png";
 
 /** GCDリキャスト（秒） */
 const GCD_RECAST = 2.5;
@@ -505,5 +506,18 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "polyglot", amount: 1 },
     ],
+  },
+  {
+    id: "swiftcast",
+    name: "迅速魔",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: swiftcastIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 60,
+    acquiredLevel: 18,
+    buffApplications: ["swiftcast"],
   },
 ];

@@ -2,6 +2,7 @@ import type { BuffDefinition } from "../types/skill";
 
 import presenceOfMindIcon from "../assets/icons/whm/Presence_of_Mind.png";
 import sacredSightIcon from "../assets/icons/whm/traits/Enhanced_Presence_of_Mind.png";
+import swiftcastIcon from "../assets/icons/whm/role_actions/Swiftcast.png";
 
 /**
  * 白魔道士（WHM）バフ定義
@@ -31,5 +32,15 @@ export const WHM_BUFFS: BuffDefinition[] = [
     color: "#ffcc00",
     maxStacks: 3,
     acquiredLevel: 92,
+  },
+  {
+    id: "swiftcast",
+    name: "迅速魔",
+    shortName: "迅速魔",
+    icon: swiftcastIcon,
+    duration: 10,
+    effects: [{ type: "instantCast", value: 0 }],
+    color: "#80deea",
+    acquiredLevel: 18,
   },
 ];

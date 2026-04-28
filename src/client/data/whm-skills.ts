@@ -17,6 +17,7 @@ import afflatus_solaceIcon from "../assets/icons/whm/Afflatus_Solace.png";
 import afflatus_raptureIcon from "../assets/icons/whm/Afflatus_Rapture.png";
 import assizeIcon from "../assets/icons/whm/Assize.png";
 import presenceOfMindIcon from "../assets/icons/whm/Presence_of_Mind.png";
+import swiftcastIcon from "../assets/icons/whm/role_actions/Swiftcast.png";
 
 /** GCDのデフォルトリキャストタイム（秒） */
 const GCD_RECAST = 2.5;
@@ -276,5 +277,18 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     cooldown: 120,
     acquiredLevel: 30,
     buffApplications: ["presence-of-mind", "sacred-sight"],
+  },
+  {
+    id: "swiftcast",
+    name: "迅速魔",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: swiftcastIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 60,
+    acquiredLevel: 18,
+    buffApplications: ["swiftcast"],
   },
 ];

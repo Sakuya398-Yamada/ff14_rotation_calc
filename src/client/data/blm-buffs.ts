@@ -7,6 +7,7 @@ import thunderIcon from "../assets/icons/blm/Thunder.png";
 import fire3Icon from "../assets/icons/blm/Fire_III.png";
 import leyLinesIcon from "../assets/icons/blm/Ley_Lines.png";
 import triplecastIcon from "../assets/icons/blm/Triplecast.png";
+import swiftcastIcon from "../assets/icons/blm/role_actions/Swiftcast.png";
 
 /**
  * 黒魔道士のバフ定義。
@@ -196,5 +197,15 @@ export const BLM_BUFFS: BuffDefinition[] = [
     ],
     color: "#ab47bc",
     acquiredLevel: 52,
+  },
+  {
+    id: "swiftcast",
+    name: "迅速魔",
+    shortName: "迅速魔",
+    icon: swiftcastIcon,
+    duration: 10,
+    effects: [{ type: "instantCast", value: 0 }],
+    color: "#80deea",
+    acquiredLevel: 18,
   },
 ];

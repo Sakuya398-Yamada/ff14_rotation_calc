@@ -28,6 +28,7 @@ import retributionOfTheMadeenIcon from "../assets/icons/pct/Retribution_of_the_M
 import strikingMuseIcon from "../assets/icons/pct/Striking_Muse.png";
 import subtractivePaletteIcon from "../assets/icons/pct/Subtractive_Palette.png";
 import starryMuseIcon from "../assets/icons/pct/Starry_Muse.png";
+import swiftcastIcon from "../assets/icons/pct/role_actions/Swiftcast.png";
 
 /** GCDリキャスト（秒） */
 const GCD_RECAST = 2.5;
@@ -519,5 +520,18 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { resourceId: "scape-canvas", amount: -1 },
     ],
     buffApplications: ["starry-muse", "installation", "star-prism-ready", "subtractive-ready"],
+  },
+  {
+    id: "swiftcast",
+    name: "迅速魔",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: swiftcastIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 60,
+    acquiredLevel: 18,
+    buffApplications: ["swiftcast"],
   },
 ];
