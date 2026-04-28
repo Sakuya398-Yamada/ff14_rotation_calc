@@ -239,6 +239,92 @@ describe("迅速魔（Swiftcast）統合スモークテスト", () => {
   );
 });
 
+describe("instantCast バフの appliesToSkillIds スコープ制限", () => {
+  it("appliesToSkillIds 指定時、対象スキル以外では消費・Instant 化されない", () => {
+    const scopedBuff: BuffDefinition = {
+      id: "scoped-instant",
+      name: "限定Instant",
+      shortName: "限",
+      icon: "",
+      duration: null,
+      effects: [{ type: "instantCast", value: 0, appliesToSkillIds: ["target-spell"] }],
+      color: "#ffab91",
+    };
+    const grant = makeSkill({ id: "grant", buffApplications: ["scoped-instant"] });
+    const otherSpell = makeSkill({ id: "other-spell", castTime: 2.5 });
+    const targetSpell = makeSkill({ id: "target-spell", castTime: 3.5 });
+    const skillMap = new Map([
+      [grant.id, grant],
+      [otherSpell.id, otherSpell],
+      [targetSpell.id, targetSpell],
+    ]);
+
+    const result = resolveTimeline(
+      [makeEntry("grant"), makeEntry("other-spell"), makeEntry("target-spell"), makeEntry("target-spell")],
+      skillMap,
+      [],
+      undefined,
+      [scopedBuff]
+    );
+
+    // 対象外スキル（other-spell）では Instant 化されず、バフも消費されない
+    expect(result.entries[1].castTime).toBeCloseTo(2.5, 3);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "scoped-instant")).toBe(true);
+
+    // 対象スキル（target-spell）では Instant 化され、バフが消費される
+    expect(result.entries[2].castTime).toBe(0);
+    expect(result.entries[2].activeBuffs.some((ab) => ab.buffId === "scoped-instant")).toBe(false);
+
+    // 消費後、次の対象スキルは通常詠唱に戻る
+    expect(result.entries[3].castTime).toBeCloseTo(3.5, 3);
+  });
+
+  it("BLM firestarter はファイガ（fire-3）のみを Instant 化し、ファイア（fire）では消費されない", () => {
+    const skillMap = new Map(BLM_ATTACK_SKILLS.map((s) => [s.id, s]));
+    const firestarterBuffDef = BLM_BUFFS.find((b) => b.id === "firestarter")!;
+    const fire = BLM_ATTACK_SKILLS.find((s) => s.id === "fire")!;
+    const fire3 = BLM_ATTACK_SKILLS.find((s) => s.id === "fire-3")!;
+
+    expect(firestarterBuffDef.effects[0]).toMatchObject({
+      type: "instantCast",
+      appliesToSkillIds: ["fire-3"],
+    });
+    expect(fire.castTime).toBeGreaterThan(0);
+    expect(fire3.castTime).toBeGreaterThan(0);
+
+    // パラドックス（AF 中に firestarter 付与）の前提条件を構築せず、テスト用 grant スキルで
+    // firestarter を直接付与する。fire-4 は requiredBuff: astral-fire-3 を持つためリソースエラーで
+    // 消費判定がスキップされ得るので、本テストでは fire / fire-3 のみで検証する。
+    const grant = makeSkill({ id: "test-grant-firestarter", buffApplications: ["firestarter"] });
+    const augmented = new Map(skillMap);
+    augmented.set(grant.id, grant);
+
+    const result = resolveTimeline(
+      [
+        makeEntry("test-grant-firestarter"),
+        makeEntry("fire"),
+        makeEntry("fire-3"),
+        makeEntry("fire-3"),
+      ],
+      augmented,
+      [],
+      undefined,
+      BLM_BUFFS
+    );
+
+    // ファイア（fire）は Instant 化されず、firestarter は残ったまま
+    expect(result.entries[1].castTime).toBeGreaterThan(0);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "firestarter")).toBe(true);
+
+    // ファイガ（fire-3）で初めて Instant 化されてバフが消費される
+    expect(result.entries[2].castTime).toBe(0);
+    expect(result.entries[2].activeBuffs.some((ab) => ab.buffId === "firestarter")).toBe(false);
+
+    // 消費後の 2 発目ファイガは通常詠唱に戻る
+    expect(result.entries[3].castTime).toBeGreaterThan(0);
+  });
+});
+
 describe("consumeOnGcd と instantCast を併せ持つバフ（消費ロジック統合）", () => {
   // 現状そのようなバフ定義は存在しないが、将来追加された際に同一バフが
   // 1 発で 2 回デクリメントされる構造的リスクを排除した #198 の回帰テスト。

@@ -106,15 +106,24 @@ function getSpeedMultiplier(
 
 /**
  * アクティブなバフに詠唱破棄（instantCast）効果を持つものが含まれるか判定する。
+ * targetSkillId が指定されている場合、appliesToSkillIds に
+ * 該当スキルIDが含まれないエフェクトは無視する（例: ファイアスターターはファイガ限定）。
  */
 function hasInstantCastBuff(
   activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  targetSkillId?: string
 ): boolean {
   for (const ab of activeBuffs) {
     const def = buffDefMap.get(ab.buffId);
     if (!def) continue;
-    if (def.effects.some((e) => e.type === "instantCast")) return true;
+    for (const effect of def.effects) {
+      if (effect.type !== "instantCast") continue;
+      if (effect.appliesToSkillIds && targetSkillId !== undefined) {
+        if (!effect.appliesToSkillIds.includes(targetSkillId)) continue;
+      }
+      return true;
+    }
   }
   return false;
 }
@@ -534,8 +543,9 @@ export function resolveTimeline(
       const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap);
       const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
       // instantCast バフがアクティブなら詠唱時間を 0 に上書きする（三連魔・ファイアスターター等）
+      // 対象スキル限定バフ（appliesToSkillIds）を正しくフィルタするため originalSkill.id を渡す
       const instantCast = originalSkill.castTime
-        ? hasInstantCastBuff(currentActiveBuffs, buffDefMap)
+        ? hasInstantCastBuff(currentActiveBuffs, buffDefMap, originalSkill.id)
         : false;
       resolvedCastTime = originalSkill.castTime && !instantCast
         ? Math.round(originalSkill.castTime * speedMul * 1000) / 1000
@@ -773,6 +783,7 @@ export function resolveTimeline(
     // （スキル実行中に新たに付与されたバフは消費対象外）
     // - consumeOnGcd: 全 GCD スキル実行後に消費
     // - instantCast: 詠唱時間 > 0 の GCD スキル実行後にのみ消費（非詠唱 GCD / oGCD では消費しない）
+    //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（例: firestarter は fire-3 限定）
     const consumeBuffTargets = new Set<string>();
     if (skill.type === "gcd") {
       const isCastingGcd = !!originalSkill.castTime && originalSkill.castTime > 0;
@@ -780,7 +791,11 @@ export function resolveTimeline(
         const def = buffDefMap.get(ab.buffId);
         if (!def) continue;
         const hasConsumeOnGcd = def.effects.some((e) => e.type === "consumeOnGcd");
-        const hasInstantCast = isCastingGcd && def.effects.some((e) => e.type === "instantCast");
+        const hasInstantCast = isCastingGcd && def.effects.some((e) => {
+          if (e.type !== "instantCast") return false;
+          if (e.appliesToSkillIds && !e.appliesToSkillIds.includes(originalSkill.id)) return false;
+          return true;
+        });
         if (hasConsumeOnGcd || hasInstantCast) {
           consumeBuffTargets.add(ab.buffId);
         }

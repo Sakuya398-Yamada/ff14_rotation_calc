@@ -164,8 +164,8 @@ export const BLM_BUFFS: BuffDefinition[] = [
     shortName: "ﾌｧｲｱ\nｽﾀｰﾀｰ",
     icon: fire3Icon,
     duration: null,
-    // 次のファイガ詠唱を Instant 化（実スキル側の補正は別途対応。本バフは詠唱時間 0 化のみ担う）
-    effects: [{ type: "instantCast", value: 0 }],
+    // 次のファイガ（fire-3）詠唱のみ Instant 化する。実機ではファイア・ファイジャ等は対象外
+    effects: [{ type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] }],
     color: "#ff7043",
     acquiredLevel: 2,
   },
