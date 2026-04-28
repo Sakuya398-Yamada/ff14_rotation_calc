@@ -129,8 +129,8 @@ describe("BLM: ポリグロット自動蓄積", () => {
   it("AF/UB 中は 30 秒ごとにポリグロットが 1 蓄積される", () => {
     // fire-3 で AF3 を付与し、以降 GCD を多数配置して 30 秒経過させる
     const entries: TimelineEntry[] = [entry("fire-3")];
-    // GCD 2.5s × 12 回 = 30 秒
-    for (let i = 0; i < 12; i++) {
+    // fire-3 cast 3.5s + fire-4 (cast 2.0s, GCD 2.5s) × 13 = 36 秒（30秒を確実に超える）
+    for (let i = 0; i < 13; i++) {
       entries.push(entry("fire-4"));
     }
     const result = resolveTimeline(

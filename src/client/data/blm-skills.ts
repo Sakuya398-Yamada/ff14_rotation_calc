@@ -73,7 +73,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: fireIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 2.5,
+    castTime: 2.0,
     acquiredLevel: 2,
     resourceChanges: [
       { resourceId: "mp", amount: -800 },
@@ -107,7 +107,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: fire4Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 2.8,
+    castTime: 2.0,
     acquiredLevel: 60,
     // AF3 中でのみ実用、AF1/AF2 でもゲーム上は使用可能
     requiredBuff: "astral-fire-3",
@@ -126,7 +126,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: despairIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 3.0,
     acquiredLevel: 72,
     // AF 中のみ使用可（AF3 へ直接引き上げる）
     requiredBuff: "astral-fire-3",
@@ -143,7 +142,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: flareStarIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 3.0,
+    castTime: 2.0,
     acquiredLevel: 100,
     // アストラルソウル 6 を消費
     resourceChanges: [
@@ -200,7 +199,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: blizzardIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 2.5,
+    castTime: 2.0,
     acquiredLevel: 1,
     resourceChanges: [
       // 通常ヒット時に MP 回復（UB 中はさらに多く回復すべきだが簡易化）
@@ -233,7 +232,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: blizzard4Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 2.5,
+    castTime: 2.0,
     acquiredLevel: 58,
     // UB 中のみ使用可
     requiredBuff: "umbral-ice-3",
@@ -289,7 +288,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: freezeIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 2.8,
+    castTime: 2.0,
     acquiredLevel: 40,
     resourceChanges: [
       { resourceId: "mp", amount: -1000 },
@@ -310,7 +309,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: paradoxIcon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    castTime: 2.5,
     acquiredLevel: 90,
     // パラドックスゲージを 1 消費
     resourceChanges: [
