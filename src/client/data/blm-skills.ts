@@ -171,7 +171,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "high-fire-2",
-    name: "ハイファイア",
+    name: "ハイファイラ",
     potency: 140,
     type: "gcd",
     target: "enemy",
