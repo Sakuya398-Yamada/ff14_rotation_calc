@@ -190,7 +190,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -209,6 +209,7 @@ export interface BuffEffect {
    * - stat: ステータス加算値
    * - resource: リソース変動量
    * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
+   * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
    */
   value: number;
   /** statバフの対象ステータスキー */

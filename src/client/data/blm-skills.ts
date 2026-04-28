@@ -584,6 +584,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "mp", amount: -800 }],
     buffApplications: ["astral-fire-3", "thunderhead"],
   },
+  // 注: ブリザド系の段階別 MP 回復（UB1: +2500, UB2: +5000, UB3: +10000）は
+  // UB バフの `resourceGainOnSkill` 効果で自動発動するため、隠しスキル側に MP 回復を持たせない。
   {
     id: "blizzard-up-ub2",
     name: "ブリザド (UB1→UB2)",
@@ -596,7 +598,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
-    resourceChanges: [{ resourceId: "mp", amount: 2500 }],
     buffApplications: ["umbral-ice-2", "thunderhead"],
   },
   {
@@ -611,7 +612,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
-    resourceChanges: [{ resourceId: "mp", amount: 5000 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
   },
   {
@@ -626,7 +626,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
-    resourceChanges: [{ resourceId: "mp", amount: 10000 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
   },
   {

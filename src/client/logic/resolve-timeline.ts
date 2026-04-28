@@ -501,6 +501,40 @@ function applyBuffResourceCostMultipliers(
 }
 
 /**
+ * アクティブバフの `resourceGainOnSkill` 効果に従って、スキル使用時のリソース獲得を追加する。
+ *
+ * 用途: BLM の UB1/UB2/UB3 中にブリザド系スキルを使用したときの段階別 MP 回復（+2500/+5000/+10000）。
+ * 判定はスキル実行前のバフ状態で行うため、`buffApplications` で当該スキル自身が UB バフを更新する前のタイミングで呼ばれる。
+ *
+ * 処理:
+ * - アクティブバフの effects から `resourceGainOnSkill` 型を抽出し、`appliesToSkillIds` で絞り込み
+ * - 該当した分の正の ResourceChange を末尾に追加して返す（既存 changes には触らない）
+ */
+function applyBuffResourceGainOnSkill(
+  changes: ResourceChange[],
+  skillId: string,
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): ResourceChange[] {
+  if (activeBuffs.length === 0) return changes;
+
+  const gains: ResourceChange[] = [];
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const eff of def.effects) {
+      if (eff.type !== "resourceGainOnSkill") continue;
+      if (!eff.resourceId) continue;
+      if (eff.appliesToSkillIds && !eff.appliesToSkillIds.includes(skillId)) continue;
+      gains.push({ resourceId: eff.resourceId, amount: eff.value });
+    }
+  }
+
+  if (gains.length === 0) return changes;
+  return [...changes, ...gains];
+}
+
+/**
  * 正の ResourceChange について、アクティブバフの redirectResourceGain に従って振替先リソースに書き換える。
  * 負の変動はそのまま返す。未登録の toResourceId へのリダイレクトは無視する（onExpireResourceTransfer と同様に安全側倒し）。
  */
@@ -723,7 +757,8 @@ export function resolveTimeline(
 
     // バフの resourceCostMultiplier 効果でリソース消費量を動的にスケールしたものを以降で使用する
     // （リソース不足判定・実適用の両方が同じ実効値を参照するように、ここで一度だけ計算する）
-    const effectiveResourceChanges = skill.resourceChanges
+    // さらに resourceGainOnSkill 効果（UB 段階別 MP 回復等）の正変動も同じタイミングで上乗せする
+    const baseResourceChanges = skill.resourceChanges
       ? applyBuffResourceCostMultipliers(
           skill.resourceChanges,
           skill.id,
@@ -732,6 +767,16 @@ export function resolveTimeline(
           buffDefMap
         )
       : undefined;
+    const gainsFromBuff = applyBuffResourceGainOnSkill(
+      [],
+      skill.id,
+      currentActiveBuffs,
+      buffDefMap
+    );
+    const effectiveResourceChanges =
+      gainsFromBuff.length > 0
+        ? [...(baseResourceChanges ?? []), ...gainsFromBuff]
+        : baseResourceChanges;
 
     // リソース不足チェック
     const resourceErrors: string[] = [];
