@@ -767,26 +767,22 @@ export function resolveTimeline(
       // state未登録 = 初回使用 → エラーなし
     }
 
-    // GCDスキル実行前に、consumeOnGcd対象のバフIDを記録しておく
+    // GCDスキル実行前に、消費対象（consumeOnGcd / instantCast）のバフIDを Set で収集する。
+    // 同一バフが両エフェクトを併せ持つ場合に 1 発で 2 回デクリメントされるリスクを排除するため、
+    // 和集合として 1 度だけ消費するように Set 化している。
     // （スキル実行中に新たに付与されたバフは消費対象外）
-    const consumeOnGcdTargets: string[] = [];
+    // - consumeOnGcd: 全 GCD スキル実行後に消費
+    // - instantCast: 詠唱時間 > 0 の GCD スキル実行後にのみ消費（非詠唱 GCD / oGCD では消費しない）
+    const consumeBuffTargets = new Set<string>();
     if (skill.type === "gcd") {
+      const isCastingGcd = !!originalSkill.castTime && originalSkill.castTime > 0;
       for (const ab of currentActiveBuffs) {
         const def = buffDefMap.get(ab.buffId);
-        if (def?.effects.some((e) => e.type === "consumeOnGcd")) {
-          consumeOnGcdTargets.push(ab.buffId);
-        }
-      }
-    }
-
-    // 詠唱時間を持つGCDスキル実行前に、instantCast対象のバフIDを記録しておく
-    // （非詠唱GCD・oGCDでは消費しない。スキル実行中に新たに付与されたバフも消費対象外）
-    const instantCastTargets: string[] = [];
-    if (skill.type === "gcd" && originalSkill.castTime && originalSkill.castTime > 0) {
-      for (const ab of currentActiveBuffs) {
-        const def = buffDefMap.get(ab.buffId);
-        if (def?.effects.some((e) => e.type === "instantCast")) {
-          instantCastTargets.push(ab.buffId);
+        if (!def) continue;
+        const hasConsumeOnGcd = def.effects.some((e) => e.type === "consumeOnGcd");
+        const hasInstantCast = isCastingGcd && def.effects.some((e) => e.type === "instantCast");
+        if (hasConsumeOnGcd || hasInstantCast) {
+          consumeBuffTargets.add(ab.buffId);
         }
       }
     }
@@ -1087,29 +1083,13 @@ export function resolveTimeline(
       consumeGuaranteedDhBuffs(currentActiveBuffs, buffDefMap, consumedByBuffConsumptions);
     }
 
-    // GCDスキル実行後、スキル実行前にアクティブだったconsumeOnGcdバフを消費（竜眼等）
-    // スキル実行中に新規付与されたバフは消費しない
-    if (!hasError && consumeOnGcdTargets.length > 0) {
-      for (const buffId of consumeOnGcdTargets) {
-        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
-        if (idx >= 0) {
-          const ab = currentActiveBuffs[idx];
-          if (ab.stacks !== undefined) {
-            ab.stacks = Math.max(0, ab.stacks - 1);
-            if (ab.stacks === 0) {
-              currentActiveBuffs.splice(idx, 1);
-            }
-          } else {
-            currentActiveBuffs.splice(idx, 1);
-          }
-        }
-      }
-    }
-
-    // 詠唱GCD実行後、スキル実行前にアクティブだったinstantCastバフを消費（三連魔・ファイアスターター等）
-    // スキル実行中に新規付与されたバフは消費しない
-    if (!hasError && instantCastTargets.length > 0) {
-      for (const buffId of instantCastTargets) {
+    // GCDスキル実行後、スキル実行前にアクティブだった消費対象バフを 1 ループで消費する。
+    // - consumeOnGcd: 竜眼等（全 GCD で消費）
+    // - instantCast: 三連魔・ファイアスターター等（詠唱 GCD でのみ消費）
+    // 同一バフが両エフェクトを併せ持っても収集側で Set 化済みのため二重消費は起きない。
+    // スキル実行中に新規付与されたバフは消費しない（収集を実行前に済ませているため）。
+    if (!hasError && consumeBuffTargets.size > 0) {
+      for (const buffId of consumeBuffTargets) {
         const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
         if (idx >= 0) {
           const ab = currentActiveBuffs[idx];

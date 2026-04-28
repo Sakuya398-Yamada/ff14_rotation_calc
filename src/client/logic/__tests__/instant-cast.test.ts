@@ -238,3 +238,90 @@ describe("迅速魔（Swiftcast）統合スモークテスト", () => {
     }
   );
 });
+
+describe("consumeOnGcd と instantCast を併せ持つバフ（消費ロジック統合）", () => {
+  // 現状そのようなバフ定義は存在しないが、将来追加された際に同一バフが
+  // 1 発で 2 回デクリメントされる構造的リスクを排除した #198 の回帰テスト。
+  it("両エフェクトを持つスタック式バフは詠唱GCD 1発でスタックが1だけ減る（二重消費しない）", () => {
+    const dualBuff: BuffDefinition = {
+      id: "dual-effect-test",
+      name: "両効果バフ",
+      shortName: "両",
+      icon: "",
+      duration: null,
+      maxStacks: 2,
+      effects: [
+        { type: "instantCast", value: 0 },
+        { type: "consumeOnGcd", value: 0 },
+      ],
+      color: "#90caf9",
+    };
+    const grant = makeSkill({ id: "grant", buffApplications: ["dual-effect-test"] });
+    const castSpell = makeSkill({ id: "cast-spell", castTime: 2.8 });
+    const skillMap = new Map([[grant.id, grant], [castSpell.id, castSpell]]);
+
+    const result = resolveTimeline(
+      [
+        makeEntry("grant"),
+        makeEntry("cast-spell"),
+        makeEntry("cast-spell"),
+        makeEntry("cast-spell"),
+      ],
+      skillMap,
+      [],
+      undefined,
+      [dualBuff]
+    );
+
+    // ActiveBuff オブジェクトはエントリ間で参照を共有するため stacks の数値比較は
+    // 安定しない。配列への含有／除外（splice の有無）でスタックの段階消費を検証する。
+    // 二重消費が起きていれば 1 発目で stacks=0 になり splice されて entries[1] から消失する。
+
+    // 1発目 cast-spell 後: dualBuff はまだ存在する（stacks 2→1。二重消費していない）
+    expect(
+      result.entries[1].activeBuffs.some((ab) => ab.buffId === "dual-effect-test")
+    ).toBe(true);
+
+    // 2発目 cast-spell 後: stacks 1→0 で splice され消失
+    expect(
+      result.entries[2].activeBuffs.some((ab) => ab.buffId === "dual-effect-test")
+    ).toBe(false);
+
+    // 1〜2発目は instantCast で詠唱破棄、3発目はバフ失効後で通常詠唱
+    expect(result.entries[1].castTime).toBe(0);
+    expect(result.entries[2].castTime).toBe(0);
+    expect(result.entries[3].castTime).toBeCloseTo(2.8, 3);
+  });
+
+  it("両エフェクトを持つ単発バフは詠唱GCD 1発で消費される（重複削除エラーなし）", () => {
+    const dualSingleBuff: BuffDefinition = {
+      id: "dual-single-test",
+      name: "両効果単発バフ",
+      shortName: "両単",
+      icon: "",
+      duration: null,
+      effects: [
+        { type: "instantCast", value: 0 },
+        { type: "consumeOnGcd", value: 0 },
+      ],
+      color: "#a5d6a7",
+    };
+    const grant = makeSkill({ id: "grant", buffApplications: ["dual-single-test"] });
+    const castSpell = makeSkill({ id: "cast-spell", castTime: 2.8 });
+    const skillMap = new Map([[grant.id, grant], [castSpell.id, castSpell]]);
+
+    const result = resolveTimeline(
+      [makeEntry("grant"), makeEntry("cast-spell"), makeEntry("cast-spell")],
+      skillMap,
+      [],
+      undefined,
+      [dualSingleBuff]
+    );
+
+    // 1発目で消費されてバフ消失（2回 splice しようとしてもエラーにならない）
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "dual-single-test")).toBe(false);
+    // 1発目は instantCast 適用、2発目はバフ失効で通常詠唱
+    expect(result.entries[1].castTime).toBe(0);
+    expect(result.entries[2].castTime).toBeCloseTo(2.8, 3);
+  });
+});
