@@ -147,7 +147,7 @@ describe("BLM: ポリグロット自動蓄積", () => {
 });
 
 describe("BLM: マナフォント", () => {
-  it("マナフォントは MP 全回復 + AF3 + アンブラルハート3 + ファイアスターター + サンダーヘッドを付与する", () => {
+  it("マナフォントは MP 全回復 + AF3 + アンブラルハート3 + パラドックス + サンダーヘッドを付与する（ファイアスターターは付与しない）", () => {
     // 先に fire-3 で MP を消費 → manafont で回復
     const result = resolveTimeline(
       [entry("fire-3"), entry("manafont")],
@@ -164,7 +164,7 @@ describe("BLM: マナフォント", () => {
     expect(manafontEntry.resourceSnapshot["umbral-heart"]).toBe(3);
     expect(manafontEntry.resourceSnapshot["paradox-gauge"]).toBe(1);
     expect(manafontEntry.activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
-    expect(manafontEntry.activeBuffs.some((ab) => ab.buffId === "firestarter")).toBe(true);
+    expect(manafontEntry.activeBuffs.some((ab) => ab.buffId === "firestarter")).toBe(false);
     expect(manafontEntry.activeBuffs.some((ab) => ab.buffId === "thunderhead")).toBe(true);
   });
 });
