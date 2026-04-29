@@ -55,8 +55,8 @@ export function SkillPalette({
   selectedJob,
   onJobChange,
 }: SkillPaletteProps) {
-  const gcdSkills = skills.filter((s) => s.type === "gcd");
-  const ogcdSkills = skills.filter((s) => s.type === "ogcd");
+  const gcdSkills = skills.filter((s) => s.type === "gcd" && !s.hidden);
+  const ogcdSkills = skills.filter((s) => s.type === "ogcd" && !s.hidden);
 
   const handleDragStart = (e: React.DragEvent, skill: Skill) => {
     e.dataTransfer.setData("application/skill-id", skill.id);

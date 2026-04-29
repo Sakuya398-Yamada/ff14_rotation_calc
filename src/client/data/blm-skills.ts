@@ -78,8 +78,14 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "mp", amount: -800 },
     ],
-    // AF1 付与（初回）。後続では AF2/3 を使う方が自然だが、現行は簡易実装
+    // 通常時（AF外/UB外）または UB 中（exclusiveGroup により UB が解除されて AF1 となる）に AF1 を付与
     buffApplications: ["astral-fire-1", "thunderhead"],
+    // AF 中は段階を進める。AF3 中は維持
+    autoTransform: [
+      { buffId: "astral-fire-3", skillId: "fire-stay-af3" },
+      { buffId: "astral-fire-2", skillId: "fire-up-af3" },
+      { buffId: "astral-fire-1", skillId: "fire-up-af2" },
+    ],
   },
   {
     id: "fire-3",
@@ -201,11 +207,14 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.0,
     acquiredLevel: 1,
-    resourceChanges: [
-      // 通常ヒット時に MP 回復（UB 中はさらに多く回復すべきだが簡易化）
-      { resourceId: "mp", amount: 400 },
-    ],
+    // UB外/AF中→UB1 付与時は MP 回復なし（UB 段階遷移時の回復は隠しスキル側で表現）
     buffApplications: ["umbral-ice-1", "thunderhead"],
+    // UB 中は段階を進めつつヒット時 MP を回復する（隠しスキルに委譲）。UB3 中は維持＋全回復
+    autoTransform: [
+      { buffId: "umbral-ice-3", skillId: "blizzard-stay-ub3" },
+      { buffId: "umbral-ice-2", skillId: "blizzard-up-ub3" },
+      { buffId: "umbral-ice-1", skillId: "blizzard-up-ub2" },
+    ],
   },
   {
     id: "blizzard-3",
@@ -483,10 +492,17 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 5,
     acquiredLevel: 4,
-    // AF と UB の状態を単純に「反転」させる。AF が一切無ければ UB1、UB が無ければ AF1 を付与
-    // という実機挙動の近似として、UB1 を付与してサンダーヘッドを更新する
-    // （スキル回し的には切替目的で使用され、精密計算上の威力影響は軽微）
+    // 無極性時の簡易フォールバック（実機では無極性時は何も起きないが、現行ツールの簡易挙動を維持）
     buffApplications: ["umbral-ice-1", "thunderhead"],
+    // AF 中は UB1 へ、UB 中は AF1 へ切替
+    autoTransform: [
+      { buffId: "astral-fire-3", skillId: "transpose-to-ub1" },
+      { buffId: "astral-fire-2", skillId: "transpose-to-ub1" },
+      { buffId: "astral-fire-1", skillId: "transpose-to-ub1" },
+      { buffId: "umbral-ice-3", skillId: "transpose-to-af1" },
+      { buffId: "umbral-ice-2", skillId: "transpose-to-af1" },
+      { buffId: "umbral-ice-1", skillId: "transpose-to-af1" },
+    ],
   },
   {
     id: "amplifier",
@@ -517,5 +533,127 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     cooldown: 60,
     acquiredLevel: 18,
     buffApplications: ["swiftcast"],
+  },
+
+  // ============================================================
+  // 隠しスキル: AF/UB 段階進行（fire/blizzard/transpose の autoTransform 先）
+  // UI 非表示。元スキルから威力・コスト・キャストを引き継ぎ、付与バフのみが異なる
+  // ============================================================
+  {
+    id: "fire-up-af2",
+    name: "ファイア (AF1→AF2)",
+    potency: 180,
+    type: "gcd",
+    target: "enemy",
+    icon: fireIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    castTime: 2.0,
+    acquiredLevel: 2,
+    hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -800 }],
+    buffApplications: ["astral-fire-2", "thunderhead"],
+  },
+  {
+    id: "fire-up-af3",
+    name: "ファイア (AF2→AF3)",
+    potency: 180,
+    type: "gcd",
+    target: "enemy",
+    icon: fireIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    castTime: 2.0,
+    acquiredLevel: 2,
+    hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -800 }],
+    buffApplications: ["astral-fire-3", "thunderhead"],
+  },
+  {
+    id: "fire-stay-af3",
+    name: "ファイア (AF3 維持)",
+    potency: 180,
+    type: "gcd",
+    target: "enemy",
+    icon: fireIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    castTime: 2.0,
+    acquiredLevel: 2,
+    hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -800 }],
+    buffApplications: ["astral-fire-3", "thunderhead"],
+  },
+  // 注: ブリザド系の段階別 MP 回復（UB1: +2500, UB2: +5000, UB3: +10000）は
+  // UB バフの `resourceGainOnSkill` 効果で自動発動するため、隠しスキル側に MP 回復を持たせない。
+  {
+    id: "blizzard-up-ub2",
+    name: "ブリザド (UB1→UB2)",
+    potency: 180,
+    type: "gcd",
+    target: "enemy",
+    icon: blizzardIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    castTime: 2.0,
+    acquiredLevel: 1,
+    hidden: true,
+    buffApplications: ["umbral-ice-2", "thunderhead"],
+  },
+  {
+    id: "blizzard-up-ub3",
+    name: "ブリザド (UB2→UB3)",
+    potency: 180,
+    type: "gcd",
+    target: "enemy",
+    icon: blizzardIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    castTime: 2.0,
+    acquiredLevel: 1,
+    hidden: true,
+    buffApplications: ["umbral-ice-3", "thunderhead"],
+  },
+  {
+    id: "blizzard-stay-ub3",
+    name: "ブリザド (UB3 維持)",
+    potency: 180,
+    type: "gcd",
+    target: "enemy",
+    icon: blizzardIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    castTime: 2.0,
+    acquiredLevel: 1,
+    hidden: true,
+    buffApplications: ["umbral-ice-3", "thunderhead"],
+  },
+  {
+    id: "transpose-to-ub1",
+    name: "トランス (AF→UB1)",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: transposeIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 5,
+    acquiredLevel: 4,
+    hidden: true,
+    buffApplications: ["umbral-ice-1", "thunderhead"],
+  },
+  {
+    id: "transpose-to-af1",
+    name: "トランス (UB→AF1)",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: transposeIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 5,
+    acquiredLevel: 4,
+    hidden: true,
+    buffApplications: ["astral-fire-1", "thunderhead"],
   },
 ];
