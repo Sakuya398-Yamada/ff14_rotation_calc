@@ -437,13 +437,13 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 100,
     acquiredLevel: 30,
-    // MP 全回復 + AF3 + アンブラルハート 3 + ファイアスターター付与（7.2 仕様）
+    // MP 全回復 + AF3 + アンブラルハート 3 + パラドックス + サンダーヘッド付与（7.2 仕様）
     resourceChanges: [
       { resourceId: "mp", amount: 10000 },
       { resourceId: "umbral-heart", amount: 3 },
       { resourceId: "paradox-gauge", amount: 1 },
     ],
-    buffApplications: ["astral-fire-3", "firestarter", "thunderhead"],
+    buffApplications: ["astral-fire-3", "thunderhead"],
   },
   {
     id: "triplecast",
