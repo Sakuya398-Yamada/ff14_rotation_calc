@@ -223,3 +223,41 @@ Claude Desktop セッションで `ToolSearch` に `mcp__playwright__browser_nav
 - `.mcp.json` の playwright エントリが `--browser msedge` を指しているか
 - `@playwright/mcp` が `npx` で取得可能か（ネットワーク到達性、`npx clear-npx-cache` 後に再試行）
 - Claude Desktop を完全終了→再起動（タスクトレイから Quit）して `.mcp.json` を再読み込み
+
+---
+
+## MCP サーバー（GitHub MCP による Issue/PR 操作）
+
+リポジトリルートの `.mcp.json` に GitHub MCP（[`github/github-mcp-server`](https://github.com/github/github-mcp-server)、Go バイナリ）を登録しており、Claude Desktop セッションから Issue / PR の取得・作成・コメント・ラベル付与等を直接操作できます。
+
+### 構成
+
+`.mcp.json` の github エントリ：
+
+```jsonc
+"github": {
+  "command": "github-mcp-server",
+  "args": ["stdio"],
+  "env": {
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+  }
+}
+```
+
+`@modelcontextprotocol/server-github`（npm 版）は archived のため使いません。
+
+### 初回セットアップ
+
+1. **バイナリのインストール**: [Releases](https://github.com/github/github-mcp-server/releases) から `github-mcp-server_Windows_x86_64.zip` をダウンロードし、任意の永続フォルダ（例: `C:\Tools\github-mcp-server\`）に解凍。解凍先を **ユーザー環境変数 `Path`** に追加
+2. **PAT の発行**: GitHub の Settings → Developer settings → Personal access tokens (classic) で発行。最小スコープは `repo` / `read:org`
+3. **環境変数の設定**: PowerShell（管理者権限不要）で：
+   ```powershell
+   [Environment]::SetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN", "ghp_your_actual_token_here", "User")
+   ```
+4. **Claude Desktop を完全終了 → 再起動**（タスクトレイから Quit）
+
+詳細手順とトラブルシューティングは `.claude/rules/mcp-setup.md` を参照してください。
+
+### 接続確認
+
+Claude Desktop セッションで `ToolSearch` に `mcp__github__add_issue_comment` 等を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は `mcp-setup.md` のトラブルシューティング表を参照してください。
