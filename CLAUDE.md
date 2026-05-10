@@ -36,6 +36,8 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 
 `/issue-start` の各Phase詳細は `.claude/skills/issue-start/SKILL.md` 参照。
 
+精度向上のためのチェック項目（Issue 本文乖離検出 / スコープ乖離判定 / 系統スキル網羅性 / 系統横断ユニットテスト）は対応する `.claude/skills/issue-start/phases/*.md` 内のチェック節を参照（Issue #231 で導入）。
+
 ### スコープ外問題の取り扱い
 
 `/issue-start` 実行中（Phase 3/5/6）にスコープ外の問題を検出した場合は、以下のいずれかに当てはまるものだけを起票候補として扱う：

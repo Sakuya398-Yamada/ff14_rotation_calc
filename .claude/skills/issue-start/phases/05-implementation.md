@@ -19,6 +19,29 @@
 - 1コミット = 1テーマを目安に、レビューしやすく分割する
 - WIPコミットは避け、各コミットがビルド可能・テスト通過する状態を保つ
 
+## 系統横断ユニットテストガイド
+
+UI 視覚検証 (Playwright MCP) では「個別スキルが期待通り動くか」は確認できるが、**系統全体に同じ仕様を適用したつもりが一部スキルだけ反応しない** タイプのバグは検出が難しい。Phase 4 で系統網羅性を要した設計の場合（`phases/04-design.md` 「必須チェック項目」参照）、ここで対応するユニットテストを必ず書く。
+
+テスト記述パターン:
+
+```ts
+import { test, expect } from "vitest";
+
+const BLIZZARD_FAMILY = ["blizzard", "blizzara", "blizzaga", "blizzaja"] as const;
+
+test.each(BLIZZARD_FAMILY)("UB 中の %s で MP が回復する", (skillId) => {
+  const result = simulateCast(skillId, { ubLevel: 3 });
+  expect(result.mpDelta).toBeGreaterThan(0);
+});
+```
+
+ポイント:
+
+- **`test.each` で系統スキル ID を回し、期待挙動を共通アサート** にする。新スキル追加時にも `BLIZZARD_FAMILY` に 1 行足すだけで自動的にテスト対象になる
+- 既存テストファイル（例: `src/client/logic/__tests__/blm-af-ub.test.ts`）に同パターンが既にあれば踏襲する
+- UI 検証は別途 Phase 6 で実施するが、系統横断バグの **一次防御線はユニットテスト**
+
 ## スコープ外問題の記録と末尾提案
 
 実装中に当該Issueのスコープ外の問題（周辺コードのバグ／仕様乖離／技術負債等）に遭遇した場合は **その場で直さず、メモとして記録するだけに留める**。1 Issue = 1 PR 原則を守り、実装フローを分断しないため。
