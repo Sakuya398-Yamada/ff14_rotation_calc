@@ -40,6 +40,9 @@ articles/
 # Prisma
 generated/
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 
 # Fankit raw downloads
 FFXIVIcons*/
