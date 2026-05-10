@@ -657,3 +657,39 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["astral-fire-1", "thunderhead"],
   },
 ];
+
+// ============================================================
+// AF/UB バフ効果の対象スキル ID 群
+// ============================================================
+// blm-buffs.ts の AF/UB バフが potency 倍率・MP 消費倍率・
+// MP 回復対象を判定する際に参照する。隠しスキル（fire-up-af2 等）も
+// autoTransform 経由で実行されるため対象に含める。
+// 新スキルや段階進行用の隠しスキルを追加した際は、ここを更新するだけで
+// blm-buffs.ts の AF/UB 効果が自動追従する。
+
+/** AF（アストラルファイア）効果の対象となるファイア系スキル ID 群 */
+export const BLM_FIRE_FAMILY_IDS = [
+  "fire",
+  "fire-2",
+  "fire-3",
+  "fire-4",
+  "high-fire-2",
+  "despair",
+  "flare-star",
+  "fire-up-af2",
+  "fire-up-af3",
+  "fire-stay-af3",
+];
+
+/** UB（アンブラルブリザード）効果の対象となるブリザド系スキル ID 群 */
+export const BLM_BLIZZARD_FAMILY_IDS = [
+  "blizzard",
+  "blizzard-2",
+  "blizzard-3",
+  "blizzard-4",
+  "high-blizzard-2",
+  "freeze",
+  "blizzard-up-ub2",
+  "blizzard-up-ub3",
+  "blizzard-stay-ub3",
+];
