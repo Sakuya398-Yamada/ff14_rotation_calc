@@ -12,7 +12,7 @@
 set -euo pipefail
 
 input=$(cat)
-command=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+command=$(printf '%s' "$input" | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));process.stdout.write(d?.tool_input?.command||"")')
 
 # Match: git checkout -b <branch>  or  git switch -c <branch>
 branch=""
