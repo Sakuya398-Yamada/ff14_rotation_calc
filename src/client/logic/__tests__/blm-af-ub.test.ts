@@ -356,7 +356,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
-  it("UB1 中の AOE ブリザド系（ブリザラ）も UB バフの MP 回復が発動する", () => {
+  it("UB1 中の AOE ブリザド系（ブリザラ）は UB バフの MP 回復 +2500 が発動する", () => {
     const result = resolveTimeline(
       [entry("fire-3"), entry("despair"), entry("transpose"), entry("blizzard-2")],
       skillMap,
@@ -365,11 +365,99 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
       BLM_BUFFS,
     );
     // entries[2] = UB1, MP 0 / entries[3] = blizzard-2（UB1 中→ UB3 直接付与、resourceGainOnSkill +2500）
-    // blizzard-2 は元定義に MP +400（旧簡易実装）、UB1 の resourceCostMultiplier ×0 は正の変動には作用しないので残る
     const before = result.entries[2].resourceSnapshot["mp"];
     const after = result.entries[3].resourceSnapshot["mp"];
-    expect(after - before).toBe(400 + 2500);
+    expect(after - before).toBe(2500);
     expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB2 中のブリザラは UB バフの MP 回復 +5000 が発動する", () => {
+    // fire-3 → despair で MP を 0 にしてから transpose → blizzard で UB2 へ進める
+    const result = resolveTimeline(
+      [
+        entry("fire-3"),
+        entry("despair"),
+        entry("transpose"),
+        entry("blizzard"),
+        entry("blizzard-2"),
+      ],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    // entries[3] = blizzard で UB1→UB2、MP +2500（=2500）
+    // entries[4] = blizzard-2 で UB2 中→ UB3 直接付与、resourceGainOnSkill +5000
+    const before = result.entries[3].resourceSnapshot["mp"];
+    const after = result.entries[4].resourceSnapshot["mp"];
+    expect(after - before).toBe(5000);
+    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB3 中のブリザラは UB バフの MP 回復 +10000 が発動する（上限キャップ）", () => {
+    // blizzard-3 で UB3 を直接付与してから blizzard-2 を撃つ
+    const result = resolveTimeline(
+      [entry("blizzard-3"), entry("blizzard-2")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[0].resourceSnapshot["mp"];
+    const after = result.entries[1].resourceSnapshot["mp"];
+    // resourceGainOnSkill +10000 が適用されるが、MP 上限 10000 にキャップ
+    expect(before).toBeLessThan(10000);
+    expect(after).toBe(10000);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB1 中のハイブリザラは UB バフの MP 回復 +2500 が発動する", () => {
+    const result = resolveTimeline(
+      [entry("fire-3"), entry("despair"), entry("transpose"), entry("high-blizzard-2")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[2].resourceSnapshot["mp"];
+    const after = result.entries[3].resourceSnapshot["mp"];
+    expect(after - before).toBe(2500);
+    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB2 中のハイブリザラは UB バフの MP 回復 +5000 が発動する", () => {
+    const result = resolveTimeline(
+      [
+        entry("fire-3"),
+        entry("despair"),
+        entry("transpose"),
+        entry("blizzard"),
+        entry("high-blizzard-2"),
+      ],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[3].resourceSnapshot["mp"];
+    const after = result.entries[4].resourceSnapshot["mp"];
+    expect(after - before).toBe(5000);
+    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+  });
+
+  it("UB3 中のハイブリザラは UB バフの MP 回復 +10000 が発動する（上限キャップ）", () => {
+    const result = resolveTimeline(
+      [entry("blizzard-3"), entry("high-blizzard-2")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const before = result.entries[0].resourceSnapshot["mp"];
+    const after = result.entries[1].resourceSnapshot["mp"];
+    expect(before).toBeLessThan(10000);
+    expect(after).toBe(10000);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 });
 
