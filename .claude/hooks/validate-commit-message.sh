@@ -21,13 +21,26 @@ if [[ "$command" =~ --amend ]]; then
   exit 0
 fi
 
-# Extract message: try -m "..." then -m '...' then heredoc payload
+# Extract message. Priority order matters:
+#   1) HEREDOC payload — checked FIRST because the recommended Bash recipe is
+#      `git commit -m "$(cat <<'EOF' ... EOF)"`. The `-m "..."` regex below
+#      would otherwise match the entire `$(cat <<'EOF'\n...\nEOF\n)` body and
+#      treat `$(cat <<'EOF'` as the subject line (false positive block).
+#   2) -m "<simple>" double-quoted message
+#   3) -m '<simple>' single-quoted message
+#
+# HEREDOC body capture limit: bash POSIX ERE `.` does not match newlines,
+# so the original `(.*)` could only capture single-line bodies. Since this
+# hook only validates the FIRST line (subject), capturing `[^${NL}]+` (the
+# very first body line right after `<<EOF\n`) is sufficient and correct
+# regardless of body length.
+NL=$'\n'
 msg=""
-if [[ "$command" =~ -m[[:space:]]+\"([^\"]+)\" ]]; then
+if [[ "$command" =~ \<\<-?[\'\"]?EOF[\'\"]?[[:space:]]*${NL}([^${NL}]+) ]]; then
+  msg="${BASH_REMATCH[1]}"
+elif [[ "$command" =~ -m[[:space:]]+\"([^\"]+)\" ]]; then
   msg="${BASH_REMATCH[1]}"
 elif [[ "$command" =~ -m[[:space:]]+\'([^\']+)\' ]]; then
-  msg="${BASH_REMATCH[1]}"
-elif [[ "$command" =~ \<\<[\'\"]?EOF[\'\"]?[[:space:]]*$'\n'(.*)$'\n'[[:space:]]*EOF ]]; then
   msg="${BASH_REMATCH[1]}"
 fi
 
