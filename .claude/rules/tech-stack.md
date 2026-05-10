@@ -16,11 +16,13 @@
 | テスト配信 | Cloudflare Pages（Git連携） | Pages 自身が repo を監視しフロントエンドを自動ビルド＆配信（プロジェクト名: `ff14-rotation-calc`、トークン不要） |
 | 本番デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare（CDN/DNS層） |
 | UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッション (Claude Desktop) から `browser_navigate` 等でフロントエンド操作・スクリーンショット取得。Windows 標準の Microsoft Edge を使用（リポジトリ直下 `.mcp.json` に `--browser msedge` で登録） |
+| Issue/PR操作 | GitHub MCP (`github/github-mcp-server` Go バイナリ) | Issue / PR の取得・作成・コメント・ラベル付与等を Claude Code セッションから直接操作。リポジトリ直下 `.mcp.json` に stdio 登録。PAT は OS ユーザー環境変数 `GITHUB_PERSONAL_ACCESS_TOKEN` から `${...}` 展開（詳細は `.claude/rules/mcp-setup.md`） |
 
 ## 開発環境
 
 - **Windows 11 ローカル開発** を前提とする
 - 必要ツール: Node.js (v22 以上推奨, CIは v22)、npm、git、Microsoft Edge（Playwright MCP 用、Windows 11 標準）
+- 任意ツール: `github-mcp-server` バイナリ（GitHub MCP 用、`.claude/rules/mcp-setup.md` にインストール手順）、`gh` CLI（MCP 未設定時のフォールバック）
 - ネイティブモジュール (better-sqlite3 等) は基本 prebuilt バイナリで導入されるため、Visual Studio Build Tools は通常不要。フォールバック時のみ必要
 - DB は SQLite ファイル (`dev.db`) をリポジトリ直下に配置（gitignore 済み）
 

@@ -9,8 +9,9 @@
 |---------|------|----------------|------|
 | `playwright` | stdio | なし | UI 視覚検証（`.claude/rules/playwright-mcp.md` 参照） |
 | `brave-search` | stdio | `BRAVE_API_KEY` | FF14 公式ジョブガイド等の外部情報検索 |
+| `github` | stdio | `GITHUB_PERSONAL_ACCESS_TOKEN` | Issue / PR の取得・作成・コメント・ラベル付与等の GitHub 操作 |
 
-GitHub / context7 MCP はプロジェクト `.mcp.json` では管理せず、Claude Code ホスト側（グローバル）で設定されている。
+context7 MCP は本リポジトリでは未登録。必要になった時点で `.mcp.json` に追加する。
 
 ## 環境変数による API キー注入
 
@@ -61,6 +62,49 @@ PowerShell（一般ユーザー権限）でユーザー環境変数として永�
 [Environment]::SetEnvironmentVariable("BRAVE_API_KEY", $null, "User")
 ```
 
+## GitHub MCP の取得と設定
+
+GitHub MCP は GitHub 公式の Go バイナリ [`github/github-mcp-server`](https://github.com/github/github-mcp-server) を `.mcp.json` から stdio で起動する。npm パッケージ `@modelcontextprotocol/server-github` は archived のため使わない。
+
+### 1. バイナリのインストール（Windows 11）
+
+1. [Releases](https://github.com/github/github-mcp-server/releases) から `github-mcp-server_Windows_x86_64.zip` をダウンロード（v1.0.3 以降を推奨）
+2. 任意の永続フォルダに解凍する（例: `C:\Tools\github-mcp-server\`）
+3. 解凍先フォルダを **ユーザー環境変数 `Path`** に追加（PowerShell・管理者権限不要）：
+
+   ```powershell
+   $tool = "C:\Tools\github-mcp-server"
+   $current = [Environment]::GetEnvironmentVariable("Path", "User")
+   if ($current -notlike "*$tool*") {
+     [Environment]::SetEnvironmentVariable("Path", "$current;$tool", "User")
+   }
+   ```
+
+4. **新しい PowerShell を開いて** `github-mcp-server --version` で動作確認
+
+PATH に追加せず `.mcp.json` でフルパス指定したい場合は、`"command": "C:\\Tools\\github-mcp-server\\github-mcp-server.exe"` に書き換えてもよい（ただしマシンごとに差が出るので非推奨）。
+
+### 2. PAT の取得と設定
+
+1. GitHub の [Settings → Developer settings → Personal access tokens (classic)](https://github.com/settings/tokens) で PAT を発行
+2. **必要スコープ**:
+   - `repo`（プライベートリポジトリのIssue/PR操作）
+   - `read:org`（組織情報の読み取り）
+   - `gist`（必要に応じて）
+3. PowerShell でユーザー環境変数として永続的に設定：
+
+   ```powershell
+   [Environment]::SetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN", "ghp_your_actual_token_here", "User")
+   ```
+
+4. **Claude Desktop を完全終了 → 再起動**（タスクトレイから Quit）。再起動後の新セッションで `ToolSearch select:mcp__github__add_issue_comment` 等でツール取得確認
+
+削除する場合：
+
+```powershell
+[Environment]::SetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN", $null, "User")
+```
+
 ## 接続状態の確認
 
 セッション開始後、以下で確認する：
@@ -80,6 +124,7 @@ MCP は**補助的な手段**。接続エラー・未設定時はフロー全体
 |---------|----------------|
 | `brave-search` | `WebSearch` 組み込みツール、またはユーザーに手動検索を依頼 |
 | `playwright` | UI 動作確認はユーザーに依頼。その旨を完了報告に明記 |
+| `github` | `gh.exe` のフルパス起動 (`/c/Program Files/GitHub CLI/gh.exe`) を Bash 経由で利用。Issue/PR 取得は `gh issue view` / `gh pr view`、コメント投稿は `gh issue comment --body-file <tmpfile>`、PR 作成は `gh pr create`。公開リポジトリの読み取りのみなら `WebFetch` でも代用可（コメント投稿は不可）|
 
 ## トラブルシューティング
 
@@ -88,4 +133,6 @@ MCP は**補助的な手段**。接続エラー・未設定時はフロー全体
 | `brave_web_search` が `ToolSearch` で見つからない | `BRAVE_API_KEY` 未設定 or stdio 起動失敗 | 環境変数設定 → セッション再起動 |
 | `${BRAVE_API_KEY}` が展開されずそのまま渡っている | 古い Claude Code バージョン | Claude Code を更新 |
 | `/mcp` で `brave-search` が `failed` | npx キャッシュ破損 or ネットワーク | `npx clear-npx-cache` 後、セッション再起動 |
-| stdio サーバー（Playwright/Brave）が途中で切断 | セッション長時間放置 | `.claude/rules/playwright-mcp.md` の「切断時の再接続手順」参照 |
+| stdio サーバー（Playwright/Brave/GitHub）が途中で切断 | セッション長時間放置 | `.claude/rules/playwright-mcp.md` の「切断時の再接続手順」参照（共通） |
+| `mcp__github__*` ツールが `ToolSearch` で見つからない | `GITHUB_PERSONAL_ACCESS_TOKEN` 未設定、`github-mcp-server` バイナリが PATH に無い、PAT スコープ不足のいずれか | 上記「GitHub MCP の取得と設定」を実施 → Claude Desktop 再起動 |
+| `github-mcp-server` 実行時に `401 Unauthorized` | PAT が無効 or スコープ不足 | PAT を再発行し `repo` / `read:org` を付与 → 環境変数を再設定 → Claude Desktop 再起動 |
