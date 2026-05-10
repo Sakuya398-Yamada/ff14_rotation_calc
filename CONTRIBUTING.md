@@ -76,31 +76,47 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 
 ## ローカル開発
 
-WSL上の **開発コンテナ（Dev Container）** で開発します。コンテナ内に Node.js、SQLite等の依存がすべて含まれるため、ローカル環境への個別インストールは不要です。
+**Windows 11 ローカル**で開発します。
 
-```bash
-# 開発コンテナ内で実行
+### 必要ツール
 
+| ツール | バージョン目安 | 備考 |
+|--------|---------------|------|
+| Node.js | v22 以上推奨（CIは v22） | `node --version` で確認 |
+| npm | Node 同梱 | `npm --version` |
+| git | 任意の新しめ | コミット規約は hook で検証 |
+| Microsoft Edge | Windows 11 標準 | Playwright MCP の UI 検証用 |
+| Visual Studio Build Tools | 通常不要 | better-sqlite3 等のネイティブモジュールが prebuilt 失敗時のみ |
+| GitHub CLI (`gh`) | 推奨 | Issue/PR 操作。`winget install GitHub.cli` |
+
+### 初回セットアップ
+
+```powershell
 # 依存インストール
 npm install
 
-# Prismaクライアント生成
+# .env を作成（DATABASE_URL を Prisma に渡すため）
+"DATABASE_URL=`"file:./dev.db`"" | Out-File -FilePath .env -Encoding utf8
+
+# Prisma クライアント生成
 npm run db:generate
 
-# DBマイグレーション適用
+# DB マイグレーション適用（dev.db が無ければ作成される）
 npm run db:migrate
-
-# バックエンドサーバー起動（port 3000）
-npm run dev
-
-# フロントエンド開発サーバー起動（port 5173）
-npm run dev:client
-
-# テスト実行
-npm test
 ```
 
-> **Note**: 開発時はバックエンド (`npm run dev`) とフロントエンド (`npm run dev:client`) を別ターミナルで同時に起動してください。Vite開発サーバーは `/api/*` への要求をバックエンド (port 3000) にプロキシします。
+> **Note (Prisma drift)**: `prisma/schema.prisma` にモデル未定義のため `npm run db:migrate` の最後で「新マイグレーション名」を聞かれることがあります。Ctrl+C で抜けて構いません（既存マイグレーションは適用済み）。再適用だけしたい時は `npx prisma migrate deploy` が安全。
+
+### 日常開発コマンド
+
+```powershell
+npm run dev          # Hono バックエンド (port 3000)
+npm run dev:client   # Vite フロントエンド (port 5173)
+npm test             # Vitest 一括実行
+npm run test:watch   # Vitest watch モード
+```
+
+> **Note**: 開発時はバックエンド (`npm run dev`) とフロントエンド (`npm run dev:client`) を別 PowerShell タブで同時に起動してください。Vite 開発サーバーは `/api/*` への要求をバックエンド (port 3000) にプロキシします。
 
 ---
 
@@ -166,51 +182,44 @@ npm test
 
 ## MCP サーバー（Playwright による UI 視覚検証）
 
-リポジトリルートの `.mcp.json` に Playwright MCP (`@playwright/mcp`) を登録しており、Claude Code セッションから `browser_navigate` / `browser_snapshot` / `browser_click` 等のツールでフロントエンドの UI を操作・キャプチャできます。
+リポジトリルートの `.mcp.json` に Playwright MCP (`@playwright/mcp`) を登録しており、Claude Desktop セッションから `browser_navigate` / `browser_snapshot` / `browser_click` 等のツールでフロントエンドの UI を操作・キャプチャできます。
 
-### 初回セットアップ
+### 構成
 
-`@playwright/mcp@latest` は `--browser` 引数で `chrome | firefox | webkit | msedge` のみを受け付け、旧 `chromium` 指定は廃止されています。本プロジェクトの `.mcp.json` では `--executable-path` を使って、DevContainer にプリインストールされている Playwright 公式 Chromium を直接指す構成になっています。
+`.mcp.json` の playwright エントリ（抜粋）：
 
 ```jsonc
-// .mcp.json（抜粋）
 "args": [
   "-y",
   "@playwright/mcp@latest",
-  "--executable-path",
-  "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+  "--browser",
+  "msedge"
 ]
 ```
 
-DevContainer 内では事前に以下が満たされている前提です：
+Windows 11 標準の **Microsoft Edge** を使用します。`@playwright/mcp@latest` の `--browser` は `chrome | firefox | webkit | msedge` のみを受け付け、旧 `chromium` 指定は廃止されています。
 
-- 環境変数 `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` が設定されている
-- `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` が存在する（Playwright 公式 Chromium）
+### 初回セットアップ
 
-上記が無い／バージョンが異なる環境では、以下のいずれかで配備します：
+特別なブラウザ配備は不要です。Windows 11 に Microsoft Edge がインストールされていれば（標準で入っています）追加ダウンロードなしで動作します。
 
-```bash
-# 開発コンテナ内で1回だけ実行（PLAYWRIGHT_BROWSERS_PATH 設定下で）
-npx playwright install chromium
-```
-
-> Dev Container を新規ビルドした場合は再度実行が必要です。インストール後に `.mcp.json` の `--executable-path` が実在するバイナリを指しているかを確認してください（バージョンディレクトリ名が変わる場合があります）。
+`@playwright/mcp` 自体は `npx -y` で都度取得されるため、明示的なグローバルインストールも不要です（初回 npx 実行時にキャッシュされます）。
 
 ### 利用フロー
 
-1. 別ターミナルでフロントエンドを起動：
-   ```bash
+1. 別 PowerShell タブでフロントエンドを起動：
+   ```powershell
    npm run dev:client
    ```
-2. Claude Code セッションから MCP ツールを呼び出す（例）：
+2. Claude Desktop セッションから MCP ツールを呼び出す（例）：
    - `browser_navigate` で `http://localhost:5173` を開く
    - `browser_snapshot` でアクセシビリティツリー／スクリーンショットを取得
    - `browser_click` でスキルボタン等を操作
 
 ### 接続確認
 
-Claude Code セッションで `ToolSearch` に `playwright` や `browser_navigate` を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は以下を確認してください：
+Claude Desktop セッションで `ToolSearch` に `mcp__playwright__browser_navigate` を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は以下を確認してください：
 
-- `.mcp.json` の `--executable-path` が実在するバイナリを指しているか
-- `@playwright/mcp` が `npx` で取得可能か
-- `browser_navigate` 実行時に `Browser "chrome-for-testing" is not installed` が出る場合、`--executable-path` が効いていない（古い設定で MCP サーバーが起動している）可能性があるためセッション再起動を試みる
+- `.mcp.json` の playwright エントリが `--browser msedge` を指しているか
+- `@playwright/mcp` が `npx` で取得可能か（ネットワーク到達性、`npx clear-npx-cache` 後に再試行）
+- Claude Desktop を完全終了→再起動（タスクトレイから Quit）して `.mcp.json` を再読み込み

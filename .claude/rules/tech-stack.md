@@ -15,12 +15,14 @@
 | CI | GitHub Actions | `.github/workflows/ci.yml`（型チェック・テスト・ビルド検証） |
 | テスト配信 | Cloudflare Pages（Git連携） | Pages 自身が repo を監視しフロントエンドを自動ビルド＆配信（プロジェクト名: `ff14-rotation-calc`、トークン不要） |
 | 本番デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare（CDN/DNS層） |
-| UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッションから `browser_navigate` 等でフロントエンド操作・スクリーンショット取得（リポジトリ直下 `.mcp.json` に登録） |
+| UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッション (Claude Desktop) から `browser_navigate` 等でフロントエンド操作・スクリーンショット取得。Windows 標準の Microsoft Edge を使用（リポジトリ直下 `.mcp.json` に `--browser msedge` で登録） |
 
 ## 開発環境
 
-- WSL（Windows Subsystem for Linux）上に **開発コンテナ（Dev Container）** を作成して開発する
-- コンテナ内に Node.js、SQLite等の依存をすべて閉じ込め、環境差異を排除する
+- **Windows 11 ローカル開発** を前提とする
+- 必要ツール: Node.js (v22 以上推奨, CIは v22)、npm、git、Microsoft Edge（Playwright MCP 用、Windows 11 標準）
+- ネイティブモジュール (better-sqlite3 等) は基本 prebuilt バイナリで導入されるため、Visual Studio Build Tools は通常不要。フォールバック時のみ必要
+- DB は SQLite ファイル (`dev.db`) をリポジトリ直下に配置（gitignore 済み）
 
 ## インフラ構成（本番）
 

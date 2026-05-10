@@ -3,6 +3,8 @@
 このファイルは `CLAUDE.md` から `@.claude/rules/playwright-mcp.md` でインポートされる。
 **Claude が UI/フロントエンド変更時に自前で動作確認するためのランブック** であり、人間向けは `CONTRIBUTING.md` を参照。
 
+開発環境は **Windows 11 ローカル + Microsoft Edge** を前提とする（`.mcp.json` は `--browser msedge`）。
+
 ## いつ使うか
 
 - React コンポーネントやページ（`src/client/**`）を追加・変更したとき
@@ -22,10 +24,10 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
    必要なツールをカンマ区切りで指定。一度ロードされればセッション中は使い回せる。
 
 2. **Vite dev サーバーを別プロセスで起動**:
-   ```bash
+   ```powershell
    npm run dev:client   # run_in_background: true
    ```
-   `VITE vX.Y.Z  ready in ...ms` のログを待ってから次へ。
+   `VITE vX.Y.Z  ready in ...ms` のログを待ってから次へ。デフォルトは `http://localhost:5173/` だが、ポート競合時は 5174 等にフォールバックされるためログで実 URL を確認する。
 
 ## 典型フロー
 
@@ -39,6 +41,8 @@ browser_type      ref=...  text=...
   ↓
 browser_snapshot                          # 変化後の状態を再取得して検証
 browser_take_screenshot                   # 必要なら画像も保存
+  ↓
+browser_close                             # 検証終わりに必ず閉じる
 ```
 
 `click`/`type`/`hover` 等はセレクタではなく **snapshot で得た ref を使う**。ref なしで呼ぶとエラー。
@@ -47,10 +51,11 @@ browser_take_screenshot                   # 必要なら画像も保存
 
 | 症状 | 原因 | 対処 |
 |------|------|------|
-| `Browser "chrome-for-testing" is not installed` | `.mcp.json` の `--executable-path` が欠落し、`@playwright/mcp@latest` が `chrome-for-testing` にフォールバックしている（旧 `--browser chromium` は廃止済み） | `.mcp.json` に `--executable-path /opt/pw-browsers/chromium-1194/chrome-linux/chrome` が入っているか確認 → Claude Code セッションを再起動 |
+| `Failed to launch ... executable doesn't exist at /opt/...` | `.mcp.json` が古い Linux パス前提のまま | `.mcp.json` の playwright 引数が `--browser msedge` になっているか確認。違う場合は修正して Claude Desktop 再起動 |
+| `Browser "chrome-for-testing" is not installed` | `--browser` 引数が欠落し、`@playwright/mcp@latest` がデフォルトの chrome-for-testing にフォールバックしている | `.mcp.json` に `--browser msedge` が入っているか確認 → Claude Desktop 再起動 |
 | `InputValidationError` / ツールが呼べない | ToolSearch 未実行でスキーマが未ロード | `ToolSearch select:<tool_name>` で先にロード |
-| `browser_navigate` でタイムアウト／接続拒否 | Vite が起動していない・ポート違い | `npm run dev:client` のログで `http://localhost:5173/` を確認 |
-| `--executable-path` で指定したパスに Chromium が無い | `/opt/pw-browsers/chromium-1194` 未配備（新規 DevContainer 直後など） | 環境側で `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` のもと `npx playwright install chromium` を実行して `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` を用意 |
+| `browser_navigate` でタイムアウト／接続拒否 | Vite が起動していない・ポート違い | `npm run dev:client` のログで実 URL（5173 or 5174）を確認 |
+| `msedge` が見つからない／起動しない | システム Edge がアンインストールされている／プロファイル破損 | Edge を再インストール、または `--browser chrome` に切り替え（Chrome がインストールされている場合） |
 | 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
 
 ## 切断時の再接続手順（Claude 向け）
@@ -61,18 +66,15 @@ Playwright MCP は stdio サーバーのため、HTTP/SSE サーバーと違っ�
 
 UI 検証を始めようとして切断を検知したら、**自己判断で復旧を試みる → だめならユーザーに具体的な指示を返す**。
 
-1. **まず `/mcp` 相当の状態確認をユーザーに依頼**:
-   ```
-   Playwright MCP が切断されています。`/mcp` を実行して playwright サーバーの状態を確認し、`failed` 表示なら画面の指示で Retry してください。
-   ```
-   `/mcp` はスラッシュコマンドなので Claude からは直接実行できない。ユーザー操作が必要。
+Claude Desktop 環境では `/mcp` スラッシュコマンドが UI 上で確認できないことがある。その場合は以下の段階で復旧を依頼する：
 
-2. **Retry でも戻らない／`/mcp` が使えない環境の場合**: セッション再起動を依頼
+1. **まず Claude Desktop 全体の再起動を依頼**:
    ```
-   セッションを再起動してください（CLI なら exit → 再入、Web なら新規セッション）。再起動後、.mcp.json が再読み込みされて playwright が再接続されます。
+   Playwright MCP が切断されています。タスクトレイの Claude アイコンを右クリックして Quit → 再起動してください。
+   ウィンドウを閉じるだけだとプロセスが残るため、必ず Quit を選んでください。
    ```
 
-3. **再接続後の初期化**: スキーマを再ロードする必要がある
+2. **再起動後の初期化**: スキーマを再ロードする必要がある
    ```
    ToolSearch query: "select:mcp__playwright__browser_navigate,mcp__playwright__browser_snapshot,mcp__playwright__browser_click"
    ```
@@ -86,8 +88,10 @@ UI 検証を始めようとして切断を検知したら、**自己判断で復
 
 `browser_snapshot` / `browser_take_screenshot` 等は `.playwright-mcp/` にログ・YAML・画像を自動生成する。`.gitignore` 済みなのでコミットしないこと。
 
+検証用に手動でルート直下に保存したスクリーンショット（例: `setup-verify.png`）も、検証完了後は削除すること。リポジトリに残さない。
+
 ## 参考
 
-- MCP 登録: リポジトリ直下 `.mcp.json`（`--executable-path /opt/pw-browsers/chromium-1194/chrome-linux/chrome` 必須。`@playwright/mcp@latest` では `--browser chromium` が廃止されているため `--executable-path` でプリインストール済み Chromium を直接指す）
-- 前提環境: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` が設定され、同パス配下に Playwright 公式 Chromium（`chromium-1194/chrome-linux/chrome`）が配備されていること
+- MCP 登録: リポジトリ直下 `.mcp.json`（`--browser msedge` 指定。Windows 11 標準の Microsoft Edge を直接利用するため、追加の Chromium ダウンロードや `npx playwright install` は不要）
+- 前提環境: Windows 11 + Microsoft Edge（システム標準）
 - 人間向けセットアップ: `CONTRIBUTING.md` 「MCP サーバー（Playwright による UI 視覚検証）」
