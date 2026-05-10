@@ -1,4 +1,5 @@
 import type { BuffDefinition } from "../types/skill";
+import { BLM_FIRE_FAMILY_IDS, BLM_BLIZZARD_FAMILY_IDS } from "./blm-skills";
 
 // === バフアイコン ===
 import fireIcon from "../assets/icons/blm/Fire.png";
@@ -24,32 +25,6 @@ import swiftcastIcon from "../assets/icons/blm/role_actions/Swiftcast.png";
  *    正確な値は実機検証で必要に応じて調整する。
  */
 
-// === AF/UB で対象となるスキルID群 ===
-// 隠しスキル（fire-up-af2 等）も autoTransform 経由で実行されるため対象に含める
-const FIRE_SKILL_IDS = [
-  "fire",
-  "fire-2",
-  "fire-3",
-  "fire-4",
-  "high-fire-2",
-  "despair",
-  "flare-star",
-  "fire-up-af2",
-  "fire-up-af3",
-  "fire-stay-af3",
-];
-const BLIZZARD_SKILL_IDS = [
-  "blizzard",
-  "blizzard-2",
-  "blizzard-3",
-  "blizzard-4",
-  "high-blizzard-2",
-  "freeze",
-  "blizzard-up-ub2",
-  "blizzard-up-ub3",
-  "blizzard-stay-ub3",
-];
-
 /** エノキアン倍率（Lv86 特性、AF/UB 中常時）。Lv100 想定の近似値 */
 const ENOCHIAN_MULTIPLIER = 1.23;
 
@@ -68,14 +43,14 @@ export const BLM_BUFFS: BuffDefinition[] = [
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
     effects: [
-      { type: "potency", value: 1.4, appliesToSkillIds: FIRE_SKILL_IDS },
-      { type: "potency", value: 0.9, appliesToSkillIds: BLIZZARD_SKILL_IDS },
+      { type: "potency", value: 1.4, appliesToSkillIds: BLM_FIRE_FAMILY_IDS },
+      { type: "potency", value: 0.9, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
       {
         type: "resourceCostMultiplier",
         value: 2,
         resourceId: "mp",
-        appliesToSkillIds: FIRE_SKILL_IDS,
+        appliesToSkillIds: BLM_FIRE_FAMILY_IDS,
         negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
       },
     ],
@@ -90,14 +65,14 @@ export const BLM_BUFFS: BuffDefinition[] = [
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
     effects: [
-      { type: "potency", value: 1.6, appliesToSkillIds: FIRE_SKILL_IDS },
-      { type: "potency", value: 0.8, appliesToSkillIds: BLIZZARD_SKILL_IDS },
+      { type: "potency", value: 1.6, appliesToSkillIds: BLM_FIRE_FAMILY_IDS },
+      { type: "potency", value: 0.8, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
       {
         type: "resourceCostMultiplier",
         value: 2,
         resourceId: "mp",
-        appliesToSkillIds: FIRE_SKILL_IDS,
+        appliesToSkillIds: BLM_FIRE_FAMILY_IDS,
         negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
       },
     ],
@@ -112,14 +87,14 @@ export const BLM_BUFFS: BuffDefinition[] = [
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
     effects: [
-      { type: "potency", value: 1.8, appliesToSkillIds: FIRE_SKILL_IDS },
-      { type: "potency", value: 0.7, appliesToSkillIds: BLIZZARD_SKILL_IDS },
+      { type: "potency", value: 1.8, appliesToSkillIds: BLM_FIRE_FAMILY_IDS },
+      { type: "potency", value: 0.7, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
       {
         type: "resourceCostMultiplier",
         value: 2,
         resourceId: "mp",
-        appliesToSkillIds: FIRE_SKILL_IDS,
+        appliesToSkillIds: BLM_FIRE_FAMILY_IDS,
         negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
       },
     ],
@@ -140,11 +115,11 @@ export const BLM_BUFFS: BuffDefinition[] = [
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
     effects: [
-      { type: "potency", value: 0.9, appliesToSkillIds: FIRE_SKILL_IDS },
+      { type: "potency", value: 0.9, appliesToSkillIds: BLM_FIRE_FAMILY_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
-      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLIZZARD_SKILL_IDS },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
       // UB1 中にブリザド系を撃つと命中時に MP +2500（実行前バフで判定）
-      { type: "resourceGainOnSkill", resourceId: "mp", value: 2500, appliesToSkillIds: BLIZZARD_SKILL_IDS },
+      { type: "resourceGainOnSkill", resourceId: "mp", value: 2500, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
     ],
     color: "#42a5f5",
     acquiredLevel: 1,
@@ -157,10 +132,10 @@ export const BLM_BUFFS: BuffDefinition[] = [
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
     effects: [
-      { type: "potency", value: 0.8, appliesToSkillIds: FIRE_SKILL_IDS },
+      { type: "potency", value: 0.8, appliesToSkillIds: BLM_FIRE_FAMILY_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
-      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLIZZARD_SKILL_IDS },
-      { type: "resourceGainOnSkill", resourceId: "mp", value: 5000, appliesToSkillIds: BLIZZARD_SKILL_IDS },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
+      { type: "resourceGainOnSkill", resourceId: "mp", value: 5000, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
     ],
     color: "#1e88e5",
     acquiredLevel: 1,
@@ -173,10 +148,10 @@ export const BLM_BUFFS: BuffDefinition[] = [
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
     effects: [
-      { type: "potency", value: 0.7, appliesToSkillIds: FIRE_SKILL_IDS },
+      { type: "potency", value: 0.7, appliesToSkillIds: BLM_FIRE_FAMILY_IDS },
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
-      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLIZZARD_SKILL_IDS },
-      { type: "resourceGainOnSkill", resourceId: "mp", value: 10000, appliesToSkillIds: BLIZZARD_SKILL_IDS },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
+      { type: "resourceGainOnSkill", resourceId: "mp", value: 10000, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
     ],
     color: "#1565c0",
     acquiredLevel: 1,

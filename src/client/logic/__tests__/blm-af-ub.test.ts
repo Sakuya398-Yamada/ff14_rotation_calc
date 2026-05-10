@@ -351,7 +351,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     );
     const before = result.entries[0].resourceSnapshot["mp"];
     const after = result.entries[1].resourceSnapshot["mp"];
-    // ブリザガは BLIZZARD_SKILL_IDS で AF の倍率対象外、UB バフ非アクティブのため回復もなし
+    // ブリザガは BLM_BLIZZARD_FAMILY_IDS で AF の倍率対象外、UB バフ非アクティブのため回復もなし
     expect(after - before).toBe(-800);
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
@@ -511,7 +511,7 @@ describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
       undefined,
       BLM_BUFFS,
     );
-    // fire-3 は通常通り MP -2000 消費（UB の倍率は BLIZZARD_SKILL_IDS のみに適用）
+    // fire-3 は通常通り MP -2000 消費（UB の倍率は BLM_BLIZZARD_FAMILY_IDS のみに適用）
     expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000 - 2000);
   });
 
