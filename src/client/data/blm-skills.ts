@@ -493,7 +493,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     cooldown: 5,
     acquiredLevel: 4,
     // 無極性時の簡易フォールバック（実機では無極性時は何も起きないが、現行ツールの簡易挙動を維持）
-    buffApplications: ["umbral-ice-1", "thunderhead"],
+    // 実機ではトランスでサンダーヘッドは付与されない（ファイア／ブリザド系命中時のみ付与）
+    buffApplications: ["umbral-ice-1"],
     // AF 中は UB1 へ、UB 中は AF1 へ切替
     autoTransform: [
       { buffId: "astral-fire-3", skillId: "transpose-to-ub1" },
@@ -640,7 +641,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     cooldown: 5,
     acquiredLevel: 4,
     hidden: true,
-    buffApplications: ["umbral-ice-1", "thunderhead"],
+    buffApplications: ["umbral-ice-1"],
   },
   {
     id: "transpose-to-af1",
@@ -654,6 +655,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     cooldown: 5,
     acquiredLevel: 4,
     hidden: true,
-    buffApplications: ["astral-fire-1", "thunderhead"],
+    buffApplications: ["astral-fire-1"],
   },
 ];
