@@ -27,7 +27,7 @@ fail=0
 run_case() {
   local name="$1" expected="$2" command="$3"
   local payload exit_code
-  payload=$(jq -n --arg cmd "$command" '{tool_input:{command:$cmd}}')
+  payload=$(printf '%s' "$command" | node -e 'const c=require("fs").readFileSync(0,"utf8");process.stdout.write(JSON.stringify({tool_input:{command:c}}))')
   set +e
   CLAUDE_PROJECT_DIR=/nonexistent bash "$HOOK" >/dev/null 2>&1 <<<"$payload"
   exit_code=$?
