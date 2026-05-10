@@ -2,6 +2,40 @@
 
 Issueの内容を十分に把握してから実装に入ることが重要。曖昧なまま進めると手戻りが大きくなるため、ここで確実に情報を揃える。
 
+## 0. 作業環境チェック（Phase 1 着手前）
+
+セッション開始時の SessionStart hook 出力を必ず確認する。`## ⚠ Ghost worktree detected` が含まれていたら、**亡霊 worktree モード** で作業する（後述）。出力されていない場合でも、自分で確認したいときは以下のコマンドで判定できる。
+
+```bash
+pwd
+git rev-parse --show-toplevel
+git worktree list
+```
+
+判定マトリクス：
+
+| pwd の状態 | 扱い |
+|---|---|
+| `git rev-parse --show-toplevel` と一致 | **メインリポ作業**: 通常通り |
+| `git worktree list` の登録 worktree と一致 | **真の worktree 作業**: 通常通り |
+| `.claude/worktrees/<name>/` 配下なのに **登録 worktree でない** | **亡霊 worktree モード**: 以降のすべての Edit/Write/bash 相対パスをメインリポ絶対パス基準に切り替える |
+
+### 亡霊 worktree モードでの作業ガイド
+
+亡霊 worktree (`.claude/worktrees/<name>/` ディレクトリは残っているが `git worktree` には未登録の状態) は `.gitignore` 配下のため、その配下に書き込んだ Edit/Write は `git status` に出ず **無音で消える**。さらに bash 相対パスは pwd（亡霊側）基準で解決されるので、メインリポ側に書いた tmp ファイル等が辿れない事故が起きる。
+
+このため：
+
+- **`Edit` / `Write` の `file_path` は常にメインリポ絶対パスで指定する**
+  - 例: `D:\ドキュメント_D\for_claude\ff14-dev\RotationCalc\src\client\...`
+  - `worktrees/<name>/` をパスに含めない
+- **`Bash` での相対パスを避け、絶対パスを使う**
+  - 例: `gh ... --body-file "D:/ドキュメント_D/for_claude/ff14-dev/RotationCalc/.claude/tmp-foo.md"`
+- **`git` 操作は `git -C "<main repo absolute path>" <subcommand>` 形式を常用する**
+  - pwd に依存した暗黙の解決を避ける
+
+SessionStart hook が亡霊を検出したら警告セクションを出力する。警告がある時は迷わず上記モードに切り替えること（推測でメインリポ側か worktree 側か悩む必要はない）。
+
 ## 手順
 
 1. GitHub MCPの `issue_read`（method: `get`）でIssueの本文・ラベルを取得し、`issue_read`（method: `get_comments`）でコメントも取得する
