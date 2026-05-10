@@ -36,23 +36,30 @@ Claude Code は `.mcp.json` 読み込み時に `${BRAVE_API_KEY}` を OS 環境�
 2. アカウント登録し、無料プラン（Free: 月2,000クエリ、1 req/sec）を選択
 3. ダッシュボードから API キーを発行
 
-### 2. 設定場所（環境別）
+### 2. 設定（Windows / Claude Desktop）
 
-#### ローカル CLI（Dev Container 内）
+PowerShell（一般ユーザー権限）でユーザー環境変数として永続的に設定する：
 
-`~/.bashrc` または `~/.zshrc` に追記：
-
-```bash
-export BRAVE_API_KEY="BSA..."
+```powershell
+[Environment]::SetEnvironmentVariable("BRAVE_API_KEY", "BSA_your_actual_key_here", "User")
 ```
 
-追記後は新しいシェルを開くか `source ~/.bashrc` で反映。Dev Container を再ビルドした場合は再設定が必要（または Dev Container の `containerEnv` / `remoteEnv` に入れて永続化）。
+スコープ補足：
+- `"User"` … ユーザーホーム配下に永続化（管理者権限不要）
+- `"Machine"` … システム全体（管理者権限が必要）
+- `"Process"` … 現在のシェルだけ（再起動で消える）
 
-#### Claude Code on the web
+設定後の反映手順：
 
-Web セッションは都度新規環境のため、ホスト側（Claude Code for Web のプロジェクト／ワークスペース設定）で `BRAVE_API_KEY` を環境変数として登録する。詳細は Claude Code on the web の UI で「Environment variables」または「Secrets」セクションを参照。
+1. **新しい PowerShell を開いて** `[Environment]::GetEnvironmentVariable("BRAVE_API_KEY","User")` で設定値を確認
+2. **Claude Desktop を完全終了 → 再起動**（タスクトレイから Quit）。Claude Desktop は起動時に環境変数を読み込むため、再起動しないと既存プロセスは古い env のまま
+3. 再起動後の新セッションで `ToolSearch select:mcp__brave-search__brave_web_search` でツール取得確認
 
-設定後はセッションを再起動して `.mcp.json` の再読み込みを促す。
+削除する場合：
+
+```powershell
+[Environment]::SetEnvironmentVariable("BRAVE_API_KEY", $null, "User")
+```
 
 ## 接続状態の確認
 
