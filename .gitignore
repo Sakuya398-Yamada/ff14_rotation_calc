@@ -29,6 +29,9 @@ npm-debug.log*
 # Playwright MCP runtime output
 .playwright-mcp/
 
+# Claude Code runtime tmp files (vite logs, issue payloads, patch files etc.)
+.claude/tmp-*
+
 # Environment
 .env
 .env.local
