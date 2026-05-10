@@ -1,5 +1,16 @@
 # Phase 7: PR作成
 
+## 事前チェックリスト（push 前）
+
+push 前に以下を確認する。1つでも該当する場合は対応してから次のステップへ進む。
+
+- [ ] `git status --short` を実行し、`.claude/tmp-*` などの一時ファイルが staging / untracked に含まれていない
+  - 含まれている場合: `.gitignore` 側でカバーされているか確認し、必要なら `.gitignore` を修正してから `git rm --cached <path>` で取り除く
+- [ ] `git log origin/main..HEAD --stat` でこのブランチのコミットに無関係な変更（生成物・ログ・他Issueの修正等）が混入していない
+  - 混入している場合: `git reset --soft <correct-base>` で巻き戻して staging を整理し直す
+
+## 手順
+
 1. リモートにブランチをプッシュする：
 
    ```bash
