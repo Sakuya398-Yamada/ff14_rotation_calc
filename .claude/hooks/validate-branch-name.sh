@@ -14,6 +14,16 @@ set -euo pipefail
 input=$(cat)
 command=$(printf '%s' "$input" | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));process.stdout.write(d?.tool_input?.command||"")')
 
+# Skip git commit invocations entirely. Branch-name validation only applies to
+# branch-creation commands (`git checkout -b` / `git switch -c`). When a commit
+# message body contains the string `git checkout -b foo` (e.g. when documenting
+# hook behavior), the regex below would otherwise match `foo` as a branch name
+# and block the commit. Commit messages are validated separately by
+# validate-commit-message.sh.
+if [[ "$command" =~ git[[:space:]]+commit ]]; then
+  exit 0
+fi
+
 # Match: git checkout -b <branch>  or  git switch -c <branch>
 branch=""
 if [[ "$command" =~ git[[:space:]]+checkout[[:space:]]+-b[[:space:]]+([^[:space:]\;\&\|]+) ]]; then
