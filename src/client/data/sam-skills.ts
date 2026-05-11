@@ -129,6 +129,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     // 月光: コンボ成立時威力 370 + 背面ボーナス 50 = 420（方向指定成功前提）
+    // コンボ成立時に風月バフを付与（実機: 陣風→月光で duration リフレッシュ。明鏡止水で
+    // 陣風をスキップして直接月光を撃った場合も風月が付与される）
     id: "gekko",
     name: "月光",
     potency: 420,
@@ -140,6 +142,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 30,
     comboFrom: ["jinpu"],
+    comboBuffApplications: ["fugetsu"],
     comboResourceChanges: [
       { resourceId: "getsu", amount: 1 },
       { resourceId: "kenki", amount: 10 },
@@ -147,6 +150,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     // 花車: コンボ成立時威力 370 + 側面ボーナス 50 = 420（方向指定成功前提）
+    // コンボ成立時に風花バフを付与（月光と同様の理由）
     id: "kasha",
     name: "花車",
     potency: 420,
@@ -158,6 +162,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 40,
     comboFrom: ["shifu"],
+    comboBuffApplications: ["fuka"],
     comboResourceChanges: [
       { resourceId: "ka", amount: 1 },
       { resourceId: "kenki", amount: 10 },

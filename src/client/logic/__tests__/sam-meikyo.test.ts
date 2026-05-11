@@ -47,6 +47,25 @@ describe("侍: 明鏡止水（bypassCombo + consumeOnGcd）", () => {
     expect(result.entries[1].resolvedPotency).toBe(420);
     // 月閃も付与される
     expect(result.entries[1].resourceSnapshot.getsu).toBe(1);
+    // 陣風をスキップしても月光のコンボ成立で風月バフが付与される（実機準拠）
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(true);
+  });
+
+  it("明鏡止水中: 花車単独でも風花バフが付与される", () => {
+    const result = resolveTimeline(
+      [
+        entry("meikyo-shisui-skill"),
+        entry("kasha"),   // comboFrom=["shifu"] だがバイパスで成立 → 風花付与
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    expect(result.entries[1].wsComboError).toBe(false);
+    expect(result.entries[1].resourceSnapshot.ka).toBe(1);
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(true);
   });
 
   it("明鏡止水で 3 WS 消費した後、4回目は通常判定（バフ消失）", () => {
