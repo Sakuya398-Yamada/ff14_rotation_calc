@@ -1214,6 +1214,38 @@ export function resolveTimeline(
         }
       }
 
+      // applyBuffOnSkill: アクティブバフの effects に applyBuffOnSkill があり、
+      // appliesToSkillIds に resolvedSkillId が含まれる場合、appliedBuffId を付与する。
+      // 例: 明鏡止水中の月光使用時に風月を付与（明鏡止水バフ側で対応関係を宣言）。
+      // 走査中の配列変更を避けるため、まず付与対象を収集してから一括付与する。
+      const buffsToApplyOnSkill: string[] = [];
+      for (const ab of currentActiveBuffs) {
+        const def = buffDefMap.get(ab.buffId);
+        if (!def) continue;
+        for (const effect of def.effects) {
+          if (effect.type !== "applyBuffOnSkill") continue;
+          if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(resolvedSkillId)) continue;
+          if (effect.appliedBuffId) buffsToApplyOnSkill.push(effect.appliedBuffId);
+        }
+      }
+      for (const buffId of buffsToApplyOnSkill) {
+        const buffDef = buffDefMap.get(buffId);
+        if (!buffDef) continue;
+        removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
+        const existingIdx = currentActiveBuffs.findIndex((b) => b.buffId === buffId);
+        const newBuff: ActiveBuff = {
+          buffId,
+          startTime,
+          endTime: computeBuffEndTime(startTime, buffDef.duration),
+          stacks: buffDef.maxStacks,
+        };
+        if (existingIdx >= 0) {
+          currentActiveBuffs[existingIdx] = newBuff;
+        } else {
+          currentActiveBuffs.push(newBuff);
+        }
+      }
+
       // チャージ消費 & クールダウン開始
       if (skill.cooldown !== undefined) {
         const maxCharges = skill.maxCharges ?? 1;

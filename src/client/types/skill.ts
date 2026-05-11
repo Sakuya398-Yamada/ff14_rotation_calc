@@ -224,7 +224,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -245,6 +245,7 @@ export interface BuffEffect {
    * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
    * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
    * - bypassCombo: バフアクティブ中、対象GCD WSのコンボ条件判定を強制成立扱いにする（値は未使用、appliesToSkillIds で対象限定）
+   * - applyBuffOnSkill: バフアクティブ中、対象 GCD/oGCD 使用時に appliedBuffId のバフを追加付与する（値は未使用、明鏡止水中の月光→風月等）
    */
   value: number;
   /** statバフの対象ステータスキー */
@@ -258,6 +259,8 @@ export interface BuffEffect {
    * 同一バフが複数スキル群に異なる倍率を適用するケースで使用する。
    */
   appliesToSkillIds?: string[];
+  /** applyBuffOnSkill 専用: 付与するバフID */
+  appliedBuffId?: string;
   /**
    * resourceCostMultiplier 専用: 指定リソースが消費可能な量だけ残っていれば倍率を打ち消す。
    * 打ち消し成立時はそのリソースを消費する（例: BLMのアンブラルハートでAF中のMP2倍化を打ち消す）。

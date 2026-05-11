@@ -129,8 +129,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     // 月光: コンボ成立時威力 370 + 背面ボーナス 50 = 420（方向指定成功前提）
-    // コンボ成立時に風月バフを付与（実機: 陣風→月光で duration リフレッシュ。明鏡止水で
-    // 陣風をスキップして直接月光を撃った場合も風月が付与される）
+    // 風月バフは陣風（2段目）のみが付与する。明鏡止水中の月光時の風月付与は、
+    // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "gekko",
     name: "月光",
     potency: 420,
@@ -142,7 +142,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 30,
     comboFrom: ["jinpu"],
-    comboBuffApplications: ["fugetsu"],
     comboResourceChanges: [
       { resourceId: "getsu", amount: 1 },
       { resourceId: "kenki", amount: 10 },
@@ -150,7 +149,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     // 花車: コンボ成立時威力 370 + 側面ボーナス 50 = 420（方向指定成功前提）
-    // コンボ成立時に風花バフを付与（月光と同様の理由）
+    // 風花バフは士風（2段目）のみが付与する。明鏡止水中の花車時の風花付与は、
+    // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "kasha",
     name: "花車",
     potency: 420,
@@ -162,7 +162,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 40,
     comboFrom: ["shifu"],
-    comboBuffApplications: ["fuka"],
     comboResourceChanges: [
       { resourceId: "ka", amount: 1 },
       { resourceId: "kenki", amount: 10 },
@@ -198,6 +197,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "kenki", amount: 10 }],
   },
   {
+    // 満月: 範囲コンボ最終段。通常コンボ完走では風月バフは付与されない。
+    // 明鏡止水中の満月時の風月付与は、明鏡止水バフ側の applyBuffOnSkill で表現する。
     id: "mangetsu",
     name: "満月",
     potency: 120,
@@ -209,13 +210,13 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 35,
     comboFrom: ["fuga", "fuko"],
-    comboBuffApplications: ["fugetsu"],
     comboResourceChanges: [
       { resourceId: "getsu", amount: 1 },
       { resourceId: "kenki", amount: 10 },
     ],
   },
   {
+    // 桜花: 範囲コンボ最終段。風花バフ付与の扱いは満月と同様（明鏡止水バフ側で表現）。
     id: "oka",
     name: "桜花",
     potency: 120,
@@ -227,7 +228,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 45,
     comboFrom: ["fuga", "fuko"],
-    comboBuffApplications: ["fuka"],
     comboResourceChanges: [
       { resourceId: "ka", amount: 1 },
       { resourceId: "kenki", amount: 10 },

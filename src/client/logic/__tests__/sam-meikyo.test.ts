@@ -51,7 +51,7 @@ describe("侍: 明鏡止水（bypassCombo + consumeOnGcd）", () => {
     expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(true);
   });
 
-  it("明鏡止水中: 花車単独でも風花バフが付与される", () => {
+  it("明鏡止水中: 花車単独でも風花バフが付与される（applyBuffOnSkill）", () => {
     const result = resolveTimeline(
       [
         entry("meikyo-shisui-skill"),
@@ -66,6 +66,68 @@ describe("侍: 明鏡止水（bypassCombo + consumeOnGcd）", () => {
     expect(result.entries[1].wsComboError).toBe(false);
     expect(result.entries[1].resourceSnapshot.ka).toBe(1);
     expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(true);
+  });
+
+  it("明鏡止水中: 満月使用時に風月バフが付与される（applyBuffOnSkill、範囲コンボ最終段も対象）", () => {
+    const result = resolveTimeline(
+      [
+        entry("meikyo-shisui-skill"),
+        entry("mangetsu"),   // comboFrom=["fuga","fuko"] だがバイパスで成立 → 風月付与
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    expect(result.entries[1].wsComboError).toBe(false);
+    expect(result.entries[1].resourceSnapshot.getsu).toBe(1);
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(true);
+  });
+
+  it("明鏡止水中: 桜花使用時に風花バフが付与される", () => {
+    const result = resolveTimeline(
+      [
+        entry("meikyo-shisui-skill"),
+        entry("oka"),
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(true);
+  });
+
+  it("明鏡止水中: 雪風使用時には風月・風花いずれも付与されない（appliesToSkillIds 対象外）", () => {
+    const result = resolveTimeline(
+      [
+        entry("meikyo-shisui-skill"),
+        entry("yukikaze"),
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(false);
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(false);
+  });
+
+  it("明鏡止水バフが無い時は月光単独で風月バフが付与されない（明鏡止水固有の効果）", () => {
+    const result = resolveTimeline(
+      [entry("gekko")],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    // 陣風コンボ起点なしで月光単独 → wsComboError、風月は付与されない
+    expect(result.entries[0].wsComboError).toBe(true);
+    expect(result.entries[0].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(false);
   });
 
   it("明鏡止水で 3 WS 消費した後、4回目は通常判定（バフ消失）", () => {

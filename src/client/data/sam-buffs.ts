@@ -68,7 +68,7 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
 
   // ============================================================
-  // 明鏡止水（コンボ条件無視 + GCDで自動消費）
+  // 明鏡止水（コンボ条件無視 + GCDで自動消費 + 月光/満月/花車/桜花使用時に風月/風花付与）
   // ============================================================
   {
     id: "meikyo-shisui",
@@ -86,6 +86,20 @@ export const SAM_BUFFS: BuffDefinition[] = [
         type: "consumeOnGcd",
         value: 1,
         appliesToSkillIds: MEIKYO_BYPASS_TARGETS,
+      },
+      // 月光（単体コンボ最終段）・満月（範囲コンボ最終段）時に風月バフ付与
+      {
+        type: "applyBuffOnSkill",
+        value: 1,
+        appliesToSkillIds: ["gekko", "mangetsu"],
+        appliedBuffId: "fugetsu",
+      },
+      // 花車・桜花使用時に風花バフ付与
+      {
+        type: "applyBuffOnSkill",
+        value: 1,
+        appliesToSkillIds: ["kasha", "oka"],
+        appliedBuffId: "fuka",
       },
     ],
     color: "#26c6da",

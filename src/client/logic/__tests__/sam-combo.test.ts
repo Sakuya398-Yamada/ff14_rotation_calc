@@ -90,6 +90,50 @@ describe("侍: 3系統 WS コンボ（月/花/雪）", () => {
     expect(result.entries[2].buffMultiplier).toBeCloseTo(1.13, 2);
   });
 
+  it("通常コンボ（陣風→月光）では月光時点で風月バフは新たに付与されない（陣風で付与済み）", () => {
+    // 月光に comboBuffApplications: ["fugetsu"] は無いため、月光単体では風月を付与しない
+    // ただし陣風で付与された風月は持続するため、月光時点でアクティブのまま
+    const result = resolveTimeline(
+      [entry("hakaze"), entry("jinpu"), entry("gekko")],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    // 月光時点で風月はアクティブ（陣風由来）
+    const fugetsuAtGekko = result.entries[2].activeBuffs.find((b) => b.buffId === "fugetsu");
+    expect(fugetsuAtGekko).toBeDefined();
+    // duration リフレッシュされていないこと: 風月の startTime が jinpu 時点（entries[1].startTime）
+    expect(fugetsuAtGekko?.startTime).toBeCloseTo(result.entries[1].startTime, 2);
+  });
+
+  it("満月の通常コンボ完走では風月バフは付与されない（実機準拠）", () => {
+    const result = resolveTimeline(
+      [entry("fuga"), entry("mangetsu")],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    expect(result.entries[1].wsComboError).toBe(false);
+    expect(result.entries[1].resourceSnapshot.getsu).toBe(1);
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(false);
+  });
+
+  it("桜花の通常コンボ完走では風花バフは付与されない（実機準拠）", () => {
+    const result = resolveTimeline(
+      [entry("fuga"), entry("oka")],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(false);
+  });
+
   it("暁風（Lv92置換）からも陣風コンボが成立する", () => {
     const result = resolveTimeline(
       [entry("gyofu"), entry("jinpu")],
