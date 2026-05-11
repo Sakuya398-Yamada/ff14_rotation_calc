@@ -29,6 +29,7 @@ import leyLinesIcon from "../assets/icons/blm/Ley_Lines.png";
 import transposeIcon from "../assets/icons/blm/Transpose.png";
 import amplifierIcon from "../assets/icons/blm/Amplifier.png";
 import swiftcastIcon from "../assets/icons/blm/role_actions/Swiftcast.png";
+import lucidDreamingIcon from "../assets/icons/blm/role_actions/Lucid_Dreaming.png";
 
 /** GCDリキャスト（秒） */
 const GCD_RECAST = 2.5;
@@ -527,6 +528,21 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     cooldown: 60,
     acquiredLevel: 18,
     buffApplications: ["swiftcast"],
+  },
+  // MP 回復は `lucid-dreaming` バフ + `BLM_RESOURCES` の `autoGenerateWhileBuff` 連携で駆動する。
+  // ここで即時 `resourceChanges` は付けない（21 秒間で計 3850 回復する挙動を維持するため）
+  {
+    id: "lucid-dreaming",
+    name: "ルーシッドドリーム",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: lucidDreamingIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 60,
+    acquiredLevel: 14,
+    buffApplications: ["lucid-dreaming"],
   },
 
   // ============================================================

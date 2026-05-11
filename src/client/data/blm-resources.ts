@@ -10,6 +10,10 @@ import type { ResourceDefinition } from "../types/skill";
  * （旧エノキアンのポリグロット蓄積を模倣）。`autoGenerateWhileBuff` で表現。
  *
  * MP の自然回復は本ツールでは実装しない（ユーザー指定）。スキル使用時の消費・回復のみ管理する。
+ *
+ * 例外: ルーシッドドリーム（ロールアクション、#256）はバフが付いている間、3 秒ごとに 550 MP
+ * 回復する（21 秒間で計 3850 回復）。`autoGenerateWhileBuff` で「lucid-dreaming」バフ条件に
+ * 紐付けて表現する。MP 満タンの間はティックがスキップされる（既存仕様）。
  */
 export const BLM_RESOURCES: ResourceDefinition[] = [
   {
@@ -20,6 +24,10 @@ export const BLM_RESOURCES: ResourceDefinition[] = [
     initialStacks: 10000,
     color: "#5b9bd5",
     acquiredLevel: 1,
+    // ルーシッドドリーム（ロールアクション）付与中のみ 3 秒ごとに 550 回復
+    autoGenerateInterval: 3,
+    autoGenerateAmount: 550,
+    autoGenerateWhileBuff: ["lucid-dreaming"],
   },
   {
     id: "umbral-heart",
