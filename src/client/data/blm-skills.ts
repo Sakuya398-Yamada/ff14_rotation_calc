@@ -266,9 +266,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 3.0,
     acquiredLevel: 12,
-    resourceChanges: [
-      { resourceId: "mp", amount: 400 },
-    ],
     buffApplications: ["umbral-ice-3", "thunderhead"],
   },
   {
@@ -283,9 +280,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 3.0,
     acquiredLevel: 45,
     replacesSkillId: "blizzard-2",
-    resourceChanges: [
-      { resourceId: "mp", amount: 400 },
-    ],
     buffApplications: ["umbral-ice-3", "thunderhead"],
   },
   {
