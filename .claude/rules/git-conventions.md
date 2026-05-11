@@ -108,3 +108,7 @@ test: ローテーションエンジンのユニットテスト追加 #8
 ## 自動検証
 
 `.claude/hooks/validate-branch-name.sh` と `.claude/hooks/validate-commit-message.sh` が PreToolUse hook として `git checkout -b` / `git switch -c` / `git commit` の規約違反をブロックする。
+
+加えて `.claude/hooks/validate-edit-path.sh` が `Edit` / `Write` の PreToolUse hook として、登録済み worktree で作業中に `file_path` がメインリポ側絶対パスを指し（かつ同じ相対パスのファイルが worktree 側にも存在する）場合に **警告のみ（exit 1、ブロックなし）** を出す。検出ロジックは `.claude/hooks/validate-edit-path.cjs` に実装。意図的にメインリポ側を編集したい場合は環境変数 `CLAUDE_ALLOW_MAIN_REPO_EDIT=1` で抑制できる。
+
+> **警告の受け手は人間**: Claude Code の hook 仕様では exit 1 の stderr は **人間のターミナルにだけ** 表示され、アシスタント（Claude）には届かない（届くのは exit 2 の場合）。Claude は Edit が成功したと思って続行するため、警告に気付くのは人間側。気付いたら手動で介入する（パス取り違えを Claude に伝え直す等）。将来、ブロック方式に切り替えたい場合は exit 2 へ変更する。
