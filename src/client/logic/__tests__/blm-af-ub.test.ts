@@ -502,6 +502,21 @@ describe("BLM: トランスポーズの逆状態切替", () => {
     expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "thunderhead")).toBe(false);
   });
 
+  // 実機では無極性（AF/UB 非アクティブ）でトランスを使っても何も起きない（Issue #218）。
+  // 現行実装は UB1 を付与していたが、これを撤廃する。
+  it("無極性時のトランスは UB1 を付与しない（何も起きない）", () => {
+    const result = resolveTimeline(
+      [entry("transpose")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(false);
+    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(false);
+  });
+
   it("AF 中のトランス（→UB1）はサンダーヘッドを再付与しない", () => {
     const result = resolveTimeline(
       [entry("fire-3"), entry("transpose")],
