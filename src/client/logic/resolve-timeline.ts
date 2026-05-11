@@ -1321,6 +1321,11 @@ export function resolveTimeline(
     const critRateBonus = critRateBonusBeforeApply;
     const dhRateBonus = dhRateBonusBeforeApply;
 
+    // 消費が走る前のアクティブバフを退避（詳細パネル等の表示用途）。
+    // 以降の consumeGuaranteedCritBuffs / consumeBuffTargets で `currentActiveBuffs` が
+    // ミューテートされるため、この行は消費前である必要がある。
+    const activeBuffsAtUse: ActiveBuff[] = [...currentActiveBuffs];
+
     // buffConsumptionsで既に消費されたバフIDを収集（二重消費防止）
     const consumedByBuffConsumptions = new Set(
       skill.buffConsumptions?.map((c) => c.buffId) ?? []
@@ -1382,6 +1387,7 @@ export function resolveTimeline(
       recastError,
       wsComboError,
       activeBuffs: [...currentActiveBuffs],
+      activeBuffsAtUse,
       buffMultiplier,
       critRateBonus,
       dhRateBonus,

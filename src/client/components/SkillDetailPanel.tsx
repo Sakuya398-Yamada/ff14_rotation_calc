@@ -48,8 +48,10 @@ export function SkillDetailPanel({
     entry.recastError;
 
   // エラー時は entry.buffMultiplier / critRateBonus / dhRateBonus が 0/1 に倒されるため、
-  // 個別バフ寄与も同様に空扱いにして集約値との整合を保つ
-  const contributions = hasError ? [] : getBuffContributions(entry.activeBuffs, buffDefMap, entry.resolvedSkillId);
+  // 個別バフ寄与も同様に空扱いにして集約値との整合を保つ。
+  // 入力には activeBuffsAtUse（消費前スナップショット）を使う。ライフサージ等の guaranteedCrit は
+  // GCD 使用時に消費され activeBuffs には残らないため、消費前の状態でないと内訳を引けない。
+  const contributions = hasError ? [] : getBuffContributions(entry.activeBuffsAtUse, buffDefMap, entry.resolvedSkillId);
   const potencyContribs = contributions.filter((c) => c.potencyMultiplier !== undefined);
   const critContribs = contributions.filter((c) => c.critRateBonus !== undefined || c.guaranteedCrit);
   const dhContribs = contributions.filter((c) => c.dhRateBonus !== undefined || c.guaranteedDh);
