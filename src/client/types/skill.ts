@@ -44,6 +44,23 @@ export interface TraitPotencyOverride {
 /** サポートするプレイヤーレベル */
 export type PlayerLevel = 70 | 80 | 90 | 100;
 
+/**
+ * autoTransform 配列要素の型。
+ * `buffId` または `resourceConditions` の少なくとも一方が必須。
+ * 両方指定時は AND 評価（バフアクティブ かつ 全リソース閾値以上）。
+ */
+export type AutoTransformEntry =
+  | {
+      buffId: string;
+      resourceConditions?: { resourceId: string; minAmount: number }[];
+      skillId: string;
+    }
+  | {
+      buffId?: string;
+      resourceConditions: { resourceId: string; minAmount: number }[];
+      skillId: string;
+    };
+
 /** スキルの定義データ */
 export interface Skill {
   /** スキルの一意識別子 */
@@ -110,6 +127,18 @@ export interface Skill {
   };
   /** consumeAllResources消費数に応じたバフ適用テーブル（index 0 = 1個消費時のbuffId[]） */
   buffApplicationsByConsumedCount?: string[][];
+  /**
+   * consumeAllResources で消費したリソース数に応じた別リソース獲得。
+   * 例: 葉隠（侍）— 雪/月/花の閃を全消費し、消費した数 × 10 の剣気を獲得。
+   */
+  resourceGainByConsumedCount?: {
+    /** 消費数の集計対象リソースID（consumeAllResources と同一を指定するのが基本） */
+    fromResourceIds: string[];
+    /** 獲得するリソースID */
+    resourceId: string;
+    /** 1個消費あたりの獲得量 */
+    gainPerConsumed: number;
+  };
   /** バフ消費のOR条件（いずれか1つを消費。potency指定時は威力を上書き、procRate+fallbackPotency指定時は期待値を計算） */
   buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number; procRate?: number; fallbackPotency?: number }[];
   /** 指定バフがアクティブな場合、resourceChangesの特定リソース消費をスキップしバフを1スタック消費する（バフ優先消費） */
@@ -118,18 +147,23 @@ export interface Skill {
   conditionalPotencyBuffs?: { buffId: string; potency: number }[];
   /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */
   requiredBuff?: string;
-  /** 自動変化条件（指定バフがアクティブ時に別スキルに変化。配列の場合は先頭から優先チェック） */
-  autoTransform?: {
-    /** 変化条件となるバフID */
-    buffId: string;
-    /** 変化先スキルID */
-    skillId: string;
-  } | {
-    buffId: string;
-    skillId: string;
-  }[];
+  /**
+   * 自動変化条件。
+   * - 配列形式: 先頭から優先評価し、最初に条件を満たすエントリの変化先を採用
+   * - 単一エントリ形式: 後方互換のため維持
+   * - 各エントリの条件:
+   *   - `buffId` 指定時: 該当バフがアクティブであること
+   *   - `resourceConditions` 指定時: 指定された全リソースが minAmount 以上であること（AND）
+   *   - 両方指定時は AND（バフあり かつ 全リソース閾値以上）
+   * - `buffId` も `resourceConditions` も無いエントリは型エラー（型レベルで「どちらかは必須」を強制）
+   */
+  autoTransform?: AutoTransformEntry | AutoTransformEntry[];
   /** UI上で非表示にするか（autoTransform の変化先専用スキル等で使用） */
   hidden?: boolean;
+  /** スキル固有の確定クリティカル（バフ経由ではない常時クリ。乱れ雪月花・天道雪月花・奥義波切等） */
+  guaranteedCrit?: boolean;
+  /** スキル固有の確定ダイレクトヒット（バフ経由ではない常時DH。返し波切等） */
+  guaranteedDh?: boolean;
 }
 
 /** タイムラインに配置されたスキル */
@@ -190,7 +224,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -210,6 +244,8 @@ export interface BuffEffect {
    * - resource: リソース変動量
    * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
    * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
+   * - bypassCombo: バフアクティブ中、対象GCD WSのコンボ条件判定を強制成立扱いにする（値は未使用、appliesToSkillIds で対象限定）
+   * - applyBuffOnSkill: バフアクティブ中、対象 GCD/oGCD 使用時に appliedBuffId のバフを追加付与する（値は未使用、明鏡止水中の月光→風月等）
    */
   value: number;
   /** statバフの対象ステータスキー */
@@ -223,6 +259,8 @@ export interface BuffEffect {
    * 同一バフが複数スキル群に異なる倍率を適用するケースで使用する。
    */
   appliesToSkillIds?: string[];
+  /** applyBuffOnSkill 専用: 付与するバフID */
+  appliedBuffId?: string;
   /**
    * resourceCostMultiplier 専用: 指定リソースが消費可能な量だけ残っていれば倍率を打ち消す。
    * 打ち消し成立時はそのリソースを消費する（例: BLMのアンブラルハートでAF中のMP2倍化を打ち消す）。
