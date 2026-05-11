@@ -57,6 +57,8 @@ interface TimelineProps {
   ppsRange: PpsRange | null;
   onPpsRangeChange: (range: PpsRange | null) => void;
   lastGcdEndTime: number;
+  selectedEntryUid: string | null;
+  onSelectEntry: (uid: string | null) => void;
 }
 
 /**
@@ -112,6 +114,8 @@ export function Timeline({
   ppsRange,
   onPpsRangeChange,
   lastGcdEndTime,
+  selectedEntryUid,
+  onSelectEntry,
 }: TimelineProps) {
   const [dragOver, setDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
@@ -979,9 +983,12 @@ export function Timeline({
                             ...styles.skillIcon,
                             ...(hasError ? styles.skillIconError : {}),
                             ...(entry.wsComboError ? styles.skillIconComboWarning : {}),
+                            ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                             ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                           }}
                           title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          data-skill-entry-uid={entry.uid}
+                          onClick={() => onSelectEntry(entry.uid)}
                           draggable
                           onDragStart={(e) => handleEntryDragStart(e, entry, entry.skill)}
                           onDragEnd={handleEntryDragEnd}
@@ -1030,9 +1037,12 @@ export function Timeline({
                           style={{
                             ...styles.ogcdIcon,
                             ...(hasError ? styles.ogcdIconError : {}),
+                            ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                             ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                           }}
                           title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          data-skill-entry-uid={entry.uid}
+                          onClick={() => onSelectEntry(entry.uid)}
                           draggable
                           onDragStart={(e) => handleEntryDragStart(e, entry, entry.skill)}
                           onDragEnd={handleEntryDragEnd}
@@ -1615,6 +1625,10 @@ const styles: Record<string, React.CSSProperties> = {
     border: "2px solid #ff9800",
     boxShadow: "0 0 8px rgba(255, 152, 0, 0.6)",
   },
+  skillIconSelected: {
+    border: "2px solid #ffd700",
+    boxShadow: "0 0 8px rgba(255, 215, 0, 0.6)",
+  },
   skillIconDragging: {
     opacity: 0.3,
   },
@@ -1638,6 +1652,10 @@ const styles: Record<string, React.CSSProperties> = {
   ogcdIconError: {
     border: "2px solid #ef5350",
     boxShadow: "0 0 8px rgba(239, 83, 80, 0.6)",
+  },
+  ogcdIconSelected: {
+    border: "2px solid #ffd700",
+    boxShadow: "0 0 8px rgba(255, 215, 0, 0.6)",
   },
   ogcdIconDragging: {
     opacity: 0.3,

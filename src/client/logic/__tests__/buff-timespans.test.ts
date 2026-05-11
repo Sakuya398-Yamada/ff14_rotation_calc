@@ -26,6 +26,7 @@ function makeEntry(startTime: number, activeBuffs: ActiveBuff[]): ResolvedTimeli
     recastError: false,
     wsComboError: false,
     activeBuffs,
+    activeBuffsAtUse: activeBuffs,
     buffMultiplier: 1,
     critRateBonus: 0,
     dhRateBonus: 0,

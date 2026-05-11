@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
+import { SkillDetailPanel } from "./SkillDetailPanel";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { WHM_ATTACK_SKILLS } from "../data/whm-skills";
 import { WHM_RESOURCES } from "../data/whm-resources";
@@ -55,6 +56,7 @@ export function App() {
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
+  const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
 
   const jobData = JOB_DATA[selectedJob];
 
@@ -63,6 +65,7 @@ export function App() {
     // ジョブ変更時にタイムラインをリセット（異なるジョブのスキルは互換性がない）
     setEntries([]);
     setPpsRange(null);
+    setSelectedEntryUid(null);
   }, []);
 
   // レベルに応じたバフ・リソースをフィルタ
@@ -131,6 +134,7 @@ export function App() {
 
   const handleRemoveEntry = useCallback((uid: string) => {
     setEntries((prev) => prev.filter((e) => e.uid !== uid));
+    setSelectedEntryUid((prev) => (prev === uid ? null : prev));
   }, []);
 
   const handleMoveEntry = useCallback((uid: string, insertBeforeUid?: string) => {
@@ -178,6 +182,21 @@ export function App() {
       stats
     );
   }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, stats]);
+
+  const buffDefMap = useMemo(
+    () => new Map(levelBuffs.map((b) => [b.id, b])),
+    [levelBuffs]
+  );
+
+  const selectedEntry = useMemo(() => {
+    if (selectedEntryUid === null) return null;
+    return resolvedEntries.find((e) => e.uid === selectedEntryUid) ?? null;
+  }, [resolvedEntries, selectedEntryUid]);
+
+  const selectedSkill = useMemo(() => {
+    if (!selectedEntry) return null;
+    return allSkillMap.get(selectedEntry.resolvedSkillId) ?? null;
+  }, [selectedEntry, allSkillMap]);
 
   // 範囲選択PPS
   const rangePps = useMemo(() => {
@@ -229,7 +248,18 @@ export function App() {
           ppsRange={ppsRange}
           onPpsRangeChange={setPpsRange}
           lastGcdEndTime={timelineResult.lastGcdEndTime}
+          selectedEntryUid={selectedEntryUid}
+          onSelectEntry={setSelectedEntryUid}
         />
+        {selectedEntry && selectedSkill && (
+          <SkillDetailPanel
+            entry={selectedEntry}
+            resolvedSkill={selectedSkill}
+            buffDefMap={buffDefMap}
+            stats={stats}
+            onClose={() => setSelectedEntryUid(null)}
+          />
+        )}
       </div>
       <footer style={styles.footer}>
         <small style={styles.copyright}>

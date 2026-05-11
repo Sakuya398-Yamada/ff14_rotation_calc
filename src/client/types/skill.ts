@@ -407,8 +407,18 @@ export interface ResolvedTimelineEntry {
   recastError: boolean;
   /** WSコンボ不成立（エラーではないがコンボ威力が適用されない） */
   wsComboError: boolean;
-  /** このスキル使用時にアクティブなバフ一覧 */
+  /**
+   * このエントリ実行**後**にアクティブなバフ一覧（guaranteedCrit/Dh・consumeOnGcd 等の
+   * 自動消費を反映済み）。次エントリの speed 計算 / バフレーン終端検出に使用される。
+   */
   activeBuffs: ActiveBuff[];
+  /**
+   * このエントリ実行**前**（消費が走る前）にアクティブだったバフ一覧のスナップショット。
+   * ライフサージ等の guaranteedCrit バフは GCD 使用時に消費されるため `activeBuffs` には
+   * 残らないが、UI 側で「このスキルに効いたバフの内訳」を表示するには消費前の状態が必要。
+   * 詳細パネル等の表示用途で使う。
+   */
+  activeBuffsAtUse: ActiveBuff[];
   /** 威力バフの合成倍率（1.0 = バフなし） */
   buffMultiplier: number;
   /** クリティカル発生率ボーナス（0.0 = バフなし、0.1 = +10%） */
