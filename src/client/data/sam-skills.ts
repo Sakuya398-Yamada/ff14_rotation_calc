@@ -538,7 +538,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     recastTime: 1.0,
     animationLock: 0.65,
     acquiredLevel: 54,
-    cooldown: 10,
+    cooldown: 5,
     resourceChanges: [{ resourceId: "kenki", amount: -10 }],
   },
   {
