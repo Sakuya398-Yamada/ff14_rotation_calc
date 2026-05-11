@@ -486,9 +486,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 5,
     acquiredLevel: 4,
-    // 無極性時の簡易フォールバック（実機では無極性時は何も起きないが、現行ツールの簡易挙動を維持）
-    // 実機ではトランスでサンダーヘッドは付与されない（ファイア／ブリザド系命中時のみ付与）
-    buffApplications: ["umbral-ice-1"],
+    // 無極性時は何もしない（cooldown 消費のみ）。AF/UB 中は autoTransform で隠しスキルに切替 (Issue #218)
+    buffApplications: [],
     // AF 中は UB1 へ、UB 中は AF1 へ切替
     autoTransform: [
       { buffId: "astral-fire-3", skillId: "transpose-to-ub1" },
