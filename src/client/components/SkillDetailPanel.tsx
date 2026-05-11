@@ -47,7 +47,9 @@ export function SkillDetailPanel({
     entry.untargetableError ||
     entry.recastError;
 
-  const contributions = getBuffContributions(entry.activeBuffs, buffDefMap, entry.resolvedSkillId);
+  // エラー時は entry.buffMultiplier / critRateBonus / dhRateBonus が 0/1 に倒されるため、
+  // 個別バフ寄与も同様に空扱いにして集約値との整合を保つ
+  const contributions = hasError ? [] : getBuffContributions(entry.activeBuffs, buffDefMap, entry.resolvedSkillId);
   const potencyContribs = contributions.filter((c) => c.potencyMultiplier !== undefined);
   const critContribs = contributions.filter((c) => c.critRateBonus !== undefined || c.guaranteedCrit);
   const dhContribs = contributions.filter((c) => c.dhRateBonus !== undefined || c.guaranteedDh);
