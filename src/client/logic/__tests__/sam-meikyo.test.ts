@@ -44,7 +44,7 @@ describe("侍: 明鏡止水（bypassCombo + consumeOnGcd）", () => {
     );
 
     expect(result.entries[1].wsComboError).toBe(false);
-    expect(result.entries[1].resolvedPotency).toBe(370);
+    expect(result.entries[1].resolvedPotency).toBe(420);
     // 月閃も付与される
     expect(result.entries[1].resourceSnapshot.getsu).toBe(1);
   });
@@ -106,7 +106,7 @@ describe("侍: 明鏡止水（bypassCombo + consumeOnGcd）", () => {
     );
 
     expect(result.entries[2].wsComboError).toBe(false);
-    expect(result.entries[2].resolvedPotency).toBe(370);
+    expect(result.entries[2].resolvedPotency).toBe(420);
   });
 
   it("明鏡止水は居合術には影響しない（appliesToSkillIds 対象外）", () => {

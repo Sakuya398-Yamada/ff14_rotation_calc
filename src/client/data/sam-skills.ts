@@ -128,9 +128,10 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
+    // 月光: コンボ成立時威力 370 + 背面ボーナス 50 = 420（方向指定成功前提）
     id: "gekko",
     name: "月光",
-    potency: 370,
+    potency: 420,
     nonComboPotency: 170,
     type: "gcd",
     target: "enemy",
@@ -145,9 +146,10 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
+    // 花車: コンボ成立時威力 370 + 側面ボーナス 50 = 420（方向指定成功前提）
     id: "kasha",
     name: "花車",
-    potency: 370,
+    potency: 420,
     nonComboPotency: 170,
     type: "gcd",
     target: "enemy",

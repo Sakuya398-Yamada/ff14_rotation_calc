@@ -25,7 +25,7 @@ describe("侍: 3系統 WS コンボ（月/花/雪）", () => {
     expect(result.entries[1].wsComboError).toBe(false);
     expect(result.entries[1].resolvedPotency).toBe(300);
     expect(result.entries[2].wsComboError).toBe(false);
-    expect(result.entries[2].resolvedPotency).toBe(370);
+    expect(result.entries[2].resolvedPotency).toBe(420);
     expect(result.entries[2].resourceSnapshot.getsu).toBe(1);
     expect(result.entries[2].resourceSnapshot.setsu ?? 0).toBe(0);
     expect(result.entries[2].resourceSnapshot.ka ?? 0).toBe(0);
@@ -43,7 +43,7 @@ describe("侍: 3系統 WS コンボ（月/花/雪）", () => {
     );
 
     expect(result.entries[2].wsComboError).toBe(false);
-    expect(result.entries[2].resolvedPotency).toBe(370);
+    expect(result.entries[2].resolvedPotency).toBe(420);
     expect(result.entries[2].resourceSnapshot.ka).toBe(1);
     expect(result.entries[2].resourceSnapshot.getsu ?? 0).toBe(0);
   });
