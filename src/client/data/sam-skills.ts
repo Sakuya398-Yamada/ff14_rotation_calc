@@ -124,7 +124,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     comboFrom: ["hakaze", "gyofu"],
     comboResourceChanges: [
       { resourceId: "setsu", amount: 1 },
-      { resourceId: "kenki", amount: 10 },
+      { resourceId: "kenki", amount: 15 },
     ],
   },
   {

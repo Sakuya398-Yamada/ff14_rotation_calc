@@ -51,8 +51,8 @@ describe("侍: リソース定義（剣気・閃3種・剣圧）", () => {
 
     const last = result.entries[result.entries.length - 1];
     expect(last.resourceSnapshot.setsu).toBe(0);
-    // 剣気: 刃風(+5) + 雪風(+10) + 葉隠(+10*1) = 25
-    expect(last.resourceSnapshot.kenki).toBe(25);
+    // 剣気: 刃風(+5) + 雪風(+15) + 葉隠(+10*1) = 30
+    expect(last.resourceSnapshot.kenki).toBe(30);
   });
 
   it("葉隠: 2閃で剣気+20（gainPerConsumed × consumeAllCount の乗算）", () => {
@@ -71,8 +71,8 @@ describe("侍: リソース定義（剣気・閃3種・剣圧）", () => {
     const last = result.entries[result.entries.length - 1];
     expect(last.resourceSnapshot.setsu).toBe(0);
     expect(last.resourceSnapshot.getsu).toBe(0);
-    // 剣気: 刃風×2(+10) + 雪風(+10) + 陣風(+5) + 月光(+10) + 葉隠(+10*2=20) = 55
-    expect(last.resourceSnapshot.kenki).toBe(55);
+    // 剣気: 刃風×2(+10) + 雪風(+15) + 陣風(+5) + 月光(+10) + 葉隠(+10*2=20) = 60
+    expect(last.resourceSnapshot.kenki).toBe(60);
   });
 
   it("葉隠: 3閃で剣気+30", () => {
@@ -93,8 +93,8 @@ describe("侍: リソース定義（剣気・閃3種・剣圧）", () => {
     expect(last.resourceSnapshot.setsu).toBe(0);
     expect(last.resourceSnapshot.getsu).toBe(0);
     expect(last.resourceSnapshot.ka).toBe(0);
-    // 剣気: 刃風×3(+15) + 陣風(+5) + 月光(+10) + 士風(+5) + 花車(+10) + 雪風(+10) + 葉隠(+10*3=30) = 85
-    expect(last.resourceSnapshot.kenki).toBe(85);
+    // 剣気: 刃風×3(+15) + 陣風(+5) + 月光(+10) + 士風(+5) + 花車(+10) + 雪風(+15) + 葉隠(+10*3=30) = 90
+    expect(last.resourceSnapshot.kenki).toBe(90);
   });
 
   it("葉隠: 閃 0 のときは実行不可（resourceErrors に setsu）", () => {
