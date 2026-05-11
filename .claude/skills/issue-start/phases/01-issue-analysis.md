@@ -17,7 +17,7 @@ git worktree list
 | pwd の状態 | 扱い |
 |---|---|
 | `git rev-parse --show-toplevel` と一致 | **メインリポ作業**: 通常通り |
-| `git worktree list` の登録 worktree と一致 | **真の worktree 作業**: **Edit/Write の `file_path` は必ずこの worktree のパスを使う。メインリポ側のパスで指定すると pwd 基準の bash 実行と乖離して『編集したはずなのに反映されない』無音失敗を起こす（PR #241 で実例）** |
+| `git worktree list` の登録 worktree と一致 | **真の worktree 作業**: **Edit/Write の `file_path` は必ずこの worktree のパスを使う。メインリポ側のパスで指定すると pwd 基準の bash 実行と乖離して『編集したはずなのに反映されない』無音失敗を起こす（PR #241 で実例）。** PreToolUse hook `.claude/hooks/validate-edit-path.sh` が同条件を検知して警告（exit 1、ブロックなし）を出す。意図的にメインリポ側を触りたい場合は `CLAUDE_ALLOW_MAIN_REPO_EDIT=1` で抑制 |
 | `.claude/worktrees/<name>/` 配下なのに **登録 worktree でない** | **亡霊 worktree モード**: 以降のすべての Edit/Write/bash 相対パスをメインリポ絶対パス基準に切り替える |
 
 ### 亡霊 worktree モードでの作業ガイド
