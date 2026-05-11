@@ -16,7 +16,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 
 ## 詳細規約（Memory Imports）
 
-具体的な規約は以下のファイルにモジュール分割している。Claude Code は起動時にこれらを自動的に読み込む。
+具体的な規約は以下のファイルにモジュール分割している。Claude Code は起動時にこれらを自動的に読み込む。**`CLAUDE.md` は索引・コア原則のみに保ち、詳細規約は `.claude/rules/*.md` 側に書く**（運用方針は `@.claude/rules/documentation-policy.md` 参照）。
 
 @.claude/rules/git-conventions.md
 @.claude/rules/coding-standards.md
@@ -25,6 +25,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 @.claude/rules/mcp-setup.md
 @.claude/rules/playwright-mcp.md
 @.claude/rules/workflow-feedback.md
+@.claude/rules/documentation-policy.md
 
 ## 開発フロー
 
