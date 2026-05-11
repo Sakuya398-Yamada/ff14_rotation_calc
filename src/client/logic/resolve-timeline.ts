@@ -283,6 +283,28 @@ function consumeGuaranteedDhBuffs(
 }
 
 /**
+ * アクティブなバフに bypassCombo 効果があるか判定する。
+ * appliesToSkillIds が指定されたエフェクトは、targetSkillId が含まれるときだけ有効。
+ * 消費自体は consumeOnGcd 仕組みに委譲する（明鏡止水バフは consumeOnGcd を併設する）。
+ */
+function hasBypassComboBuff(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>,
+  targetSkillId: string
+): boolean {
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type !== "bypassCombo") continue;
+      if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(targetSkillId)) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * アクティブなバフから威力バフの合成倍率を計算する。
  * targetSkillId が指定されている場合、appliesToSkillIds に
  * 該当スキルIDが含まれないエフェクトは除外する（対象スキル限定バフ）。
@@ -682,7 +704,7 @@ export function resolveTimeline(
       actionAvailableAt = startTime + originalSkill.animationLock;
     }
 
-    // 自動変化チェック: バフ条件を満たす場合、変化先スキルに差し替え（チェーン対応）
+    // 自動変化チェック: バフ条件 / リソース条件を満たす場合、変化先スキルに差し替え（チェーン対応）
     let skill = originalSkill;
     let resolvedSkillId = entry.skillId;
     {
@@ -695,17 +717,27 @@ export function resolveTimeline(
           ? current.autoTransform
           : [current.autoTransform];
         for (const t of transforms) {
-          const hasBuff = currentActiveBuffs.some((ab) => ab.buffId === t.buffId);
-          if (hasBuff) {
-            const next = skillMap.get(t.skillId);
-            if (next) {
-              skill = next;
-              resolvedSkillId = next.id;
-              current = next;
-              transformed = true;
-            }
-            break; // 先頭一致で確定（優先度順）
+          // buffId 指定時: 該当バフがアクティブであること
+          if (t.buffId !== undefined) {
+            const hasBuff = currentActiveBuffs.some((ab) => ab.buffId === t.buffId);
+            if (!hasBuff) continue;
           }
+          // resourceConditions 指定時: 全リソースが minAmount 以上であること（AND）
+          if (t.resourceConditions) {
+            const allMet = t.resourceConditions.every(
+              (rc) => (resourceState[rc.resourceId] ?? 0) >= rc.minAmount
+            );
+            if (!allMet) continue;
+          }
+          // 条件成立 → 変化先スキルへ
+          const next = skillMap.get(t.skillId);
+          if (next) {
+            skill = next;
+            resolvedSkillId = next.id;
+            current = next;
+            transformed = true;
+          }
+          break; // 先頭一致で確定（優先度順）
         }
       }
     }
@@ -871,6 +903,10 @@ export function resolveTimeline(
       const comboTimerExpired = (startTime - lastComboTime) >= COMBO_TIMER;
       const comboMatch = lastComboSkillId !== null && skill.comboFrom.includes(lastComboSkillId);
       wsComboError = comboTimerExpired || !comboMatch;
+      // bypassCombo バフ（appliesToSkillIds に当該スキルが含まれる）がアクティブなら強制成立
+      if (wsComboError && hasBypassComboBuff(currentActiveBuffs, buffDefMap, resolvedSkillId)) {
+        wsComboError = false;
+      }
     }
 
     // コンボ成否に基づく威力決定
@@ -923,6 +959,7 @@ export function resolveTimeline(
     // 和集合として 1 度だけ消費するように Set 化している。
     // （スキル実行中に新たに付与されたバフは消費対象外）
     // - consumeOnGcd: 全 GCD スキル実行後に消費
+    //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（明鏡止水で特定WSに限定する用途）
     // - instantCast: 詠唱時間 > 0 の GCD スキル実行後にのみ消費（非詠唱 GCD / oGCD では消費しない）
     //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（例: firestarter は fire-3 限定）
     //   複数の instantCast バフが同時アクティブな場合は 1 発につき 1 つだけ消費する
@@ -934,7 +971,11 @@ export function resolveTimeline(
       for (const ab of currentActiveBuffs) {
         const def = buffDefMap.get(ab.buffId);
         if (!def) continue;
-        const hasConsumeOnGcd = def.effects.some((e) => e.type === "consumeOnGcd");
+        const hasConsumeOnGcd = def.effects.some((e) => {
+          if (e.type !== "consumeOnGcd") return false;
+          if (e.appliesToSkillIds && !e.appliesToSkillIds.includes(resolvedSkillId)) return false;
+          return true;
+        });
         if (hasConsumeOnGcd) {
           consumeBuffTargets.add(ab.buffId);
         }
@@ -961,8 +1002,8 @@ export function resolveTimeline(
     // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
     // 解決後のスキルIDを渡すことで、対象スキル限定バフ（appliesToSkillIds）を正しくフィルタする
     const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap, resolvedSkillId);
-    const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedCrit(currentActiveBuffs, buffDefMap);
-    const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && hasGuaranteedDh(currentActiveBuffs, buffDefMap);
+    const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedCrit === true || hasGuaranteedCrit(currentActiveBuffs, buffDefMap));
+    const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedDh === true || hasGuaranteedDh(currentActiveBuffs, buffDefMap));
     // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
     const baseCritRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
     // 直接ダメージ用: guaranteedCritの場合は100%に上書き
@@ -1065,6 +1106,18 @@ export function resolveTimeline(
           const idx = currentActiveBuffs.indexOf(activeBuff);
           if (idx >= 0) currentActiveBuffs.splice(idx, 1);
         }
+      }
+
+      // resourceGainByConsumedCount: consumeAllResourcesの消費数に応じた別リソース獲得（葉隠の剣気獲得等）
+      if (skill.resourceGainByConsumedCount && consumeAllCount > 0) {
+        const gainDef = skill.resourceGainByConsumedCount;
+        const totalGain = gainDef.gainPerConsumed * consumeAllCount;
+        const resDef = resourceDefMap.get(gainDef.resourceId);
+        const cap = resDef?.maxStacks ?? Infinity;
+        resourceState[gainDef.resourceId] = Math.min(
+          cap,
+          (resourceState[gainDef.resourceId] ?? 0) + totalGain
+        );
       }
 
       // buffApplicationsByConsumedCount: consumeAllResourcesの消費数に応じたバフ適用
