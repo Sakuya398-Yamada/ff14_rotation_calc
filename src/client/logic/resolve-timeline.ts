@@ -1012,6 +1012,13 @@ export function resolveTimeline(
     // 直接ダメージ用: guaranteedDhの場合は100%に上書き
     const dhRateBonusBeforeApply = guaranteedDhBeforeApply ? 1 : baseDhRateBonus;
 
+    // 詳細パネル等で「このスキルの威力に寄与したバフ」を表示するためのスナップショット。
+    // buffMultiplierBeforeApply / *BeforeApply と同じタイミングで取得することで、
+    // スキル自身が付与する potency バフが内訳に含まれない（集約倍率との整合）。
+    // 後段で buffApplications/comboBuffApplications/buffConsumptions/guaranteedCrit 消費等が走るが、
+    // それらは「このスキルが実行された結果」であり、寄与判定の入力には含めない。
+    const activeBuffsAtUse: ActiveBuff[] = [...currentActiveBuffs];
+
     if (!hasError) {
       const onResourceApplied = (def: ResourceDefinition) => {
         // リソースが最大未満になったら自動生成タイマーを開始
@@ -1320,11 +1327,6 @@ export function resolveTimeline(
     const guaranteedCrit = guaranteedCritBeforeApply;
     const critRateBonus = critRateBonusBeforeApply;
     const dhRateBonus = dhRateBonusBeforeApply;
-
-    // 消費が走る前のアクティブバフを退避（詳細パネル等の表示用途）。
-    // 以降の consumeGuaranteedCritBuffs / consumeBuffTargets で `currentActiveBuffs` が
-    // ミューテートされるため、この行は消費前である必要がある。
-    const activeBuffsAtUse: ActiveBuff[] = [...currentActiveBuffs];
 
     // buffConsumptionsで既に消費されたバフIDを収集（二重消費防止）
     const consumedByBuffConsumptions = new Set(
