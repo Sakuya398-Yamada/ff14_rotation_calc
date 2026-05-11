@@ -428,6 +428,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
       { buffId: "tsubame-kaeshi-namikiri-ready", skillId: "kaeshi-namikiri" },
     ],
   },
+  // 燕返し系は剣圧を付与しない（実機: 剣圧は居合術系と奥義波切のみで付与）
   {
     id: "kaeshi-goken",
     name: "返し五剣",
@@ -441,7 +442,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     hidden: true,
     requiredBuff: "tsubame-kaeshi-goken-ready",
     buffConsumptions: [{ buffId: "tsubame-kaeshi-goken-ready", stacks: 1 }],
-    resourceChanges: [{ resourceId: "meditation", amount: 1 }],
   },
   {
     id: "kaeshi-setsugekka",
@@ -457,7 +457,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     guaranteedCrit: true,
     requiredBuff: "tsubame-kaeshi-setsugekka-ready",
     buffConsumptions: [{ buffId: "tsubame-kaeshi-setsugekka-ready", stacks: 1 }],
-    resourceChanges: [{ resourceId: "meditation", amount: 1 }],
   },
   {
     id: "tendo-kaeshi-goken",
@@ -472,7 +471,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     hidden: true,
     requiredBuff: "tsubame-tendo-kaeshi-goken-ready",
     buffConsumptions: [{ buffId: "tsubame-tendo-kaeshi-goken-ready", stacks: 1 }],
-    resourceChanges: [{ resourceId: "meditation", amount: 1 }],
   },
   {
     id: "tendo-kaeshi-setsugekka",
@@ -488,7 +486,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     guaranteedCrit: true,
     requiredBuff: "tsubame-tendo-kaeshi-setsugekka-ready",
     buffConsumptions: [{ buffId: "tsubame-tendo-kaeshi-setsugekka-ready", stacks: 1 }],
-    resourceChanges: [{ resourceId: "meditation", amount: 1 }],
   },
   {
     id: "kaeshi-namikiri",
@@ -505,7 +502,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     guaranteedDh: true,
     requiredBuff: "tsubame-kaeshi-namikiri-ready",
     buffConsumptions: [{ buffId: "tsubame-kaeshi-namikiri-ready", stacks: 1 }],
-    resourceChanges: [{ resourceId: "meditation", amount: 1 }],
   },
 
   // ============================================================

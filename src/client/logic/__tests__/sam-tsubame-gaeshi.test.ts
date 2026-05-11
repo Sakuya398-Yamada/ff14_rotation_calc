@@ -29,8 +29,8 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
     const last = result.entries[result.entries.length - 1];
     expect(last.resolvedSkillId).toBe("kaeshi-goken");
     expect(last.resolvedPotency).toBe(300);
-    // 剣圧は天下五剣で+1、返し五剣でさらに+1 = 計2
-    expect(last.resourceSnapshot.meditation).toBe(2);
+    // 剣圧は天下五剣（居合術）でのみ +1。返し五剣（燕返し）では付与されない（実機準拠）
+    expect(last.resourceSnapshot.meditation).toBe(1);
   });
 
   it("乱れ雪月花後の燕返し → 返し雪月花（威力680、確定クリ）", () => {
@@ -162,6 +162,48 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
 
     const last = result.entries[result.entries.length - 1];
     expect(last.resolvedSkillId).toBe("kaeshi-goken");
+  });
+
+  it("燕返し系は剣圧を付与しない（実機: 剣圧は居合術・奥義波切のみで蓄積）", () => {
+    const result = resolveTimeline(
+      [
+        entry("hakaze"), entry("yukikaze"),
+        entry("hakaze"), entry("jinpu"), entry("gekko"),
+        entry("hakaze"), entry("shifu"), entry("kasha"),
+        entry("iaijutsu"),         // 乱れ雪月花 → meditation +1
+        entry("tsubame-gaeshi"),   // 返し雪月花 → meditation 変動なし
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    const iaijutsuEntry = result.entries[result.entries.length - 2];
+    const tsubameEntry = result.entries[result.entries.length - 1];
+    // 乱れ雪月花時点で剣圧 1、その後の返し雪月花で増えない
+    expect(iaijutsuEntry.resourceSnapshot.meditation).toBe(1);
+    expect(tsubameEntry.resourceSnapshot.meditation).toBe(1);
+  });
+
+  it("奥義波切は剣圧 +1、続く返し波切では付与されない", () => {
+    const result = resolveTimeline(
+      [
+        entry("ikishoten"),
+        entry("hakaze"),
+        entry("ogi-namikiri"),    // 剣圧 +1
+        entry("tsubame-gaeshi"),  // 返し波切 → 剣圧変動なし
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    const ogiEntry = result.entries[2];
+    const kaeshiEntry = result.entries[3];
+    expect(ogiEntry.resourceSnapshot.meditation).toBe(1);
+    expect(kaeshiEntry.resourceSnapshot.meditation).toBe(1);
   });
 
   it("Ready バフ無しで燕返しを使うと requiredBuff エラー", () => {
