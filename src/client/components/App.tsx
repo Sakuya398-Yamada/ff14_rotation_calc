@@ -17,12 +17,15 @@ import { PCT_BUFFS } from "../data/pct-buffs";
 import { BLM_ATTACK_SKILLS } from "../data/blm-skills";
 import { BLM_RESOURCES } from "../data/blm-resources";
 import { BLM_BUFFS } from "../data/blm-buffs";
+import { SAM_ATTACK_SKILLS } from "../data/sam-skills";
+import { SAM_RESOURCES } from "../data/sam-resources";
+import { SAM_BUFFS } from "../data/sam-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
 import type { Skill, BuffDefinition, ResourceDefinition, TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange, PlayerLevel } from "../types/skill";
 
 /** ジョブID */
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam";
 
 /** ジョブデータ定義 */
 interface JobData {
@@ -40,6 +43,7 @@ const JOB_DATA: Record<JobId, JobData> = {
   brd: { name: "詩人", abbreviation: "BRD", skills: BRD_ATTACK_SKILLS, buffs: BRD_BUFFS, resources: BRD_RESOURCES },
   pct: { name: "ピクトマンサー", abbreviation: "PCT", skills: PCT_ATTACK_SKILLS, buffs: PCT_BUFFS, resources: PCT_RESOURCES },
   blm: { name: "黒魔道士", abbreviation: "BLM", skills: BLM_ATTACK_SKILLS, buffs: BLM_BUFFS, resources: BLM_RESOURCES },
+  sam: { name: "侍", abbreviation: "SAM", skills: SAM_ATTACK_SKILLS, buffs: SAM_BUFFS, resources: SAM_RESOURCES },
 };
 
 let nextUid = 1;
