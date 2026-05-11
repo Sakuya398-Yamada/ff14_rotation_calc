@@ -399,6 +399,59 @@ describe("BLM: トランスポーズの逆状態切替", () => {
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(false);
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
   });
+
+  // 実機ではトランスポーズでサンダーヘッドは付与されない（Issue #219）。
+  // thunderhead はファイア／ブリザド系命中時のみ付与される。
+  it("無極性時のトランスはサンダーヘッドを付与しない", () => {
+    const result = resolveTimeline(
+      [entry("transpose")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "thunderhead")).toBe(false);
+  });
+
+  it("AF 中のトランス（→UB1）はサンダーヘッドを再付与しない", () => {
+    const result = resolveTimeline(
+      [entry("fire-3"), entry("transpose")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    // fire-3 命中時に thunderhead が付与済み。トランスが thunderhead を再付与した場合、
+    // startTime がトランス時刻に上書きされるため、fire-3 時の startTime と同一であることで
+    // 「トランス自身が thunderhead を付与していない」ことを検証する。
+    const beforeTranspose = result.entries[0];
+    const afterTranspose = result.entries[1];
+    const thunderheadBefore = beforeTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
+    const thunderheadAfter = afterTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
+    expect(thunderheadBefore).toBeDefined();
+    expect(thunderheadAfter).toBeDefined();
+    expect(thunderheadAfter!.startTime).toBe(thunderheadBefore!.startTime);
+  });
+
+  it("UB 中のトランス（→AF1）はサンダーヘッドを再付与しない", () => {
+    const result = resolveTimeline(
+      [entry("blizzard-3"), entry("transpose")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+
+    const beforeTranspose = result.entries[0];
+    const afterTranspose = result.entries[1];
+    const thunderheadBefore = beforeTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
+    const thunderheadAfter = afterTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
+    expect(thunderheadBefore).toBeDefined();
+    expect(thunderheadAfter).toBeDefined();
+    expect(thunderheadAfter!.startTime).toBe(thunderheadBefore!.startTime);
+  });
 });
 
 describe("BLM: フレアスターとアストラルソウル", () => {
