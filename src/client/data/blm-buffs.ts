@@ -9,6 +9,7 @@ import fire3Icon from "../assets/icons/blm/Fire_III.png";
 import leyLinesIcon from "../assets/icons/blm/Ley_Lines.png";
 import triplecastIcon from "../assets/icons/blm/Triplecast.png";
 import swiftcastIcon from "../assets/icons/blm/role_actions/Swiftcast.png";
+import lucidDreamingIcon from "../assets/icons/blm/role_actions/Lucid_Dreaming.png";
 
 /**
  * 黒魔道士のバフ定義。
@@ -219,5 +220,16 @@ export const BLM_BUFFS: BuffDefinition[] = [
     effects: [{ type: "instantCast", value: 0 }],
     color: "#80deea",
     acquiredLevel: 18,
+  },
+  // バフ自体に効果は持たず、MP 回復は `BLM_RESOURCES` の `autoGenerateWhileBuff` で駆動する
+  {
+    id: "lucid-dreaming",
+    name: "ルーシッドドリーム",
+    shortName: "ﾙｰｼｯﾄﾞ",
+    icon: lucidDreamingIcon,
+    duration: 21,
+    effects: [],
+    color: "#a5d6a7",
+    acquiredLevel: 14,
   },
 ];
