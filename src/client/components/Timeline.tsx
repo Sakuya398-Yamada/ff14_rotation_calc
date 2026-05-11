@@ -68,7 +68,7 @@ function calcInsertIndex(
   scrollLeft: number,
   resolvedEntries: ResolvedTimelineEntry[],
   skillMap: Map<string, Skill>,
-  recastFn: (skill: Skill, activeBuffs: ActiveBuff[]) => number
+  recastFn: (entry: ResolvedTimelineEntry, skill: Skill) => number
 ): number {
   // タイムラインコンテンツ上の実際のX座標（スクロール考慮、レーンラベル分を引く）
   const contentX = mouseX + scrollLeft - LANE_LABEL_WIDTH;
@@ -81,7 +81,7 @@ function calcInsertIndex(
     const entry = resolvedEntries[i];
     const skill = skillMap.get(entry.skillId);
     if (!skill) continue;
-    const centerTime = entry.startTime + recastFn(skill, entry.activeBuffs) / 2;
+    const centerTime = entry.startTime + recastFn(entry, skill) / 2;
     if (time < centerTime) {
       return i;
     }
@@ -202,23 +202,24 @@ export function Timeline({
   );
 
   /** エントリのアクティブバフを考慮したリキャスト計算 */
-  const getEntryRecastTime = useCallback(
-    (skill: Skill, activeBuffs: ActiveBuff[]) => {
-      let recast = getRecastTime(skill);
-      if (skill.type === "gcd" && activeBuffs.length > 0) {
-        for (const ab of activeBuffs) {
-          const def = buffDefMap.get(ab.buffId);
-          if (!def) continue;
-          for (const effect of def.effects) {
-            if (effect.type === "speed") {
-              recast = Math.round(recast * effect.value * 1000) / 1000;
-            }
-          }
-        }
+  /**
+   * 既存エントリのリキャスト時間を resolve-timeline 側の計算結果から取得する。
+   * GCD: gcdAvailableAt - startTime（自スキル付与の speed バフは除外済み = 実機準拠）
+   * oGCD: スキル固有の recastTime（gcdAvailableAt は前 GCD 由来のため使えない）
+   *
+   * 注意: entry.activeBuffs から自前で speed を再計算するのは NG。
+   * activeBuffs は実行"直後"のバフを含むため、当該スキル自身が付与した speed
+   * バフが二重計算されて視覚的なリキャストバーと resolve-timeline の startTime
+   * が乖離する（侍の士風→風花のように、自スキルが付与する速度バフを持つ場合）。
+   */
+  const getResolvedEntryRecast = useCallback(
+    (entry: ResolvedTimelineEntry, skill: Skill) => {
+      if (skill.type === "gcd") {
+        return Math.round((entry.gcdAvailableAt - entry.startTime) * 1000) / 1000;
       }
-      return recast;
+      return getRecastTime(skill);
     },
-    [getRecastTime, buffDefMap]
+    [getRecastTime]
   );
 
   const gcdEntries: (ResolvedTimelineEntry & { skill: Skill; displaySkill: Skill })[] = [];
@@ -306,7 +307,7 @@ export function Timeline({
     for (const entry of resolvedEntries) {
       const skill = skillMap.get(entry.skillId);
       if (!skill) continue;
-      const end = entry.startTime + getEntryRecastTime(skill, entry.activeBuffs);
+      const end = entry.startTime + getResolvedEntryRecast(entry, skill);
       if (end > maxEnd) maxEnd = end;
       // バフ終了時刻も考慮（永続バフ= endTime が Infinity はタイムライン幅に影響させない）
       for (const ab of entry.activeBuffs) {
@@ -329,7 +330,7 @@ export function Timeline({
       }
     }
     return maxEnd;
-  }, [resolvedEntries, skillMap, getEntryRecastTime, activeDoTs, untargetableWindows, cooldownSpans]);
+  }, [resolvedEntries, skillMap, getResolvedEntryRecast, activeDoTs, untargetableWindows, cooldownSpans]);
 
   const timelineWidth = Math.max(totalDuration * PX_PER_SEC + 100, 600);
 
@@ -350,14 +351,14 @@ export function Timeline({
     if (scrollRef.current && resolvedEntries.length > 0) {
       const last = resolvedEntries[resolvedEntries.length - 1];
       const skill = skillMap.get(last.skillId);
-      const recast = skill ? getEntryRecastTime(skill, last.activeBuffs) : 0;
+      const recast = skill ? getResolvedEntryRecast(last, skill) : 0;
       const endPx = (last.startTime + recast) * PX_PER_SEC;
       const container = scrollRef.current;
       if (endPx > container.scrollLeft + container.clientWidth - 100) {
         container.scrollLeft = endPx - container.clientWidth + 150;
       }
     }
-  }, [resolvedEntries, skillMap, getEntryRecastTime]);
+  }, [resolvedEntries, skillMap, getResolvedEntryRecast]);
 
   /** ドラッグ中のスキルタイプを検出 */
   const detectDragType = useCallback((e: React.DragEvent): "gcd" | "ogcd" => {
@@ -470,7 +471,7 @@ export function Timeline({
    * GCDリキャスト中のウィービング位置を正しく判定する。
    */
   const getAnimLockWidth = useCallback(
-    (skill: Skill, _activeBuffs: ActiveBuff[]): number => skill.animationLock,
+    (_entry: ResolvedTimelineEntry, skill: Skill): number => skill.animationLock,
     []
   );
 
@@ -485,12 +486,12 @@ export function Timeline({
   const calcCombinedInsertIndex = useCallback(
     (mouseX: number, scrollLeft: number, type: "gcd" | "ogcd"): number => {
       if (type === "gcd") {
-        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, visibleGcdEntriesForInsert, skillMap, getEntryRecastTime);
+        const gcdIdx = calcInsertIndex(mouseX, scrollLeft, visibleGcdEntriesForInsert, skillMap, getResolvedEntryRecast);
         return mapGcdIndexToInsertion(gcdIdx);
       }
       return calcInsertIndex(mouseX, scrollLeft, visibleEntriesForInsert, skillMap, getAnimLockWidth);
     },
-    [visibleEntriesForInsert, visibleGcdEntriesForInsert, skillMap, getEntryRecastTime, getAnimLockWidth, mapGcdIndexToInsertion]
+    [visibleEntriesForInsert, visibleGcdEntriesForInsert, skillMap, getResolvedEntryRecast, getAnimLockWidth, mapGcdIndexToInsertion]
   );
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -919,7 +920,7 @@ export function Timeline({
                 <div style={styles.laneContent}>
                   {gcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
-                    const recast = getEntryRecastTime(entry.skill, entry.activeBuffs);
+                    const recast = getResolvedEntryRecast(entry, entry.skill);
                     const castTime = entry.castTime;
                     const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
                     const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus) : null;
