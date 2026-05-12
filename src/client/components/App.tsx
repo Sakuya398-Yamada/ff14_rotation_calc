@@ -142,7 +142,11 @@ export function App() {
     setEntries((prev) => {
       const fromIdx = prev.findIndex((e) => e.uid === uid);
       if (fromIdx < 0) return prev;
-      const entry = prev[fromIdx];
+      // D&D での並び替え時は、過去に設定した manualStartTime をリセットして自動計算に戻す
+      // （Issue #175 仕様: 並び替えで位置が変わるならマニュアル時刻の意味が薄れる）
+      const { manualStartTime: _drop, ...rest } = prev[fromIdx];
+      void _drop;
+      const entry: TimelineEntry = rest;
       const without = [...prev.slice(0, fromIdx), ...prev.slice(fromIdx + 1)];
       if (insertBeforeUid) {
         const toIdx = without.findIndex((e) => e.uid === insertBeforeUid);
@@ -152,6 +156,24 @@ export function App() {
       return [...without, entry];
     });
   }, []);
+
+  const handleManualStartTimeChange = useCallback(
+    (uid: string, manualStartTime: number | undefined) => {
+      setEntries((prev) =>
+        prev.map((e) => {
+          if (e.uid !== uid) return e;
+          if (manualStartTime === undefined) {
+            // undefined を渡されたら manualStartTime キー自体を削除（型上 optional のため省略形が正）
+            const { manualStartTime: _drop, ...rest } = e;
+            void _drop;
+            return rest;
+          }
+          return { ...e, manualStartTime };
+        })
+      );
+    },
+    []
+  );
 
   // per-entryのクリティカル率ボーナスを考慮した合計期待威力
   const { totalExpectedPotency, dotExpectedPotency } = useMemo(() => {
@@ -258,6 +280,7 @@ export function App() {
             buffDefMap={buffDefMap}
             stats={stats}
             onClose={() => setSelectedEntryUid(null)}
+            onManualStartTimeChange={handleManualStartTimeChange}
           />
         )}
       </div>
