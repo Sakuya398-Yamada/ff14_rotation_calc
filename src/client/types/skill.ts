@@ -97,6 +97,13 @@ export interface Skill {
   cooldown?: number;
   /** 最大チャージ数。未設定の場合は1（従来通り1回使用でクールダウン） */
   maxCharges?: number;
+  /**
+   * 共有リキャストグループ識別子。同一グループのスキル間でチャージ・クールダウンを共有する。
+   * 例: 必殺剣・紅蓮（Lv62）と置換後の必殺剣・閃影（Lv96）は同じ "hissatsu-senei-guren" を持ち、
+   * どちらを使ってもチャージが共有消費される。
+   * 未設定の場合は従来通りスキル個別のチャージ管理（後方互換）。
+   */
+  cooldownGroup?: string;
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */

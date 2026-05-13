@@ -185,6 +185,89 @@ describe("チャージシステム", () => {
     });
   });
 
+  describe("共有リキャスト（cooldownGroup）", () => {
+    it("同一グループのスキル間でチャージを共有消費する", () => {
+      // 紅蓮 → 閃影 → 閃影（紅蓮 2 チャージを 3 連続で消費）→ 3 発目で recastError
+      const guren = makeSkill({
+        id: "guren",
+        cooldown: 60,
+        maxCharges: 2,
+        cooldownGroup: "shared",
+      });
+      const senei = makeSkill({
+        id: "senei",
+        cooldown: 60,
+        maxCharges: 2,
+        cooldownGroup: "shared",
+      });
+      const skillMap = new Map([
+        [guren.id, guren],
+        [senei.id, senei],
+      ]);
+      const entries = [makeEntry("guren"), makeEntry("senei"), makeEntry("senei")];
+
+      const result = resolveTimeline(entries, skillMap, []);
+
+      expect(result.entries[0].recastError).toBe(false);
+      expect(result.entries[1].recastError).toBe(false);
+      expect(result.entries[2].recastError).toBe(true);
+    });
+
+    it("グループ未設定スキルは独立したチャージ管理（後方互換）", () => {
+      // cooldownGroup 未設定の 2 スキルは別個のチャージを持つ
+      const a = makeSkill({ id: "skill-a", cooldown: 30 });
+      const b = makeSkill({ id: "skill-b", cooldown: 30 });
+      const skillMap = new Map([
+        [a.id, a],
+        [b.id, b],
+      ]);
+      const entries = [makeEntry("skill-a"), makeEntry("skill-b")];
+
+      const result = resolveTimeline(entries, skillMap, []);
+
+      expect(result.entries[0].recastError).toBe(false);
+      expect(result.entries[1].recastError).toBe(false);
+    });
+
+    it("共有グループの cooldown 経過でチャージが回復する", () => {
+      // cooldown: 1s, maxCharges: 2 を共有するグループ
+      // t=0: guren (charges 2→1, nextChargeAt=1.0)
+      // t=0.65: senei (charges 1→0, nextChargeAt=1.0)
+      // t=1.30: GCD (gcdAvailableAt=3.80)
+      // t=1.95: guren → nextChargeAt=1.0<=1.95, charges 0→1 → OK
+      const guren = makeSkill({
+        id: "guren",
+        cooldown: 1,
+        maxCharges: 2,
+        cooldownGroup: "shared",
+      });
+      const senei = makeSkill({
+        id: "senei",
+        cooldown: 1,
+        maxCharges: 2,
+        cooldownGroup: "shared",
+      });
+      const gcd = makeSkill({ id: "gcd-skill", type: "gcd", recastTime: 2.5 });
+      const skillMap = new Map([
+        [guren.id, guren],
+        [senei.id, senei],
+        [gcd.id, gcd],
+      ]);
+      const entries = [
+        makeEntry("guren"),
+        makeEntry("senei"),
+        makeEntry("gcd-skill"),
+        makeEntry("guren"),
+      ];
+
+      const result = resolveTimeline(entries, skillMap, []);
+
+      expect(result.entries[0].recastError).toBe(false);
+      expect(result.entries[1].recastError).toBe(false);
+      expect(result.entries[3].recastError).toBe(false);
+    });
+  });
+
   describe("ライフサージ（竜騎士）シナリオ", () => {
     it("maxCharges: 2のライフサージを連続使用できる", () => {
       const lifeSurge = makeSkill({
