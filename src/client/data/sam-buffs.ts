@@ -14,6 +14,9 @@ import kaeshiNamikiriIcon from "../assets/icons/sam/Kaeshi_Namikiri.png";
 import tendoSetsugekkaIcon from "../assets/icons/sam/Tendo_Setsugekka.png";
 import enpiIcon from "../assets/icons/sam/Enpi.png";
 
+// === ロールアクション アイコン ===
+import trueNorthIcon from "../assets/icons/sam/role_actions/True_North.png";
+
 /**
  * 明鏡止水でコンボ条件無視（bypassCombo）の対象となるWS群。
  * - 1段目（刃風/暁風/風雅/風光）は comboFrom を持たないのでバイパス不要
@@ -229,5 +232,18 @@ export const SAM_BUFFS: BuffDefinition[] = [
     maxStacks: 1,
     acquiredLevel: 90,
     exclusiveGroup: "tsubame-ready",
+  },
+  // ロールアクション: トゥルーノース（方向指定無視）
+  // effects は空（方向指定ボーナス計算が本ツール未実装のため）
+  {
+    id: "true-north",
+    name: "トゥルーノース",
+    shortName: "ﾄｩﾙｰ\nﾉｰｽ",
+    icon: trueNorthIcon,
+    duration: 10,
+    effects: [],
+    color: "#ce93d8",
+    maxStacks: 1,
+    acquiredLevel: 50,
   },
 ];

@@ -37,6 +37,9 @@ import wyrmwindThrustIcon from "../assets/icons/drg/Wyrmwind_Thrust.png";
 import riseOfTheDragonIcon from "../assets/icons/drg/Rise_of_the_Dragon.png";
 import starcrossIcon from "../assets/icons/drg/Starcross.png";
 
+// === ロールアクション アイコン ===
+import trueNorthIcon from "../assets/icons/drg/role_actions/True_North.png";
+
 /** GCDのデフォルトリキャストタイム（秒） */
 const GCD_RECAST = 2.5;
 
@@ -577,5 +580,25 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
     acquiredLevel: 45,
+  },
+
+  // ============================================================
+  // oGCD: 近接DPSロールアクション
+  // ============================================================
+  // 方向指定ボーナスを無視するアビリティ。本ツールは方向指定ボーナス計算自体を
+  // 実装していないため、バフ effects は空。リキャスト枠の管理用途で配置可能。
+  {
+    id: "true-north",
+    name: "トゥルーノース",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: trueNorthIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    cooldown: 45,
+    maxCharges: 2,
+    acquiredLevel: 50,
+    buffApplications: ["true-north"],
   },
 ];

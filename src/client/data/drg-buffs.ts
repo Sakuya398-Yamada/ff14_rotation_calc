@@ -14,6 +14,9 @@ import starcrossIcon from "../assets/icons/drg/Starcross.png";
 import drakesbaneIcon from "../assets/icons/drg/Drakesbane.png";
 import piercingTalonIcon from "../assets/icons/drg/Piercing_Talon.png";
 
+// === ロールアクション アイコン ===
+import trueNorthIcon from "../assets/icons/drg/role_actions/True_North.png";
+
 /**
  * 竜騎士（DRG）バフ定義
  */
@@ -188,5 +191,18 @@ export const DRG_BUFFS: BuffDefinition[] = [
     color: "#00bcd4",
     maxStacks: 1,
     acquiredLevel: 76,
+  },
+  // ロールアクション: トゥルーノース（方向指定無視）
+  // effects は空（方向指定ボーナス計算が本ツール未実装のため）
+  {
+    id: "true-north",
+    name: "トゥルーノース",
+    shortName: "ﾄｩﾙｰ\nﾉｰｽ",
+    icon: trueNorthIcon,
+    duration: 10,
+    effects: [],
+    color: "#ce93d8",
+    maxStacks: 1,
+    acquiredLevel: 50,
   },
 ];
