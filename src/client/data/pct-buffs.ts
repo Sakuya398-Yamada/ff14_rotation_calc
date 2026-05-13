@@ -115,7 +115,23 @@ export const PCT_BUFFS: BuffDefinition[] = [
     duration: 30,
     maxStacks: 5,
     effects: [
-      { type: "speed", value: 0.75 },
+      // 25% キャスト/リキャスト短縮の対象は色魔法・スタープリズム・ホワイトホーリー/ブラックコメットに限定。
+      // ハンマーコンボ・描画スキル・レインボードリップは対象外。
+      {
+        type: "speed",
+        value: 0.75,
+        appliesToSkillIds: [
+          "fire-in-red",
+          "aero-in-green",
+          "water-in-blue",
+          "blizzard-in-cyan",
+          "stone-in-yellow",
+          "thunder-in-magenta",
+          "star-prism",
+          "holy-in-white",
+          "comet-in-black",
+        ],
+      },
       { type: "consumeOnGcd", value: 1 },
     ],
     color: "#b39ddb",
