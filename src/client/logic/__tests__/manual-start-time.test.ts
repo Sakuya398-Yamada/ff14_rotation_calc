@@ -80,6 +80,40 @@ describe("manualStartTime (Issue #175)", () => {
     expect(result.entries[1].recastError).toBe(true);
   });
 
+  it("cooldown を持たない GCD でも、manualStartTime が自動計算値より早ければ recastError を立てる", () => {
+    // Issue #175 フィードバック対応: グレアガ→ディアを 1.0s に手動配置すると
+    // 自動 2.5s に対して GCD リキャスト中の強制配置になるが、現状警告が出なかった問題。
+    const entries: TimelineEntry[] = [
+      { uid: "a", skillId: "gcd-a" },
+      { uid: "b", skillId: "gcd-b", manualStartTime: 1.0 }, // 自動 2.5s に対し 1.0s に前倒し
+    ];
+    const result = resolveTimeline(entries, skillMap, []);
+    expect(result.entries[1].startTime).toBeCloseTo(1.0, 6);
+    expect(result.entries[1].autoStartTime).toBeCloseTo(2.5, 6);
+    expect(result.entries[1].recastError).toBe(true);
+  });
+
+  it("manualStartTime == autoStartTime（境界）では recastError を立てない", () => {
+    const entries: TimelineEntry[] = [
+      { uid: "a", skillId: "gcd-a" },
+      { uid: "b", skillId: "gcd-b", manualStartTime: 2.5 }, // 自動値と同じ
+    ];
+    const result = resolveTimeline(entries, skillMap, []);
+    expect(result.entries[1].startTime).toBeCloseTo(2.5, 6);
+    expect(result.entries[1].recastError).toBe(false);
+  });
+
+  it("oGCD でも manualStartTime が自動計算値より早ければ recastError を立てる（アニメロック中）", () => {
+    const entries: TimelineEntry[] = [
+      { uid: "a", skillId: "gcd-a" }, // アニメロック 0.65s
+      { uid: "x", skillId: "ogcd-x", manualStartTime: 0.3 }, // 自動 0.65s に対し 0.3s に前倒し
+    ];
+    const result = resolveTimeline(entries, skillMap, []);
+    expect(result.entries[1].startTime).toBeCloseTo(0.3, 6);
+    expect(result.entries[1].autoStartTime).toBeCloseTo(0.65, 6);
+    expect(result.entries[1].recastError).toBe(true);
+  });
+
   it("マニュアル設定された後続エントリは、マニュアル時刻を基準に再計算される", () => {
     const entries: TimelineEntry[] = [
       { uid: "a", skillId: "gcd-a" },

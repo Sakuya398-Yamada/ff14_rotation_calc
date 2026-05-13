@@ -963,6 +963,13 @@ export function resolveTimeline(
       }
       // state未登録 = 初回使用 → エラーなし
     }
+    // マニュアル開始時刻が自動計算値より早い場合（= GCD リキャスト/詠唱中・oGCD アニメーションロック中に
+    // ユーザーが強制配置した）も警告対象。cooldown 系の charge エラーとは別経路だが、UI 上は
+    // 同じ「リキャスト中」エラーとして扱う（Issue #175 仕様）。
+    // 浮動小数誤差を避けるため epsilon を入れる。
+    if (entry.manualStartTime !== undefined && startTime + 0.0005 < autoStartTime) {
+      recastError = true;
+    }
 
     // GCDスキル実行前に、消費対象（consumeOnGcd / instantCast）のバフIDを Set で収集する。
     // 同一バフが両エフェクトを併せ持つ場合に 1 発で 2 回デクリメントされるリスクを排除するため、
