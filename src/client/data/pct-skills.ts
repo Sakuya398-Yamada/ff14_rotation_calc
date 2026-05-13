@@ -163,7 +163,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 50,
     requiredBuff: "hammer-combo-ready",
-    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }],
+    guaranteedCrit: true,
+    guaranteedDh: true,
     buffApplications: ["hammer-brush-ready"],
     autoTransform: [
       { buffId: "hammer-polish-ready", skillId: "polishing-hammer" },
@@ -187,7 +188,10 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 86,
     requiredBuff: "hammer-combo-ready",
-    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }, { buffId: "hammer-brush-ready", stacks: 1 }],
+    comboFrom: ["hammer-stamp"],
+    guaranteedCrit: true,
+    guaranteedDh: true,
+    buffConsumptions: [{ buffId: "hammer-brush-ready", stacks: 1 }],
     buffApplications: ["hammer-polish-ready"],
   },
   {
@@ -201,7 +205,13 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 86,
     requiredBuff: "hammer-combo-ready",
-    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }, { buffId: "hammer-polish-ready", stacks: 1 }],
+    comboFrom: ["hammer-brush"],
+    guaranteedCrit: true,
+    guaranteedDh: true,
+    buffConsumptions: [
+      { buffId: "hammer-combo-ready", stacks: 1 },
+      { buffId: "hammer-polish-ready", stacks: 1 },
+    ],
   },
 
   // ============================================================
