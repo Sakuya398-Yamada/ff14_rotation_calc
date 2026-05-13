@@ -12,8 +12,10 @@ import type {
   ActiveDoT,
   TimelineResult,
   BossUntargetableWindow,
+  MultiTargetWindow,
 } from "../types/skill";
 import { calcGcd, calcExpectedMultiplier } from "./stat-calc";
+import { calcEntryExpectedPotency } from "./expected-potency";
 
 /** DoTティック間隔（秒） */
 const DOT_TICK_INTERVAL = 3;
@@ -391,6 +393,26 @@ function isInUntargetableWindow(
 }
 
 /**
+ * 指定時刻における敵の数を返す（複数体ウィンドウ判定）。
+ * - `skill.target !== "enemy"` のスキル（味方対象・自己対象）は常に 1
+ * - `multiTargetWindows` 未定義 / 該当なしの場合は 1
+ * - 半開区間 `[startTime, endTime)`（`isInUntargetableWindow` と同仕様）
+ */
+function getTargetCountAt(
+  time: number,
+  windows: MultiTargetWindow[] | undefined,
+  skill: Skill
+): number {
+  if (!windows || windows.length === 0 || skill.target !== "enemy") return 1;
+  for (const w of windows) {
+    if (time >= w.startTime && time < w.endTime) {
+      return Math.max(1, w.targetCount);
+    }
+  }
+  return 1;
+}
+
+/**
  * 同一 displayGroup 内の他リソース合計を取得する（groupMaxStacks キャップ判定用）。
  */
 function getGroupOtherSum(
@@ -634,7 +656,8 @@ export function resolveTimeline(
   resources: ResourceDefinition[],
   stats?: CharacterStats,
   buffs?: BuffDefinition[],
-  untargetableWindows?: BossUntargetableWindow[]
+  untargetableWindows?: BossUntargetableWindow[],
+  multiTargetWindows?: MultiTargetWindow[]
 ): TimelineResult {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
@@ -950,6 +973,7 @@ export function resolveTimeline(
     const untargetableError = skill.target === "enemy" && untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
       : false;
+    const targetCount = getTargetCountAt(startTime, multiTargetWindows, skill);
 
     // チャージ回復処理 & リキャストチェック
     // cooldownGroup 設定時は同一グループ内でチャージ・クールダウンを共有する
@@ -1426,6 +1450,7 @@ export function resolveTimeline(
       gcdAvailableAt,
       actionAvailableAt,
       castTime: resolvedCastTime,
+      targetCount,
     });
   }
 
@@ -1531,13 +1556,8 @@ export function calcPps(
   let directPotency = 0;
   for (const entry of resolvedEntries) {
     if (entry.startTime >= rangeStart && entry.startTime < rangeEnd) {
-      // ハードエラーのあるスキルはダメージ計算対象外
-      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
-      if (hasError) continue;
-      // resolvedPotencyを使用（コンボ成否・自動変化を反映済み）
-      const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
-      directPotency += Math.floor(buffedPotency * entryMul);
+      const skill = skillMap.get(entry.resolvedSkillId);
+      directPotency += calcEntryExpectedPotency(entry, skill, stats);
     }
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats } from "../types/skill";
 import { calcExpectedMultiplier } from "../logic/stat-calc";
+import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
 
 interface SkillDetailPanelProps {
@@ -114,9 +115,15 @@ export function SkillDetailPanel({
 
   const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
   const expectedMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
-  const expectedValue = !hasError && entry.resolvedPotency > 0
+  const singleTargetExpected = !hasError && entry.resolvedPotency > 0
     ? Math.floor(buffedPotency * expectedMul)
     : null;
+  // 複数体ヒット内訳。単体時は targets.length <= 1
+  const breakdown = !hasError && entry.resolvedPotency > 0
+    ? calcEntryPotencyBreakdown(entry, resolvedSkill, stats)
+    : null;
+  const expectedValue = breakdown ? breakdown.total : singleTargetExpected;
+  const isMultiTargetHit = breakdown !== null && breakdown.targets.length > 1;
 
   const errorMessages: string[] = [];
   if (entry.resourceErrors.length > 0) errorMessages.push(`リソース不足: ${entry.resourceErrors.join(", ")}`);
@@ -231,13 +238,22 @@ export function SkillDetailPanel({
         </Section>
 
         <div style={styles.expectedBox}>
-          <div style={styles.sectionLabel}>期待値</div>
+          <div style={styles.sectionLabel}>
+            期待値{isMultiTargetHit && breakdown ? ` (×${breakdown.targets.length}体 合算)` : ""}
+          </div>
           <div style={styles.expectedValue}>
             {expectedValue !== null ? expectedValue : "—"}
           </div>
-          {expectedValue !== null && (
+          {singleTargetExpected !== null && !isMultiTargetHit && (
             <div style={styles.expectedFormula}>
-              {entry.resolvedPotency} × {entry.buffMultiplier.toFixed(2)} × {expectedMul.toFixed(3)} = {expectedValue}
+              {entry.resolvedPotency} × {entry.buffMultiplier.toFixed(2)} × {expectedMul.toFixed(3)} = {singleTargetExpected}
+            </div>
+          )}
+          {isMultiTargetHit && breakdown && (
+            <div style={styles.expectedFormula}>
+              1体: {breakdown.singleTargetPotency}
+              {breakdown.targets.slice(1).map((t, i) => ` / ${i + 2}体目: ${t}`).join("")}
+              {" = "}{breakdown.total}
             </div>
           )}
         </div>

@@ -22,8 +22,9 @@ import { SAM_ATTACK_SKILLS } from "../data/sam-skills";
 import { SAM_RESOURCES } from "../data/sam-resources";
 import { SAM_BUFFS } from "../data/sam-buffs";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
+import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
-import type { Skill, BuffDefinition, ResourceDefinition, TimelineEntry, CharacterStats, BossUntargetableWindow, PpsRange, PlayerLevel } from "../types/skill";
+import type { Skill, BuffDefinition, ResourceDefinition, TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
 
 /** ジョブID */
 export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam";
@@ -55,6 +56,7 @@ export function App() {
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
+  const [multiTargetWindows, setMultiTargetWindows] = useState<MultiTargetWindow[]>([]);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
   const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
 
@@ -111,8 +113,8 @@ export function App() {
   }, [skills, jobData.skills, level]);
 
   const timelineResult = useMemo(
-    () => resolveTimeline(entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows),
-    [entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows]
+    () => resolveTimeline(entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows),
+    [entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows]
   );
 
   const resolvedEntries = timelineResult.entries;
@@ -175,16 +177,14 @@ export function App() {
     []
   );
 
-  // per-entryのクリティカル率ボーナスを考慮した合計期待威力
+  // per-entryのクリティカル率ボーナスを考慮した合計期待威力（複数体ヒット合算込み）
   const { totalExpectedPotency, dotExpectedPotency } = useMemo(() => {
     const directExpected = resolvedEntries.reduce((sum, entry) => {
-      const hasError = entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError || entry.recastError;
-      if (hasError) return sum;
-      const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-      const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
-      return sum + Math.floor(buffedPotency * entryMul);
+      const skill = allSkillMap.get(entry.resolvedSkillId);
+      return sum + calcEntryExpectedPotency(entry, skill, stats);
     }, 0);
     // DoTはティックごとにスナップショット済みのcritRateBonus・dhRateBonusを適用
+    // （DoTは保守的に1体のみ付与の前提のため targetCount は反映しない）
     const dotExpected = timelineResult.dotTicks.reduce((sum, tick) => {
       const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
       return sum + Math.floor(tick.potency * dotMul);
@@ -265,6 +265,8 @@ export function App() {
           activeDoTs={timelineResult.activeDoTs}
           untargetableWindows={untargetableWindows}
           onUntargetableWindowsChange={setUntargetableWindows}
+          multiTargetWindows={multiTargetWindows}
+          onMultiTargetWindowsChange={setMultiTargetWindows}
           overallPps={overallPps}
           rangePps={rangePps}
           ppsRange={ppsRange}
