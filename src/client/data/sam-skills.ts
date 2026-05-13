@@ -33,6 +33,7 @@ import shohaIcon from "../assets/icons/sam/Shoha.png";
 import hissatsuGyotenIcon from "../assets/icons/sam/Hissatsu_Gyoten.png";
 import hissatsuYatenIcon from "../assets/icons/sam/Hissatsu_Yaten.png";
 import hissatsuShintenIcon from "../assets/icons/sam/Hissatsu_Shinten.png";
+import hissatsuGurenIcon from "../assets/icons/sam/Hissatsu_Guren.png";
 import hissatsuSeneiIcon from "../assets/icons/sam/Hissatsu_Senei.png";
 import ikishotenIcon from "../assets/icons/sam/Ikishoten.png";
 import hagakureIcon from "../assets/icons/sam/Hagakure.png";
@@ -571,6 +572,21 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
   },
   {
+    id: "hissatsu-guren",
+    name: "必殺剣・紅蓮",
+    potency: 400,
+    type: "ogcd",
+    target: "enemy",
+    icon: hissatsuGurenIcon,
+    recastTime: 1.0,
+    animationLock: 0.65,
+    acquiredLevel: 62,
+    cooldown: 60,
+    maxCharges: 2,
+    cooldownGroup: "hissatsu-senei-guren",
+    resourceChanges: [{ resourceId: "kenki", amount: -25 }],
+  },
+  {
     id: "hissatsu-senei",
     name: "必殺剣・閃影",
     potency: 800,
@@ -579,8 +595,11 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: hissatsuSeneiIcon,
     recastTime: 1.0,
     animationLock: 0.65,
-    acquiredLevel: 72,
+    acquiredLevel: 96,
     cooldown: 60,
+    maxCharges: 2,
+    cooldownGroup: "hissatsu-senei-guren",
+    replacesSkillId: "hissatsu-guren",
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
   },
 
