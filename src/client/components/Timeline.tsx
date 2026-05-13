@@ -1487,6 +1487,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     minWidth: 0,
+    position: "relative" as const,
   },
   header: {
     display: "flex",
@@ -2046,14 +2047,14 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: "center" as const,
   },
   deleteDropZone: {
-    position: "fixed" as const,
+    position: "absolute" as const,
     bottom: 32,
-    left: "50%",
-    transform: "translateX(-50%)",
-    minWidth: 560,
+    left: 32,
+    right: 32,
     padding: "28px 44px",
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 16,
     backgroundColor: "rgba(211, 47, 47, 0.85)",
     color: "#fff",
@@ -2069,7 +2070,7 @@ const styles: Record<string, React.CSSProperties> = {
   deleteDropZoneActive: {
     backgroundColor: "rgba(211, 47, 47, 1)",
     borderColor: "rgba(255, 255, 255, 0.95)",
-    transform: "translateX(-50%) scale(1.06)",
+    transform: "scale(1.02)",
   },
   deleteDropZoneIcon: {
     width: 40,
