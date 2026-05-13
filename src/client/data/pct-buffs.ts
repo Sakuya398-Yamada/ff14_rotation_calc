@@ -67,11 +67,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "ﾊﾝﾏｰ\nｺﾝﾎﾞ",
     icon: hammerStampIcon,
     duration: null,
-    maxStacks: 3,
-    effects: [
-      { type: "guaranteedCrit", value: 1 },
-      { type: "guaranteedDh", value: 1 },
-    ],
+    effects: [],
     color: "#ffb74d",
   },
   {
