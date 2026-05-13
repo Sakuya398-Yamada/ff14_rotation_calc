@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, PpsRange } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../types/skill";
 import { calcGcd, calcExpectedMultiplier } from "../logic/stat-calc";
+import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { computeBuffTimespans } from "../logic/buff-timespans";
 import { resolveTimeline } from "../logic/resolve-timeline";
 import "./timeline.css";
@@ -52,6 +53,8 @@ interface TimelineProps {
   activeDoTs: ActiveDoT[];
   untargetableWindows: BossUntargetableWindow[];
   onUntargetableWindowsChange: (windows: BossUntargetableWindow[]) => void;
+  multiTargetWindows: MultiTargetWindow[];
+  onMultiTargetWindowsChange: (windows: MultiTargetWindow[]) => void;
   overallPps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
   rangePps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
   ppsRange: PpsRange | null;
@@ -89,6 +92,21 @@ function ManualStartTimeBadge() {
       </svg>
     </div>
   );
+}
+
+/**
+ * 期待値ツールチップに付与する複数体ヒット内訳を整形する。
+ * - 単体（`targets.length <= 1`）: 空文字
+ * - 複数体（全て同値）: ` ×N体 (1体: X)`
+ * - 複数体（減衰あり）: ` ×N体 (1体: X / 減衰時: Y)`
+ */
+function formatTargetBreakdown(
+  breakdown: { total: number; targets: number[]; singleTargetPotency: number } | null
+): string {
+  if (!breakdown || breakdown.targets.length <= 1) return "";
+  const reduced = breakdown.targets.find((t) => t !== breakdown.singleTargetPotency);
+  const reducedSuffix = reduced !== undefined ? ` / 減衰時: ${reduced}` : "";
+  return ` ×${breakdown.targets.length}体 (1体: ${breakdown.singleTargetPotency}${reducedSuffix})`;
 }
 
 function calcInsertIndex(
@@ -135,6 +153,8 @@ export function Timeline({
   activeDoTs,
   untargetableWindows,
   onUntargetableWindowsChange,
+  multiTargetWindows,
+  onMultiTargetWindowsChange,
   overallPps,
   rangePps,
   ppsRange,
@@ -199,6 +219,7 @@ export function Timeline({
   const [showDoTs, setShowDoTs] = useState(true);
   const [showRecasts, setShowRecasts] = useState(true);
   const [showUntargetableEditor, setShowUntargetableEditor] = useState(false);
+  const [showMultiTargetEditor, setShowMultiTargetEditor] = useState(false);
   const [showPpsRange, setShowPpsRange] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** 末尾追加時のみ自動スクロールするためのフラグ */
@@ -284,8 +305,8 @@ export function Timeline({
     const filteredRaw = resolvedEntries
       .filter((e) => e.uid !== draggingEntryUid)
       .map((e) => ({ uid: e.uid, skillId: e.skillId }));
-    return resolveTimeline(filteredRaw, skillMap, resources, stats, buffs, untargetableWindows).entries;
-  }, [resolvedEntries, draggingEntryUid, skillMap, resources, stats, buffs, untargetableWindows]);
+    return resolveTimeline(filteredRaw, skillMap, resources, stats, buffs, untargetableWindows, multiTargetWindows).entries;
+  }, [resolvedEntries, draggingEntryUid, skillMap, resources, stats, buffs, untargetableWindows, multiTargetWindows]);
 
   /**
    * マウス位置と突き合わせる用の「見えている並び」。
@@ -353,6 +374,10 @@ export function Timeline({
     for (const w of untargetableWindows) {
       if (w.endTime > maxEnd) maxEnd = w.endTime;
     }
+    // 複数体ウィンドウの終了時刻も考慮
+    for (const w of multiTargetWindows) {
+      if (w.endTime > maxEnd) maxEnd = w.endTime;
+    }
     // 個別リキャストの終了時刻も考慮
     for (const spans of cooldownSpans.values()) {
       for (const span of spans) {
@@ -360,7 +385,7 @@ export function Timeline({
       }
     }
     return maxEnd;
-  }, [resolvedEntries, skillMap, getResolvedEntryRecast, activeDoTs, untargetableWindows, cooldownSpans]);
+  }, [resolvedEntries, skillMap, getResolvedEntryRecast, activeDoTs, untargetableWindows, multiTargetWindows, cooldownSpans]);
 
   const timelineWidth = Math.max(totalDuration * PX_PER_SEC + 100, 600);
 
@@ -703,6 +728,17 @@ export function Timeline({
             {showUntargetableEditor ? "離脱 ▼" : "離脱 ▶"}
             {untargetableWindows.length > 0 && ` (${untargetableWindows.length})`}
           </button>
+          <button
+            style={{
+              ...styles.toggleButton,
+              ...(multiTargetWindows.length > 0 ? { borderColor: "rgba(180, 100, 220, 0.5)", color: "#b864dc" } : {}),
+            }}
+            onClick={() => setShowMultiTargetEditor((v) => !v)}
+            title="複数体ウィンドウ設定（敵の数を指定する時間帯）"
+          >
+            {showMultiTargetEditor ? "複数体 ▼" : "複数体 ▶"}
+            {multiTargetWindows.length > 0 && ` (${multiTargetWindows.length})`}
+          </button>
           {activeDoTs.length > 0 && (
             <button
               style={styles.toggleButton}
@@ -917,6 +953,98 @@ export function Timeline({
         </div>
       )}
 
+      {showMultiTargetEditor && (
+        <div style={styles.multiTargetEditor}>
+          <div style={styles.multiTargetHeader}>
+            <span style={styles.multiTargetTitle}>複数体ウィンドウ</span>
+            <button
+              style={styles.multiTargetAddButton}
+              onClick={() => {
+                const lastEnd = multiTargetWindows.length > 0
+                  ? Math.max(...multiTargetWindows.map((w) => w.endTime))
+                  : 0;
+                onMultiTargetWindowsChange([
+                  ...multiTargetWindows,
+                  { startTime: lastEnd + 5, endTime: lastEnd + 10, targetCount: 2 },
+                ]);
+              }}
+            >
+              + 追加
+            </button>
+          </div>
+          {multiTargetWindows.length === 0 && (
+            <div style={styles.multiTargetEmpty}>複数体ウィンドウが未設定です</div>
+          )}
+          {multiTargetWindows.map((w, i) => (
+            <div key={i} style={styles.multiTargetRow}>
+              <label style={styles.multiTargetLabel}>
+                開始:
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={w.startTime}
+                  style={styles.multiTargetInput}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (isNaN(val) || val < 0) return;
+                    const next = [...multiTargetWindows];
+                    next[i] = { ...next[i], startTime: val };
+                    onMultiTargetWindowsChange(next);
+                  }}
+                />
+                s
+              </label>
+              <label style={styles.multiTargetLabel}>
+                終了:
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={w.endTime}
+                  style={styles.multiTargetInput}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (isNaN(val) || val < 0) return;
+                    const next = [...multiTargetWindows];
+                    next[i] = { ...next[i], endTime: val };
+                    onMultiTargetWindowsChange(next);
+                  }}
+                />
+                s
+              </label>
+              <label style={styles.multiTargetLabel}>
+                敵の数:
+                <input
+                  type="number"
+                  step="1"
+                  min="2"
+                  max="8"
+                  value={w.targetCount}
+                  style={styles.multiTargetInput}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (isNaN(val) || val < 2) return;
+                    const next = [...multiTargetWindows];
+                    next[i] = { ...next[i], targetCount: val };
+                    onMultiTargetWindowsChange(next);
+                  }}
+                />
+              </label>
+              <button
+                style={styles.multiTargetDeleteButton}
+                onClick={() => {
+                  onMultiTargetWindowsChange(multiTargetWindows.filter((_, idx) => idx !== i));
+                }}
+                title="削除"
+              >
+                x
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div
         style={{
           ...styles.dropZone,
@@ -953,12 +1081,11 @@ export function Timeline({
                     const recast = getResolvedEntryRecast(entry, entry.skill);
                     const castTime = entry.castTime;
                     const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus) : null;
-                    const expectedPot = hasError ? null : (
-                      entryExpMul !== null && entry.resolvedPotency > 0
-                        ? Math.floor(buffedPotency * entryExpMul)
-                        : null
-                    );
+                    const breakdown = stats && entry.resolvedPotency > 0 && !hasError
+                      ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
+                      : null;
+                    const expectedPot = breakdown ? breakdown.total : null;
+                    const targetBreakdown = formatTargetBreakdown(breakdown);
                     const isAutoTransformed = entry.resolvedSkillId !== entry.skillId;
                     // castTime > recast の場合は次 GCD が打てるのは castTime 後（resolve-timeline.ts と整合）。
                     // skillBlock の幅を max(castTime, recast) に拡張し、各バーを blockDuration 基準で割合計算する。
@@ -1012,7 +1139,7 @@ export function Timeline({
                             ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                             ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                           }}
-                          title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           data-skill-entry-uid={entry.uid}
                           onClick={() => onSelectEntry(entry.uid)}
                           draggable
@@ -1048,12 +1175,11 @@ export function Timeline({
                   {ogcdEntries.map((entry) => {
                     const hasError = entriesWithErrors.has(entry.uid);
                     const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-                    const entryExpMul = stats ? calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus) : null;
-                    const expectedPot = hasError ? null : (
-                      entryExpMul !== null && entry.resolvedPotency > 0
-                        ? Math.floor(buffedPotency * entryExpMul)
-                        : null
-                    );
+                    const breakdown = stats && entry.resolvedPotency > 0 && !hasError
+                      ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
+                      : null;
+                    const expectedPot = breakdown ? breakdown.total : null;
+                    const targetBreakdown = formatTargetBreakdown(breakdown);
                     return (
                       <div
                         key={entry.uid}
@@ -1069,7 +1195,7 @@ export function Timeline({
                             ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                             ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                           }}
-                          title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           data-skill-entry-uid={entry.uid}
                           onClick={() => onSelectEntry(entry.uid)}
                           draggable
@@ -1400,6 +1526,46 @@ export function Timeline({
                       }}
                     >
                       離脱
+                    </span>
+                  </div>
+                );
+              })}
+
+              {/* 複数体ウィンドウ */}
+              {multiTargetWindows.map((w, i) => {
+                const left = LANE_LABEL_WIDTH + w.startTime * PX_PER_SEC;
+                const width = (w.endTime - w.startTime) * PX_PER_SEC;
+                return (
+                  <div
+                    key={`multi-target-${i}`}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      bottom: RULER_HEIGHT,
+                      left,
+                      width,
+                      backgroundColor: "rgba(180, 100, 220, 0.12)",
+                      borderLeft: "2px solid rgba(180, 100, 220, 0.5)",
+                      borderRight: "2px solid rgba(180, 100, 220, 0.5)",
+                      zIndex: 4,
+                      pointerEvents: "none",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "center",
+                      paddingTop: "2px",
+                    }}
+                    title={`複数体 ×${w.targetCount} (${w.startTime}s - ${w.endTime}s)`}
+                  >
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        color: "rgba(180, 100, 220, 0.9)",
+                        fontWeight: "bold",
+                        whiteSpace: "nowrap",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      ×{w.targetCount}
                     </span>
                   </div>
                 );
@@ -2146,6 +2312,71 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255, 80, 80, 0.3)",
     borderRadius: "4px",
     color: "#ef5350",
+    fontSize: "12px",
+    padding: "2px 8px",
+    cursor: "pointer",
+    lineHeight: 1,
+  },
+  // 複数体ウィンドウエディタ
+  multiTargetEditor: {
+    backgroundColor: "rgba(180, 100, 220, 0.05)",
+    border: "1px solid rgba(180, 100, 220, 0.2)",
+    borderRadius: "6px",
+    padding: "8px 12px",
+    marginBottom: "8px",
+  },
+  multiTargetHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "6px",
+  },
+  multiTargetTitle: {
+    fontSize: "13px",
+    fontWeight: "bold",
+    color: "#b864dc",
+  },
+  multiTargetAddButton: {
+    background: "none",
+    border: "1px solid rgba(180, 100, 220, 0.4)",
+    borderRadius: "4px",
+    color: "#b864dc",
+    fontSize: "12px",
+    padding: "2px 10px",
+    cursor: "pointer",
+  },
+  multiTargetEmpty: {
+    fontSize: "12px",
+    color: "#777",
+  },
+  multiTargetRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "4px",
+  },
+  multiTargetLabel: {
+    fontSize: "12px",
+    color: "#aaa",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  multiTargetInput: {
+    width: "60px",
+    backgroundColor: "#1a1a3e",
+    border: "1px solid #444",
+    borderRadius: "4px",
+    color: "#e0e0e0",
+    padding: "2px 6px",
+    fontSize: "12px",
+    textAlign: "right" as const,
+  },
+  multiTargetDeleteButton: {
+    background: "none",
+    border: "1px solid rgba(180, 100, 220, 0.3)",
+    borderRadius: "4px",
+    color: "#b864dc",
     fontSize: "12px",
     padding: "2px 8px",
     cursor: "pointer",

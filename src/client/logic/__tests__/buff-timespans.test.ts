@@ -34,6 +34,7 @@ function makeEntry(startTime: number, activeBuffs: ActiveBuff[]): ResolvedTimeli
     gcdAvailableAt: startTime,
     actionAvailableAt: startTime,
     castTime: 0,
+    targetCount: 1,
   };
 }
 

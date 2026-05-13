@@ -173,6 +173,22 @@ export interface Skill {
   guaranteedCrit?: boolean;
   /** スキル固有の確定ダイレクトヒット（バフ経由ではない常時DH。返し波切等） */
   guaranteedDh?: boolean;
+  /**
+   * 対象数（1 = 単体、2以上 = 範囲）。
+   * 未設定または 1 の場合は単体スキルとして扱い、複数体ウィンドウ内でも 1 体分のみ威力を計上する。
+   * データ投入はジョブ別 Issue（#269〜#273）で行う。
+   */
+  maxTargets?: number;
+  /**
+   * 2体目以降（または `falloffStartTarget` 以降）の威力減衰率（0.0〜1.0）。
+   * 例: 0.5 = 50%減衰（残り 50% 威力）。未設定（または 0）は減衰なし＝フル威力。
+   */
+  falloffRate?: number;
+  /**
+   * 減衰が始まる体数（1-indexed）。未設定は 2（= 2体目から減衰）。
+   * 例: 3 を指定すると 1〜2 体目はフル威力、3 体目以降が減衰対象。
+   */
+  falloffStartTarget?: number;
 }
 
 /** タイムラインに配置されたスキル */
@@ -375,6 +391,20 @@ export interface BossUntargetableWindow {
   endTime: number;
 }
 
+/**
+ * 複数体ウィンドウ（指定時間帯に複数体の敵が居る期間）。
+ * この区間内に配置された対象 `enemy` スキルは `Skill.maxTargets` / `falloffRate` を元に合計威力が増加する。
+ * 区間判定は半開区間 `[startTime, endTime)`（`BossUntargetableWindow` と同仕様）。
+ */
+export interface MultiTargetWindow {
+  /** 開始時刻（秒） */
+  startTime: number;
+  /** 終了時刻（秒） */
+  endTime: number;
+  /** 敵の数（2以上） */
+  targetCount: number;
+}
+
 /** PPS範囲選択 */
 export interface PpsRange {
   /** 範囲開始時刻（秒） */
@@ -460,4 +490,9 @@ export interface ResolvedTimelineEntry {
    * UI 側で activeBuffs を再解釈しなくても、この値を直接描画できる。
    */
   castTime: number;
+  /**
+   * このスキル使用時の敵の数。`multiTargetWindows` の内側であれば 2 以上、外側または対象 `enemy` 以外のスキルでは 1。
+   * 合計威力計算は `Skill.maxTargets` で頭打ち、`falloffRate` / `falloffStartTarget` で減衰される。
+   */
+  targetCount: number;
 }
