@@ -86,19 +86,25 @@ function processAutoGen(
  */
 /**
  * 指定時刻にアクティブなバフから速度バフの合成倍率を計算する。
+ * targetSkillId が指定されている場合、appliesToSkillIds に
+ * 該当スキルIDが含まれないエフェクトは除外する（対象スキル限定バフ）。
+ * 例: インスタレーションは色魔法/スタープリズム/ホワイトホーリー等にのみ適用。
  */
 function getSpeedMultiplier(
   activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  targetSkillId?: string
 ): number {
   let multiplier = 1;
   for (const ab of activeBuffs) {
     const def = buffDefMap.get(ab.buffId);
     if (!def) continue;
     for (const effect of def.effects) {
-      if (effect.type === "speed") {
-        multiplier *= effect.value;
+      if (effect.type !== "speed") continue;
+      if (effect.appliesToSkillIds && targetSkillId !== undefined) {
+        if (!effect.appliesToSkillIds.includes(targetSkillId)) continue;
       }
+      multiplier *= effect.value;
     }
   }
   return multiplier;
@@ -687,7 +693,8 @@ export function resolveTimeline(
       expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
 
       // 速度バフを適用してリキャスト・詠唱時間計算
-      const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap);
+      // 対象スキル限定の speed バフ（インスタレーション等）を正しくフィルタするため originalSkill.id を渡す
+      const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
       const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
       // instantCast バフがアクティブなら詠唱時間を 0 に上書きする（三連魔・ファイアスターター等）
       // 対象スキル限定バフ（appliesToSkillIds）を正しくフィルタするため originalSkill.id を渡す
@@ -1480,7 +1487,7 @@ export function resolveTimeline(
     const skill = skillMap.get(entry.resolvedSkillId);
     if (!skill || skill.type !== "gcd") continue;
     const baseRecast = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
-    const speedMul = getSpeedMultiplier(entry.activeBuffs, buffDefMap);
+    const speedMul = getSpeedMultiplier(entry.activeBuffs, buffDefMap, entry.resolvedSkillId);
     const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
     const endTime = entry.startTime + recastTime;
     if (endTime > lastGcdEndTime) lastGcdEndTime = endTime;
