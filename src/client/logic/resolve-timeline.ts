@@ -952,10 +952,12 @@ export function resolveTimeline(
       : false;
 
     // チャージ回復処理 & リキャストチェック
+    // cooldownGroup 設定時は同一グループ内でチャージ・クールダウンを共有する
     let recastError = false;
     if (skill.cooldown !== undefined) {
       const maxCharges = skill.maxCharges ?? 1;
-      const state = skillChargeState.get(skill.id);
+      const chargeKey = skill.cooldownGroup ?? skill.id;
+      const state = skillChargeState.get(chargeKey);
       if (state) {
         // チャージ回復: nextChargeAtからcooldown間隔で回復
         while (state.nextChargeAt !== null && state.charges < maxCharges && state.nextChargeAt <= startTime) {
@@ -1278,9 +1280,11 @@ export function resolveTimeline(
       }
 
       // チャージ消費 & クールダウン開始
+      // cooldownGroup 設定時は同一グループ内でチャージ・クールダウンを共有する
       if (skill.cooldown !== undefined) {
         const maxCharges = skill.maxCharges ?? 1;
-        const state = skillChargeState.get(skill.id);
+        const chargeKey = skill.cooldownGroup ?? skill.id;
+        const state = skillChargeState.get(chargeKey);
         if (state) {
           state.charges--;
           // チャージが最大から減った場合、回復タイマーを開始
@@ -1289,7 +1293,7 @@ export function resolveTimeline(
           }
         } else {
           // 初回使用: チャージ状態を初期化（maxCharges - 1 残り）
-          skillChargeState.set(skill.id, {
+          skillChargeState.set(chargeKey, {
             charges: maxCharges - 1,
             nextChargeAt: Math.round((startTime + skill.cooldown) * 1000) / 1000,
           });
