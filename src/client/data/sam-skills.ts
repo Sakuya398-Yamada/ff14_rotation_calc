@@ -39,6 +39,9 @@ import hagakureIcon from "../assets/icons/sam/Hagakure.png";
 import meikyoShisuiIcon from "../assets/icons/sam/Meikyo_Shisui.png";
 import zanshinIcon from "../assets/icons/sam/Zanshin.png";
 
+// === ロールアクション アイコン ===
+import trueNorthIcon from "../assets/icons/sam/role_actions/True_North.png";
+
 /**
  * 侍（SAM）攻撃スキル定義（Lv100まで）
  *
@@ -670,5 +673,25 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 82,
     cooldown: 15,
     resourceChanges: [{ resourceId: "meditation", amount: -3 }],
+  },
+
+  // ============================================================
+  // oGCD: 近接DPSロールアクション
+  // ============================================================
+  // 方向指定ボーナスを無視するアビリティ。本ツールは方向指定ボーナス計算自体を
+  // 実装していないため、バフ effects は空。リキャスト枠の管理用途で配置可能。
+  {
+    id: "true-north",
+    name: "トゥルーノース",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: trueNorthIcon,
+    recastTime: 1.0,
+    animationLock: 0.65,
+    cooldown: 45,
+    maxCharges: 2,
+    acquiredLevel: 50,
+    buffApplications: ["true-north"],
   },
 ];
