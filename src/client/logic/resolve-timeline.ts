@@ -671,10 +671,17 @@ export function resolveTimeline(
     let startTime: number;
     let resolvedCastTime = 0;
 
+    let autoStartTime: number;
+
     if (originalSkill.type === "gcd") {
       const baseRecast = stats ? calcGcd(originalSkill.recastTime, stats) : originalSkill.recastTime;
-      startTime = Math.max(gcdAvailableAt, actionAvailableAt);
-      startTime = Math.round(startTime * 1000) / 1000;
+      autoStartTime = Math.max(gcdAvailableAt, actionAvailableAt);
+      autoStartTime = Math.round(autoStartTime * 1000) / 1000;
+      // entry.manualStartTime が設定されていれば自動計算値を上書き（候補A: 強制上書き）。
+      // リキャスト中等の制約違反は後段の recastError 検出に委ね、配置はユーザー判断を尊重する。
+      startTime = entry.manualStartTime !== undefined
+        ? Math.round(entry.manualStartTime * 1000) / 1000
+        : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
       expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
@@ -695,8 +702,11 @@ export function resolveTimeline(
       // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
       actionAvailableAt = startTime + Math.max(resolvedCastTime, originalSkill.animationLock);
     } else {
-      startTime = actionAvailableAt;
-      startTime = Math.round(startTime * 1000) / 1000;
+      autoStartTime = actionAvailableAt;
+      autoStartTime = Math.round(autoStartTime * 1000) / 1000;
+      startTime = entry.manualStartTime !== undefined
+        ? Math.round(entry.manualStartTime * 1000) / 1000
+        : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
       expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
@@ -952,6 +962,13 @@ export function resolveTimeline(
         recastError = state.charges <= 0;
       }
       // state未登録 = 初回使用 → エラーなし
+    }
+    // マニュアル開始時刻が自動計算値より早い場合（= GCD リキャスト/詠唱中・oGCD アニメーションロック中に
+    // ユーザーが強制配置した）も警告対象。cooldown 系の charge エラーとは別経路だが、UI 上は
+    // 同じ「リキャスト中」エラーとして扱う（Issue #175 仕様）。
+    // 浮動小数誤差を避けるため epsilon を入れる。
+    if (entry.manualStartTime !== undefined && startTime + 0.0005 < autoStartTime) {
+      recastError = true;
     }
 
     // GCDスキル実行前に、消費対象（consumeOnGcd / instantCast）のバフIDを Set で収集する。
@@ -1382,6 +1399,8 @@ export function resolveTimeline(
       resolvedSkillId,
       resolvedPotency,
       startTime,
+      autoStartTime,
+      manualStartTime: entry.manualStartTime,
       resourceSnapshot: snapshotAfter,
       resourceErrors,
       comboErrors,

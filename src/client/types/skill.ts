@@ -172,6 +172,13 @@ export interface TimelineEntry {
   uid: string;
   /** 参照するスキルのID */
   skillId: string;
+  /**
+   * マニュアル設定された開始時刻（秒）。
+   * 未設定（undefined）の場合は前エントリからの自動計算値を使用する。
+   * 設定されている場合は自動計算値を無視してこの値を強制採用する
+   * （リキャスト中等の制約違反時は recastError として警告のみ表示し、配置は尊重する）。
+   */
+  manualStartTime?: number;
 }
 
 /** リソースの定義データ */
@@ -395,6 +402,14 @@ export interface ResolvedTimelineEntry {
   resolvedPotency: number;
   /** 開始時刻（秒） */
   startTime: number;
+  /**
+   * 自動計算による開始時刻（秒）。
+   * `manualStartTime` が設定されているエントリでも、自動計算なら何秒になるかを保持する。
+   * `manualStartTime` 未設定時は `startTime` と同値。詳細パネルで「自動計算値: X.XXs」を表示する用途。
+   */
+  autoStartTime: number;
+  /** 元のタイムラインエントリにマニュアル開始時刻が設定されているか */
+  manualStartTime?: number;
   /** スキル実行後のリソース状態（消費・獲得・バフ由来の自動消費すべて反映済み） */
   resourceSnapshot: ResourceSnapshot;
   /** リソース不足のリソースIDリスト */

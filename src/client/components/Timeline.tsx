@@ -65,6 +65,32 @@ interface TimelineProps {
  * ドラッグ中のマウスX座標から挿入インデックスを計算する。
  * resolvedEntriesの各エントリの中央位置と比較し、挿入位置を決定する。
  */
+/**
+ * マニュアル開始時刻が設定されたスキルアイコンの左下に表示するストップウォッチバッジ。
+ * シンプルなインライン SVG（自作）。
+ */
+function ManualStartTimeBadge() {
+  return (
+    <div style={styles.manualBadge} title="開始時刻を手動設定中">
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <line x1="10" y1="2" x2="14" y2="2" />
+        <circle cx="12" cy="14" r="8" />
+        <line x1="12" y1="14" x2="15" y2="11" />
+      </svg>
+    </div>
+  );
+}
+
 function calcInsertIndex(
   mouseX: number,
   scrollLeft: number,
@@ -986,7 +1012,7 @@ export function Timeline({
                             ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                             ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                           }}
-                          title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           data-skill-entry-uid={entry.uid}
                           onClick={() => onSelectEntry(entry.uid)}
                           draggable
@@ -999,6 +1025,9 @@ export function Timeline({
                             style={styles.iconImage}
                             draggable={false}
                           />
+                          {entry.manualStartTime !== undefined && (
+                            <ManualStartTimeBadge />
+                          )}
                         </div>
                         <div style={{
                           ...styles.skillPotency,
@@ -1040,7 +1069,7 @@ export function Timeline({
                             ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                             ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                           }}
-                          title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                          title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                           data-skill-entry-uid={entry.uid}
                           onClick={() => onSelectEntry(entry.uid)}
                           draggable
@@ -1053,6 +1082,9 @@ export function Timeline({
                             style={styles.iconImage}
                             draggable={false}
                           />
+                          {entry.manualStartTime !== undefined && (
+                            <ManualStartTimeBadge />
+                          )}
                         </div>
                         <div style={styles.skillPotency}>
                           {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
@@ -1616,6 +1648,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: "8px",
     flexShrink: 0,
     transition: "opacity 0.15s",
+    position: "relative" as const,
   },
   skillIconError: {
     border: "2px solid #ef5350",
@@ -1648,6 +1681,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255,255,255,0.2)",
     flexShrink: 0,
     transition: "opacity 0.15s",
+    position: "relative" as const,
   },
   ogcdIconError: {
     border: "2px solid #ef5350",
@@ -1664,6 +1698,21 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "100%",
     objectFit: "contain" as const,
+  },
+  manualBadge: {
+    position: "absolute" as const,
+    left: "1px",
+    bottom: "1px",
+    width: "14px",
+    height: "14px",
+    borderRadius: "50%",
+    backgroundColor: "rgba(15, 15, 35, 0.85)",
+    border: "1px solid #ffa726",
+    color: "#ffa726",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none" as const,
   },
   skillPotency: {
     fontSize: "9px",

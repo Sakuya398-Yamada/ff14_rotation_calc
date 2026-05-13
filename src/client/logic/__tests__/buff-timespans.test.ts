@@ -19,6 +19,7 @@ function makeEntry(startTime: number, activeBuffs: ActiveBuff[]): ResolvedTimeli
     resolvedSkillId: "dummy",
     resolvedPotency: 0,
     startTime,
+    autoStartTime: startTime,
     resourceSnapshot: {},
     resourceErrors: [],
     comboErrors: [],
