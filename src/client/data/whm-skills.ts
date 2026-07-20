@@ -172,6 +172,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     castTime: 1.5,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 45,
+    // 周囲の敵全体に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "holy3",
@@ -185,6 +187,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 82,
     replacesSkillId: "holy",
+    maxTargets: Infinity,
   },
 
   // === GCD: グレアジャ（神速魔効果アップ Lv92） ===
@@ -201,6 +204,9 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     buffConsumptions: [
       { buffId: "sacred-sight", stacks: 1 },
     ],
+    // 対象とその周囲の敵にヒット、2体目以降は威力40%減
+    maxTargets: Infinity,
+    falloffRate: 0.4,
   },
 
   // === GCD: リリー関連 ===
@@ -250,6 +256,9 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 1400 },
     ],
+    // 対象とその周囲の敵にヒット、2体目以降は威力50%減
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
 
   // === oGCD ===
@@ -264,6 +273,8 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 40,
     acquiredLevel: 56,
+    // 周囲の敵全体に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "presence-of-mind",
