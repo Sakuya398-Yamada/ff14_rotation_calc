@@ -287,6 +287,30 @@ export function App() {
         )}
       </div>
       <footer style={styles.footer}>
+        <small style={styles.contact}>
+          不具合・要望:{" "}
+          <a
+            style={styles.contactLink}
+            href="https://github.com/Sakuya398-Yamada/ff14_rotation_calc"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>{" "}
+          |{" "}
+          <a
+            style={styles.contactLink}
+            href="https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Issue
+          </a>{" "}
+          | メール:{" "}
+          <a style={styles.contactLink} href="mailto:forestry.for@gmail.com">
+            forestry.for@gmail.com
+          </a>
+        </small>
         <small style={styles.copyright}>
           Copyright (C) SQUARE ENIX CO., LTD. All Rights Reserved.
         </small>
@@ -332,6 +356,16 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: "#16213e",
     borderTop: "1px solid #333",
     textAlign: "center" as const,
+  },
+  contact: {
+    display: "block",
+    fontSize: "11px",
+    color: "#888",
+    marginBottom: "2px",
+  },
+  contactLink: {
+    color: "#7aa2f7",
+    textDecoration: "none",
   },
   copyright: {
     fontSize: "11px",
