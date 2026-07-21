@@ -37,6 +37,14 @@ if [[ -z "$branch" ]]; then
   exit 0
 fi
 
+# Strip surrounding quotes. Shell-experienced users reflexively quote values
+# containing `#` (e.g. `git checkout -b "fix/#5-x"`), and the capture above
+# includes those quote characters, which would fail the convention regex
+# even though the actual branch name is compliant (issue #290).
+raw_branch="$branch"
+branch="${branch#[\"\']}"
+branch="${branch%[\"\']}"
+
 # Exempt branches
 case "$branch" in
   claude/*|main|master|develop)
@@ -46,6 +54,11 @@ esac
 
 # Convention check
 if [[ ! "$branch" =~ ^(feature|fix|refactor|docs)/\#[0-9]+-.+ ]]; then
+  quote_note=""
+  if [[ "$raw_branch" != "$branch" ]]; then
+    quote_note="
+  Note: quotes were stripped before validation (raw input: $raw_branch)."
+  fi
   cat >&2 <<EOF
 [hook:validate-branch-name] Branch name '$branch' violates the project convention.
 
@@ -53,7 +66,7 @@ if [[ ! "$branch" =~ ^(feature|fix|refactor|docs)/\#[0-9]+-.+ ]]; then
   Example:  feature/#42-add-pictomancer-rotation
 
   See .claude/rules/git-conventions.md for details.
-  Exempt prefixes: claude/*, main, master, develop.
+  Exempt prefixes: claude/*, main, master, develop.${quote_note}
 EOF
   exit 2
 fi

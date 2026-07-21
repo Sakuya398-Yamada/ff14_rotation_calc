@@ -107,5 +107,22 @@ CMD
 run_case "REGRESSION: HEREDOC contains broken branch-creation example (allow)" 0 \
   "$heredoc_bad"
 
+# 11) [REGRESSION] Quoted compliant branch names — must allow (issue #290).
+#     Shell-experienced users reflexively quote values containing `#`; the
+#     extraction regex captures the quote characters, which used to fail the
+#     convention check.
+run_case "REGRESSION: double-quoted compliant name (allow)" 0 \
+  'git checkout -b "feature/#260-add-something"'
+run_case "REGRESSION: single-quoted compliant name (allow)" 0 \
+  "git switch -c 'fix/#216-fix-something'"
+
+# 12) Quoted exempt branch — allow
+run_case "double-quoted claude/* exempt (allow)" 0 \
+  'git checkout -b "claude/some-session"'
+
+# 13) Quoted non-conforming name — must still block after quote stripping
+run_case "double-quoted non-conforming name (must block)" 2 \
+  'git checkout -b "invalid-branch-name"'
+
 printf '\nResults: %d pass, %d fail\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]
