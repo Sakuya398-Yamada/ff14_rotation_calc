@@ -29,6 +29,11 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
    ```
    `VITE vX.Y.Z  ready in ...ms` のログを待ってから次へ。デフォルトは `http://localhost:5173/` だが、ポート競合時は 5174 等にフォールバックされるためログで実 URL を確認する。
 
+   **Vite v8 で Local URL がログに出ない場合**: Vite v8 は `ready in 150ms` のみ出力し `Local: http://localhost:NNNN/` 行を出さないことがある。複数 worktree 並行運用時（5173〜5177 が複数 Vite で埋まる状況）はどのポートで起動したか判別できないため、以下で対処する（知見ボード #195、発生元 #255）：
+
+   - **明示ポート指定で起動するのが確実**: `npx vite --port <空きポート> --strictPort`（`--strictPort` により競合時はフォールバックせず起動失敗するので、起動成功 = 指定ポートが確定する）
+   - **listening 中のポートを確認**: `netstat -ano | findstr LISTENING | findstr 517`（PID 列と Vite プロセスを突き合わせれば worktree との対応も取れる）
+
 ## 典型フロー
 
 ```
@@ -87,6 +92,27 @@ browser_close                             # 検証終わりに必ず閉じる
 
 並び替え（Timeline 内 DnD）も同じパターンで動く。ソースを既存エントリに、ターゲットを別エントリ／挿入位置にすればよい。
 
+## React 制御フォーム要素の操作ワークアラウンド（`value` 直接代入が効かない場合）
+
+本リポジトリのジョブセレクター（`<select>`）やステータス入力欄（`<input>`）は React の制御コンポーネントで実装されている。`browser_evaluate` で `select.value = 'blm'; select.dispatchEvent(new Event('change'))` と書いても、**React 内部の状態と乖離して値が反映されない**（`select.value` が空 `''` に戻る）。React が value プロパティのセッターを追跡しているため、**native setter を経由してから `change` イベントを dispatch する** 必要がある。Issue #256 のセッションで実証済み（知見ボード #195）。
+
+```js
+// React の制御 select/input は value を直接代入しても internal state と乖離する。
+// React の onChange を発火させるには native setter を経由して dispatchEvent する。
+const nativeSetter = Object.getOwnPropertyDescriptor(
+  window.HTMLSelectElement.prototype, 'value'   // <input> なら HTMLInputElement
+).set;
+nativeSetter.call(select, 'blm');
+select.dispatchEvent(new Event('change', { bubbles: true }));
+```
+
+ポイント:
+
+1. **`<select>` に限らず制御コンポーネント全般に当てはまる**: `<input>`（ステータス入力欄）なら `HTMLInputElement.prototype`、`<textarea>` なら `HTMLTextAreaElement.prototype` を使う
+2. **`change` イベントは `bubbles: true` で dispatch する**: React はルートでイベントを委譲リッスンしているため、バブリングしないと onChange が呼ばれない
+3. **ユースケース**: ジョブセレクター切り替え・ステータス入力欄編集・フィルター変更など、UI 視覚検証で頻出
+4. 可能なら `browser_evaluate` ではなく `browser_select_option` / `browser_type`（ref 指定）を優先する。これらは実ブラウザ操作をエミュレートするため React とも整合する。`browser_evaluate` でのワークアラウンドは、snapshot の ref が使えない一括操作スクリプト等で必要になった場合の手段
+
 ## 失敗時の診断
 
 | 症状 | 原因 | 対処 |
@@ -98,6 +124,7 @@ browser_close                             # 検証終わりに必ず閉じる
 | `msedge` が見つからない／起動しない | システム Edge がアンインストールされている／プロファイル破損 | Edge を再インストール、または `--browser chrome` に切り替え（Chrome がインストールされている場合） |
 | 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
 | `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | アプリが React の HTML5 ネイティブ DnD（`onDragStart` + `dataTransfer.setData`）で実装されており、`browser_drag` 内部の `dragTo` がマウス移動をエミュレートするだけで `dragstart` / `drop` を発火しない | 上記「HTML5 ネイティブ DnD のワークアラウンド」のスニペットを `browser_evaluate` で実行する |
+| `browser_evaluate` で `select.value = '...'` を代入して `change` を dispatch しても UI が変化しない（値が空に戻る） | React の制御コンポーネントは value 代入を内部状態と同期しないため、直接代入では onChange が発火しない | 上記「React 制御フォーム要素の操作ワークアラウンド」の native setter スニペットを使う |
 
 ## 切断時の再接続手順（Claude 向け）
 
