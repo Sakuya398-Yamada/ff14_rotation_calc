@@ -55,6 +55,13 @@ Structure your response for maximum actionability — developers should know exa
 
 呼び出し側のプロンプトで上限指定がある場合はそちらを優先する。
 
+## Git 操作の制約（読み取り専用）
+
+- `git checkout` / `git switch` / `git stash` / `git restore` / `git reset` / `git merge` / `git rebase` / `git clean` 等、**ワーキングツリーやブランチ状態を変える git 操作を実行しない**
+- 差分確認は `git diff <base>...<head>` / `git diff --cached` / `git show <sha>:<path>` / `git log` / `git branch --show-current` 等の**読み取り専用コマンドのみ**で行う
+- 別ブランチ・別コミットのファイル内容が必要な場合も checkout せず `git show <ref>:<path>` で取得する
+- 背景: レビュー用サブエージェントが checkout を実行し、呼び出し元セッションの作業ブランチが `main` に切り替わる事故が発生した（Issue #294、発生元 #269）
+
 ## Project Context
 
 - Stack: TypeScript (`strict: true`) + React + Vite + Hono + Prisma + SQLite

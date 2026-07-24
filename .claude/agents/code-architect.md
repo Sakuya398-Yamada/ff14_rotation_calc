@@ -43,6 +43,12 @@ Make confident architectural choices rather than presenting multiple options unl
 
 呼び出し側のプロンプトで「N 行以内」等の指定がある場合はそちらを優先する。
 
+## Git 操作の制約（読み取り専用）
+
+- このエージェントは Bash を持たないが、将来ツール構成が変わっても **ワーキングツリーやブランチ状態を変える git 操作（`git checkout` / `git switch` / `git stash` / `git restore` / `git reset` / `git merge` / `git rebase` / `git clean` 等）は実行しない**
+- 履歴・差分の確認が必要な場合は `git diff` / `git show <ref>:<path>` / `git log` 等の読み取り専用コマンドに限定する
+- 背景: サブエージェントが checkout を実行し、呼び出し元セッションの作業ブランチが `main` に切り替わる事故が発生した（Issue #294、発生元 #269）
+
 ## Project Context
 
 - Stack: TypeScript + React (Vite) + Hono + Prisma + SQLite

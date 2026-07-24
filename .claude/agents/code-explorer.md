@@ -62,6 +62,13 @@ Structure your response for maximum clarity and usefulness. Always include speci
 
 呼び出し側のプロンプトに「N 行以内」「シグネチャのみ」等の指定がある場合は、そちらを優先する。
 
+## Git 操作の制約（読み取り専用）
+
+- `git checkout` / `git switch` / `git stash` / `git restore` / `git reset` / `git merge` / `git rebase` / `git clean` 等、**ワーキングツリーやブランチ状態を変える git 操作を実行しない**
+- 履歴・差分の確認は `git diff` / `git show <ref>:<path>` / `git log` / `git branch --show-current` 等の**読み取り専用コマンドのみ**で行う
+- 別ブランチ・別コミットのファイル内容が必要な場合も checkout せず `git show <ref>:<path>` で取得する
+- 背景: サブエージェントが checkout を実行し、呼び出し元セッションの作業ブランチが `main` に切り替わる事故が発生した（Issue #294、発生元 #269）
+
 ## Project Context
 
 - Stack: TypeScript + React (Vite) + Hono + Prisma + SQLite
