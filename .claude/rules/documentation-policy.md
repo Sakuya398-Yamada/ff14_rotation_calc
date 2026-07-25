@@ -14,6 +14,7 @@
 |---------|---------|
 | `git-conventions.md` | ブランチ・コミット・PR・Issue 規約 |
 | `coding-standards.md` | TypeScript・命名・ディレクトリ構成・コメント方針 |
+| `testing-conventions.md` | テスト記述の既知の罠と回避パターン |
 | `tech-stack.md` | 技術スタック・開発環境・npm スクリプト |
 | `context-efficiency.md` | コンテキスト効率・ファイル読解ルール |
 | `mcp-setup.md` | MCP サーバー設定・API キー管理 |
