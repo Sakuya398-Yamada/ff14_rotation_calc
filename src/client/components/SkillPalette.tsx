@@ -1,19 +1,11 @@
 import { useState } from "react";
 import type { Skill, CharacterStats, PlayerLevel } from "../types/skill";
 import type { JobId } from "./App";
+import { JOB_OPTIONS } from "../data/job-registry";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
 
 const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
-
-const JOBS: { id: JobId; name: string }[] = [
-  { id: "whm", name: "白魔道士" },
-  { id: "drg", name: "竜騎士" },
-  { id: "brd", name: "詩人" },
-  { id: "pct", name: "ピクトマンサー" },
-  { id: "blm", name: "黒魔道士" },
-  { id: "sam", name: "侍" },
-];
 
 interface CollapsibleSectionProps {
   title: React.ReactNode;
@@ -84,7 +76,7 @@ export function SkillPalette({
           value={selectedJob}
           onChange={(e) => onJobChange(e.target.value as JobId)}
         >
-          {JOBS.map((job) => (
+          {JOB_OPTIONS.map((job) => (
             <option key={job.id} value={job.id}>
               {job.name}
             </option>

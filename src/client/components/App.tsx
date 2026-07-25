@@ -3,50 +3,15 @@ import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
-import { WHM_ATTACK_SKILLS } from "../data/whm-skills";
-import { WHM_RESOURCES } from "../data/whm-resources";
-import { WHM_BUFFS } from "../data/whm-buffs";
-import { DRG_ATTACK_SKILLS } from "../data/drg-skills";
-import { DRG_RESOURCES } from "../data/drg-resources";
-import { DRG_BUFFS } from "../data/drg-buffs";
-import { BRD_ATTACK_SKILLS } from "../data/brd-skills";
-import { BRD_RESOURCES } from "../data/brd-resources";
-import { BRD_BUFFS } from "../data/brd-buffs";
-import { PCT_ATTACK_SKILLS } from "../data/pct-skills";
-import { PCT_RESOURCES } from "../data/pct-resources";
-import { PCT_BUFFS } from "../data/pct-buffs";
-import { BLM_ATTACK_SKILLS } from "../data/blm-skills";
-import { BLM_RESOURCES } from "../data/blm-resources";
-import { BLM_BUFFS } from "../data/blm-buffs";
-import { SAM_ATTACK_SKILLS } from "../data/sam-skills";
-import { SAM_RESOURCES } from "../data/sam-resources";
-import { SAM_BUFFS } from "../data/sam-buffs";
+import { JOB_DATA } from "../data/job-registry";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
-import type { Skill, BuffDefinition, ResourceDefinition, TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
+import type { JobId } from "../data/job-registry";
+import type { TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
 
-/** ジョブID */
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam";
-
-/** ジョブデータ定義 */
-interface JobData {
-  name: string;
-  abbreviation: string;
-  skills: Skill[];
-  buffs: BuffDefinition[];
-  resources: ResourceDefinition[];
-}
-
-/** ジョブデータレジストリ */
-const JOB_DATA: Record<JobId, JobData> = {
-  whm: { name: "白魔道士", abbreviation: "WHM", skills: WHM_ATTACK_SKILLS, buffs: WHM_BUFFS, resources: WHM_RESOURCES },
-  drg: { name: "竜騎士", abbreviation: "DRG", skills: DRG_ATTACK_SKILLS, buffs: DRG_BUFFS, resources: DRG_RESOURCES },
-  brd: { name: "詩人", abbreviation: "BRD", skills: BRD_ATTACK_SKILLS, buffs: BRD_BUFFS, resources: BRD_RESOURCES },
-  pct: { name: "ピクトマンサー", abbreviation: "PCT", skills: PCT_ATTACK_SKILLS, buffs: PCT_BUFFS, resources: PCT_RESOURCES },
-  blm: { name: "黒魔道士", abbreviation: "BLM", skills: BLM_ATTACK_SKILLS, buffs: BLM_BUFFS, resources: BLM_RESOURCES },
-  sam: { name: "侍", abbreviation: "SAM", skills: SAM_ATTACK_SKILLS, buffs: SAM_BUFFS, resources: SAM_RESOURCES },
-};
+// 既存の `import type { JobId } from "./App"` を壊さないための再エクスポート
+export type { JobId } from "../data/job-registry";
 
 let nextUid = 1;
 
