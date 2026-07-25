@@ -176,6 +176,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 86, potency: 540 },
       { traitLevel: 94, potency: 560 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
   {
     id: "hammer-brush",
@@ -193,6 +196,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     guaranteedDh: true,
     buffConsumptions: [{ buffId: "hammer-brush-ready", stacks: 1 }],
     buffApplications: ["hammer-polish-ready"],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
   {
     id: "polishing-hammer",
@@ -212,6 +218,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { buffId: "hammer-combo-ready", stacks: 1 },
       { buffId: "hammer-polish-ready", stacks: 1 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
 
   // ============================================================
@@ -235,6 +244,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 84, potency: 500 },
       { traitLevel: 94, potency: 570 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力65%減
+    maxTargets: Infinity,
+    falloffRate: 0.65,
   },
   {
     id: "comet-in-black",
@@ -254,6 +266,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 940 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力65%減
+    maxTargets: Infinity,
+    falloffRate: 0.65,
   },
 
   // ============================================================
@@ -271,6 +286,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 100,
     requiredBuff: "star-prism-ready",
     buffConsumptions: [{ buffId: "star-prism-ready", stacks: 1 }],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
 
   // ============================================================
@@ -290,6 +308,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "white-paint", amount: 1 },
     ],
+    // 前方直線範囲。2体目以降は威力85%減
+    maxTargets: Infinity,
+    falloffRate: 0.85,
   },
 
   // ============================================================
@@ -369,6 +390,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 54, potency: 700 },
       { traitLevel: 84, potency: 800 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
   {
     id: "winged-muse",
@@ -391,6 +415,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 54, potency: 700 },
       { traitLevel: 84, potency: 800 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
   {
     id: "clawed-muse",
@@ -409,6 +436,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     ],
     buffConsumptions: [{ buffId: "claw-muse-ready", stacks: 1 }],
     buffApplications: ["fang-muse-ready"],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
   {
     id: "fanged-muse",
@@ -427,6 +457,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     ],
     buffConsumptions: [{ buffId: "fang-muse-ready", stacks: 1 }],
     buffApplications: ["madeen-symbol"],
+    // 対象とその周囲にヒット、2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
 
   // ============================================================
@@ -450,6 +483,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 54, potency: 800 },
       { traitLevel: 84, potency: 1000 },
     ],
+    // 前方直線範囲。2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
   {
     id: "retribution-of-the-madeen",
@@ -464,6 +500,9 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 96,
     requiredBuff: "madeen-symbol",
     buffConsumptions: [{ buffId: "madeen-symbol", stacks: 1 }],
+    // 前方直線範囲。2体目以降は威力70%減
+    maxTargets: Infinity,
+    falloffRate: 0.7,
   },
 
   // ============================================================
