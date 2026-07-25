@@ -5,6 +5,7 @@ import { computeBuffTimespans } from "../logic/buff-timespans";
 import { PX_PER_SEC, LANE_LABEL_WIDTH } from "./timeline/constants";
 import { styles } from "./timeline/styles";
 import { useTimelineDnd } from "./timeline/use-timeline-dnd";
+import { TimelineHeader } from "./timeline/TimelineHeader";
 import { PpsRangeEditor } from "./timeline/PpsRangeEditor";
 import { UntargetableWindowEditor } from "./timeline/UntargetableWindowEditor";
 import { MultiTargetWindowEditor } from "./timeline/MultiTargetWindowEditor";
@@ -326,105 +327,34 @@ export function Timeline({
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>タイムライン</h2>
-        <div style={styles.headerControls}>
-          <button
-            style={{
-              ...styles.toggleButton,
-              ...(untargetableWindows.length > 0 ? { borderColor: "rgba(255, 80, 80, 0.5)", color: "#ef5350" } : {}),
-            }}
-            onClick={() => setShowUntargetableEditor((v) => !v)}
-            title="ボス離脱タイミング設定"
-          >
-            {showUntargetableEditor ? "離脱 ▼" : "離脱 ▶"}
-            {untargetableWindows.length > 0 && ` (${untargetableWindows.length})`}
-          </button>
-          <button
-            style={{
-              ...styles.toggleButton,
-              ...(multiTargetWindows.length > 0 ? { borderColor: "rgba(180, 100, 220, 0.5)", color: "#b864dc" } : {}),
-            }}
-            onClick={() => setShowMultiTargetEditor((v) => !v)}
-            title="複数体ウィンドウ設定（敵の数を指定する時間帯）"
-          >
-            {showMultiTargetEditor ? "複数体 ▼" : "複数体 ▶"}
-            {multiTargetWindows.length > 0 && ` (${multiTargetWindows.length})`}
-          </button>
-          {activeDoTs.length > 0 && (
-            <button
-              style={styles.toggleButton}
-              onClick={() => setShowDoTs((v) => !v)}
-              title={showDoTs ? "DoT表示を非表示" : "DoT表示を表示"}
-            >
-              {showDoTs ? "DoT ▼" : "DoT ▶"}
-            </button>
-          )}
-          {buffs.length > 0 && (
-            <button
-              style={styles.toggleButton}
-              onClick={() => setShowBuffs((v) => !v)}
-              title={showBuffs ? "バフ表示を非表示" : "バフ表示を表示"}
-            >
-              {showBuffs ? "バフ ▼" : "バフ ▶"}
-            </button>
-          )}
-          {hasRecastSkills && (
-            <button
-              style={styles.toggleButton}
-              onClick={() => setShowRecasts((v) => !v)}
-              title={showRecasts ? "リキャスト表示を非表示" : "リキャスト表示を表示"}
-            >
-              {showRecasts ? "リキャスト ▼" : "リキャスト ▶"}
-            </button>
-          )}
-          {resources.length > 0 && (
-            <button
-              style={styles.toggleButton}
-              onClick={() => setShowResources((v) => !v)}
-              title={showResources ? "リソースゲージを非表示" : "リソースゲージを表示"}
-            >
-              {showResources ? "リソース ▼" : "リソース ▶"}
-            </button>
-          )}
-          <button
-            style={{
-              ...styles.toggleButton,
-              ...(ppsRange ? { borderColor: "rgba(255, 183, 77, 0.5)", color: "#ffb74d" } : {}),
-            }}
-            onClick={() => {
-              const next = !showPpsRange;
-              setShowPpsRange(next);
-              if (next && !ppsRange) {
-                onPpsRangeChange({ startTime: 0, endTime: Math.max(lastGcdEndTime, 10) });
-              }
-              if (!next) {
-                onPpsRangeChange(null);
-              }
-            }}
-            title="PPS範囲選択"
-          >
-            {showPpsRange ? "PPS範囲 ▼" : "PPS範囲 ▶"}
-          </button>
-          <div style={styles.potencyDisplay}>
-            {totalExpectedPotency > 0 && (
-              <>
-                期待威力: <span style={styles.potencyValue}>{totalExpectedPotency}</span>
-                {dotExpectedPotency > 0 && (
-                  <span style={{ fontSize: "13px", color: "#a5d6a7" }}>
-                    {" "}(DoT: {dotExpectedPotency})
-                  </span>
-                )}
-              </>
-            )}
-            {overallPps !== null && (
-              <span style={styles.ppsDisplay}>
-                {" "}PPS: <span style={styles.ppsValue}>{overallPps.pps.toFixed(2)}</span>
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      <TimelineHeader
+        untargetableWindows={untargetableWindows}
+        multiTargetWindows={multiTargetWindows}
+        hasDoTs={activeDoTs.length > 0}
+        hasBuffs={buffs.length > 0}
+        hasRecastSkills={hasRecastSkills}
+        hasResources={resources.length > 0}
+        showUntargetableEditor={showUntargetableEditor}
+        setShowUntargetableEditor={setShowUntargetableEditor}
+        showMultiTargetEditor={showMultiTargetEditor}
+        setShowMultiTargetEditor={setShowMultiTargetEditor}
+        showDoTs={showDoTs}
+        setShowDoTs={setShowDoTs}
+        showBuffs={showBuffs}
+        setShowBuffs={setShowBuffs}
+        showRecasts={showRecasts}
+        setShowRecasts={setShowRecasts}
+        showResources={showResources}
+        setShowResources={setShowResources}
+        showPpsRange={showPpsRange}
+        setShowPpsRange={setShowPpsRange}
+        ppsRange={ppsRange}
+        onPpsRangeChange={onPpsRangeChange}
+        lastGcdEndTime={lastGcdEndTime}
+        totalExpectedPotency={totalExpectedPotency}
+        dotExpectedPotency={dotExpectedPotency}
+        overallPps={overallPps}
+      />
 
       {showPpsRange && (
         <PpsRangeEditor
