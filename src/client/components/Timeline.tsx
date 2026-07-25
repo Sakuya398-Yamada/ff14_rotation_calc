@@ -1,28 +1,22 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, ActiveBuff, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../types/skill";
-import { calcGcd, calcExpectedMultiplier } from "../logic/stat-calc";
-import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../types/skill";
+import { calcGcd } from "../logic/stat-calc";
 import { computeBuffTimespans } from "../logic/buff-timespans";
 import { resolveTimeline } from "../logic/resolve-timeline";
-import {
-  PX_PER_SEC,
-  ICON_SIZE,
-  LANE_HEIGHT,
-  RESOURCE_LANE_HEIGHT,
-  BUFF_LANE_HEIGHT,
-  DOT_LANE_HEIGHT,
-  RECAST_LANE_HEIGHT,
-  RULER_HEIGHT,
-  LANE_LABEL_WIDTH,
-  RESOURCE_DOT_SIZE,
-  RESOURCE_DOT_GAP,
-} from "./timeline/constants";
+import { PX_PER_SEC, LANE_LABEL_WIDTH } from "./timeline/constants";
 import { styles } from "./timeline/styles";
-import { formatTargetBreakdown, calcInsertIndex } from "./timeline/helpers";
-import { ManualStartTimeBadge } from "./timeline/ManualStartTimeBadge";
+import { calcInsertIndex } from "./timeline/helpers";
 import { PpsRangeEditor } from "./timeline/PpsRangeEditor";
 import { UntargetableWindowEditor } from "./timeline/UntargetableWindowEditor";
 import { MultiTargetWindowEditor } from "./timeline/MultiTargetWindowEditor";
+import { SkillLanes } from "./timeline/SkillLanes";
+import { ResourceLanes } from "./timeline/ResourceLanes";
+import { BuffLanes } from "./timeline/BuffLanes";
+import { RecastLanes } from "./timeline/RecastLanes";
+import { DotLanes } from "./timeline/DotLanes";
+import { TimelineOverlays } from "./timeline/TimelineOverlays";
+import { TimelineRuler } from "./timeline/TimelineRuler";
+import { DeleteZone } from "./timeline/DeleteZone";
 import "./timeline.css";
 
 interface TimelineProps {
@@ -779,552 +773,67 @@ export function Timeline({
                 />
               )}
 
-              {/* GCD行 */}
-              <div style={styles.lane}>
-                <div style={{ ...styles.laneLabel, backgroundColor: labelBg }}>GCD</div>
-                <div style={styles.laneContent}>
-                  {gcdEntries.map((entry) => {
-                    const hasError = entriesWithErrors.has(entry.uid);
-                    const recast = getResolvedEntryRecast(entry, entry.skill);
-                    const castTime = entry.castTime;
-                    const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-                    const breakdown = stats && entry.resolvedPotency > 0 && !hasError
-                      ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
-                      : null;
-                    const expectedPot = breakdown ? breakdown.total : null;
-                    const targetBreakdown = formatTargetBreakdown(breakdown);
-                    const isAutoTransformed = entry.resolvedSkillId !== entry.skillId;
-                    // castTime > recast の場合は次 GCD が打てるのは castTime 後（resolve-timeline.ts と整合）。
-                    // skillBlock の幅を max(castTime, recast) に拡張し、各バーを blockDuration 基準で割合計算する。
-                    const blockDuration = Math.max(castTime, recast);
-                    return (
-                      <div
-                        key={entry.uid}
-                        style={{
-                          ...styles.skillBlock,
-                          left: entry.startTime * PX_PER_SEC,
-                          width: blockDuration * PX_PER_SEC,
-                        }}
-                      >
-                        <div
-                          style={{
-                            ...styles.recastBar,
-                            width: (recast / blockDuration) * 100 + "%",
-                          }}
-                          title={`リキャスト: ${recast}s`}
-                        />
-                        {castTime > 0 && (
-                          <div
-                            style={styles.castTimeBar}
-                            title={`詠唱時間: ${castTime}s`}
-                          >
-                            <div
-                              style={{
-                                ...styles.castTimeFill,
-                                width: (castTime / blockDuration) * 100 + "%",
-                              }}
-                            />
-                          </div>
-                        )}
-                        <div
-                          style={styles.animLockBar}
-                          title={`アニメーションロック: ${entry.skill.animationLock}s`}
-                        >
-                          <div
-                            style={{
-                              ...styles.animLockFill,
-                              width:
-                                (entry.skill.animationLock / blockDuration) * 100 + "%",
-                            }}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            ...styles.skillIcon,
-                            ...(hasError ? styles.skillIconError : {}),
-                            ...(entry.wsComboError ? styles.skillIconComboWarning : {}),
-                            ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
-                            ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
-                          }}
-                          title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
-                          data-skill-entry-uid={entry.uid}
-                          onClick={() => onSelectEntry(entry.uid)}
-                          draggable
-                          onDragStart={(e) => handleEntryDragStart(e, entry, entry.skill)}
-                          onDragEnd={handleEntryDragEnd}
-                        >
-                          <img
-                            src={entry.displaySkill.icon}
-                            alt={entry.displaySkill.name}
-                            style={styles.iconImage}
-                            draggable={false}
-                          />
-                          {entry.manualStartTime !== undefined && (
-                            <ManualStartTimeBadge />
-                          )}
-                        </div>
-                        <div style={{
-                          ...styles.skillPotency,
-                          ...(entry.wsComboError ? { color: "#ff9800" } : {}),
-                        }}>
-                          {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* oGCD行 */}
-              <div style={styles.lane}>
-                <div style={{ ...styles.laneLabel, backgroundColor: labelBg }}>oGCD</div>
-                <div style={styles.laneContent}>
-                  {ogcdEntries.map((entry) => {
-                    const hasError = entriesWithErrors.has(entry.uid);
-                    const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-                    const breakdown = stats && entry.resolvedPotency > 0 && !hasError
-                      ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
-                      : null;
-                    const expectedPot = breakdown ? breakdown.total : null;
-                    const targetBreakdown = formatTargetBreakdown(breakdown);
-                    return (
-                      <div
-                        key={entry.uid}
-                        style={{
-                          ...styles.ogcdBlock,
-                          left: entry.startTime * PX_PER_SEC,
-                        }}
-                      >
-                        <div
-                          style={{
-                            ...styles.ogcdIcon,
-                            ...(hasError ? styles.ogcdIconError : {}),
-                            ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
-                            ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
-                          }}
-                          title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
-                          data-skill-entry-uid={entry.uid}
-                          onClick={() => onSelectEntry(entry.uid)}
-                          draggable
-                          onDragStart={(e) => handleEntryDragStart(e, entry, entry.skill)}
-                          onDragEnd={handleEntryDragEnd}
-                        >
-                          <img
-                            src={entry.displaySkill.icon}
-                            alt={entry.displaySkill.name}
-                            style={styles.iconImage}
-                            draggable={false}
-                          />
-                          {entry.manualStartTime !== undefined && (
-                            <ManualStartTimeBadge />
-                          )}
-                        </div>
-                        <div style={styles.skillPotency}>
-                          {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <SkillLanes
+                gcdEntries={gcdEntries}
+                ogcdEntries={ogcdEntries}
+                entriesWithErrors={entriesWithErrors}
+                getResolvedEntryRecast={getResolvedEntryRecast}
+                stats={stats}
+                selectedEntryUid={selectedEntryUid}
+                draggingEntryUid={draggingEntryUid}
+                labelBg={labelBg}
+                onSelectEntry={onSelectEntry}
+                onEntryDragStart={handleEntryDragStart}
+                onEntryDragEnd={handleEntryDragEnd}
+              />
 
               {/* リソースゲージ行 */}
-              {showResources && resourceGroups.map((group) => (
-                <div key={group.key} style={styles.resourceLane}>
-                  <div style={{ ...styles.resourceLaneLabel, backgroundColor: labelBg }} title={group.resources.map((r) => r.name).join(" / ")}>
-                    {group.label}
-                  </div>
-                  <div style={styles.resourceLaneContent}>
-                    {resolvedEntries.map((entry) => {
-                      const hasError = group.resources.some((r) => entry.resourceErrors.includes(r.id));
-                      return (
-                        <div
-                          key={entry.uid}
-                          style={{
-                            ...styles.resourceMarker,
-                            left: entry.startTime * PX_PER_SEC,
-                          }}
-                          title={
-                            group.groupMaxStacks !== undefined
-                              ? group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}`).join(" / ") +
-                                ` (合計 ${group.resources.reduce((s, r) => s + (entry.resourceSnapshot[r.id] ?? 0), 0)}/${group.groupMaxStacks})` +
-                                (hasError ? " (不足)" : "")
-                              : group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${r.maxStacks}`).join(", ") +
-                                (hasError ? " (不足)" : "")
-                          }
-                        >
-                          <div style={styles.resourceDots}>
-                            {group.groupMaxStacks !== undefined ? (() => {
-                              // 統合スロット描画: displayGroupPriority 昇順でスロットを埋め、残りは空ドット
-                              const groupMax = group.groupMaxStacks;
-                              const slotColors: string[] = [];
-                              for (const res of group.sortedResources) {
-                                const count = entry.resourceSnapshot[res.id] ?? 0;
-                                for (let i = 0; i < count && slotColors.length < groupMax; i++) {
-                                  slotColors.push(res.color);
-                                }
-                              }
-                              while (slotColors.length < groupMax) {
-                                slotColors.push("rgba(255,255,255,0.15)");
-                              }
-                              const stacksPerRow = group.stacksPerRow ?? groupMax;
-                              const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
-                              return (
-                                <div style={{ ...styles.resourceDotGrid, width: gridWidth }}>
-                                  {slotColors.map((color, i) => (
-                                    <div
-                                      key={i}
-                                      style={{ ...styles.resourceDot, backgroundColor: color }}
-                                    />
-                                  ))}
-                                </div>
-                              );
-                            })() : group.resources.map((res) => {
-                              const count = entry.resourceSnapshot[res.id] ?? 0;
-                              if (res.maxStacks > 10) {
-                                return (
-                                  <div key={res.id} style={styles.resourceGauge}>
-                                    <div
-                                      style={{
-                                        ...styles.resourceGaugeFill,
-                                        width: `${(count / res.maxStacks) * 100}%`,
-                                        backgroundColor: res.color,
-                                      }}
-                                    />
-                                    <span style={styles.resourceGaugeLabel}>{count}</span>
-                                  </div>
-                                );
-                              }
-                              const stacksPerRow = res.stacksPerRow ?? res.maxStacks;
-                              const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
-                              return (
-                                <div
-                                  key={res.id}
-                                  style={{
-                                    ...styles.resourceDotGrid,
-                                    width: gridWidth,
-                                  }}
-                                >
-                                  {Array.from({ length: res.maxStacks }, (_, i) => (
-                                    <div
-                                      key={`${res.id}-${i}`}
-                                      style={{
-                                        ...styles.resourceDot,
-                                        backgroundColor:
-                                          i < count
-                                            ? res.color
-                                            : "rgba(255,255,255,0.15)",
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {hasError && (
-                            <div style={styles.resourceErrorMark}>!</div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+              {showResources && (
+                <ResourceLanes
+                  resourceGroups={resourceGroups}
+                  resolvedEntries={resolvedEntries}
+                  labelBg={labelBg}
+                />
+              )}
 
               {/* バフレーン */}
-              {showBuffs && buffs.map((buffDef) => {
-                const spans = buffTimespans.get(buffDef.id);
-                if (!spans || spans.length === 0) return null;
-                return (
-                  <div key={buffDef.id} style={styles.buffLane}>
-                    <div style={{ ...styles.buffLaneLabel, backgroundColor: labelBg }} title={buffDef.name}>
-                      {buffDef.shortName}
-                    </div>
-                    <div style={styles.buffLaneContent}>
-                      {spans.map((span, i) => {
-                        // 永続バフ（endTime = Infinity）はタイムライン末尾でキャップ
-                        const isPermanent = !Number.isFinite(span.endTime);
-                        const effectiveEnd = isPermanent ? totalDuration : span.endTime;
-                        const left = span.startTime * PX_PER_SEC;
-                        const width = Math.max(0, (effectiveEnd - span.startTime) * PX_PER_SEC);
-                        const stacksLabel = buffDef.maxStacks && span.stacks !== undefined
-                          ? ` x${span.stacks}`
-                          : "";
-                        const endTimeLabel = isPermanent ? "∞" : `${span.endTime.toFixed(2)}s`;
-                        const durationLabel = buffDef.maxStacks
-                          ? `x${span.stacks ?? buffDef.maxStacks}`
-                          : buffDef.duration === null
-                            ? "∞"
-                            : `${buffDef.duration}s`;
-                        return (
-                          <div
-                            key={i}
-                            style={{
-                              ...styles.buffBar,
-                              left,
-                              width,
-                              backgroundColor: `${buffDef.color}30`,
-                              borderColor: buffDef.color,
-                            }}
-                            title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${endTimeLabel})`}
-                          >
-                            <img
-                              src={buffDef.icon}
-                              alt={buffDef.name}
-                              style={styles.buffIcon}
-                            />
-                            <span style={{ ...styles.buffDuration, color: buffDef.color }}>
-                              {durationLabel}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+              {showBuffs && (
+                <BuffLanes
+                  buffs={buffs}
+                  buffTimespans={buffTimespans}
+                  totalDuration={totalDuration}
+                  labelBg={labelBg}
+                />
+              )}
 
               {/* リキャストレーン */}
-              {showRecasts && Array.from(cooldownSpans.entries()).map(([skillId, spans]) => {
-                const skill = skillMap.get(skillId);
-                const label = skill?.name ?? skillId;
-                return (
-                  <div key={`recast-${skillId}`} style={styles.recastLane}>
-                    <div style={{ ...styles.recastLaneLabel, backgroundColor: labelBg }} title={`${label} リキャスト`}>
-                      RC
-                      {skill?.icon && (
-                        <img
-                          src={skill.icon}
-                          alt={label}
-                          style={styles.recastLabelIcon}
-                        />
-                      )}
-                    </div>
-                    <div style={styles.recastLaneContent}>
-                      {spans.map((span, i) => {
-                        const left = span.startTime * PX_PER_SEC;
-                        const width = (span.endTime - span.startTime) * PX_PER_SEC;
-                        return (
-                          <div
-                            key={i}
-                            style={{
-                              ...styles.cooldownBar,
-                              left,
-                              width,
-                            }}
-                            title={`${span.skillName} リキャスト (${span.startTime.toFixed(2)}s - ${span.endTime.toFixed(2)}s / ${skill?.cooldown}s)`}
-                          >
-                            <img
-                              src={span.icon}
-                              alt={span.skillName}
-                              style={styles.recastIcon}
-                            />
-                            <span style={styles.recastDuration}>
-                              {skill?.cooldown}s
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+              {showRecasts && (
+                <RecastLanes
+                  cooldownSpans={cooldownSpans}
+                  skillMap={skillMap}
+                  labelBg={labelBg}
+                />
+              )}
 
               {/* DoTレーン */}
-              {showDoTs && activeDoTs.length > 0 && (() => {
-                // スキルIDごとにDoTをグループ化
-                const dotBySkill = new Map<string, ActiveDoT[]>();
-                for (const dot of activeDoTs) {
-                  if (!dotBySkill.has(dot.skillId)) {
-                    dotBySkill.set(dot.skillId, []);
-                  }
-                  dotBySkill.get(dot.skillId)!.push(dot);
-                }
+              {showDoTs && activeDoTs.length > 0 && (
+                <DotLanes
+                  activeDoTs={activeDoTs}
+                  dotTicks={dotTicks}
+                  skillMap={skillMap}
+                  stats={stats}
+                  labelBg={labelBg}
+                />
+              )}
 
-                return Array.from(dotBySkill.entries()).map(([skillId, dots]) => {
-                  const skill = skillMap.get(skillId);
-                  const label = skill?.name ?? skillId;
-                  const ticksForSkill = dotTicks.filter((t) => t.skillId === skillId);
+              <TimelineOverlays
+                untargetableWindows={untargetableWindows}
+                multiTargetWindows={multiTargetWindows}
+                ppsRange={ppsRange}
+                showPpsRange={showPpsRange}
+              />
 
-                  return (
-                    <div key={`dot-${skillId}`} style={styles.dotLane}>
-                      <div style={{ ...styles.dotLaneLabel, backgroundColor: labelBg }} title={`${label} DoT`}>
-                        DoT
-                      </div>
-                      <div style={styles.dotLaneContent}>
-                        {dots.map((dot, i) => {
-                          const left = dot.startTime * PX_PER_SEC;
-                          const width = (dot.endTime - dot.startTime) * PX_PER_SEC;
-                          return (
-                            <div
-                              key={i}
-                              style={{
-                                ...styles.dotBar,
-                                left,
-                                width,
-                              }}
-                              title={`${label} DoT (${dot.potency}威力/tick${dot.buffMultiplier !== 1 ? ` x${dot.buffMultiplier.toFixed(2)}` : ""}) ${dot.startTime.toFixed(2)}s - ${dot.endTime.toFixed(2)}s`}
-                            >
-                              <img
-                                src={dot.icon}
-                                alt={label}
-                                style={styles.dotIcon}
-                              />
-                              <span style={styles.dotDuration}>
-                                {dot.potency}{dot.buffMultiplier !== 1 ? `x${dot.buffMultiplier.toFixed(1)}` : ""}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        {/* DoTティックマーカー */}
-                        {ticksForSkill.map((tick, i) => (
-                          <div
-                            key={`tick-${i}`}
-                            style={{
-                              ...styles.dotTickMarker,
-                              left: tick.time * PX_PER_SEC,
-                            }}
-                            title={`DoTティック: ${tick.potency}威力${tick.critRateBonus > 0 || tick.dhRateBonus > 0 ? ` (CRT+${Math.round(tick.critRateBonus * 100)}%${tick.dhRateBonus > 0 ? ` DH+${Math.round(tick.dhRateBonus * 100)}%` : ""})` : ""} @ ${tick.time.toFixed(2)}s${stats ? ` / 期待値: ${Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus))}` : ""}`}
-                          >
-                            <div style={styles.dotTickLine} />
-                            <div style={styles.dotTickPotency}>
-                              {stats ? Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus)) : tick.potency}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-
-              {/* ボス離脱ウィンドウ */}
-              {untargetableWindows.map((w, i) => {
-                const left = LANE_LABEL_WIDTH + w.startTime * PX_PER_SEC;
-                const width = (w.endTime - w.startTime) * PX_PER_SEC;
-                return (
-                  <div
-                    key={`untargetable-${i}`}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      bottom: RULER_HEIGHT,
-                      left,
-                      width,
-                      backgroundColor: "rgba(255, 80, 80, 0.12)",
-                      borderLeft: "2px solid rgba(255, 80, 80, 0.5)",
-                      borderRight: "2px solid rgba(255, 80, 80, 0.5)",
-                      zIndex: 5,
-                      pointerEvents: "none",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "center",
-                      paddingTop: "2px",
-                    }}
-                    title={`ボス離脱 (${w.startTime}s - ${w.endTime}s)`}
-                  >
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        color: "rgba(255, 80, 80, 0.8)",
-                        fontWeight: "bold",
-                        whiteSpace: "nowrap",
-                        pointerEvents: "none",
-                      }}
-                    >
-                      離脱
-                    </span>
-                  </div>
-                );
-              })}
-
-              {/* 複数体ウィンドウ */}
-              {multiTargetWindows.map((w, i) => {
-                const left = LANE_LABEL_WIDTH + w.startTime * PX_PER_SEC;
-                const width = (w.endTime - w.startTime) * PX_PER_SEC;
-                return (
-                  <div
-                    key={`multi-target-${i}`}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      bottom: RULER_HEIGHT,
-                      left,
-                      width,
-                      backgroundColor: "rgba(180, 100, 220, 0.12)",
-                      borderLeft: "2px solid rgba(180, 100, 220, 0.5)",
-                      borderRight: "2px solid rgba(180, 100, 220, 0.5)",
-                      zIndex: 4,
-                      pointerEvents: "none",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "center",
-                      paddingTop: "2px",
-                    }}
-                    title={`複数体 ×${w.targetCount} (${w.startTime}s - ${w.endTime}s)`}
-                  >
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        color: "rgba(180, 100, 220, 0.9)",
-                        fontWeight: "bold",
-                        whiteSpace: "nowrap",
-                        pointerEvents: "none",
-                      }}
-                    >
-                      ×{w.targetCount}
-                    </span>
-                  </div>
-                );
-              })}
-
-              {/* PPS範囲選択オーバーレイ */}
-              {ppsRange && showPpsRange && (() => {
-                const left = LANE_LABEL_WIDTH + ppsRange.startTime * PX_PER_SEC;
-                const width = (ppsRange.endTime - ppsRange.startTime) * PX_PER_SEC;
-                return (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      bottom: RULER_HEIGHT,
-                      left,
-                      width,
-                      backgroundColor: "rgba(255, 183, 77, 0.08)",
-                      borderLeft: "2px solid rgba(255, 183, 77, 0.6)",
-                      borderRight: "2px solid rgba(255, 183, 77, 0.6)",
-                      zIndex: 4,
-                      pointerEvents: "none",
-                    }}
-                    title={`PPS範囲 (${ppsRange.startTime}s - ${ppsRange.endTime}s)`}
-                  />
-                );
-              })()}
-
-              {/* 時間軸ルーラー */}
-              <div style={styles.ruler}>
-                <div style={{ ...styles.rulerLabel, backgroundColor: labelBg }} />
-                <div style={styles.rulerContent}>
-                  {rulerTicks.map((t) => {
-                    const isMajor = t % 1 === 0;
-                    return (
-                      <div
-                        key={t}
-                        style={{
-                          ...styles.rulerTick,
-                          left: t * PX_PER_SEC,
-                          height: isMajor ? "12px" : "6px",
-                        }}
-                      >
-                        <div style={styles.rulerTickLine} />
-                        {isMajor && (
-                          <div style={styles.rulerTickLabel}>{t}s</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <TimelineRuler rulerTicks={rulerTicks} labelBg={labelBg} />
             </div>
           </div>
         )}
@@ -1335,19 +844,13 @@ export function Timeline({
       </div>
 
       {draggingEntryUid !== null && (
-        <div
-          style={{
-            ...styles.deleteDropZone,
-            ...(overDeleteZone ? styles.deleteDropZoneActive : {}),
-          }}
+        <DeleteZone
+          overDeleteZone={overDeleteZone}
           onDragEnter={handleDeleteZoneDragEnter}
           onDragOver={handleDeleteZoneDragOver}
           onDragLeave={handleDeleteZoneDragLeave}
           onDrop={handleDeleteZoneDrop}
-        >
-          <div style={styles.deleteDropZoneIcon} aria-hidden>×</div>
-          <div style={styles.deleteDropZoneLabel}>ここにドロップして削除</div>
-        </div>
+        />
       )}
     </div>
   );
