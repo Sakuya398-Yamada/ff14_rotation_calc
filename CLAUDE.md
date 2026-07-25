@@ -21,6 +21,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 
 @.claude/rules/git-conventions.md
 @.claude/rules/coding-standards.md
+@.claude/rules/testing-conventions.md
 @.claude/rules/tech-stack.md
 @.claude/rules/context-efficiency.md
 @.claude/rules/mcp-setup.md
