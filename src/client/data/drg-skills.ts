@@ -242,6 +242,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 40,
     autoTransform: { buffId: "dragons-eye", skillId: "draconian-fury" },
+    // 前方直線範囲。減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "sonic-thrust",
@@ -256,6 +258,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 62,
+    maxTargets: Infinity,
   },
   {
     id: "coerthan-torment",
@@ -270,6 +273,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 72,
+    maxTargets: Infinity,
   },
   {
     id: "draconian-fury",
@@ -285,6 +289,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "firstminds-focus", amount: 1 },
     ],
+    maxTargets: Infinity,
   },
 
   // ============================================================
@@ -454,6 +459,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     cooldown: 120,
     acquiredLevel: 50,
     buffApplications: ["dragons-flight"],
+    // 対象とその周囲にヒット、2体目以降は威力50%減
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
   {
     id: "rise-of-the-dragon",
@@ -467,6 +475,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     cooldown: 1,
     acquiredLevel: 92,
     buffConsumptions: [{ buffId: "dragons-flight", stacks: 1 }],
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
   {
     id: "stardiver",
@@ -484,6 +494,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 840 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力40%減（パッチ7.3で50%→40%）
+    maxTargets: Infinity,
+    falloffRate: 0.4,
   },
   {
     id: "starcross",
@@ -497,6 +510,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     cooldown: 1,
     acquiredLevel: 100,
     buffConsumptions: [{ buffId: "starcross-ready", stacks: 1 }],
+    maxTargets: Infinity,
+    falloffRate: 0.4,
   },
 
   // ============================================================
@@ -517,6 +532,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 90, potency: 280 },
     ],
+    // 前方直線範囲だが2体目以降は威力50%減
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
   {
     id: "nastrond",
@@ -533,6 +551,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 90, potency: 720 },
     ],
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
   {
     id: "wyrmwind-thrust",
@@ -551,6 +571,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 440 },
     ],
+    // 前方直線範囲。減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
 
   // ============================================================
