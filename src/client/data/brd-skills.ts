@@ -195,6 +195,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 18,
     buffApplications: ["hawks-eye"],
+    // 前方扇範囲。減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "shadowbite",
@@ -210,6 +212,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
       { buffId: "barrage", stacks: 1, potency: 300 },
       { buffId: "hawks-eye", stacks: 1, procRate: 0.35, fallbackPotency: 140 },
     ],
+    // 対象とその周囲にヒット。減衰なし（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "ladonsbite",
@@ -223,6 +227,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 82,
     replacesSkillId: "quick-nock",
     buffApplications: ["hawks-eye"],
+    // 前方扇範囲。減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
 
   // ============================================================
@@ -248,6 +254,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
       maxAmount: 100, maxPotency: 700,
     },
     buffApplicationIfResource: { resourceId: "soul-voice", minAmount: 80, buffIds: ["blast-arrow-ready"] },
+    // 前方直線範囲。減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "blast-arrow",
@@ -260,6 +268,9 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 86,
     buffConsumptions: [{ buffId: "blast-arrow-ready", stacks: 1 }],
+    // 前方直線範囲。2体目以降は威力50%減
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
   {
     id: "resonant-arrow",
@@ -272,6 +283,9 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 96,
     buffConsumptions: [{ buffId: "resonant-arrow-ready", stacks: 1 }],
+    // 対象とその周囲にヒット、2体目以降は威力50%減
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
   {
     id: "radiant-encore",
@@ -288,6 +302,9 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
       { buffId: "radiant-encore-ready-2", stacks: 1, potency: 800 },
       { buffId: "radiant-encore-ready-1", stacks: 1, potency: 700 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力50%減
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
 
   // ============================================================
@@ -320,6 +337,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     cooldown: 15,
     acquiredLevel: 45,
     maxCharges: 3,
+    // 対象とその周囲にヒット。減衰なし（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "empyreal-arrow",
@@ -352,6 +371,9 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "repertoire", amount: -3 },
     ],
+    // 対象とその周囲にヒット、2体目以降は威力50%減
+    maxTargets: Infinity,
+    falloffRate: 0.5,
   },
   {
     id: "sidewinder",
