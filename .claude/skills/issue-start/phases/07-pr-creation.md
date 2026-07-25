@@ -39,7 +39,10 @@ push 前に以下を確認する。1つでも該当する場合は対応して�
      ```
 
 3. 作成されたPRのURLをユーザーに返す
-4. ユーザーに「このPRを購読して、CIエラーやレビューコメントを自動対応しますか？」と尋ね、希望があれば `subscribe_pr_activity` を呼ぶ
+4. PR購読の可否は **ツールの存在確認をしてから** 提案する（環境によっては `subscribe_pr_activity` が GitHub MCP に存在しない。`github/github-mcp-server` v1.x には無い）：
+   1. まず `ToolSearch query: "select:mcp__github__subscribe_pr_activity"` でスキーマロードを試みる
+   2. **見つかった場合のみ**「このPRを購読して、CIエラーやレビューコメントを自動対応しますか？」と尋ね、Y なら `subscribe_pr_activity` を呼ぶ
+   3. **見つからない場合**（`No matching deferred tools found`）は購読の提案自体を省略し、Phase 7 の完了報告に「CI/レビュー結果は手動で確認してください」と明記する
 
 ## ワークフロー改善余地のメモ（Phase 8 向け）
 
