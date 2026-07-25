@@ -12,15 +12,14 @@ FF14 Rotation Calculator に新しいジョブを追加するときの手順書�
 
 ## 全体像
 
-新規ジョブを追加するために触る場所は **3 ファイル新規作成 + 2 ファイル追記 + アイコン配置** に集約されている。
+新規ジョブを追加するために触る場所は **3 ファイル新規作成 + 1 ファイル追記 + アイコン配置** に集約されている。
 
 | 区分 | パス | 操作 |
 |------|------|------|
 | データ | `src/client/data/<job>-skills.ts` | 新規作成（攻撃スキル定義） |
 | データ | `src/client/data/<job>-buffs.ts` | 新規作成（バフ定義） |
 | データ | `src/client/data/<job>-resources.ts` | 新規作成（リソース／ゲージ定義） |
-| 登録 | `src/client/components/App.tsx` | `JobId` Union と `JOB_DATA` レコードに追記 |
-| 登録 | `src/client/components/SkillPalette.tsx` | `JOBS` 配列に追記 |
+| 登録 | `src/client/data/job-registry.ts` | `JobId` Union と `JOB_DATA` レコードに追記 |
 | アイコン | `src/client/assets/icons/<job>/*.png` | スキルアイコン配置 |
 | テスト（推奨） | `src/client/logic/__tests__/<job>-*.test.ts` | 新規作成 |
 
@@ -213,50 +212,33 @@ export const XXX_ATTACK_SKILLS: Skill[] = [
 
 ---
 
-## ステップ 5: `App.tsx` に登録
+## ステップ 5: `job-registry.ts` に登録
 
-`src/client/components/App.tsx` の冒頭で 3 ファイルを import し、`JobId` Union と `JOB_DATA` レコードに追記する。
+`src/client/data/job-registry.ts` の冒頭で 3 ファイルを import し、`JobId` Union と `JOB_DATA` レコードに追記する。
 
 ```ts
 // 1. import 追加
-import { XXX_ATTACK_SKILLS } from "../data/<job>-skills";
-import { XXX_RESOURCES } from "../data/<job>-resources";
-import { XXX_BUFFS } from "../data/<job>-buffs";
+import { XXX_ATTACK_SKILLS } from "./<job>-skills";
+import { XXX_RESOURCES } from "./<job>-resources";
+import { XXX_BUFFS } from "./<job>-buffs";
 
 // 2. JobId Union に追加
 export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "<job>";
 
 // 3. JOB_DATA に追加
-const JOB_DATA: Record<JobId, JobData> = {
+export const JOB_DATA: Record<JobId, JobData> = {
   // ...
   "<job>": { name: "○○○", abbreviation: "XXX", skills: XXX_ATTACK_SKILLS, buffs: XXX_BUFFS, resources: XXX_RESOURCES },
 };
 ```
 
-実例: `src/client/components/App.tsx:6-8, 21-23, 30, 42-48`
-
 > `JOB_DATA` は `Record<JobId, JobData>` 型のため、`JobId` に追加したジョブをここに登録し忘れると **コンパイル時に検出される**。
 
----
-
-## ステップ 6: `SkillPalette.tsx` に登録
-
-`src/client/components/SkillPalette.tsx:9` の `JOBS` 配列に表示順を追加する。
-
-```ts
-const JOBS: { id: JobId; name: string }[] = [
-  { id: "whm", name: "白魔道士" },
-  // ...
-  { id: "<job>", name: "○○○" },
-];
-```
-
-> **注意**: この `JOBS` 配列は `JOB_DATA` とは独立した宣言なので、ここの追記漏れは
-> コンパイル時に検出されない。**追記し忘れると UI に出てこない**ため必ず追加する。
+ジョブセレクタの選択肢（`JOB_OPTIONS`）は `JOB_DATA` のキー順から自動派生するため、**表示順は `JOB_DATA` レコードのキーの記述順で制御する**。`SkillPalette.tsx` 側への追記は不要。
 
 ---
 
-## ステップ 7: テストを書く（推奨）
+## ステップ 6: テストを書く（推奨）
 
 `src/client/logic/__tests__/<job>-*.test.ts` を新規作成し、ジョブ固有のロジックを検証する。
 
@@ -283,8 +265,7 @@ SAM の以下が雛形として参考になる：
 - [ ] `src/client/data/<job>-buffs.ts` が存在し、`<JOB>_BUFFS` を export している
 - [ ] `src/client/data/<job>-resources.ts` が存在し、`<JOB>_RESOURCES` を export している
 - [ ] `src/client/assets/icons/<job>/` 配下に全スキル分のアイコンがある
-- [ ] `App.tsx` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている
-- [ ] `SkillPalette.tsx` の `JOBS` 配列に新ジョブが追加されている
+- [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（セレクタ表示順は `JOB_DATA` のキー順）
 - [ ] `npm run build` / `npm test` が GREEN
 - [ ] パレットから新ジョブを選択でき、スキルをタイムラインに配置して期待威力が計算できる
 
