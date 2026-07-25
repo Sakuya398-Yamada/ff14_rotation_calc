@@ -20,6 +20,9 @@ import {
 import { styles } from "./timeline/styles";
 import { formatTargetBreakdown, calcInsertIndex } from "./timeline/helpers";
 import { ManualStartTimeBadge } from "./timeline/ManualStartTimeBadge";
+import { PpsRangeEditor } from "./timeline/PpsRangeEditor";
+import { UntargetableWindowEditor } from "./timeline/UntargetableWindowEditor";
+import { MultiTargetWindowEditor } from "./timeline/MultiTargetWindowEditor";
 import "./timeline.css";
 
 interface TimelineProps {
@@ -727,234 +730,26 @@ export function Timeline({
       </div>
 
       {showPpsRange && (
-        <div style={styles.ppsRangeEditor}>
-          <div style={styles.ppsRangeHeader}>
-            <span style={styles.ppsRangeTitle}>PPS範囲選択</span>
-          </div>
-          <div style={styles.ppsRangeRow}>
-            <label style={styles.ppsRangeLabel}>
-              開始:
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                value={ppsRange?.startTime ?? 0}
-                style={styles.ppsRangeInput}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  if (isNaN(val) || val < 0) return;
-                  onPpsRangeChange({
-                    startTime: val,
-                    endTime: ppsRange?.endTime ?? lastGcdEndTime,
-                  });
-                }}
-              />
-              s
-            </label>
-            <label style={styles.ppsRangeLabel}>
-              終了:
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                value={ppsRange?.endTime ?? lastGcdEndTime}
-                style={styles.ppsRangeInput}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  if (isNaN(val) || val < 0) return;
-                  onPpsRangeChange({
-                    startTime: ppsRange?.startTime ?? 0,
-                    endTime: val,
-                  });
-                }}
-              />
-              s
-            </label>
-            <button
-              style={styles.ppsRangeResetButton}
-              onClick={() => onPpsRangeChange({ startTime: 0, endTime: lastGcdEndTime })}
-              title="全体範囲にリセット"
-            >
-              全体
-            </button>
-          </div>
-          {rangePps !== null && (
-            <div style={styles.ppsRangeResult}>
-              <span>
-                範囲PPS: <span style={styles.ppsValue}>{rangePps.pps.toFixed(2)}</span>
-              </span>
-              <span style={styles.ppsRangeDetail}>
-                (威力: {rangePps.totalPotency} = 直接{rangePps.directPotency} + DoT{rangePps.dotPotency})
-              </span>
-            </div>
-          )}
-        </div>
+        <PpsRangeEditor
+          ppsRange={ppsRange}
+          onPpsRangeChange={onPpsRangeChange}
+          lastGcdEndTime={lastGcdEndTime}
+          rangePps={rangePps}
+        />
       )}
 
       {showUntargetableEditor && (
-        <div style={styles.untargetableEditor}>
-          <div style={styles.untargetableHeader}>
-            <span style={styles.untargetableTitle}>ボス離脱タイミング</span>
-            <button
-              style={styles.untargetableAddButton}
-              onClick={() => {
-                const lastEnd = untargetableWindows.length > 0
-                  ? Math.max(...untargetableWindows.map((w) => w.endTime))
-                  : 0;
-                onUntargetableWindowsChange([
-                  ...untargetableWindows,
-                  { startTime: lastEnd + 5, endTime: lastEnd + 10 },
-                ]);
-              }}
-            >
-              + 追加
-            </button>
-          </div>
-          {untargetableWindows.length === 0 && (
-            <div style={styles.untargetableEmpty}>離脱タイミングが未設定です</div>
-          )}
-          {untargetableWindows.map((w, i) => (
-            <div key={i} style={styles.untargetableRow}>
-              <label style={styles.untargetableLabel}>
-                開始:
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={w.startTime}
-                  style={styles.untargetableInput}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    if (isNaN(val) || val < 0) return;
-                    const next = [...untargetableWindows];
-                    next[i] = { ...next[i], startTime: val };
-                    onUntargetableWindowsChange(next);
-                  }}
-                />
-                s
-              </label>
-              <label style={styles.untargetableLabel}>
-                終了:
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={w.endTime}
-                  style={styles.untargetableInput}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    if (isNaN(val) || val < 0) return;
-                    const next = [...untargetableWindows];
-                    next[i] = { ...next[i], endTime: val };
-                    onUntargetableWindowsChange(next);
-                  }}
-                />
-                s
-              </label>
-              <button
-                style={styles.untargetableDeleteButton}
-                onClick={() => {
-                  onUntargetableWindowsChange(untargetableWindows.filter((_, idx) => idx !== i));
-                }}
-                title="削除"
-              >
-                x
-              </button>
-            </div>
-          ))}
-        </div>
+        <UntargetableWindowEditor
+          untargetableWindows={untargetableWindows}
+          onUntargetableWindowsChange={onUntargetableWindowsChange}
+        />
       )}
 
       {showMultiTargetEditor && (
-        <div style={styles.multiTargetEditor}>
-          <div style={styles.multiTargetHeader}>
-            <span style={styles.multiTargetTitle}>複数体ウィンドウ</span>
-            <button
-              style={styles.multiTargetAddButton}
-              onClick={() => {
-                const lastEnd = multiTargetWindows.length > 0
-                  ? Math.max(...multiTargetWindows.map((w) => w.endTime))
-                  : 0;
-                onMultiTargetWindowsChange([
-                  ...multiTargetWindows,
-                  { startTime: lastEnd + 5, endTime: lastEnd + 10, targetCount: 2 },
-                ]);
-              }}
-            >
-              + 追加
-            </button>
-          </div>
-          {multiTargetWindows.length === 0 && (
-            <div style={styles.multiTargetEmpty}>複数体ウィンドウが未設定です</div>
-          )}
-          {multiTargetWindows.map((w, i) => (
-            <div key={i} style={styles.multiTargetRow}>
-              <label style={styles.multiTargetLabel}>
-                開始:
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={w.startTime}
-                  style={styles.multiTargetInput}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    if (isNaN(val) || val < 0) return;
-                    const next = [...multiTargetWindows];
-                    next[i] = { ...next[i], startTime: val };
-                    onMultiTargetWindowsChange(next);
-                  }}
-                />
-                s
-              </label>
-              <label style={styles.multiTargetLabel}>
-                終了:
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={w.endTime}
-                  style={styles.multiTargetInput}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    if (isNaN(val) || val < 0) return;
-                    const next = [...multiTargetWindows];
-                    next[i] = { ...next[i], endTime: val };
-                    onMultiTargetWindowsChange(next);
-                  }}
-                />
-                s
-              </label>
-              <label style={styles.multiTargetLabel}>
-                敵の数:
-                <input
-                  type="number"
-                  step="1"
-                  min="2"
-                  max="8"
-                  value={w.targetCount}
-                  style={styles.multiTargetInput}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (isNaN(val) || val < 2) return;
-                    const next = [...multiTargetWindows];
-                    next[i] = { ...next[i], targetCount: val };
-                    onMultiTargetWindowsChange(next);
-                  }}
-                />
-              </label>
-              <button
-                style={styles.multiTargetDeleteButton}
-                onClick={() => {
-                  onMultiTargetWindowsChange(multiTargetWindows.filter((_, idx) => idx !== i));
-                }}
-                title="削除"
-              >
-                x
-              </button>
-            </div>
-          ))}
-        </div>
+        <MultiTargetWindowEditor
+          multiTargetWindows={multiTargetWindows}
+          onMultiTargetWindowsChange={onMultiTargetWindowsChange}
+        />
       )}
 
       <div
