@@ -155,6 +155,9 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "astral-soul", amount: -6 },
     ],
+    // 対象とその周囲の敵にヒット、2体目以降は威力65%減
+    maxTargets: Infinity,
+    falloffRate: 0.65,
   },
 
   // ============================================================
@@ -175,6 +178,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "mp", amount: -1500 },
     ],
     buffApplications: ["astral-fire-3", "thunderhead"],
+    // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "high-fire-2",
@@ -192,6 +197,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "mp", amount: -1500 },
     ],
     buffApplications: ["astral-fire-3", "thunderhead"],
+    // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
 
   // ============================================================
@@ -268,6 +275,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 3.0,
     acquiredLevel: 12,
     buffApplications: ["umbral-ice-3", "thunderhead"],
+    // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "high-blizzard-2",
@@ -282,6 +291,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 45,
     replacesSkillId: "blizzard-2",
     buffApplications: ["umbral-ice-3", "thunderhead"],
+    // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "freeze",
@@ -299,6 +310,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "umbral-heart", amount: 3 },
     ],
     buffApplications: ["umbral-ice-3", "thunderhead"],
+    // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
 
   // ============================================================
@@ -377,6 +390,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     dotPotency: 40,
     dotDuration: 30,
     refreshesDots: ["high-thunder-2"],
+    // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
   {
     id: "thunder-4",
@@ -393,6 +408,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     dotPotency: 30,
     dotDuration: 30,
     refreshesDots: ["thunder-4"],
+    // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
+    maxTargets: Infinity,
   },
 
   // ============================================================
@@ -425,6 +442,9 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "polyglot", amount: -1 },
     ],
+    // 対象とその周囲の敵にヒット、2体目以降は威力25%減
+    maxTargets: Infinity,
+    falloffRate: 0.25,
   },
 
   // ============================================================
