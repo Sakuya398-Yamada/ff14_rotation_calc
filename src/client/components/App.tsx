@@ -39,12 +39,19 @@ export function App() {
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
   const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
 
-  // 状態変更を debounce しつつ LocalStorage へ保存
+  // 状態変更を debounce しつつ LocalStorage へ保存。
+  // debounce 待ち中（直前 500ms 以内）のリロード・タブクローズでも取りこぼさないよう、
+  // pagehide で即時フラッシュする
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    const flush = () => {
       saveAppState({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows });
-    }, SAVE_DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
+    };
+    const timer = window.setTimeout(flush, SAVE_DEBOUNCE_MS);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pagehide", flush);
+    };
   }, [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows]);
 
   const jobData = JOB_DATA[selectedJob];
