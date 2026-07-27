@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
@@ -7,6 +7,7 @@ import { JOB_DATA } from "../data/job-registry";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
+import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { JobId } from "../data/job-registry";
 import type { TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
 
@@ -15,15 +16,36 @@ export type { JobId } from "../data/job-registry";
 
 let nextUid = 1;
 
+/** 保存の debounce 間隔（ミリ秒）。連続操作中の書き込み頻度を抑える */
+const SAVE_DEBOUNCE_MS = 500;
+
 export function App() {
-  const [selectedJob, setSelectedJob] = useState<JobId>("whm");
-  const [level, setLevel] = useState<PlayerLevel>(100);
-  const [entries, setEntries] = useState<TimelineEntry[]>([]);
-  const [stats, setStats] = useState<CharacterStats>(DEFAULT_STATS);
-  const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>([]);
-  const [multiTargetWindows, setMultiTargetWindows] = useState<MultiTargetWindow[]>([]);
+  // 初回マウント時に LocalStorage から復元（復元不能時は null → 各 state の初期値にフォールバック）
+  const [restored] = useState(() => {
+    const state = loadAppState();
+    if (state) {
+      // 復元した entries の uid と新規採番が衝突しないようカウンタを進める
+      nextUid = Math.max(nextUid, computeNextUid(state.entries));
+    }
+    return state;
+  });
+
+  const [selectedJob, setSelectedJob] = useState<JobId>(restored?.selectedJob ?? "whm");
+  const [level, setLevel] = useState<PlayerLevel>(restored?.level ?? 100);
+  const [entries, setEntries] = useState<TimelineEntry[]>(restored?.entries ?? []);
+  const [stats, setStats] = useState<CharacterStats>(restored?.stats ?? DEFAULT_STATS);
+  const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>(restored?.untargetableWindows ?? []);
+  const [multiTargetWindows, setMultiTargetWindows] = useState<MultiTargetWindow[]>(restored?.multiTargetWindows ?? []);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
   const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
+
+  // 状態変更を debounce しつつ LocalStorage へ保存
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      saveAppState({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows });
+    }, SAVE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows]);
 
   const jobData = JOB_DATA[selectedJob];
 
