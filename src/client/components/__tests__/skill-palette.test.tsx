@@ -63,7 +63,7 @@ function getSectionTitle(pattern: RegExp): HTMLElement {
 afterEach(cleanup);
 
 describe("SkillPalette", () => {
-  it("ジョブセレクタに全6ジョブが表示され、selectedJob が反映される", () => {
+  it("ジョブセレクタに全7ジョブが表示され、selectedJob が反映される", () => {
     renderPalette();
     const jobSelect = screen.getByRole("combobox") as HTMLSelectElement;
     const labels = Array.from(jobSelect.options).map((o) => o.textContent);
@@ -74,6 +74,7 @@ describe("SkillPalette", () => {
       "ピクトマンサー",
       "黒魔道士",
       "侍",
+      "モンク",
     ]);
     expect(jobSelect.value).toBe("whm");
   });
