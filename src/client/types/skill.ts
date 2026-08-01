@@ -232,6 +232,14 @@ export interface ResourceDefinition {
   displayGroup?: string;
   /** ドット1行あたりのスタック数（未設定の場合はmaxStacksを1行で表示。maxStacksがこの値を超える場合は複数行に折り返される） */
   stacksPerRow?: number;
+  /**
+   * 表示上のドット数（未設定の場合はmaxStacks個のドットを表示）。
+   * maxStacksより少なく設定すると、超過分は同じドットを overflowColor で塗り直して表現する。
+   * 例: MNKの闘気（上限10）を5ドットで表示し、6〜10個目は赤色ドットで表す。
+   */
+  displayMaxStacks?: number;
+  /** displayMaxStacks 超過分を表すドット色（未設定の場合は color をそのまま使用） */
+  overflowColor?: string;
   /** displayGroup内のリソース合計スタック数の上限（同グループ内で合計がこの値を超えないようキャップ） */
   groupMaxStacks?: number;
   /** 同一displayGroup内でドット表示時の描画優先順位（昇順）。小さいほどスロットの先頭に埋められる */

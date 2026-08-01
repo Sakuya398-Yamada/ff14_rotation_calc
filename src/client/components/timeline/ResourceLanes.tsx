@@ -79,7 +79,9 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                           </div>
                         );
                       }
-                      const stacksPerRow = res.stacksPerRow ?? res.maxStacks;
+                      // displayMaxStacks 指定時はドット数を絞り、超過分は overflowColor で同じドットを塗り直す
+                      const displayMax = res.displayMaxStacks ?? res.maxStacks;
+                      const stacksPerRow = res.stacksPerRow ?? displayMax;
                       const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
                       return (
                         <div
@@ -89,15 +91,17 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                             width: gridWidth,
                           }}
                         >
-                          {Array.from({ length: res.maxStacks }, (_, i) => (
+                          {Array.from({ length: displayMax }, (_, i) => (
                             <div
                               key={`${res.id}-${i}`}
                               style={{
                                 ...styles.resourceDot,
                                 backgroundColor:
-                                  i < count
-                                    ? res.color
-                                    : "rgba(255,255,255,0.15)",
+                                  count > displayMax + i
+                                    ? (res.overflowColor ?? res.color)
+                                    : i < count
+                                      ? res.color
+                                      : "rgba(255,255,255,0.15)",
                               }}
                             />
                           ))}

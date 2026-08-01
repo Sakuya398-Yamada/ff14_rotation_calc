@@ -1,7 +1,4 @@
 import type { AutoTransformEntry, Skill } from "../types/skill";
-import bootshineIcon from "../assets/icons/mnk/Bootshine.png";
-import trueStrikeIcon from "../assets/icons/mnk/True_Strike.png";
-import snapPunchIcon from "../assets/icons/mnk/Snap_Punch.png";
 import twinSnakesIcon from "../assets/icons/mnk/Twin_Snakes.png";
 import demolishIcon from "../assets/icons/mnk/Demolish.png";
 import dragonKickIcon from "../assets/icons/mnk/Dragon_Kick.png";
@@ -66,8 +63,9 @@ import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
  *
  * ## その他の簡略化
  * - クリティカル時の確率チャクラ獲得（特性）は乱数のため対象外
- * - 空鳴闘気・万象闘気（瞑想の範囲版。効果は鉄山闘気・陰陽闘気と同一）は
- *   パレット簡潔化のため対象外
+ * - Lv92 で上位技（猿舞連撃・竜頷正拳撃・虎襲崩拳）に変化する連撃・正拳突き・崩拳、
+ *   空鳴闘気・万象闘気（瞑想の範囲版。効果は鉄山闘気・陰陽闘気と同一）は
+ *   パレット簡潔化のため対象外（Lv100 の実用キットのみ収録）
  * - 特性による低レベル帯の威力変動（traitPotencyOverrides）は未投入（Lv100 の値のみ）
  */
 
@@ -78,8 +76,6 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 // 型を付与する WS（= 次の型の WS の comboFrom）。autoTransform の変化先も含める
 /** 壱の型を付与する WS（参の型の WS 群） */
 const GRANTS_OPO_FORM = [
-  "snap-punch",
-  "snap-punch-fury",
   "pouncing-coeurl",
   "pouncing-coeurl-fury",
   "demolish",
@@ -87,8 +83,6 @@ const GRANTS_OPO_FORM = [
 ];
 /** 弐の型を付与する WS（壱の型の WS 群） */
 const GRANTS_RAPTOR_FORM = [
-  "bootshine",
-  "bootshine-fury",
   "leaping-opo",
   "leaping-opo-fury",
   "dragon-kick",
@@ -97,8 +91,6 @@ const GRANTS_RAPTOR_FORM = [
 ];
 /** 参の型を付与する WS（弐の型の WS 群） */
 const GRANTS_COEURL_FORM = [
-  "true-strike",
-  "true-strike-fury",
   "rising-raptor",
   "rising-raptor-fury",
   "twin-snakes",
@@ -164,38 +156,6 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   // GCD: 壱の型（オポオポ）の WS
   // ============================================================
-  // 連撃: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
-  {
-    id: "bootshine",
-    name: "連撃",
-    potency: 220,
-    type: "gcd",
-    target: "enemy",
-    icon: bootshineIcon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-    acquiredLevel: 1,
-    comboFrom: GRANTS_OPO_FORM,
-    guaranteedCrit: true,
-    autoTransform: [
-      { resourceConditions: [{ resourceId: "opo-fury", minAmount: 1 }], skillId: "bootshine-fury" },
-    ],
-  },
-  {
-    id: "bootshine-fury",
-    name: "連撃（功力）",
-    potency: 420,
-    type: "gcd",
-    target: "enemy",
-    icon: bootshineIcon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-    acquiredLevel: 50,
-    comboFrom: GRANTS_OPO_FORM,
-    guaranteedCrit: true,
-    resourceChanges: [{ resourceId: "opo-fury", amount: -1 }],
-    hidden: true,
-  },
   // 双竜脚: 型成立（またはバイパス）時に壱の功力を付与
   {
     id: "dragon-kick",
@@ -210,7 +170,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     comboFrom: GRANTS_OPO_FORM,
     comboResourceChanges: [{ resourceId: "opo-fury", amount: 1 }],
   },
-  // 猿舞連撃（Lv92: 連撃から変化）
+  // 猿舞連撃: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
   {
     id: "leaping-opo",
     name: "猿舞連撃",
@@ -221,7 +181,6 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
-    replacesSkillId: "bootshine",
     comboFrom: GRANTS_OPO_FORM,
     guaranteedCrit: true,
     autoTransform: [
@@ -246,35 +205,6 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   // GCD: 弐の型（ラプトル）の WS
   // ============================================================
-  {
-    id: "true-strike",
-    name: "正拳突き",
-    potency: 300,
-    type: "gcd",
-    target: "enemy",
-    icon: trueStrikeIcon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-    acquiredLevel: 4,
-    comboFrom: GRANTS_RAPTOR_FORM,
-    autoTransform: [
-      { resourceConditions: [{ resourceId: "raptor-fury", minAmount: 1 }], skillId: "true-strike-fury" },
-    ],
-  },
-  {
-    id: "true-strike-fury",
-    name: "正拳突き（功力）",
-    potency: 500,
-    type: "gcd",
-    target: "enemy",
-    icon: trueStrikeIcon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-    acquiredLevel: 18,
-    comboFrom: GRANTS_RAPTOR_FORM,
-    resourceChanges: [{ resourceId: "raptor-fury", amount: -1 }],
-    hidden: true,
-  },
   // 双掌打: 型成立時に弐の功力を付与
   {
     id: "twin-snakes",
@@ -289,7 +219,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     comboFrom: GRANTS_RAPTOR_FORM,
     comboResourceChanges: [{ resourceId: "raptor-fury", amount: 1 }],
   },
-  // 竜頷正拳撃（Lv92: 正拳突きから変化）
+  // 竜頷正拳撃
   {
     id: "rising-raptor",
     name: "竜頷正拳撃",
@@ -300,7 +230,6 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
-    replacesSkillId: "true-strike",
     comboFrom: GRANTS_RAPTOR_FORM,
     autoTransform: [
       { resourceConditions: [{ resourceId: "raptor-fury", minAmount: 1 }], skillId: "rising-raptor-fury" },
@@ -323,37 +252,6 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   // GCD: 参の型（クァール）の WS
   // ============================================================
-  // 崩拳: 威力270 + 側面ボーナス60 = 330（方向指定成功前提）
-  {
-    id: "snap-punch",
-    name: "崩拳",
-    potency: 330,
-    type: "gcd",
-    target: "enemy",
-    icon: snapPunchIcon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-    acquiredLevel: 6,
-    comboFrom: GRANTS_COEURL_FORM,
-    autoTransform: [
-      { resourceConditions: [{ resourceId: "coeurl-fury", minAmount: 1 }], skillId: "snap-punch-fury" },
-    ],
-  },
-  // 崩拳（功力）: 威力420 + 側面ボーナス60 = 480（方向指定成功前提）
-  {
-    id: "snap-punch-fury",
-    name: "崩拳（功力）",
-    potency: 480,
-    type: "gcd",
-    target: "enemy",
-    icon: snapPunchIcon,
-    recastTime: GCD_RECAST,
-    animationLock: DEFAULT_ANIMATION_LOCK,
-    acquiredLevel: 30,
-    comboFrom: GRANTS_COEURL_FORM,
-    resourceChanges: [{ resourceId: "coeurl-fury", amount: -1 }],
-    hidden: true,
-  },
   // 破砕拳: 威力360 + 背面ボーナス60 = 420（方向指定成功前提）。型成立時に参の功力を2付与
   {
     id: "demolish",
@@ -368,7 +266,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     comboFrom: GRANTS_COEURL_FORM,
     comboResourceChanges: [{ resourceId: "coeurl-fury", amount: 2 }],
   },
-  // 虎襲崩拳（Lv92: 崩拳から変化）: 威力310 + 側面ボーナス60 = 370（方向指定成功前提）
+  // 虎襲崩拳: 威力310 + 側面ボーナス60 = 370（方向指定成功前提）
   {
     id: "pouncing-coeurl",
     name: "虎襲崩拳",
@@ -379,7 +277,6 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
-    replacesSkillId: "snap-punch",
     comboFrom: GRANTS_COEURL_FORM,
     autoTransform: [
       { resourceConditions: [{ resourceId: "coeurl-fury", minAmount: 1 }], skillId: "pouncing-coeurl-fury" },

@@ -20,8 +20,6 @@ import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
 
 /** 壱の型（壱ノ型）で使う WS（型ボーナス対象）。autoTransform の変化先も含める */
 const OPO_WS = [
-  "bootshine",
-  "bootshine-fury",
   "leaping-opo",
   "leaping-opo-fury",
   "dragon-kick",
@@ -31,8 +29,6 @@ const OPO_WS = [
 
 /** 弐の型で使う WS */
 const RAPTOR_WS = [
-  "true-strike",
-  "true-strike-fury",
   "rising-raptor",
   "rising-raptor-fury",
   "twin-snakes",
@@ -41,8 +37,6 @@ const RAPTOR_WS = [
 
 /** 参の型で使う WS */
 const COEURL_WS = [
-  "snap-punch",
-  "snap-punch-fury",
   "pouncing-coeurl",
   "pouncing-coeurl-fury",
   "demolish",

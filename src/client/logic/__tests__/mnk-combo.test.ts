@@ -98,7 +98,7 @@ describe("MNK: 型コンボ（壱→弐→参）と功力", () => {
 
   it("壊神衝は壱の型成立時に威力120、不成立時は110", () => {
     const result = resolveTimeline(
-      [entry("arm-of-the-destroyer"), entry("snap-punch"), entry("arm-of-the-destroyer")],
+      [entry("arm-of-the-destroyer"), entry("pouncing-coeurl"), entry("arm-of-the-destroyer")],
       skillMap,
       MNK_RESOURCES,
       undefined,
@@ -108,8 +108,7 @@ describe("MNK: 型コンボ（壱→弐→参）と功力", () => {
     // 1体目: 型なし → 非コンボ威力
     expect(result.entries[0].wsComboError).toBe(true);
     expect(result.entries[0].resolvedPotency).toBe(110);
-    // 崩拳（壊神衝が弐の型を付与…ではなく壊神衝は弐の型付与WS。崩拳は参の型のWSなので不成立）
-    // → 3番目の壊神衝は崩拳（参の型のWS = 壱の型付与）から成立して威力120
+    // 3番目の壊神衝は虎襲崩拳（参の型のWS = 壱の型付与）から成立して威力120
     expect(result.entries[2].wsComboError).toBe(false);
     expect(result.entries[2].resolvedPotency).toBe(120);
   });
