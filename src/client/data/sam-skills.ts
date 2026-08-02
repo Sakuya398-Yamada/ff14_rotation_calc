@@ -186,6 +186,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 26,
     resourceChanges: [{ resourceId: "kenki", amount: 5 }],
+    maxTargets: Infinity,
   },
   {
     id: "fuko",
@@ -199,6 +200,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 86,
     replacesSkillId: "fuga",
     resourceChanges: [{ resourceId: "kenki", amount: 10 }],
+    maxTargets: Infinity,
   },
   {
     // 満月: 範囲コンボ最終段。通常コンボ完走では風月バフは付与されない。
@@ -218,6 +220,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "getsu", amount: 1 },
       { resourceId: "kenki", amount: 10 },
     ],
+    maxTargets: Infinity,
   },
   {
     // 桜花: 範囲コンボ最終段。風花バフ付与の扱いは満月と同様（明鏡止水バフ側で表現）。
@@ -236,6 +239,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "ka", amount: 1 },
       { resourceId: "kenki", amount: 10 },
     ],
+    maxTargets: Infinity,
   },
 
   // ============================================================
@@ -357,6 +361,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     consumeAllResources: ["setsu", "getsu", "ka"],
     resourceChanges: [{ resourceId: "meditation", amount: 1 }],
     buffApplications: ["tsubame-kaeshi-goken-ready"],
+    maxTargets: Infinity,
   },
   {
     id: "midare-setsugekka",
@@ -391,6 +396,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "meditation", amount: 1 }],
     buffConsumptions: [{ buffId: "tendo", stacks: 1 }],
     buffApplications: ["tsubame-tendo-kaeshi-goken-ready"],
+    maxTargets: Infinity,
   },
   {
     id: "tendo-setsugekka",
@@ -446,6 +452,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     hidden: true,
     requiredBuff: "tsubame-kaeshi-goken-ready",
     buffConsumptions: [{ buffId: "tsubame-kaeshi-goken-ready", stacks: 1 }],
+    maxTargets: Infinity,
   },
   {
     id: "kaeshi-setsugekka",
@@ -475,6 +482,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     hidden: true,
     requiredBuff: "tsubame-tendo-kaeshi-goken-ready",
     buffConsumptions: [{ buffId: "tsubame-tendo-kaeshi-goken-ready", stacks: 1 }],
+    maxTargets: Infinity,
   },
   {
     id: "tendo-kaeshi-setsugekka",
@@ -506,6 +514,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     guaranteedDh: true,
     requiredBuff: "tsubame-kaeshi-namikiri-ready",
     buffConsumptions: [{ buffId: "tsubame-kaeshi-namikiri-ready", stacks: 1 }],
+    maxTargets: Infinity,
+    falloffRate: 0.4,
   },
 
   // ============================================================
@@ -527,6 +537,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     buffConsumptions: [{ buffId: "ogi-namikiri-ready", stacks: 1 }],
     buffApplications: ["tsubame-kaeshi-namikiri-ready"],
     resourceChanges: [{ resourceId: "meditation", amount: 1 }],
+    maxTargets: Infinity,
+    falloffRate: 0.4,
   },
 
   // ============================================================
@@ -585,6 +597,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     maxCharges: 2,
     cooldownGroup: "hissatsu-senei-guren",
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
+    maxTargets: Infinity,
   },
   {
     id: "hissatsu-senei",
@@ -679,6 +692,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "kenki", amount: -50 }],
     requiredBuff: "zanshin-ready",
     buffConsumptions: [{ buffId: "zanshin-ready", stacks: 1 }],
+    maxTargets: Infinity,
+    falloffRate: 0.4,
   },
   {
     id: "shoha",
@@ -692,6 +707,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 82,
     cooldown: 15,
     resourceChanges: [{ resourceId: "meditation", amount: -3 }],
+    maxTargets: Infinity,
+    falloffRate: 0.4,
   },
 
   // ============================================================
