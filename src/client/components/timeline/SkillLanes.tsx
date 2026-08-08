@@ -1,3 +1,4 @@
+import { useDraggable } from "@dnd-kit/core";
 import type { Skill, ResolvedTimelineEntry, CharacterStats } from "../../types/skill";
 import type { DisplayEntry } from "./types";
 import { calcEntryPotencyBreakdown } from "../../logic/expected-potency";
@@ -5,6 +6,7 @@ import { formatTargetBreakdown } from "./helpers";
 import { ManualStartTimeBadge } from "./ManualStartTimeBadge";
 import { styles } from "./styles";
 import { PX_PER_SEC } from "./constants";
+import type { TimelineEntryDragData } from "./dnd-types";
 
 interface SkillLanesProps {
   gcdEntries: DisplayEntry[];
@@ -16,8 +18,42 @@ interface SkillLanesProps {
   draggingEntryUid: string | null;
   labelBg: string;
   onSelectEntry: (uid: string | null) => void;
-  onEntryDragStart: (e: React.DragEvent<HTMLDivElement>, entry: { uid: string; skillId: string }, skill: Skill) => void;
-  onEntryDragEnd: () => void;
+}
+
+/** dnd-kit のドラッグ元となるタイムラインエントリのアイコン（タッチ・マウス両対応） */
+function DraggableEntryIcon({
+  uid,
+  skillId,
+  skillType,
+  style,
+  title,
+  onClick,
+  children,
+}: {
+  uid: string;
+  skillId: string;
+  skillType: "gcd" | "ogcd";
+  style: React.CSSProperties;
+  title: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const data: TimelineEntryDragData = { source: "timeline", uid, skillId, skillType };
+  const { setNodeRef, listeners, attributes } = useDraggable({ id: `entry-${uid}`, data });
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      // TouchSensor の長押し判定中にページスクロールが走るのを防ぐ
+      style={{ ...style, touchAction: "none" }}
+      title={title}
+      data-skill-entry-uid={uid}
+      onClick={onClick}
+    >
+      {children}
+    </div>
+  );
 }
 
 /** GCD行・oGCD行（スキルアイコン・詠唱/リキャストバー・威力ツールチップ・DnDソース） */
@@ -31,8 +67,6 @@ export function SkillLanes({
   draggingEntryUid,
   labelBg,
   onSelectEntry,
-  onEntryDragStart,
-  onEntryDragEnd,
 }: SkillLanesProps) {
   return (
     <>
@@ -95,7 +129,10 @@ export function SkillLanes({
                     }}
                   />
                 </div>
-                <div
+                <DraggableEntryIcon
+                  uid={entry.uid}
+                  skillId={entry.skillId}
+                  skillType="gcd"
                   style={{
                     ...styles.skillIcon,
                     ...(hasError ? styles.skillIconError : {}),
@@ -104,11 +141,7 @@ export function SkillLanes({
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
                   title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
-                  data-skill-entry-uid={entry.uid}
                   onClick={() => onSelectEntry(entry.uid)}
-                  draggable
-                  onDragStart={(e) => onEntryDragStart(e, entry, entry.skill)}
-                  onDragEnd={onEntryDragEnd}
                 >
                   <img
                     src={entry.displaySkill.icon}
@@ -119,7 +152,7 @@ export function SkillLanes({
                   {entry.manualStartTime !== undefined && (
                     <ManualStartTimeBadge />
                   )}
-                </div>
+                </DraggableEntryIcon>
                 <div style={{
                   ...styles.skillPotency,
                   ...(entry.wsComboError ? { color: "#ff9800" } : {}),
@@ -152,7 +185,10 @@ export function SkillLanes({
                   left: entry.startTime * PX_PER_SEC,
                 }}
               >
-                <div
+                <DraggableEntryIcon
+                  uid={entry.uid}
+                  skillId={entry.skillId}
+                  skillType="ogcd"
                   style={{
                     ...styles.ogcdIcon,
                     ...(hasError ? styles.ogcdIconError : {}),
@@ -160,11 +196,7 @@ export function SkillLanes({
                     ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                   }}
                   title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
-                  data-skill-entry-uid={entry.uid}
                   onClick={() => onSelectEntry(entry.uid)}
-                  draggable
-                  onDragStart={(e) => onEntryDragStart(e, entry, entry.skill)}
-                  onDragEnd={onEntryDragEnd}
                 >
                   <img
                     src={entry.displaySkill.icon}
@@ -175,7 +207,7 @@ export function SkillLanes({
                   {entry.manualStartTime !== undefined && (
                     <ManualStartTimeBadge />
                   )}
-                </div>
+                </DraggableEntryIcon>
                 <div style={styles.skillPotency}>
                   {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                 </div>

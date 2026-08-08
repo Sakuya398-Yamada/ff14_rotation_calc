@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/Sakuya398-Yamada/ff14_rotation_calc#readme",
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
     "@hono/node-server": "^1.19.12",
     "@prisma/adapter-better-sqlite3": "^7.6.0",
     "@prisma/client": "^7.6.0",
