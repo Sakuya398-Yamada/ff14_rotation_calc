@@ -56,7 +56,7 @@ Structure your response for maximum clarity and usefulness. Always include speci
 
 - **総量**: 最終レポート全体で 400 行以内、Markdown で 6,000 文字以内
 - **コード引用**: 1 箇所につき 10 行以内。必要な行だけ抜粋し、全関数を丸ごと引用しない
-- **ファイル読解**: 500 行超のファイルは全読みせず、`Grep` で該当行を特定してから `Read` に `offset`/`limit` を付けて必要範囲のみ読む
+- **ファイル読解**: 800 行超のファイルは全読みせず、`Grep` で該当行を特定してから `Read` に `offset`/`limit` を付けて必要範囲のみ読む（均質な低密度ファイルの例外等は `.claude/rules/context-efficiency.md` 参照）
 - **Grep**: 既定で `output_mode: files_with_matches` を使い、内容確認が必要な場合のみ `content` + `-n` + `head_limit` 20〜30
 - **報告形式**: 冗長な前置きは書かず、「file:line + 1〜3 行の要約」を基本単位とする
 
