@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useDroppable } from "@dnd-kit/core";
 import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../types/skill";
+import { TIMELINE_DROPZONE_ID } from "./timeline/dnd-types";
 import { calcGcd } from "../logic/stat-calc";
 import { computeBuffTimespans } from "../logic/buff-timespans";
 import { PX_PER_SEC, LANE_LABEL_WIDTH } from "./timeline/constants";
@@ -190,16 +192,6 @@ export function Timeline({
     draggingEntryUid,
     overDeleteZone,
     indicatorX,
-    handleDragEnter,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleEntryDragStart,
-    handleEntryDragEnd,
-    handleDeleteZoneDragEnter,
-    handleDeleteZoneDragOver,
-    handleDeleteZoneDragLeave,
-    handleDeleteZoneDrop,
   } = useTimelineDnd({
     resolvedEntries,
     skillMap,
@@ -308,6 +300,9 @@ export function Timeline({
   // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
   const labelBg = dragOver ? "#1b1921" : "#0f0f23";
 
+  // dnd-kit のドロップ先としてタイムライン全体を登録する
+  const { setNodeRef: setDropZoneRef } = useDroppable({ id: TIMELINE_DROPZONE_ID });
+
   // タイムライン上の全バフ期間を収集（重複排除）。消費・排他解除時は実際に消えた時刻へクランプする
   const buffTimespans = useMemo(
     () => computeBuffTimespans(resolvedEntries, buffs),
@@ -380,14 +375,11 @@ export function Timeline({
       )}
 
       <div
+        ref={setDropZoneRef}
         style={{
           ...styles.dropZone,
           ...(dragOver ? styles.dropZoneActive : {}),
         }}
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
       >
         {resolvedEntries.length === 0 ? (
           <div style={styles.placeholder}>
@@ -416,8 +408,6 @@ export function Timeline({
                 draggingEntryUid={draggingEntryUid}
                 labelBg={labelBg}
                 onSelectEntry={onSelectEntry}
-                onEntryDragStart={handleEntryDragStart}
-                onEntryDragEnd={handleEntryDragEnd}
               />
 
               {/* リソースゲージ行 */}
@@ -477,13 +467,7 @@ export function Timeline({
       </div>
 
       {draggingEntryUid !== null && (
-        <DeleteZone
-          overDeleteZone={overDeleteZone}
-          onDragEnter={handleDeleteZoneDragEnter}
-          onDragOver={handleDeleteZoneDragOver}
-          onDragLeave={handleDeleteZoneDragLeave}
-          onDrop={handleDeleteZoneDrop}
-        />
+        <DeleteZone overDeleteZone={overDeleteZone} />
       )}
     </div>
   );

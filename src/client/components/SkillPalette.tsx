@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
 import type { Skill, CharacterStats, PlayerLevel } from "../types/skill";
+import type { PaletteDragData } from "./timeline/dnd-types";
 import type { JobId } from "./App";
 import { JOB_OPTIONS } from "../data/job-registry";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
@@ -29,6 +31,41 @@ function CollapsibleSection({ title, defaultOpen = true, children }: Collapsible
   );
 }
 
+/** dnd-kit のドラッグ元となるスキルカード（タッチ・マウス両対応） */
+function PaletteSkillCard({ skill }: { skill: Skill }) {
+  const data: PaletteDragData = { source: "palette", skillId: skill.id, skillType: skill.type };
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
+    id: `palette-${skill.id}`,
+    data,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{
+        ...styles.skillCard,
+        // none にするとカード上から始まるスワイプでパレットがスクロールできなくなる。
+        // delay 式 TouchSensor では manipulation で十分（長押し成立後は dnd-kit が preventDefault する）
+        touchAction: "manipulation",
+        ...(isDragging ? { opacity: 0.5 } : {}),
+      }}
+      title={`${skill.name} (威力: ${skill.potency})`}
+    >
+      <img
+        src={skill.icon}
+        alt={skill.name}
+        style={styles.skillIcon}
+        draggable={false}
+      />
+      <div style={styles.skillInfo}>
+        <div style={styles.skillName}>{skill.name}</div>
+        <div style={styles.skillPotency}>威力 {skill.potency}</div>
+      </div>
+    </div>
+  );
+}
+
 interface SkillPaletteProps {
   skills: Skill[];
   stats: CharacterStats;
@@ -50,12 +87,6 @@ export function SkillPalette({
 }: SkillPaletteProps) {
   const gcdSkills = skills.filter((s) => s.type === "gcd" && !s.hidden);
   const ogcdSkills = skills.filter((s) => s.type === "ogcd" && !s.hidden);
-
-  const handleDragStart = (e: React.DragEvent, skill: Skill) => {
-    e.dataTransfer.setData("application/skill-id", skill.id);
-    e.dataTransfer.setData(`application/skill-type-${skill.type}`, "1");
-    e.dataTransfer.effectAllowed = "copy";
-  };
 
   const handleStatChange = (key: keyof CharacterStats, value: string) => {
     const num = parseInt(value, 10);
@@ -171,24 +202,7 @@ export function SkillPalette({
       <CollapsibleSection title="GCD">
         <div style={styles.skillGrid}>
           {gcdSkills.map((skill) => (
-            <div
-              key={skill.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, skill)}
-              style={styles.skillCard}
-              title={`${skill.name} (威力: ${skill.potency})`}
-            >
-              <img
-                src={skill.icon}
-                alt={skill.name}
-                style={styles.skillIcon}
-                draggable={false}
-              />
-              <div style={styles.skillInfo}>
-                <div style={styles.skillName}>{skill.name}</div>
-                <div style={styles.skillPotency}>威力 {skill.potency}</div>
-              </div>
-            </div>
+            <PaletteSkillCard key={skill.id} skill={skill} />
           ))}
         </div>
       </CollapsibleSection>
@@ -196,24 +210,7 @@ export function SkillPalette({
       <CollapsibleSection title="oGCD">
         <div style={styles.skillGrid}>
           {ogcdSkills.map((skill) => (
-            <div
-              key={skill.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, skill)}
-              style={styles.skillCard}
-              title={`${skill.name} (威力: ${skill.potency})`}
-            >
-              <img
-                src={skill.icon}
-                alt={skill.name}
-                style={styles.skillIcon}
-                draggable={false}
-              />
-              <div style={styles.skillInfo}>
-                <div style={styles.skillName}>{skill.name}</div>
-                <div style={styles.skillPotency}>威力 {skill.potency}</div>
-              </div>
-            </div>
+            <PaletteSkillCard key={skill.id} skill={skill} />
           ))}
         </div>
       </CollapsibleSection>
