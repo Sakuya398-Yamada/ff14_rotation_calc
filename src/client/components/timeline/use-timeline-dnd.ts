@@ -5,7 +5,7 @@ import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, 
 import { resolveTimeline } from "../../logic/resolve-timeline";
 import { calcInsertIndex } from "./helpers";
 import { PX_PER_SEC } from "./constants";
-import { TIMELINE_DROPZONE_ID, DELETE_ZONE_ID, getDragClientX } from "./dnd-types";
+import { TIMELINE_DROPZONE_ID, DELETE_ZONE_ID, getEventClientX } from "./dnd-types";
 import type { TimelineDragData } from "./dnd-types";
 
 interface UseTimelineDndArgs {
@@ -55,6 +55,21 @@ export function useTimelineDnd({
   const [overDeleteZone, setOverDeleteZone] = useState(false);
   /** ドラッグムーブのrAFスロットリング用 */
   const dragRafRef = useRef<number | null>(null);
+  /**
+   * ドラッグ中の実ポインタ clientX。
+   * dnd-kit の event.delta は「ポインタ移動量 + スクロール可能祖先のスクロール差分」
+   * （scrollAdjustedTranslate）なので、activatorEvent.clientX + delta.x では
+   * autoScroll 中にスクロール量が二重加算される。window リスナーで実座標を追跡する。
+   */
+  const pointerClientXRef = useRef<number | null>(null);
+
+  const trackPointerMove = useCallback((e: PointerEvent) => {
+    pointerClientXRef.current = e.clientX;
+  }, []);
+  const trackTouchMove = useCallback((e: TouchEvent) => {
+    const t = e.touches[0];
+    if (t) pointerClientXRef.current = t.clientX;
+  }, []);
 
   /**
    * 挿入位置計算用の resolvedEntries。
@@ -181,7 +196,10 @@ export function useTimelineDnd({
       cancelAnimationFrame(dragRafRef.current);
       dragRafRef.current = null;
     }
-  }, []);
+    pointerClientXRef.current = null;
+    window.removeEventListener("pointermove", trackPointerMove);
+    window.removeEventListener("touchmove", trackTouchMove);
+  }, [trackPointerMove, trackTouchMove]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = getDragData(event);
@@ -190,7 +208,10 @@ export function useTimelineDnd({
     if (data.source === "timeline") {
       setDraggingEntryUid(data.uid);
     }
-  }, []);
+    pointerClientXRef.current = getEventClientX(event.activatorEvent);
+    window.addEventListener("pointermove", trackPointerMove, { passive: true });
+    window.addEventListener("touchmove", trackTouchMove, { passive: true });
+  }, [trackPointerMove, trackTouchMove]);
 
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
@@ -202,6 +223,12 @@ export function useTimelineDnd({
       setOverDeleteZone(overId === DELETE_ZONE_ID && data.source === "timeline");
 
       if (overId !== TIMELINE_DROPZONE_ID) {
+        // ゾーン外: 発火待ちの rAF を先にキャンセルしないと直後に insertIndex が復活し、
+        // インジケーターがゾーン外でも残留する
+        if (dragRafRef.current !== null) {
+          cancelAnimationFrame(dragRafRef.current);
+          dragRafRef.current = null;
+        }
         setInsertIndex(null);
         return;
       }
@@ -209,16 +236,12 @@ export function useTimelineDnd({
       // rAFでスロットリング: 前フレームの更新がまだ処理中なら新しいリクエストをスキップ
       if (dragRafRef.current !== null) return;
 
-      const clientX = getDragClientX(event.activatorEvent, event.delta.x);
-      const mouseX = clientX !== null && scrollRef.current
-        ? clientX - scrollRef.current.getBoundingClientRect().left
-        : null;
-      const scrollLeft = scrollRef.current?.scrollLeft ?? 0;
-
       dragRafRef.current = requestAnimationFrame(() => {
         dragRafRef.current = null;
-        if (mouseX !== null && scrollRef.current && insertionResolvedEntries.length > 0) {
-          setInsertIndex(calcCombinedInsertIndex(mouseX, scrollLeft, data.skillType));
+        const clientX = pointerClientXRef.current;
+        if (clientX !== null && scrollRef.current && insertionResolvedEntries.length > 0) {
+          const mouseX = clientX - scrollRef.current.getBoundingClientRect().left;
+          setInsertIndex(calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, data.skillType));
         } else {
           setInsertIndex(null);
         }
@@ -251,7 +274,7 @@ export function useTimelineDnd({
         return;
       }
 
-      const clientX = getDragClientX(event.activatorEvent, event.delta.x);
+      const clientX = pointerClientXRef.current;
 
       if (data.source === "timeline") {
         if (scrollRef.current && clientX !== null && insertionResolvedEntries.length > 0) {

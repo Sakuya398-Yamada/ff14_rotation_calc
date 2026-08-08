@@ -45,8 +45,9 @@ function DraggableEntryIcon({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      // TouchSensor の長押し判定中にページスクロールが走るのを防ぐ
-      style={{ ...style, touchAction: "none" }}
+      // none にするとアイコン上から始まるスワイプでタイムラインがスクロールできなくなる。
+      // delay 式 TouchSensor では manipulation で十分（長押し成立後は dnd-kit が preventDefault する）
+      style={{ ...style, touchAction: "manipulation" }}
       title={title}
       data-skill-entry-uid={uid}
       onClick={onClick}

@@ -45,8 +45,9 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
       {...attributes}
       style={{
         ...styles.skillCard,
-        // TouchSensor の長押し判定中にページスクロールが走るのを防ぐ
-        touchAction: "none",
+        // none にするとカード上から始まるスワイプでパレットがスクロールできなくなる。
+        // delay 式 TouchSensor では manipulation で十分（長押し成立後は dnd-kit が preventDefault する）
+        touchAction: "manipulation",
         ...(isDragging ? { opacity: 0.5 } : {}),
       }}
       title={`${skill.name} (威力: ${skill.potency})`}

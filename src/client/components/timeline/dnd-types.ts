@@ -21,17 +21,18 @@ export interface TimelineEntryDragData {
 export type TimelineDragData = PaletteDragData | TimelineEntryDragData;
 
 /**
- * ドラッグ開始イベント（activatorEvent）と累積 delta から現在のポインタ clientX を復元する。
- * dnd-kit のイベントはポインタ座標を直接持たないため、開始座標 + delta で求める。
+ * ドラッグ開始イベント（activatorEvent）からポインタ clientX を取り出す。
+ * 以降のポインタ座標は use-timeline-dnd 側の window リスナーで追跡する
+ * （dnd-kit の delta はスクロール補正込みのため clientX の復元には使えない）。
  * TouchEvent は jsdom に存在しない環境があるため typeof ガードを挟む。
  */
-export function getDragClientX(activatorEvent: Event, deltaX: number): number | null {
-  let startX: number | null = null;
+export function getEventClientX(activatorEvent: Event): number | null {
   if (typeof TouchEvent !== "undefined" && activatorEvent instanceof TouchEvent) {
-    startX = activatorEvent.touches[0]?.clientX ?? null;
-  } else if (activatorEvent instanceof MouseEvent) {
-    // PointerEvent は MouseEvent を継承しているためここで拾える
-    startX = activatorEvent.clientX;
+    return activatorEvent.touches[0]?.clientX ?? null;
   }
-  return startX === null ? null : startX + deltaX;
+  if (activatorEvent instanceof MouseEvent) {
+    // PointerEvent は MouseEvent を継承しているためここで拾える
+    return activatorEvent.clientX;
+  }
+  return null;
 }
