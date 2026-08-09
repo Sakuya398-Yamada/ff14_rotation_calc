@@ -37,6 +37,8 @@ const DEFAULT_MUL = calcExpectedMultiplier(DEFAULT_STATS, 0, 0);
 
 /** 公式ジョブガイド準拠の BLM 範囲スキル定義（Issue #273） */
 const BLM_AOE_FALLOFF_SKILLS = [
+  // 2体目以降30%減
+  { id: "flare", falloffRate: 0.3 },
   // 2体目以降65%減
   { id: "flare-star", falloffRate: 0.65 },
   // 2体目以降25%減
