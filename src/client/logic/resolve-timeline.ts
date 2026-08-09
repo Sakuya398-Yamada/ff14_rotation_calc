@@ -901,6 +901,16 @@ export function resolveTimeline(
       }
     }
 
+    // requiredBuffAnyOf: いずれかのバフがアクティブであればよい（バフは消費しない）
+    if (skill.requiredBuffAnyOf && skill.requiredBuffAnyOf.length > 0) {
+      const anyActive = skill.requiredBuffAnyOf.some((buffId) =>
+        currentActiveBuffs.some((ab) => ab.buffId === buffId)
+      );
+      if (!anyActive) {
+        comboErrors.push(skill.requiredBuffAnyOf[0]);
+      }
+    }
+
     // buffConsumptionAnyOf: いずれか1つのバフを消費（見つからなければエラー）
     let anyOfPotencyOverride: number | undefined;
     let anyOfProcRate: number | undefined;

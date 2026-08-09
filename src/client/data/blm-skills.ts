@@ -6,6 +6,7 @@ import fire2Icon from "../assets/icons/blm/Fire_II.png";
 import fire3Icon from "../assets/icons/blm/Fire_III.png";
 import fire4Icon from "../assets/icons/blm/Fire_IV.png";
 import highFire2Icon from "../assets/icons/blm/High_Fire_II.png";
+import flareIcon from "../assets/icons/blm/Flare.png";
 import flareStarIcon from "../assets/icons/blm/Flare_Star.png";
 import despairIcon from "../assets/icons/blm/Despair.png";
 import blizzardIcon from "../assets/icons/blm/Blizzard.png";
@@ -199,6 +200,31 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["astral-fire-3", "thunderhead"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
+  },
+  {
+    id: "flare",
+    name: "フレア",
+    potency: 240,
+    type: "gcd",
+    target: "enemy",
+    icon: flareIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    castTime: 2.0,
+    acquiredLevel: 50,
+    // AF 中のみ使用可（AF1〜AF3 いずれでも可。トランス→フレアの範囲ローテに対応）
+    requiredBuffAnyOf: ["astral-fire-1", "astral-fire-2", "astral-fire-3"],
+    // MP を全消費する。アンブラルハート全消費時の「消費 MP 2/3」は
+    // 既存の MP 機構（resourceCostMultiplier は固定コストのみ対象）では
+    // 表現できないためモデル化しない（Issue #316 で決定）
+    consumeAllOfResource: "mp",
+    resourceChanges: [
+      { resourceId: "astral-soul", amount: 3 },
+    ],
+    buffApplications: ["astral-fire-3"],
+    // 対象とその周囲の敵にヒット、2体目以降は威力30%減
+    maxTargets: Infinity,
+    falloffRate: 0.3,
   },
 
   // ============================================================
@@ -704,6 +730,7 @@ export const BLM_FIRE_FAMILY_IDS = [
   "fire-3",
   "fire-4",
   "high-fire-2",
+  "flare",
   "despair",
   "flare-star",
   "fire-up-af2",
