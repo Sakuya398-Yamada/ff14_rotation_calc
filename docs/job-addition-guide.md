@@ -236,6 +236,8 @@ export const JOB_DATA: Record<JobId, JobData> = {
 
 ジョブセレクタの選択肢（`JOB_OPTIONS`）は `JOB_DATA` のキー順から自動派生するため、**表示順は `JOB_DATA` レコードのキーの記述順で制御する**。`SkillPalette.tsx` 側への追記は不要。
 
+ただし `src/client/components/__tests__/skill-palette.test.tsx` のジョブセレクタ表示テストは**期待値を固定配列で assert している**ため、新ジョブの表示名を期待値配列に追記する（テスト名の「全Nジョブ」の数も合わせて更新する）。忘れると `npm test` がこのテストの失敗で赤になる（前例: MNK 追加の #282 / PR #319）。
+
 ---
 
 ## ステップ 6: テストを書く（推奨）
@@ -266,6 +268,7 @@ SAM の以下が雛形として参考になる：
 - [ ] `src/client/data/<job>-resources.ts` が存在し、`<JOB>_RESOURCES` を export している
 - [ ] `src/client/assets/icons/<job>/` 配下に全スキル分のアイコンがある
 - [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（セレクタ表示順は `JOB_DATA` のキー順）
+- [ ] `skill-palette.test.tsx` のジョブセレクタ期待値（固定配列）に新ジョブの表示名が追記されている
 - [ ] `npm run build` / `npm test` が GREEN
 - [ ] パレットから新ジョブを選択でき、スキルをタイムラインに配置して期待威力が計算できる
 
