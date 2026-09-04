@@ -493,7 +493,7 @@ function expireBuffs(
  * 処理:
  * - アクティブバフの effects から `resourceCostMultiplier` 型を抽出し、`appliesToSkillIds` で絞り込み
  * - 同一 resourceId に対する倍率は乗算で集約（AF/UB は exclusiveGroup 排他なので実質単独）
- * - 倍率が 1 を超え、`negatedByResource` 指定があり対象リソース残量が足りる場合、倍率を 1 に戻して当該リソースを消費する追加 ResourceChange を末尾に付与
+ * - 倍率が 1 を超え、`negatedByResource` 指定があり対象リソース残量が足り、かつ入力 changes に倍率対象リソースの負変動が存在する場合のみ、倍率を 1 に戻して当該リソースを消費する追加 ResourceChange を末尾に付与
  * - 入力 changes の負変動のうち resourceId が一致するものは amount に倍率を掛けて返す
  *
  * 正変動には作用しない。
@@ -522,7 +522,11 @@ function applyBuffResourceCostMultipliers(
 
       let multiplier = eff.value;
 
-      if (multiplier > 1 && eff.negatedByResource) {
+      // 打ち消し消費は、倍率対象リソースの消費（負変動）が実際に存在するスキルでのみ発動させる。
+      // MP コストの無いファイア系スキル（フレアスター等）が AF 中に UH を誤消費しないようにする（#334）
+      const hasNegativeCost = changes.some((c) => c.resourceId === eff.resourceId && c.amount < 0);
+
+      if (multiplier > 1 && eff.negatedByResource && hasNegativeCost) {
         const negResId = eff.negatedByResource.resourceId;
         const consumeAmount = eff.negatedByResource.consumeAmount;
         const remaining = negationRemaining.get(negResId) ?? (resourceState[negResId] ?? 0);
