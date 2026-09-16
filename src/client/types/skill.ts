@@ -156,6 +156,8 @@ export interface Skill {
   conditionalPotencyBuffs?: { buffId: string; potency: number }[];
   /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */
   requiredBuff?: string;
+  /** スキル使用に必要なバフIDのOR条件（いずれか1つでもアクティブなら可。全て未アクティブ時はエラー、威力を計上しない。バフは消費しない） */
+  requiredBuffAnyOf?: string[];
   /**
    * 自動変化条件。
    * - 配列形式: 先頭から優先評価し、最初に条件を満たすエントリの変化先を採用
