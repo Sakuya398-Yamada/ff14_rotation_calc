@@ -104,6 +104,9 @@ test: ローテーションエンジンのユニットテスト追加 #8
 | `bug` | `fix/` |
 | `refactor` | `refactor/` |
 | `docs` | `docs/` |
+| `test` | `feature/` |
+
+> `test` ラベルに専用 prefix は設けない（hook `validate-branch-name.sh` は `feature|fix|refactor|docs` の 4 種のみ許可）。テスト追加はテスト基盤・カバレッジの新規追加とみなし `feature/` を使う（前例: #281）。
 
 ## 自動検証
 

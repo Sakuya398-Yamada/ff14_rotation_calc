@@ -21,6 +21,9 @@ GitHub MCPの `issue_write`（method: `update`、`labels` パラメータ）で�
 | `bug` | `fix/` |
 | `refactor` | `refactor/` |
 | `docs` | `docs/` |
+| `test` | `feature/` |
+
+> `test` ラベルに専用 prefix は設けない（hook は `feature|fix|refactor|docs` の 4 種のみ許可）。テスト追加は `feature/` を使う（前例: #281、詳細は `.claude/rules/git-conventions.md`）。
 
 ## ブランチ作成手順
 
