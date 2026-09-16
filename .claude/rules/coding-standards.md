@@ -53,6 +53,10 @@ ff14_rotation_calc/
 - 前例: `.claude/hooks/validate-edit-path.cjs`
 - bash スクリプト内の `node -e "..."` インライン実行はこの制約の影響を受けない（ファイル拡張子による判定が働かないため）
 
+## hooks 開発・検証時の注意
+
+- **検証ペイロードはスクリプトファイル経由で間接実行する**: Bash ツールのコマンド文字列に `git checkout -b` / `git commit -m` 等のリテラルを含めると、自セッションの PreToolUse hook が文字列にマッチして発動・ブロックされる。ペイロード組み立てと hook 呼び出しは scratchpad 等のシェルスクリプトに書き出してから実行する（前例: #290。既存テストスイート `.claude/hooks/__tests__/*.test.sh` が間接実行構造なのも同じ理由）
+
 ## コメントとドキュメント
 
 - 自明なコードにコメントは付けない
