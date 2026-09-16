@@ -593,6 +593,32 @@ describe("BLM: フレアスターとアストラルソウル", () => {
     expect(flareStarEntry.resourceErrors).toEqual([]);
     expect(flareStarEntry.resourceSnapshot["astral-soul"]).toBe(0);
   });
+
+  it("MP コストの無いフレアスターは AF 中に UH を保持していても消費しない（#334）", () => {
+    // fire-3 → fire-4 ×5（souls 5、MP 枯渇）→ manafont（MP 全回復 + UH3）
+    // → fire-4（souls 6、UH 打ち消しで 3→2）→ flare-star
+    const entries: TimelineEntry[] = [entry("fire-3")];
+    for (let i = 0; i < 5; i++) entries.push(entry("fire-4"));
+    entries.push(entry("manafont"));
+    entries.push(entry("fire-4"));
+    entries.push(entry("flare-star"));
+
+    const result = resolveTimeline(
+      entries,
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const lastFire4 = result.entries[result.entries.length - 2];
+    const flareStarEntry = result.entries[result.entries.length - 1];
+    expect(flareStarEntry.resourceErrors).toEqual([]);
+    // manafont 直後の fire-4 は UH 1 消費（正しい打ち消し挙動の維持）
+    expect(lastFire4.resourceSnapshot["umbral-heart"]).toBe(2);
+    // flare-star は MP の負変動を持たないため UH を消費しない
+    expect(flareStarEntry.resourceSnapshot["umbral-heart"]).toBe(2);
+    expect(flareStarEntry.resourceSnapshot["astral-soul"]).toBe(0);
+  });
 });
 
 describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
