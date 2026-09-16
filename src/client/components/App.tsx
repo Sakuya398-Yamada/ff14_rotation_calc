@@ -1,4 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, pointerWithin } from "@dnd-kit/core";
+import type { DragStartEvent } from "@dnd-kit/core";
+import type { TimelineDragData } from "./timeline/dnd-types";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
@@ -9,7 +12,7 @@ import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { JobId } from "../data/job-registry";
-import type { TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
+import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
 
 // 既存の `import type { JobId } from "./App"` を壊さないための再エクスポート
 export type { JobId } from "../data/job-registry";
@@ -153,6 +156,30 @@ export function App() {
     });
   }, []);
 
+  // dnd-kit センサー設定（Issue #284: タッチ操作対応）
+  // MouseSensor: distance 制約でクリック（エントリ選択）とドラッグを区別する
+  // TouchSensor: 長押し（delay）でドラッグ開始し、通常のタップ・スクロールと区別する
+  const dndSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
+  );
+
+  /** ドラッグ中のスキル（DragOverlay 表示用。null = 非ドラッグ） */
+  const [activeDragSkill, setActiveDragSkill] = useState<Skill | null>(null);
+
+  const handleDndDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const data = event.active.data.current as TimelineDragData | undefined;
+      if (!data) return;
+      setActiveDragSkill(allSkillMap.get(data.skillId) ?? null);
+    },
+    [allSkillMap]
+  );
+
+  const handleDndDragFinish = useCallback(() => {
+    setActiveDragSkill(null);
+  }, []);
+
   const handleManualStartTimeChange = useCallback(
     (uid: string, manualStartTime: number | undefined) => {
       setEntries((prev) =>
@@ -233,6 +260,13 @@ export function App() {
         <h1 style={styles.headerTitle}>FF14 Rotation Calculator</h1>
         <span style={styles.headerJob}>{jobData.name} ({jobData.abbreviation})</span>
       </header>
+      <DndContext
+        sensors={dndSensors}
+        collisionDetection={pointerWithin}
+        onDragStart={handleDndDragStart}
+        onDragEnd={handleDndDragFinish}
+        onDragCancel={handleDndDragFinish}
+      >
       <div style={styles.main}>
         <SkillPalette
           skills={skills}
@@ -280,6 +314,19 @@ export function App() {
           />
         )}
       </div>
+      <DragOverlay dropAnimation={null}>
+        {activeDragSkill && (
+          <div style={styles.dragOverlayIcon}>
+            <img
+              src={activeDragSkill.icon}
+              alt={activeDragSkill.name}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              draggable={false}
+            />
+          </div>
+        )}
+      </DragOverlay>
+      </DndContext>
       <footer style={styles.footer}>
         <small style={styles.contact}>
           不具合・要望:{" "}
@@ -344,6 +391,13 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flex: 1,
     overflow: "hidden",
+  },
+  dragOverlayIcon: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "4px",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.6)",
+    cursor: "grabbing",
   },
   footer: {
     padding: "8px 20px",

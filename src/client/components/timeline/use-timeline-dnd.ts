@@ -1,8 +1,12 @@
 import { useState, useCallback, useMemo, useRef } from "react";
+import { useDndMonitor } from "@dnd-kit/core";
+import type { DragStartEvent, DragMoveEvent, DragEndEvent } from "@dnd-kit/core";
 import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, CharacterStats, BossUntargetableWindow, MultiTargetWindow } from "../../types/skill";
 import { resolveTimeline } from "../../logic/resolve-timeline";
 import { calcInsertIndex } from "./helpers";
 import { PX_PER_SEC } from "./constants";
+import { TIMELINE_DROPZONE_ID, DELETE_ZONE_ID, getEventClientX } from "./dnd-types";
+import type { TimelineDragData } from "./dnd-types";
 
 interface UseTimelineDndArgs {
   resolvedEntries: ResolvedTimelineEntry[];
@@ -22,7 +26,10 @@ interface UseTimelineDndArgs {
 
 /**
  * タイムラインの DnD（パレットからの追加／タイムライン内並び替え／削除ゾーン）の
- * state・挿入位置計算・イベントハンドラを束ねたフック。
+ * state・挿入位置計算・イベント処理を束ねたフック。
+ *
+ * dnd-kit の DndContext（App.tsx）配下で useDndMonitor によりドラッグイベントを購読する。
+ * HTML5 ネイティブ DnD はモバイルのタッチ操作で発火しないため使わない（Issue #284）。
  */
 export function useTimelineDnd({
   resolvedEntries,
@@ -46,10 +53,23 @@ export function useTimelineDnd({
   const [draggingEntryUid, setDraggingEntryUid] = useState<string | null>(null);
   /** 削除ドロップエリア上にカーソルがあるか */
   const [overDeleteZone, setOverDeleteZone] = useState(false);
-  /** ドラッグオーバーのrAFスロットリング用 */
+  /** ドラッグムーブのrAFスロットリング用 */
   const dragRafRef = useRef<number | null>(null);
-  /** dragenter/dragleaveの子要素間移動を無視するためのカウンター */
-  const dragEnterCountRef = useRef(0);
+  /**
+   * ドラッグ中の実ポインタ clientX。
+   * dnd-kit の event.delta は「ポインタ移動量 + スクロール可能祖先のスクロール差分」
+   * （scrollAdjustedTranslate）なので、activatorEvent.clientX + delta.x では
+   * autoScroll 中にスクロール量が二重加算される。window リスナーで実座標を追跡する。
+   */
+  const pointerClientXRef = useRef<number | null>(null);
+
+  const trackPointerMove = useCallback((e: PointerEvent) => {
+    pointerClientXRef.current = e.clientX;
+  }, []);
+  const trackTouchMove = useCallback((e: TouchEvent) => {
+    const t = e.touches[0];
+    if (t) pointerClientXRef.current = t.clientX;
+  }, []);
 
   /**
    * 挿入位置計算用の resolvedEntries。
@@ -62,7 +82,7 @@ export function useTimelineDnd({
    *   同一アルゴリズムで算出されるため、インジケーター位置が必ず一致する。
    *
    * 再実行コストは draggingEntryUid 変化時のみ（ドラッグ開始/終了）で、
-   * drag over の rAF コールバック内では useMemo のキャッシュを参照するだけ。
+   * drag move の rAF コールバック内では useMemo のキャッシュを参照するだけ。
    */
   const insertionResolvedEntries = useMemo(() => {
     if (draggingEntryUid === null) return resolvedEntries;
@@ -91,72 +111,6 @@ export function useTimelineDnd({
     if (draggingEntryUid === null) return resolvedEntries;
     return resolvedEntries.filter((e) => e.uid !== draggingEntryUid);
   }, [resolvedEntries, draggingEntryUid]);
-
-  /** ドラッグ中のスキルタイプを検出 */
-  const detectDragType = useCallback((e: React.DragEvent): "gcd" | "ogcd" => {
-    return e.dataTransfer.types.includes("application/skill-type-gcd") ? "gcd" : "ogcd";
-  }, []);
-
-  /** ドラッグ元を検出（タイムライン内エントリのD&D か、パレットからの新規追加か） */
-  const detectDragSource = useCallback((e: React.DragEvent): "timeline" | "palette" => {
-    return e.dataTransfer.types.includes("application/timeline-entry-uid") ? "timeline" : "palette";
-  }, []);
-
-  const handleEntryDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, entry: { uid: string; skillId: string }, skill: Skill) => {
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("application/timeline-entry-uid", entry.uid);
-      e.dataTransfer.setData("application/skill-id", entry.skillId);
-      e.dataTransfer.setData(`application/skill-type-${skill.type}`, "1");
-      setDraggingEntryUid(entry.uid);
-    },
-    []
-  );
-
-  const handleEntryDragEnd = useCallback(() => {
-    setDraggingEntryUid(null);
-    setOverDeleteZone(false);
-    setInsertIndex(null);
-    setDragType(null);
-    dragEnterCountRef.current = 0;
-    if (dragRafRef.current !== null) {
-      cancelAnimationFrame(dragRafRef.current);
-      dragRafRef.current = null;
-    }
-  }, []);
-
-  const handleDeleteZoneDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (!e.dataTransfer.types.includes("application/timeline-entry-uid")) return;
-    setOverDeleteZone(true);
-  }, []);
-
-  const handleDeleteZoneDragOver = useCallback((e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes("application/timeline-entry-uid")) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const handleDeleteZoneDragLeave = useCallback(() => {
-    setOverDeleteZone(false);
-  }, []);
-
-  const handleDeleteZoneDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const uid = e.dataTransfer.getData("application/timeline-entry-uid");
-      setOverDeleteZone(false);
-      setDraggingEntryUid(null);
-      setInsertIndex(null);
-      setDragType(null);
-      if (uid) {
-        shouldAutoScrollRef.current = false;
-        onRemoveEntry(uid);
-      }
-    },
-    [onRemoveEntry, shouldAutoScrollRef]
-  );
 
   /**
    * 挿入位置計算用の GCDエントリ（タイムライン内D&D中はドラッグ中エントリを除外）。
@@ -208,8 +162,8 @@ export function useTimelineDnd({
   );
 
   /**
-   * ドラッグ中のマウス位置から挿入インデックス（insertionResolvedEntries上）を計算する。
-   * マウス位置は「見えている並び」（resolvedEntries の startTime 準拠）に対する操作なので、
+   * ドラッグ中のポインタ位置から挿入インデックス（insertionResolvedEntries上）を計算する。
+   * ポインタ位置は「見えている並び」（resolvedEntries の startTime 準拠）に対する操作なので、
    * 中央時刻の比較は visibleEntriesForInsert / visibleGcdEntriesForInsert で行う。
    * 返される idx は uid 順序を揃えてあるので insertionResolvedEntries にもそのまま使える。
    * GCD: GCDエントリのみで計算し、insertion変換（GCDリキャスト境界間に配置）
@@ -226,110 +180,137 @@ export function useTimelineDnd({
     [visibleEntriesForInsert, visibleGcdEntriesForInsert, skillMap, getResolvedEntryRecast, getAnimLockWidth, mapGcdIndexToInsertion]
   );
 
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    dragEnterCountRef.current++;
-    setDragOver(true);
-  }, []);
+  /** ドラッグイベントの active からドラッグデータを取り出す（型は Draggable 側で保証） */
+  const getDragData = (event: { active: { data: { current?: unknown } } }): TimelineDragData | null => {
+    const data = event.active.data.current as TimelineDragData | undefined;
+    return data ?? null;
+  };
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      // ドラッグ元（パレット=copy / タイムライン内並び替え=move）に合わせる。
-      // effectAllowed（dragstart で "copy" or "move" を設定）と dropEffect が不一致だと
-      // ブラウザが drop を拒否し、handleDrop が発火せず並び替えが無言で失敗する。
-      e.dataTransfer.dropEffect = detectDragSource(e) === "timeline" ? "move" : "copy";
+  const clearDragState = useCallback(() => {
+    setDragOver(false);
+    setInsertIndex(null);
+    setDragType(null);
+    setDraggingEntryUid(null);
+    setOverDeleteZone(false);
+    if (dragRafRef.current !== null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+    pointerClientXRef.current = null;
+    window.removeEventListener("pointermove", trackPointerMove);
+    window.removeEventListener("touchmove", trackTouchMove);
+  }, [trackPointerMove, trackTouchMove]);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const data = getDragData(event);
+    if (!data) return;
+    setDragType(data.skillType);
+    if (data.source === "timeline") {
+      setDraggingEntryUid(data.uid);
+    }
+    pointerClientXRef.current = getEventClientX(event.activatorEvent);
+    window.addEventListener("pointermove", trackPointerMove, { passive: true });
+    window.addEventListener("touchmove", trackTouchMove, { passive: true });
+  }, [trackPointerMove, trackTouchMove]);
+
+  const handleDragMove = useCallback(
+    (event: DragMoveEvent) => {
+      const data = getDragData(event);
+      if (!data) return;
+
+      const overId = event.over?.id ?? null;
+      setDragOver(overId === TIMELINE_DROPZONE_ID);
+      setOverDeleteZone(overId === DELETE_ZONE_ID && data.source === "timeline");
+
+      if (overId !== TIMELINE_DROPZONE_ID) {
+        // ゾーン外: 発火待ちの rAF を先にキャンセルしないと直後に insertIndex が復活し、
+        // インジケーターがゾーン外でも残留する
+        if (dragRafRef.current !== null) {
+          cancelAnimationFrame(dragRafRef.current);
+          dragRafRef.current = null;
+        }
+        setInsertIndex(null);
+        return;
+      }
 
       // rAFでスロットリング: 前フレームの更新がまだ処理中なら新しいリクエストをスキップ
       if (dragRafRef.current !== null) return;
 
-      const type = detectDragType(e);
-      const mouseX = scrollRef.current ? e.clientX - scrollRef.current.getBoundingClientRect().left : 0;
-      const scrollLeft = scrollRef.current?.scrollLeft ?? 0;
-
       dragRafRef.current = requestAnimationFrame(() => {
         dragRafRef.current = null;
-        setDragType(type);
-
-        if (scrollRef.current && insertionResolvedEntries.length > 0) {
-          const idx = calcCombinedInsertIndex(mouseX, scrollLeft, type);
-          setInsertIndex(idx);
+        const clientX = pointerClientXRef.current;
+        if (clientX !== null && scrollRef.current && insertionResolvedEntries.length > 0) {
+          const mouseX = clientX - scrollRef.current.getBoundingClientRect().left;
+          setInsertIndex(calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, data.skillType));
         } else {
           setInsertIndex(null);
         }
       });
     },
-    [insertionResolvedEntries, detectDragType, detectDragSource, calcCombinedInsertIndex, scrollRef]
+    [insertionResolvedEntries, calcCombinedInsertIndex, scrollRef]
   );
 
-  const handleDragLeave = useCallback(() => {
-    dragEnterCountRef.current--;
-    if (dragEnterCountRef.current > 0) return;
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const data = getDragData(event);
+      const overId = event.over?.id ?? null;
 
-    if (dragRafRef.current !== null) {
-      cancelAnimationFrame(dragRafRef.current);
-      dragRafRef.current = null;
-    }
-    setDragOver(false);
-    setInsertIndex(null);
-    setDragType(null);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      dragEnterCountRef.current = 0;
-      if (dragRafRef.current !== null) {
-        cancelAnimationFrame(dragRafRef.current);
-        dragRafRef.current = null;
-      }
-      e.preventDefault();
-      setDragOver(false);
-
-      const source = detectDragSource(e);
-      const skillId = e.dataTransfer.getData("application/skill-id");
-      if (!skillId) {
-        setInsertIndex(null);
-        setDragType(null);
-        setDraggingEntryUid(null);
+      if (!data || overId === null) {
+        clearDragState();
         return;
       }
 
-      const skill = skillMap.get(skillId);
-      const type: "gcd" | "ogcd" = skill?.type === "gcd" ? "gcd" : "ogcd";
+      if (overId === DELETE_ZONE_ID) {
+        if (data.source === "timeline") {
+          shouldAutoScrollRef.current = false;
+          onRemoveEntry(data.uid);
+        }
+        clearDragState();
+        return;
+      }
 
-      if (source === "timeline") {
-        const movingUid = e.dataTransfer.getData("application/timeline-entry-uid");
-        if (movingUid && scrollRef.current && insertionResolvedEntries.length > 0) {
-          const rect = scrollRef.current.getBoundingClientRect();
-          const mouseX = e.clientX - rect.left;
-          const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
+      if (overId !== TIMELINE_DROPZONE_ID) {
+        clearDragState();
+        return;
+      }
+
+      const clientX = pointerClientXRef.current;
+
+      if (data.source === "timeline") {
+        if (scrollRef.current && clientX !== null && insertionResolvedEntries.length > 0) {
+          const mouseX = clientX - scrollRef.current.getBoundingClientRect().left;
+          const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, data.skillType);
           // insertionResolvedEntries はドラッグ中エントリを除外しているため、
           // ここで得られる targetEntry が自分自身になることはない（= 不要な no-op 判定が消える）
           const targetEntry = idx < insertionResolvedEntries.length ? insertionResolvedEntries[idx] : undefined;
           shouldAutoScrollRef.current = false;
-          onMoveEntry(movingUid, targetEntry?.uid);
+          onMoveEntry(data.uid, targetEntry?.uid);
         }
       } else {
-        if (scrollRef.current && insertionResolvedEntries.length > 0) {
-          const rect = scrollRef.current.getBoundingClientRect();
-          const mouseX = e.clientX - rect.left;
-          const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, type);
+        if (scrollRef.current && clientX !== null && insertionResolvedEntries.length > 0) {
+          const mouseX = clientX - scrollRef.current.getBoundingClientRect().left;
+          const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, data.skillType);
           const isInsertMiddle = idx < insertionResolvedEntries.length;
           if (isInsertMiddle) {
             shouldAutoScrollRef.current = false;
           }
-          onAddEntry(skillId, isInsertMiddle ? insertionResolvedEntries[idx].uid : undefined);
+          onAddEntry(data.skillId, isInsertMiddle ? insertionResolvedEntries[idx].uid : undefined);
         } else {
-          onAddEntry(skillId);
+          onAddEntry(data.skillId);
         }
       }
 
-      setInsertIndex(null);
-      setDragType(null);
-      setDraggingEntryUid(null);
+      clearDragState();
     },
-    [onAddEntry, onMoveEntry, insertionResolvedEntries, skillMap, calcCombinedInsertIndex, detectDragSource, scrollRef, shouldAutoScrollRef]
+    [onAddEntry, onMoveEntry, onRemoveEntry, insertionResolvedEntries, calcCombinedInsertIndex, scrollRef, shouldAutoScrollRef, clearDragState]
   );
+
+  useDndMonitor({
+    onDragStart: handleDragStart,
+    onDragMove: handleDragMove,
+    onDragEnd: handleDragEnd,
+    onDragCancel: clearDragState,
+  });
 
   /**
    * 挿入インジケーターのX座標。
@@ -374,15 +355,5 @@ export function useTimelineDnd({
     draggingEntryUid,
     overDeleteZone,
     indicatorX,
-    handleDragEnter,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleEntryDragStart,
-    handleEntryDragEnd,
-    handleDeleteZoneDragEnter,
-    handleDeleteZoneDragOver,
-    handleDeleteZoneDragLeave,
-    handleDeleteZoneDrop,
   };
 }

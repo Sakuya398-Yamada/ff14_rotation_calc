@@ -52,45 +52,36 @@ browser_close                             # 検証終わりに必ず閉じる
 
 `click`/`type`/`hover` 等はセレクタではなく **snapshot で得た ref を使う**。ref なしで呼ぶとエラー。
 
-## HTML5 ネイティブ DnD のワークアラウンド（`browser_drag` が発火しない場合）
+## dnd-kit ベース DnD の検証方法（`browser_drag` 単発では失敗する場合）
 
-本リポジトリの SkillPalette → Timeline ドラッグや Timeline 内の並び替えは、React の `onDragStart` + `dataTransfer.setData(...)` による **HTML5 ネイティブ DnD** で実装されている（`src/client/components/SkillPalette.tsx`, `src/client/components/Timeline.tsx`）。`mcp__playwright__browser_drag` 内部の `dragTo` は **マウス移動イベントをエミュレートするだけで `dragstart` / `drop` を発火しない** ため、ドラッグしても何も起きない（スキルが追加されない／並び替わらない）。
+本リポジトリの SkillPalette → Timeline ドラッグ／Timeline 内並び替え／削除ゾーンは、Issue #284 で **dnd-kit（`@dnd-kit/core`）のポインタ／タッチセンサー** に移行済み（HTML5 ネイティブ DnD と DataTransfer は廃止）。マウス・タッチの実イベントに反応するため、旧来の「DragEvent + DataTransfer を dispatch するワークアラウンド」は**不要かつ無効**。
 
-回避策: `browser_evaluate` で **DataTransfer インスタンスを共有**しつつ DragEvent 群を直接 dispatch する。Windows 11 + Microsoft Edge で動作検証済（2026-05-10、Issue #230）。
+注意点: `mcp__playwright__browser_drag`（内部 `dragTo`）は mousedown → move → mouseup を一気に行うため、**MouseSensor の activationConstraint（distance: 4）によるドラッグ開始と mouseup が競合して drop まで届かないことがある**。確実に検証するには `browser_run_code_unsafe` でステップ分割したマウス操作を使う（Windows 11 + Microsoft Edge で動作検証済、2026-08-08、Issue #284）：
 
 ```js
-() => {
-  // 1. ソース・ターゲットを DOM クエリで特定
-  //    ref は browser_snapshot 毎に変わるので、title/data-testid/textContent 等の安定属性を使う
-  const source = document.querySelector('[title="グレアガ (威力: 350)"]');
-  const placeholder = Array.from(document.querySelectorAll('div')).find(
-    el => el.textContent === 'スキルパレットからドラッグ＆ドロップしてスキルを追加' && el.children.length === 0
-  );
-  // ドロップゾーンは onDrop が attach された div（このアプリでは placeholder の直接の親）
-  const target = placeholder?.parentElement;
-  if (!source || !target) return { error: 'source or target not found' };
-
-  // 2. dragstart → dragenter → dragover → drop → dragend を、共有 DataTransfer で順に dispatch
-  const dt = new DataTransfer();
-  source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
-  target.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: dt }));
-  target.dispatchEvent(new DragEvent('dragover',  { bubbles: true, cancelable: true, dataTransfer: dt }));
-  target.dispatchEvent(new DragEvent('drop',      { bubbles: true, cancelable: true, dataTransfer: dt }));
-  source.dispatchEvent(new DragEvent('dragend',   { bubbles: true, cancelable: true, dataTransfer: dt }));
-
-  return { skillId: dt.getData('application/skill-id') };
+async (page) => {
+  const source = page.getByRole('button', { name: /グレアガ/ }).first();
+  const zone = page.locator('.timeline-scroll'); // 空タイムラインならプレースホルダー文言で特定
+  const sb = await source.boundingBox();
+  const zb = await zone.boundingBox();
+  await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(100);                                  // センサー activation 猶予
+  await page.mouse.move(sb.x + 60, sb.y + 10, { steps: 5 });       // distance 制約を超える小移動
+  await page.mouse.move(zb.x + 400, zb.y + 40, { steps: 15 });     // ターゲットへ段階移動
+  await page.waitForTimeout(200);                                  // over 判定の安定待ち
+  await page.mouse.up();
+  return await page.locator('[data-skill-entry-uid]').count();
 }
 ```
 
 実装上のポイント:
 
-1. **ソース・ターゲットは安定属性で指定**: `browser_snapshot` の `ref=eNN` は snapshot を取り直すたびに変わるため、ここでは使えない。`[title="..."]` / `data-testid` / 一意な textContent 等を使う
-2. **ターゲットは onDrop が直接 attach された要素**: 本アプリの場合、placeholder（「スキルパレットからドラッグ＆ドロップして...」）の **直接の親 div**。先祖を辿りすぎると React の合成イベントが onDrop に届かない
-3. **DataTransfer を共有**: `dragstart` で React の handler が `setData("application/skill-id", ...)` する。同じ `DataTransfer` を `drop` に渡さないと skillId が取れず、handler は no-op になる
-4. **dragover の preventDefault は React handler が行う**: 戻り値の `overEv.defaultPrevented === true` で確認できる。false なら drop は発火しない（= ターゲットが正しくない）
-5. 検証は **`browser_snapshot` で UI 状態の変化（スキル追加・期待威力の更新等）を直接観察** する
-
-並び替え（Timeline 内 DnD）も同じパターンで動く。ソースを既存エントリに、ターゲットを別エントリ／挿入位置にすればよい。
+1. **mousedown 直後に mouseup しない**: 小移動 → 段階移動 → 200ms 待ち → mouseup の順にする。待ちを挟まないと dnd-kit の DragStart/collision 検出（React state 更新）と競合する
+2. **タッチ経路（モバイル相当）の検証**: `page.evaluate` 内で `new Touch(...)` + `TouchEvent` を合成 dispatch する。`touchstart` → **250ms 待ち**（TouchSensor の delay: 150ms を確実に超える）→ `touchmove` を 10 分割 → `touchend`。tolerance: 8px を超える移動を delay 中に入れないこと
+3. **削除ゾーンはドラッグ中のみ表示**: ドラッグ開始（activation 後）に「ここにドロップして削除」の座標を取得してから移動する
+4. **並び替えの成否は順序で検証**: `page.$$eval('[data-skill-entry-uid]', els => els.map(e => e.getAttribute('title')))` でエントリ順を比較する
+5. **エントリのクリック選択との共存**: MouseSensor は distance: 4 未満の移動ならクリック扱いになる。選択の回帰確認は通常の `click()` でよい（詳細パネルの表示で判定）
 
 ## React 制御フォーム要素の操作ワークアラウンド（`value` 直接代入が効かない場合）
 
@@ -123,7 +114,7 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 | `browser_navigate` でタイムアウト／接続拒否 | Vite が起動していない・ポート違い | `npm run dev:client` のログで実 URL（5173 or 5174）を確認 |
 | `msedge` が見つからない／起動しない | システム Edge がアンインストールされている／プロファイル破損 | Edge を再インストール、または `--browser chrome` に切り替え（Chrome がインストールされている場合） |
 | 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
-| `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | アプリが React の HTML5 ネイティブ DnD（`onDragStart` + `dataTransfer.setData`）で実装されており、`browser_drag` 内部の `dragTo` がマウス移動をエミュレートするだけで `dragstart` / `drop` を発火しない | 上記「HTML5 ネイティブ DnD のワークアラウンド」のスニペットを `browser_evaluate` で実行する |
+| `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | dnd-kit の MouseSensor activation（distance: 4）と `dragTo` の一括ジェスチャが競合し、drop 前にドラッグが確定しない | 上記「dnd-kit ベース DnD の検証方法」のステップ分割マウス操作を `browser_run_code_unsafe` で実行する |
 | `browser_evaluate` で `select.value = '...'` を代入して `change` を dispatch しても UI が変化しない（値が空に戻る） | React の制御コンポーネントは value 代入を内部状態と同期しないため、直接代入では onChange が発火しない | 上記「React 制御フォーム要素の操作ワークアラウンド」の native setter スニペットを使う |
 
 ## 切断時の再接続手順（Claude 向け）
