@@ -129,6 +129,8 @@ export const PCT_BUFFS: BuffDefinition[] = [
         ],
       },
       { type: "consumeOnGcd", value: 1 },
+      // 5 スタックを消費し切ると「レインボードリップ効果アップ」を付与する（公式ジョブガイド: イマジンスカイ）
+      { type: "applyBuffOnDeplete", value: 0, appliedBuffId: "rainbow-drip-ready" },
     ],
     color: "#b39ddb",
   },
@@ -164,7 +166,12 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "ﾚｲﾝﾎﾞｰ\nReady",
     icon: rainbowDripIcon,
     duration: 30,
-    effects: [],
+    // 公式ジョブガイドは「リキャストタイムが短縮され、詠唱時間無しで唱えられる」とのみ記載し数値は無い。
+    // 短縮後の基礎リキャストは The Balance の「標準 2.5 秒 GCD 相当」に従い 2.5 秒とする（#349）。
+    effects: [
+      { type: "instantCast", value: 0, appliesToSkillIds: ["rainbow-drip"] },
+      { type: "recastOverride", value: 2.5, appliesToSkillIds: ["rainbow-drip"] },
+    ],
     color: "#ce93d8",
   },
 
