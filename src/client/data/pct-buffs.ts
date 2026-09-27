@@ -171,6 +171,9 @@ export const PCT_BUFFS: BuffDefinition[] = [
     effects: [
       { type: "instantCast", value: 0, appliesToSkillIds: ["rainbow-drip"] },
       { type: "recastOverride", value: 2.5, appliesToSkillIds: ["rainbow-drip"] },
+      // instantCast は同時アクティブな単発バフのうち 1 つしか消費しない（迅速魔が先に付いていると Ready が残る）ため、
+      // レインボードリップ実行時は必ず消費されるよう consumeOnGcd を併設する（Set 化により二重消費はしない）
+      { type: "consumeOnGcd", value: 1, appliesToSkillIds: ["rainbow-drip"] },
     ],
     color: "#ce93d8",
   },

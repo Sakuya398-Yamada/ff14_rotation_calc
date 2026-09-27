@@ -115,6 +115,52 @@ describe("PCT: レインボードリップ効果アップ（rainbow-drip-ready�
     expect(result.timelineEndTime).toBeCloseTo(drip.startTime + 2.5, 3);
   });
 
+  it("迅速魔が先に付いていても Ready 中の rainbow-drip で Ready は必ず消費される", () => {
+    const result = resolve([
+      makeEntry("swiftcast"),
+      makeEntry("scenic-muse"),
+      ...Array.from({ length: 5 }, () => makeEntry("fire-in-red")),
+      makeEntry("rainbow-drip"),
+      makeEntry("rainbow-drip"),
+    ]);
+    const c5 = result.entries[6];
+    const first = result.entries[7];
+    const second = result.entries[8];
+
+    // 迅速魔は色魔法（詠唱あり）で先に消費されるので、Ready 付与時点では迅速魔は無い前提を崩さないよう
+    // ここでは Ready と迅速魔の併存ではなく「Ready が rainbow-drip で確実に消費される」ことを検証する
+    expect(hasBuff(c5, "rainbow-drip-ready")).toBe(true);
+    expect(first.castTime).toBe(0);
+    expect(hasBuff(first, "rainbow-drip-ready")).toBe(false);
+    expect(second.castTime).toBe(4);
+    expect(recastOf(second)).toBe(6);
+  });
+
+  it("Ready と迅速魔が併存する rainbow-drip では Ready のみ消費され、迅速魔は据え置かれる", () => {
+    const result = resolve([
+      makeEntry("scenic-muse"),
+      ...Array.from({ length: 5 }, () => makeEntry("fire-in-red")),
+      makeEntry("swiftcast"),
+      makeEntry("rainbow-drip"),
+      makeEntry("rainbow-drip"),
+    ]);
+    const swift = result.entries[6];
+    const first = result.entries[7];
+    const second = result.entries[8];
+
+    expect(hasBuff(swift, "rainbow-drip-ready")).toBe(true);
+    expect(hasBuff(swift, "swiftcast")).toBe(true);
+    // 1 発目: Ready により instant + 2.5 秒。Ready は消費され、迅速魔は残る
+    expect(first.castTime).toBe(0);
+    expect(recastOf(first)).toBe(2.5);
+    expect(hasBuff(first, "rainbow-drip-ready")).toBe(false);
+    expect(hasBuff(first, "swiftcast")).toBe(true);
+    // 2 発目: Ready は無いのでリキャストは 6 秒に戻る（詠唱は残っていた迅速魔で instant 化される）
+    expect(second.castTime).toBe(0);
+    expect(recastOf(second)).toBe(6);
+    expect(hasBuff(second, "swiftcast")).toBe(false);
+  });
+
   it("Ready はレインボードリップ以外の詠唱 GCD では消費されない", () => {
     const result = resolve([
       makeEntry("scenic-muse"),
