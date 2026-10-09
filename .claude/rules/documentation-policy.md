@@ -19,7 +19,7 @@
 | `context-efficiency.md` | コンテキスト効率・ファイル読解ルール |
 | `mcp-setup.md` | MCP サーバー設定・API キー管理 |
 | `playwright-mcp.md` | Playwright MCP 利用ガイド |
-| `workflow-feedback.md` | ワークフロー改善知見ボード（#195）運用 |
+| `workflow-feedback.md` | ワークフロー改善知見ボード（#195）運用＋テンプレート元への還元（upstream feedback） |
 | `documentation-policy.md` | ドキュメント運用方針（このファイル） |
 
 ## 新規 rules ファイル追加時のチェック

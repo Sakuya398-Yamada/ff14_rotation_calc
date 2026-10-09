@@ -80,6 +80,7 @@ Phase 3（探索）／Phase 5（実装）／Phase 6（レビュー）でスコ�
    現状の動作: <今のワークフローでどう進んだか>
    改善案: <どう変えるとよいか。SKILL.md / phases / rules / hooks のどこを変える想定か>
    重要度: Low / Medium / High（判定基準は workflow-feedback.md 参照）
+   還元先: プロジェクト固有 / テンプレート汎用（判定基準は workflow-feedback.md「還元する / しないの判定」参照）
 
    知見ボード #195 に追記しますか？
     [Y] そのまま追記
@@ -101,6 +102,8 @@ Phase 3（探索）／Phase 5（実装）／Phase 6（レビュー）でスコ�
    **改善案**: <どう変えると良いか。SKILL.md / phases / rules / hooks のどこを変える想定か>
 
    **重要度**: Low / Medium / High
+
+   **還元先**: プロジェクト固有 / テンプレート汎用（未還元）
    ```
 
 5. **複数ある場合**: 候補ごとにユーザー確認し、承認されたものだけを**それぞれ独立したコメント**として投稿する（1気づき = 1コメントを目安にする）
@@ -113,3 +116,61 @@ Phase 3（探索）／Phase 5（実装）／Phase 6（レビュー）でスコ�
 ### 昇格後の扱い
 
 ユーザーが知見ボードのコメントを独立した改善Issueに昇格させた場合、元コメントの末尾に `✅ Issue #XXX で対応` が追記される運用になっている（`.claude/rules/workflow-feedback.md`）。Claude Code 側で特別な扱いは不要。
+
+## 6. テンプレート元への還元（upstream feedback）
+
+手順 5 で知見ボードに投稿した気づきのうち、**還元先が「テンプレート汎用」のもの** は、本プロジェクト内で閉じさせず、テンプレート元リポジトリ（`.claude/rules/workflow-feedback.md`「テンプレート元の情報」／ `.claude/template-version` の `repo`）に **Issue として起票**する。テンプレート側はその Issue を精査して反映・リリースし、改善は更新チェック（#357 で導入予定）経由で本プロジェクトにも戻ってくる。
+
+### 手順
+
+1. **対象の抽出**: 手順 5 で承認・投稿されたコメントのうち `還元先: テンプレート汎用` のものだけを対象にする。無ければこのステップ全体をスキップしてよい
+2. **抽象化**: プロジェクト固有情報（コード断片・ファイルパス・内部識別子・URL・FF14 のスキル名／ジョブ名等のドメイン固有語・認証情報）を除き、ワークフロー手順のレベルに書き直す。改善案は **テンプレート側のどのファイルをどう変えるか**（例: `template/.claude/skills/issue-start/phases/05-implementation.md`）の形で書く
+3. **重複チェック**: `search_issues` でテンプレート元の既存 Issue を検索する（query に `repo:<owner/repo>` とキーワードを含める）。近いものがあればリンクを提示し、新規起票ではなくその Issue へのコメント追記を提案する。GitHub MCP が使えない場合は `gh issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する
+4. **ユーザー確認**: 抽象化後の本文を以下のフォーマットで提示し、確認を得る（ローカル知見ボードへの承認とは**別に**取る）
+
+   ```
+   【テンプレート元への還元 候補】
+   起票先: <owner/repo>（.claude/template-version の repo）
+   タイトル案: feedback: <要約>
+   既存Issue重複チェック: なし / 候補 <URL>
+
+   ---（以下、Issue 本文）---
+   ## 還元元
+   - **プロジェクト**: Sakuya398-Yamada/ff14_rotation_calc
+   - **使用テンプレート**: Claude Code 版（`template/`）
+   - **テンプレート版**: <.claude/template-version の version>
+
+   ## 気づき
+   <プロジェクト固有情報を除いた形で>
+
+   ## 現状のテンプレートの動作
+   <テンプレートの現在の手順・規約ではどう進むか>
+
+   ## 改善案
+   - 対象ファイル: <template/ 配下のパス>
+   - 変更内容: <どう変えるか>
+
+   ## 重要度
+   Low / Medium / High
+   ---
+
+   テンプレート元に Issue を起票しますか？
+    [Y] そのまま起票
+    [E] 内容を編集して起票
+    [N] 起票しない（ローカル知見ボードのみ）
+   ```
+
+5. **承認（Y/E）後の起票**: GitHub MCP の `issue_write`（method: `create`）を、`owner` / `repo` を **テンプレート元リポジトリ** にして呼ぶ。ラベル `feedback` を付ける（権限が無くて失敗する場合はラベル無しで再試行してよい）。GitHub MCP が使えない場合は本文を scratchpad の一時ファイルに書き出し、以下にフォールバックする
+
+   ```bash
+   "/c/Program Files/GitHub CLI/gh.exe" issue create -R <owner/repo> --title "feedback: <要約>" --label feedback --body-file <tmp>
+   ```
+
+6. **起票に失敗した場合**（権限無し・ネットワーク等）: 整形済み本文をユーザーに提示し、テンプレート元の Issue テンプレート「テンプレートへの知見還元」（`.github/ISSUE_TEMPLATE/template-feedback.md`）からの手動起票を案内する。フローは止めない
+7. **ローカル側への印**: 起票後、知見ボード #195 の元コメントの `**還元先**` 行を `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する（`update_issue_comment`。使えない場合は `gh api -X PATCH repos/Sakuya398-Yamada/ff14_rotation_calc/issues/comments/<comment_id> -f body=@<tmp>`、それも難しければユーザーに編集を依頼する）
+8. **複数ある場合**: 候補ごとに確認し、承認されたものだけをそれぞれ独立した Issue として起票する（1気づき = 1 Issue）
+
+### 自動化しない
+
+- **必ずユーザー確認を挟む**。テンプレート元への無人起票はしない
+- `.claude/template-version` が無い・読めない場合は「テンプレート版 不明」と書いて進め、ファイルの復旧をユーザーに促す
