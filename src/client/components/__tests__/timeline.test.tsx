@@ -2,7 +2,16 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import type { ReactNode } from "react";
+import {
+  DndContext,
+  MouseSensor,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+} from "@dnd-kit/core";
 import { Timeline } from "../Timeline";
+import { DELETE_ZONE_ID } from "../timeline/dnd-types";
 import { resolveTimeline } from "../../logic/resolve-timeline";
 import { calcEntryExpectedPotency } from "../../logic/expected-potency";
 import type {
@@ -58,24 +67,24 @@ function resolve(
 }
 
 /**
- * HTML5 DnD の DataTransfer モック。jsdom は DataTransfer 未実装のため、
- * fireEvent に渡すオブジェクトで setData/getData/types を最小再現する。
- * DnD の追加・並び替え自体のテストはスコープ外（Issue #341）で、
- * ここでは削除ハンドラの検証にのみ使う。
+ * jsdom はレイアウトを持たず全要素の矩形が 0 のため、App.tsx の pointerWithin では
+ * どのドロップ先にも当たらない。削除ゾーンが登録されていれば常にそこへ当たる判定に差し替える。
+ * DnD の追加・並び替え自体のテストはスコープ外（Issue #341）で、削除ハンドラの検証にのみ使う。
  */
-function makeDataTransfer() {
-  const store = new Map<string, string>();
-  return {
-    effectAllowed: "",
-    dropEffect: "",
-    setData: (key: string, value: string) => {
-      store.set(key, value);
-    },
-    getData: (key: string) => store.get(key) ?? "",
-    get types() {
-      return Array.from(store.keys());
-    },
-  };
+const collideWithDeleteZone: CollisionDetection = ({ droppableContainers }) =>
+  droppableContainers
+    .filter((container) => container.id === DELETE_ZONE_ID)
+    .map((container) => ({ id: container.id }));
+
+/** Timeline は内部で useDndMonitor を使うため DndContext 配下で描画する（App.tsx と同じ構成） */
+function TestDndProvider({ children }: { children: ReactNode }) {
+  // activationConstraint なし: mousedown 即ドラッグ開始（distance 制約は jsdom で再現する意味がない）
+  const sensors = useSensors(useSensor(MouseSensor));
+  return (
+    <DndContext sensors={sensors} collisionDetection={collideWithDeleteZone}>
+      {children}
+    </DndContext>
+  );
 }
 
 function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {}) {
@@ -106,7 +115,7 @@ function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {})
     onSelectEntry: vi.fn(),
     ...overrides,
   };
-  const utils = render(<Timeline {...props} />);
+  const utils = render(<Timeline {...props} />, { wrapper: TestDndProvider });
   return { props, ...utils };
 }
 
@@ -170,12 +179,12 @@ describe("Timeline", () => {
     const entryEl = container.querySelector(`[data-skill-entry-uid="${targetUid}"]`);
     expect(entryEl).not.toBeNull();
 
-    const dataTransfer = makeDataTransfer();
-    fireEvent.dragStart(entryEl!, { dataTransfer });
-    expect(dataTransfer.getData("application/timeline-entry-uid")).toBe(targetUid);
+    // dnd-kit の MouseSensor は mousedown を要素で、move/up を document で購読する
+    fireEvent.mouseDown(entryEl!, { button: 0, clientX: 10, clientY: 10 });
+    expect(screen.getByText("ここにドロップして削除")).toBeInTheDocument();
 
-    const deleteZoneLabel = screen.getByText("ここにドロップして削除");
-    fireEvent.drop(deleteZoneLabel, { dataTransfer });
+    fireEvent.mouseMove(document, { clientX: 20, clientY: 20 });
+    fireEvent.mouseUp(document, { clientX: 20, clientY: 20 });
 
     expect(props.onRemoveEntry).toHaveBeenCalledExactlyOnceWith(targetUid);
     // ドロップ後は削除ゾーンが消える
