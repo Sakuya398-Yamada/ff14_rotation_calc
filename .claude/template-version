@@ -1,7 +1,7 @@
 # テンプレート元（issue-driven-dev-starter）と、このプロジェクトが整合しているテンプレートの版。
 # 本プロジェクトはテンプレートの出自側だが、知見の還元（upstream feedback）と更新取り込みの基準として、
 # テンプレート元の Release タグと同じ書式（v<major>.<minor>.<patch>）で version を記録する。
-# SessionStart hook による更新チェック（repo の最新リリースタグと version の比較）は #357 で導入予定。
+# SessionStart hook（.claude/hooks/session-start-info.sh）が repo の最新リリースタグと version を比較し、差があればバナーで通知する。
 # フォークした独自テンプレートを使う場合は repo を書き換える。テンプレート更新を取り込んだら version を更新する。
 # x-release-please-start-version / x-release-please-end の行はテンプレート元の release-please が
 # リリース時に version を書き換えるための印。利用プロジェクト側ではそのまま残しておいてよい。

@@ -18,7 +18,7 @@
 - **`.claude/template-version`**: `repo=<owner/repo>`（テンプレート元）と `version=vX.Y.Z`（本プロジェクトが整合しているテンプレートの版。テンプレート元の Release タグと同一書式）
 - **使用テンプレート**: Claude Code 版（テンプレート元の `template/` 配下）
 - `version` は「還元・更新の基準としてこの版と整合している」ことを示す。テンプレート更新を取り込んだら更新する
-- テンプレート → 本プロジェクト方向の更新チェック（SessionStart hook のバナー通知・更新用 Issue の起票提案）は #357 で導入予定。取り込み手順は後述「テンプレート更新の取り込み」
+- テンプレート → 本プロジェクト方向は、SessionStart hook が新しいリリースを検知してバナーで通知し、`/issue-start` Phase 1 手順 0.5 で更新用 Issue の起票を提案する。詳細は後述「テンプレート更新の取り込み」
 
 ## 何を書くか
 
@@ -142,7 +142,21 @@ Low / Medium / High（判定基準は上記と同じ）
 
 ## テンプレート更新の取り込み
 
-テンプレート元の新しいリリースは、更新用 Issue（タイトル `refactor: テンプレートを vX.Y.Z に更新`、ラベル `refactor`。本文に現在の版 → 最新版、Release notes と差分の URL、下記チェックリストを書く）として起票してから取り込む。新しいリリースの検知（SessionStart hook のバナー通知・更新用 Issue の起票提案）は #357 で導入予定。
+テンプレート元の新しいリリースは、更新用 Issue として起票してから取り込む。
+
+テンプレート元で改善がリリースされると、SessionStart hook（`.claude/hooks/session-start-info.sh`）が `.claude/template-version` の `version` と最新リリースタグ（`git ls-remote` で取得）を比較し、差があれば `## Template version` バナーに `⚠ Template update available` を出す。結果は `$(git rev-parse --git-common-dir)/template-version-check` に 24 時間キャッシュされ（worktree 共有）、オフライン時は `Latest: unknown` でスキップする。
+
+### 通知されたときの動き（`/issue-start` Phase 1 手順 0.5）
+
+1. バナーに更新ありが出ていたら、**そのセッションで一度だけ** ユーザーに「更新用 Issue を起票するか」を聞く。一致していれば何も言わない。`Latest: unknown`（オフライン等）ならスキップする
+2. **作業中の Issue のブランチでテンプレートを直接更新しない**（1 Issue = 1 PR）。承認された場合の動作は「このプロジェクトに更新用 Issue を起票する」までで、現在の Issue の作業はそのまま続ける
+3. 起票前に `search_issues`（`owner` / `repo` にこのプロジェクトを指定）で同じ版の更新 Issue が既に無いか確認する（あればリンクを示して起票しない）
+4. 更新用 Issue の内容：
+   - タイトル: `refactor: テンプレートを vX.Y.Z に更新`
+   - ラベル: `refactor`
+   - 本文: 現在の版 → 最新版、Release notes の URL（`https://github.com/<repo>/releases/tag/vX.Y.Z`）、差分の URL（`https://github.com/<repo>/compare/vOLD...vNEW`）、完了条件（下記「取り込み手順」のチェックリスト）
+5. ユーザーが「今回はスキップ」を選んだら、そのセッション中は再度聞かない（次のセッションでバナーが出れば改めて聞く）
+6. スケジュール実行の無人セッション（`weekday-issue-start` 等）では質問も起票もせず、実行報告に「テンプレート更新あり」と記載するだけに留める
 
 ### 取り込み手順（更新用 Issue を `/issue-start` したとき）
 
