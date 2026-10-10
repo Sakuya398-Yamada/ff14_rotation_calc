@@ -124,5 +124,15 @@ run_case "double-quoted claude/* exempt (allow)" 0 \
 run_case "double-quoted non-conforming name (must block)" 2 \
   'git checkout -b "invalid-branch-name"'
 
+# 14) v2: description part is machine-checked as kebab-case (#359)
+run_case "uppercase in description (must block)" 2 \
+  'git checkout -b feature/#1-Add-Skill'
+run_case "underscore in description (must block)" 2 \
+  'git checkout -b feature/#1-add_skill'
+run_case "double hyphen in description (must block)" 2 \
+  'git checkout -b feature/#1-add--skill'
+run_case "git branch creation is also checked (must block)" 2 \
+  'git branch test-branch'
+
 printf '\nResults: %d pass, %d fail\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]

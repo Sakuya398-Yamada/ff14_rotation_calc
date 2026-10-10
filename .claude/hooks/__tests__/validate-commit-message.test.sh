@@ -74,8 +74,11 @@ run_case "invalid type prefix (must block)" 2 \
 run_case "missing issue number (must block, non-claude branch)" 2 \
   'git commit -m "feat: 機能追加"'
 
-# 6) --amend — hook intentionally skips validation
-run_case "--amend (skipped)" 0 \
+# 6) --amend: v2 validates a new message passed with -m; --no-edit has nothing
+#    to validate and is let through (template v2.0.0, #359)
+run_case "--amend --no-edit (allow)" 0 \
+  'git commit --amend --no-edit'
+run_case "--amend -m without issue number (must block)" 2 \
   'git commit --amend -m "feat: 何でも"'
 
 # 7) Non-commit invocation — hook ignores
@@ -94,6 +97,14 @@ CMD
 )
 run_case "HEREDOC with invalid type prefix (must block)" 2 \
   "$heredoc_bad"
+
+# 9) v2 subject format: <type>[(scope)][!]: <subject>, one space after colon (#359)
+run_case "scope and breaking marker (valid)" 0 \
+  'git commit -m "fix(timeline)!: スキル順序を修正 #1"'
+run_case "two spaces after colon (must block)" 2 \
+  'git commit -m "feat:  スキルを追加 #1"'
+run_case "no space after colon (must block)" 2 \
+  'git commit -m "feat:スキルを追加 #1"'
 
 printf '\nResults: %d pass, %d fail\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]

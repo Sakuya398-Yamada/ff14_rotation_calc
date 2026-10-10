@@ -1,6 +1,6 @@
 # テスト規約（既知の罠と回避パターン）
 
-このファイルは CLAUDE.md から `@.claude/rules/testing-conventions.md` でインポートされる。
+`.claude/rules/` 配下のため起動時に自動で読み込まれる。
 `resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289、発生元: #198 / #217）。
 
 ## 罠1: `resolveTimeline` の `activeBuffs` は要素オブジェクトを参照共有する

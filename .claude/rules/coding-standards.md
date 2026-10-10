@@ -1,6 +1,6 @@
 # コーディング規約
 
-このファイルは CLAUDE.md から `@.claude/rules/coding-standards.md` でインポートされる。
+`.claude/rules/` 配下のため起動時に自動で読み込まれる。
 
 ## 基本方針
 
@@ -14,8 +14,9 @@
 
 ```
 ff14_rotation_calc/
-├── CLAUDE.md
+├── CLAUDE.md            # コア原則＋rules への索引
 ├── CONTRIBUTING.md
+├── .mcp.json            # プロジェクト共通の MCP サーバー（Playwright / Brave Search / GitHub）
 ├── package.json
 ├── prisma/
 │   └── schema.prisma
@@ -30,10 +31,10 @@ ff14_rotation_calc/
 │       └── index.ts
 └── .claude/
     ├── agents/          # サブエージェント定義
-    ├── rules/           # @import される規約集
-    ├── hooks/           # PreToolUse 等で使うシェルスクリプト
-    ├── settings.json    # フック設定
-    └── skills/          # スラッシュ起動可能なスキル
+    ├── rules/           # 自動読み込みされる規約集
+    ├── hooks/           # PreToolUse / SessionStart で使うシェルスクリプト
+    ├── settings.json    # 権限と hooks の登録
+    └── skills/          # /issue-start, /issue-plan
 ```
 
 ## 命名規約

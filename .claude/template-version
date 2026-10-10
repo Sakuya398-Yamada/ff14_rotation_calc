@@ -7,5 +7,5 @@
 # リリース時に version を書き換えるための印。利用プロジェクト側ではそのまま残しておいてよい。
 repo=Sakuya398-Yamada/issue-driven-dev-starter
 # x-release-please-start-version
-version=v1.0.0
+version=v2.0.0
 # x-release-please-end

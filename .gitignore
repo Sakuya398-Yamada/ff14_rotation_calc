@@ -56,3 +56,7 @@ htmlcov/
 .coverage.*
 coverage.xml
 *.cover
+
+# Claude Code local state (worktrees, personal settings)
+.claude/worktrees/
+.claude/settings.local.json
