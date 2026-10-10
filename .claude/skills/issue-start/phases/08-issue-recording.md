@@ -124,8 +124,8 @@ Phase 3（探索）／Phase 5（実装）／Phase 6（レビュー）でスコ�
 ### 手順
 
 1. **対象の抽出**: 手順 5 で承認・投稿されたコメントのうち `還元先: テンプレート汎用` のものだけを対象にする。無ければこのステップ全体をスキップしてよい
-2. **抽象化**: プロジェクト固有情報（コード断片・ファイルパス・内部識別子・URL・FF14 のスキル名／ジョブ名等のドメイン固有語・認証情報）を除き、ワークフロー手順のレベルに書き直す。改善案は **テンプレート側のどのファイルをどう変えるか**（例: `template/.claude/skills/issue-start/phases/05-implementation.md`）の形で書く
-3. **重複チェック**: `search_issues` でテンプレート元の既存 Issue を検索する（query に `repo:<owner/repo>` とキーワードを含める）。近いものがあればリンクを提示し、新規起票ではなくその Issue へのコメント追記を提案する。GitHub MCP が使えない場合は `gh issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する
+2. **抽象化**: プロジェクト固有情報（コード断片・ファイルパス・内部識別子・URL・FF14 のスキル名／ジョブ名等のドメイン固有語・認証情報・`#N` 形式の Issue 番号）を除き、ワークフロー手順のレベルに書き直す。改善案は **テンプレート側のどのファイルをどう変えるか**（例: `template/.claude/skills/issue-start/phases/05-implementation.md`）の形で書く
+3. **重複チェック**: `search_issues` を `owner` / `repo` に **テンプレート元** を指定して呼び、既存 Issue を検索する（query は自然文でよい）。近いものがあればリンクを提示し、新規起票ではなくその Issue へのコメント追記を提案する。GitHub MCP が使えない場合は `gh issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する
 4. **ユーザー確認**: 抽象化後の本文を以下のフォーマットで提示し、確認を得る（ローカル知見ボードへの承認とは**別に**取る）
 
    ```
@@ -160,7 +160,7 @@ Phase 3（探索）／Phase 5（実装）／Phase 6（レビュー）でスコ�
     [N] 起票しない（ローカル知見ボードのみ）
    ```
 
-5. **承認（Y/E）後の起票**: GitHub MCP の `issue_write`（method: `create`）を、`owner` / `repo` を **テンプレート元リポジトリ** にして呼ぶ。ラベル `feedback` を付ける（権限が無くて失敗する場合はラベル無しで再試行してよい）。GitHub MCP が使えない場合は本文を scratchpad の一時ファイルに書き出し、以下にフォールバックする
+5. **承認（Y/E）後の起票**: GitHub MCP の `issue_write`（method: `create`）を、`owner` / `repo` を **テンプレート元リポジトリ** にして呼ぶ。ラベル `feedback` を付ける（権限が無くて失敗する場合はラベル無しで再試行してよい）。本文に `#N` を書くとテンプレート元の Issue として誤リンクされるため、本プロジェクトの Issue 番号は書かないか `owner/repo#N` 形式にする。GitHub MCP が使えない場合は本文を scratchpad の一時ファイルに書き出し、以下にフォールバックする
 
    ```bash
    "/c/Program Files/GitHub CLI/gh.exe" issue create -R <owner/repo> --title "feedback: <要約>" --label feedback --body-file <tmp>

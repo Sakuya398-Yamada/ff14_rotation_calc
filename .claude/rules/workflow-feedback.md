@@ -87,7 +87,7 @@ Phase 5（実装）〜 Phase 7（PR作成）で「これは後で知見ボード
 |---------------------------|----------------------------|
 | `/issue-start` の手順・Phase 構成・ユーザー確認の粒度 | `tech-stack.md` / `coding-standards.md` / `testing-conventions.md` / `playwright-mcp.md` の中身 |
 | `git-conventions.md` / `context-efficiency.md` / `workflow-feedback.md` / `documentation-policy.md` の規約そのもの | 本プロジェクト固有の MCP 構成・`settings.json` の権限 |
-| hooks / agents の挙動・判定ロジック・出力上限 | FF14 仕様・React / Vite / Prisma 等に閉じたハマりどころ（「言語別の例が欲しい」のように一般化できる要望は汎用） |
+| hooks / agents / skills の挙動・判定ロジック・出力上限 | FF14 仕様・React / Vite / Prisma 等に閉じたハマりどころ（「言語別の例が欲しい」のように一般化できる要望は汎用） |
 | Issueテンプレート・セットアップ手順・プレースホルダーの不備 | `weekly-issue-intake` 等、本プロジェクトの運用都合による独自ルール |
 
 迷ったら「**テンプレートを新規に使う別プロジェクトでも同じ問題が起きるか**」で判定する。起きるなら汎用。
@@ -96,9 +96,9 @@ Phase 5（実装）〜 Phase 7（PR作成）で「これは後で知見ボード
 
 1. **タイミング**: Phase 8 で知見ボードへの追記が承認・投稿された直後（`phases/08-issue-recording.md` 手順 6）
 2. **抽象化**: プロジェクト固有情報を取り除き、ワークフロー手順のレベルに書き直す（後述「還元 Issue に含めないもの」）
-3. **重複チェック**: GitHub MCP の `search_issues` で **テンプレート元リポジトリ**（query に `repo:<owner/repo>` を含める）の既存 Issue を検索する。近いものがあればリンクを提示し、新規起票ではなくそこへのコメント追記を提案する。MCP が使えない場合は `gh issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する
+3. **重複チェック**: GitHub MCP の `search_issues` を `owner` / `repo` に **テンプレート元リポジトリ** を指定して呼び、既存 Issue を検索する（query は自然文でよい）。近いものがあればリンクを提示し、新規起票ではなくそこへのコメント追記を提案する。MCP が使えない場合は `gh issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する
 4. **ユーザー確認**: 抽象化後の本文を提示し Y/E/N を得る。**無人還元はしない**（ローカル知見ボードへの承認とは別に取る）
-5. **起票**: GitHub MCP の `issue_write`（method: `create`）を、`owner` / `repo` を **テンプレート元** にして呼ぶ。タイトルは `feedback: <要約>`、ラベルは `feedback`（権限が無くて付けられない場合は省略してよい）。MCP が使えない場合は `gh issue create -R <owner/repo> --title "feedback: ..." --label feedback --body-file <tmp>` にフォールバックする
+5. **起票**: GitHub MCP の `issue_write`（method: `create`）を、`owner` / `repo` を **テンプレート元** にして呼ぶ。タイトルは `feedback: <要約>`、ラベルは `feedback`（権限が無くて付けられない場合は省略してよい）。MCP が使えない場合は `gh issue create -R <owner/repo> --title "feedback: ..." --label feedback --body-file <tmp>` にフォールバックする。本文に `#N` を書くと GitHub がテンプレート元リポジトリの Issue として解釈して誤リンクになるため、本プロジェクトの Issue 番号（知見ボード #195 等）は書かないか `owner/repo#N` 形式にする
 6. **起票に失敗した場合**（権限無し・ネットワーク等）: 整形済み本文をユーザーに提示し、テンプレート元の Issue テンプレート「テンプレートへの知見還元」からの手動起票を案内する。フロー全体は止めない
 7. **ローカル側への印**: 起票後、本プロジェクトの知見ボード（#195）の元コメントの `**還元先**` を `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する（`update_issue_comment`、または `gh api -X PATCH repos/<owner/repo>/issues/comments/<id> -f body=...` / 手動）
 
@@ -138,6 +138,7 @@ Low / Medium / High（判定基準は上記と同じ）
 - 本プロジェクトのコード断片・ファイルパス・内部識別子・URL（FF14 のスキル名・ジョブ名等のドメイン固有語も含む）
 - 顧客名・社内システム名・人名
 - 認証情報・環境変数の値
+- `#N` 形式の Issue / PR 番号（テンプレート元の番号として誤リンクされる。必要なら `owner/repo#N` 形式にする）
 
 ## 棚卸し運用（週次ルーティンが正）
 
