@@ -130,6 +130,45 @@ check "offline: Latest unknown" "$(contains 'Local: `v2.0.0` / Latest: unknown')
 check "offline: rest of banner still printed" "$(contains '## 行動原則リマインダー')"
 check "offline: failure is not cached" "$([[ ! -f "$repo/.git/template-version-check" ]] && echo 1 || echo 0)"
 
+TAGS_V201=$'0123456789abcdef0123456789abcdef01234567\trefs/tags/v2.0.1'
+
+# 6. Stale cache (cached < local, e.g. the project adopted a newer release
+#    while a fresh cache still held the previous tag, #367): the cache is
+#    ignored, upstream is queried again, and no update is reported
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo stalecache v2.0.1)
+printf 'v2.0.0\n' >"$repo/.git/template-version-check"
+run_hook "$repo" "$TAGS_V201" 0
+check "stale cache: exit 0" "$([[ $rc -eq 0 ]] && echo 1 || echo 0)"
+check "stale cache: no update warning" "$(lacks 'Template update available')"
+check "stale cache: up to date with refetched tag" "$(contains 'Local: `v2.0.1` / Latest: `v2.0.1` — up to date')"
+check "stale cache: refetched from upstream" "$([[ $(ls_remote_calls) -eq 1 ]] && echo 1 || echo 0)"
+check "stale cache: cache refreshed" "$([[ "$(tr -d '[:space:]' <"$repo/.git/template-version-check")" == "v2.0.1" ]] && echo 1 || echo 0)"
+
+# 7. Stale cache and the refetch fails: unknown, never a downgrade warning
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo stalecache-offline v2.0.1)
+printf 'v2.0.0\n' >"$repo/.git/template-version-check"
+run_hook "$repo" "" 128
+check "stale cache offline: exit 0" "$([[ $rc -eq 0 ]] && echo 1 || echo 0)"
+check "stale cache offline: Latest unknown" "$(contains 'Local: `v2.0.1` / Latest: unknown')"
+check "stale cache offline: no update warning" "$(lacks 'Template update available')"
+
+# 8. Cache newer than local: still a valid cache hit, update reported, no network
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo newercache v1.0.0)
+printf 'v2.0.0\n' >"$repo/.git/template-version-check"
+run_hook "$repo" "" 128
+check "newer cache: warning shown" "$(contains '⚠ **Template update available**: local `v1.0.0` → latest `v2.0.0`')"
+check "newer cache: no ls-remote" "$([[ $(ls_remote_calls) -eq 0 ]] && echo 1 || echo 0)"
+
+# 9. Upstream itself is older than local (e.g. a pre-release adopter): no warning
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo aheadoflatest v2.0.1)
+run_hook "$repo" "$TAGS_V2" 0
+check "local ahead: no update warning" "$(lacks 'Template update available')"
+check "local ahead: shown as up to date" "$(contains 'Local: `v2.0.1` / Latest: `v2.0.0` — up to date')"
+
 echo
 printf 'Result: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

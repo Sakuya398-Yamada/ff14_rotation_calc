@@ -106,10 +106,19 @@ if [[ -f "$tv_file" ]]; then
     cache="$git_dir/template-version-check"
     now=$(date +%s)
     cache_mtime=$(stat -c %Y "$cache" 2>/dev/null || stat -f %m "$cache" 2>/dev/null || echo 0)
+    # version_newer <a> <b>: true when tag <a> sorts after tag <b> (sort -V).
+    version_newer() { [[ "$1" != "$2" && "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n 1)" == "$1" ]]; }
     latest=""
     if [[ -f "$cache" ]] && (( now - cache_mtime < 86400 )); then
       latest=$(tr -d '[:space:]' <"$cache" || true)
-    else
+      # A cached tag older than the local version means the project adopted a
+      # release after the cache was written (#367): treat it as stale and refetch
+      # instead of waiting out the 24h, so a real newer release is not missed.
+      if version_newer "$tv_local" "$latest"; then
+        latest=""
+      fi
+    fi
+    if [[ -z "$latest" ]]; then
       ls_remote=(git ls-remote --tags --refs --sort=-v:refname "https://github.com/${tv_repo}.git" 'v*')
       # `timeout --version` rather than `command -v timeout`: Git Bash on Windows also has
       # C:\Windows\System32\timeout.exe (an unrelated wait command) on PATH, which would
@@ -127,7 +136,8 @@ if [[ -f "$tv_file" ]]; then
     printf '\n## Template version\n'
     if [[ -z "$latest" ]]; then
       printf -- '- Local: `%s` / Latest: unknown (offline or fetch failed) — skip the update check this session\n' "$tv_local"
-    elif [[ "$latest" == "$tv_local" ]]; then
+    elif ! version_newer "$latest" "$tv_local"; then
+      # Equal, or upstream older than local: never suggest a downgrade (#367).
       printf -- '- Local: `%s` / Latest: `%s` — up to date\n' "$tv_local" "$latest"
     else
       printf -- '- ⚠ **Template update available**: local `%s` → latest `%s` (`%s`)\n' "$tv_local" "$latest" "$tv_repo"
