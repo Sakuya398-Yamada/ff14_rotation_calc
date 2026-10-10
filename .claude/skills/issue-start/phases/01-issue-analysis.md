@@ -49,6 +49,7 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
 ```
 
 - 作業中の Issue のブランチでテンプレートを直接更新しない（1 Issue = 1 PR）。[Y] でも動作は「更新用 Issue の起票」までで、その後は手順 1 に進む
+- バナーの版は hook が 24 時間キャッシュした値なので、最新リリースを反映していないことがある。既に起票済みの更新用 Issue の版（`テンプレートを vX.Y.Z に更新`）とバナーの版が食い違ったら、`git ls-remote --tags --refs --sort=-v:refname https://github.com/<owner/repo>.git 'v*' | head -n 1` で直接確認し、新しい方の版を正とする
 - [Y] の場合: `search_issues`（`owner` / `repo` にこのプロジェクト）で同じ版の更新 Issue（`テンプレートを <最新版> に更新`）が無いか確認し、無ければ `issue_write`（method: `create`）で起票する。タイトル `refactor: テンプレートを <最新版> に更新`、ラベル `refactor`。本文は現在の版 → 最新版、Release notes URL、差分 URL（`https://github.com/<owner/repo>/compare/<ローカル版>...<最新版>`）、完了条件（`.claude/rules/workflow-feedback.md`「取り込み手順」のチェックリスト）
 - **スケジュール実行の無人セッション**（`weekday-issue-start` 等）では質問も起票もせず、実行報告に「テンプレート更新あり（<ローカル版> → <最新版>）」と記載するだけに留める
 - 起票した更新 Issue はあとで通常どおり `/issue-start` する。その Phase 5 の手順は `.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」
@@ -57,9 +58,10 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
 ## 手順
 
 1. GitHub MCP の `issue_read`（method: `get`）で本文・ラベルを取得し、`issue_read`（method: `get_comments`）でコメントも取得する。`get` の結果には sub-issue の親子関係（`parent` / `sub_issues_summary`）と、この Issue をクローズする設定の PR（`closed_by_pull_requests`）も含まれる
-2. **マージ済み PR の確認**: `closed_by_pull_requests` にマージ済み PR があるか、無ければ `search_pull_requests`（query に Issue 番号、`owner` / `repo` を指定）で関連 PR の状態を確認する
+2. **関連 PR の確認**: `closed_by_pull_requests` にマージ済み PR があるか、無ければ `search_pull_requests`（query に Issue 番号、`owner` / `repo` を指定）で関連 PR の状態を確認する
    - マージ済み PR があれば、ユーザーに通知して追加作業の要否を確認する。不要なら処理を終了する
    - Issue が `OPEN` でも PR がマージ済みのことがあるので、Issue の state だけで判断しない
+   - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は後述「オープンな旧 PR／既存ブランチがある場合」
 3. 本文中のリンクや関連ラベルから、関連する過去の Issue を参照する。親 Issue がある場合（`parent`）はその本文も読む
 4. **【MCP: Brave Search】** IssueがFF14のスキルデータやゲーム仕様に関わる場合、`brave_web_search` で公式ジョブガイドや関連情報を検索し、実装に必要な数値・仕様を収集する
    - 検索例: `"FF14 竜騎士 ジョブガイド スキル一覧"`, `"FFXIV dragoon job guide skill potency"`
@@ -103,6 +105,20 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
      - **同一スキル名は PvE 欄と PvP 欄の両方にマッチする**。抽出結果ごとに周辺原文を読み、どちらの欄の記述かを必ず判別する（PvP 欄は威力の桁が大きい・「PvP」見出しが近傍に出る等で見分けられる）
      - 減衰・条件付き効果は「対象数に応じて威力が減少」等の**原文の有無**で判定する。原文に記載がなければ減衰なしと確定してよい（#273 で PvE 欄原文により「減衰記載があるのはフレア/フレアスター/ファウルのみ」と確定した実績）
 5. 以下のチェックリストで記載内容を検証する
+
+### オープンな旧 PR／既存ブランチがある場合
+
+同じ Issue に対して、過去の試行で作られたブランチやオープンな PR が残っていることがある。黙って同名ブランチを作ると衝突し、旧 PR への force-push は拒否されることもある（ブランチ保護・他人のブランチ）。**既定は作り直し**で、以下をユーザーに確認してから進める：
+
+```
+Issue #N には過去の PR #M（ブランチ `<type>/#N-xxx`、オープン）が残っています。
+ [R] 旧ブランチを再利用する（チェックアウトして main を取り込み、PR #M を更新）
+ [N] 作り直す（最新 main から `<type>/#N-xxx-v2` を切って新 PR、PR #M は置き換え先リンク付きでクローズ）
+```
+
+- **作り直す（既定）**: 最新 `main` から別名ブランチ（元の名前に `-v2`, `-v3` … を付ける）を切って Phase 2 以降を進める。Phase 7 で新 PR を作ったあと、旧 PR に「#<新 PR> で置き換え」とコメントしてクローズする（`update_pull_request`（`state: closed`）と `add_issue_comment`）。旧ブランチの削除はユーザーに任せる
+- **再利用する**: 旧ブランチをチェックアウトし `git merge origin/main` で最新化してから Phase 3 以降を進める。旧 PR はそのまま更新される
+- **force-push での上書きは既定にしない**。旧ブランチの履歴を捨ててよいとユーザーが明示した場合だけ行う
 
 ## チェックリスト
 
