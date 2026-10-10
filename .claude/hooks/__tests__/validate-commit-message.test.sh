@@ -106,5 +106,26 @@ run_case "two spaces after colon (must block)" 2 \
 run_case "no space after colon (must block)" 2 \
   'git commit -m "feat:スキルを追加 #1"'
 
+# 10) Only the commit's own options / heredoc count: not text in the heredoc body
+#     or a later command (template v2.0.1, #364)
+run_case "chained with git add on previous line, -F - heredoc (valid)" 0 \
+  $'git add foo.txt\ngit commit -F - <<\'MSG\'\nfeat: chained with git add #7\nMSG'
+run_case "chained with &&, -F - heredoc (valid)" 0 \
+  $'git add foo.txt && git commit -F - <<\'MSG\'\nfeat: chained with && #7\nMSG'
+run_case "chained with git add, -m heredoc (valid)" 0 \
+  $'git add foo.txt\ngit commit -m "$(cat <<\'EOF\'\nfeat: chained heredoc in -m #7\nEOF\n)"'
+run_case "heredoc body mentions -m (valid)" 0 \
+  $'git commit -F - <<\'MSG\'\nfeat: body mentions an option #8\n\n- use git commit -m "x" for short ones\nMSG'
+run_case "-F <file> followed by unrelated heredoc (allow)" 0 \
+  $'git commit -F msg.txt && cat <<\'EOF\'\nnot a subject\nEOF'
+run_case "-F <file> followed by later command with -m (allow)" 0 \
+  'git commit -F msg.txt && git log -m "x"'
+run_case "subject containing ; & | (valid)" 0 \
+  'git commit -m "fix: a; b & c | d #9"'
+run_case "chained with git add, invalid heredoc subject (must block)" 2 \
+  $'git add foo.txt\ngit commit -F - <<\'MSG\'\nbad chained subject\nMSG'
+run_case "invalid heredoc subject, body mentions valid -m (must block)" 2 \
+  $'git commit -F - <<\'MSG\'\nbad subject\n\n- body mentions -m "feat: ok #1"\nMSG'
+
 printf '\nResults: %d pass, %d fail\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]

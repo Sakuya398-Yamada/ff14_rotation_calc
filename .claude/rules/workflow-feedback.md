@@ -163,9 +163,8 @@ Low / Medium / High（判定基準は上記と同じ）
 Phase 5 の実装内容は以下。テンプレートのファイルはこのプロジェクト側でカスタマイズ済みなので、**機械的に上書きしない**。
 
 1. Release notes と差分（`git diff vOLD..vNEW -- template/` をテンプレート元のクローンで実行、または compare URL）を読み、変更ファイルの一覧を得る
-2. 変更ファイルごとに、このプロジェクト側の対応ファイル（`template/` を除いたパス）へ反映する
-   - テンプレート由来の部分（`/issue-start` の phases、汎用 rules、hooks、agents）は差分をそのまま当てる
-   - カスタマイズ済みファイル（`tech-stack.md` / `coding-standards.md` / `CLAUDE.md` のプロジェクト固有部分 / `settings.json` の許可リスト等）は差分の趣旨だけを手で取り込み、プロジェクト固有の記述を壊さない
+2. 変更ファイルごとに、このプロジェクト側の対応ファイル（`template/` を除いたパス）へ **3-way マージ**（`git merge-file`）で反映する。差分を読んで手で当てるより取りこぼしが少なく、テンプレート側の変更は自動で当たり、プロジェクト固有の記述とぶつかる箇所だけがコンフリクトとして残る（後述「3-way マージの定型手順」）
+   - コンフリクト箇所は、テンプレート側の変更を取り込みつつプロジェクト固有の記述を残す形に手で直す。とくにカスタマイズ済みファイル（`tech-stack.md` / `coding-standards.md` / `CLAUDE.md` のプロジェクト固有部分 / `settings.json` の許可リスト等）は固有の記述を壊さない
    - Release notes に「手動対応」が書かれていればそれに従う
 3. `.claude/template-version` の `version` を新しい版に更新する
 4. hooks を変更した場合は `.claude/hooks/__tests__/*.test.sh` を実行し、必要ならテストケースを追従する
@@ -174,6 +173,33 @@ Phase 5 の実装内容は以下。テンプレートのファイルはこのプ
    - [ ] カスタマイズ済みファイルのプロジェクト固有記述が失われていない
    - [ ] `.claude/template-version` の `version` を更新した
    - [ ] hooks テストが通る
+
+### 3-way マージの定型手順
+
+`<repo>` は `.claude/template-version` の `repo`、`vOLD` / `vNEW` は取り込み前後の版。作業ファイルはプロジェクトの外（scratchpad 等）に置く。
+
+```bash
+SRC=<scratchpad>/template-src   # テンプレート元のクローン
+W=<scratchpad>/template-merge   # 作業ディレクトリ
+git clone -q https://github.com/<repo>.git "$SRC"
+
+git -C "$SRC" diff --name-only vOLD vNEW -- template/ | while read -r t; do
+  p=${t#template/}  # プロジェクト側のパス
+  mkdir -p "$W/$(dirname "$p")"
+  git show "HEAD:$p"               >"$W/$p.ours"   2>/dev/null || { echo "project にない:  $p"; continue; }
+  git -C "$SRC" show "vOLD:$t"     >"$W/$p.base"   2>/dev/null || { echo "vNEW で追加:    $p"; continue; }
+  git -C "$SRC" show "vNEW:$t"     >"$W/$p.theirs" 2>/dev/null || { echo "vNEW で削除:    $p"; continue; }
+  git merge-file -p -L ours -L vOLD -L vNEW "$W/$p.ours" "$W/$p.base" "$W/$p.theirs" >"$W/$p.merged"
+  echo "conflicts=$?  $p"  # 0 ならそのまま使える
+done
+```
+
+1. `conflicts=0` のファイルは `$W/<path>.merged` をそのままプロジェクト側に書き戻す
+2. `conflicts=N`（N > 0）のファイルは `<<<<<<< ours` 〜 `>>>>>>> vNEW` の箇所だけを上記の方針で解消してから書き戻す。マーカーが残っていないことを `grep -n '^<<<<<<<\|^>>>>>>>' <file>` で確かめる
+3. ループが `continue` で飛ばしたファイルは手で判断する
+   - **project にない / vNEW で追加**: 新規ファイルとして `vNEW` の内容を置く（プロジェクトで意図的に削除していたなら置かない）
+   - **vNEW で削除**: プロジェクト側でも削除してよいか確認してから削除する
+4. **「現プロジェクト版」は作業ツリーではなく `git show HEAD:<path>` から取る**。Windows で `core.autocrlf=true` だと作業ツリーのファイルは CRLF になっていて、LF のテンプレート側と全行が衝突する。`HEAD` の内容（リポジトリ内の LF）を使えば改行コードの差は出ない。このため取り込み作業は未コミットの変更が無い状態で始める
 
 ## 棚卸し運用（週次ルーティンが正）
 
