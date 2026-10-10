@@ -111,8 +111,9 @@ if [[ -f "$tv_file" ]]; then
       latest=$(tr -d '[:space:]' <"$cache" || true)
     else
       ls_remote=(git ls-remote --tags --refs --sort=-v:refname "https://github.com/${tv_repo}.git" 'v*')
-      # On Windows, PATH may resolve `timeout` to System32\timeout.exe (a
-      # different command), so only use it when it is GNU coreutils' timeout.
+      # `timeout --version` rather than `command -v timeout`: Git Bash on Windows also has
+      # C:\Windows\System32\timeout.exe (an unrelated wait command) on PATH, which would
+      # make the check fail silently and always report "Latest: unknown".
       if timeout --version >/dev/null 2>&1; then
         latest=$(timeout 8 "${ls_remote[@]}" 2>/dev/null | head -n 1 | awk -F/ '{print $NF}' || true)
       else

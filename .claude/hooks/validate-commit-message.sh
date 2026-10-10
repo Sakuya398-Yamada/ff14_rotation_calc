@@ -98,6 +98,17 @@ msg_bare_re='(^|[[:space:]])(-[a-zA-Z]*m|--message)(=|[[:space:]]+)([^[:space:]"
 heredoc_re='<<-?[[:space:]]*["'"'"']?[A-Za-z_][A-Za-z0-9_]*["'"'"']?[^'"$NL"']*'"$NL"'+([^'"$NL"']+)'
 type_re='^(feat|fix|refactor|test|docs|chore|style)(\([^)]+\))?!?: [^[:space:]]'
 
+# own_match <regex> <group>: sets msg to the group if <regex> matches inside this commit's
+# own options, i.e. nothing before the match ends the command (newline, ; & |). Without this,
+# text in a heredoc body or in a later command is taken as the subject (e.g. a body line
+# that contains `-m "x"`, or `git commit -F msg.txt && cat <<EOF ...`).
+own_match() {
+  [[ "$rest" =~ $1 ]] || return 1
+  local value="${BASH_REMATCH[$2]}" prefix="${rest%%"${BASH_REMATCH[0]}"*}"
+  [[ "$prefix" == *[$'\n;&|']* ]] && return 1
+  msg="$value"
+}
+
 current_branch_of() {
   local dir="$1"
   git -C "$dir" symbolic-ref --short -q HEAD 2>/dev/null \
@@ -117,16 +128,11 @@ while [[ "$rest" =~ $git_commit_re ]]; do
   fi
 
   msg=""
-  if [[ "$rest" =~ $msg_dq_re ]] || [[ "$rest" =~ $msg_sq_re ]] || [[ "$rest" =~ $msg_bare_re ]]; then
-    msg="${BASH_REMATCH[4]}"
-  fi
+  own_match "$msg_dq_re" 4 || own_match "$msg_sq_re" 4 || own_match "$msg_bare_re" 4 || true
   # `-m "$(cat <<'EOF' ...)"` or `-F - <<'EOF'`: the subject is the first heredoc line.
   if [[ -z "$msg" || "$msg" == \$\(* ]]; then
-    if [[ "$rest" =~ $heredoc_re ]]; then
-      msg="${BASH_REMATCH[1]}"
-    else
-      msg=""
-    fi
+    msg=""
+    own_match "$heredoc_re" 1 || true
   fi
 
   # Nothing extractable (e.g. -F <file>, --amend --no-edit): let git decide.
