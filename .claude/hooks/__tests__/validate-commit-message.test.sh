@@ -127,5 +127,24 @@ run_case "chained with git add, invalid heredoc subject (must block)" 2 \
 run_case "invalid heredoc subject, body mentions valid -m (must block)" 2 \
   $'git commit -F - <<\'MSG\'\nbad subject\n\n- body mentions -m "feat: ok #1"\nMSG'
 
+# Separators (; & |) inside a quoted option value do not end the command, so the -m
+# that follows them is still this commit's own subject (template v2.0.2, #374).
+run_case "quoted & in --author before valid -m (valid)" 0 \
+  'git commit --author="A & B <a@example.com>" -m "feat: quoted amp #10"'
+run_case "quoted & in --author before invalid -m (must block)" 2 \
+  'git commit --author="A & B <a@example.com>" -m "bad"'
+run_case "single-quoted ; in --author before invalid -m (must block)" 2 \
+  "git commit --author='A; B' -m 'bad'"
+run_case "quoted | in --trailer before invalid -m (must block)" 2 \
+  'git commit --trailer="Note: a | b" -m "bad"'
+run_case "escaped quotes around & before invalid -m (must block)" 2 \
+  'git commit --author="A \"&\" B" -m "bad"'
+run_case "backslash-escaped & outside quotes before invalid -m (must block)" 2 \
+  'git commit --author=A\&B -m "bad"'
+run_case "apostrophe in heredoc body, valid subject (valid)" 0 \
+  $'git commit -F - <<\'MSG\'\nfeat: apostrophe in body #11\n\n- don\'t use -m "x" here\nMSG'
+run_case "apostrophe in heredoc body, invalid subject (must block)" 2 \
+  $'git commit -F - <<\'MSG\'\nbad subject\n\n- it\'s fine to say -m "feat: ok #1"\nMSG'
+
 printf '\nResults: %d pass, %d fail\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]
