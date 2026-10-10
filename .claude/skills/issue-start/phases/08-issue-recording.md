@@ -90,7 +90,7 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 
 ## 6. テンプレート元への還元（upstream feedback）
 
-手順 5 で投稿した気づきのうち **還元先が「テンプレート汎用」のもの** は、このプロジェクト内で閉じさせず、テンプレート元リポジトリ（`.claude/rules/workflow-feedback.md`「テンプレート元の情報」／ `.claude/template-version` の `repo`）に **Issue として起票** する。テンプレート側で反映・リリースされた改善は、更新用 Issue による取り込み（`.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」。検知の自動化は #357 で導入予定）でこのプロジェクトにも戻ってくる。
+手順 5 で投稿した気づきのうち **還元先が「テンプレート汎用」のもの** は、このプロジェクト内で閉じさせず、テンプレート元リポジトリ（`.claude/rules/workflow-feedback.md`「テンプレート元の情報」／ `.claude/template-version` の `repo`）に **Issue として起票** する。テンプレート側で反映・リリースされた改善は、更新用 Issue による取り込み（`.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」。新しいリリースは SessionStart hook が検知し、Phase 1 手順 0.5 で起票を提案する）でこのプロジェクトにも戻ってくる。
 
 ### 手順
 

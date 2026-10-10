@@ -4,7 +4,8 @@
 # after compaction — no matcher is set in settings.json so it runs for all).
 #
 # Output goes to stdout. Claude Code adds it to Claude's context.
-# Needs: git.
+# Needs: git. The template update check additionally needs network access
+# (silently skipped when offline; the result is cached for 24h under .git/).
 
 set -euo pipefail
 
@@ -87,6 +88,53 @@ if [[ -n "$n_top" ]] \
   printf -- '- This path looks like a worktree but is **not registered** (likely a leftover after `git worktree remove`).\n'
   printf -- '- Use the **main repo absolute path** for `Edit`/`Write` `file_path` and `gh ... --body-file <abs>` invocations. Edits to the launch cwd will land in a gitignored area and silently disappear.\n'
   printf -- '- For git operations, prefer `git -C "%s" ...` over relying on the current shell pwd.\n' "$toplevel"
+fi
+
+# --- Template update check -------------------------------------------------
+# `.claude/template-version` holds the upstream template repo and the version
+# this project has adopted. Compare it against the newest `v*` tag on the
+# upstream repo and tell the model when a newer template release exists.
+# Network failures are silent (offline is fine); the result is cached for 24h
+# under the common git dir (shared by all worktrees) so the check does not slow
+# down every session start.
+tv_file="${toplevel:-.}/.claude/template-version"
+if [[ -f "$tv_file" ]]; then
+  tv_repo=$(sed -n 's/^repo=//p' "$tv_file" | head -n 1 | tr -d '[:space:]' || true)
+  tv_local=$(sed -n 's/^version=//p' "$tv_file" | head -n 1 | tr -d '[:space:]' || true)
+  if [[ -n "$tv_repo" && -n "$tv_local" ]]; then
+    git_dir=$(git rev-parse --git-common-dir 2>/dev/null || echo ".git")
+    cache="$git_dir/template-version-check"
+    now=$(date +%s)
+    cache_mtime=$(stat -c %Y "$cache" 2>/dev/null || stat -f %m "$cache" 2>/dev/null || echo 0)
+    latest=""
+    if [[ -f "$cache" ]] && (( now - cache_mtime < 86400 )); then
+      latest=$(tr -d '[:space:]' <"$cache" || true)
+    else
+      ls_remote=(git ls-remote --tags --refs --sort=-v:refname "https://github.com/${tv_repo}.git" 'v*')
+      # On Windows, PATH may resolve `timeout` to System32\timeout.exe (a
+      # different command), so only use it when it is GNU coreutils' timeout.
+      if timeout --version >/dev/null 2>&1; then
+        latest=$(timeout 8 "${ls_remote[@]}" 2>/dev/null | head -n 1 | awk -F/ '{print $NF}' || true)
+      else
+        latest=$("${ls_remote[@]}" 2>/dev/null | head -n 1 | awk -F/ '{print $NF}' || true)
+      fi
+      if [[ -n "$latest" ]]; then
+        printf '%s\n' "$latest" >"$cache" 2>/dev/null || true
+      fi
+    fi
+
+    printf '\n## Template version\n'
+    if [[ -z "$latest" ]]; then
+      printf -- '- Local: `%s` / Latest: unknown (offline or fetch failed) — skip the update check this session\n' "$tv_local"
+    elif [[ "$latest" == "$tv_local" ]]; then
+      printf -- '- Local: `%s` / Latest: `%s` — up to date\n' "$tv_local" "$latest"
+    else
+      printf -- '- ⚠ **Template update available**: local `%s` → latest `%s` (`%s`)\n' "$tv_local" "$latest" "$tv_repo"
+      printf -- '- Release notes: https://github.com/%s/releases/tag/%s\n' "$tv_repo" "$latest"
+      printf -- '- Diff: https://github.com/%s/compare/%s...%s\n' "$tv_repo" "$tv_local" "$latest"
+      printf -- '- `/issue-start` Phase 1 手順 0.5 で **一度だけ** ユーザーに更新用 Issue の起票を提案する（無人セッションでは実行報告に記載するだけ）。作業中の Issue のブランチでテンプレートを直接更新しない（1 Issue = 1 PR）\n'
+    fi
+  fi
 fi
 
 printf '\n## 行動原則リマインダー\n'

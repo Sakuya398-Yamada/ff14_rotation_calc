@@ -28,6 +28,32 @@ git worktree list
   - 例: `gh ... --body-file "D:/ドキュメント_D/for_claude/ff14-dev/RotationCalc/.claude/tmp-foo.md"`
 - git 操作は `git -C "<メインリポ絶対パス>" <subcommand>` で行う（pwd に依存した暗黙の解決を避ける）
 
+## 0.5 テンプレート更新チェック（セッションで一度だけ）
+
+SessionStart hook 出力の `## Template version` を確認する。
+
+| バナーの状態 | 動作 |
+|---|---|
+| `up to date` | 何もしない（言及も不要） |
+| `Latest: unknown` | オフライン等で取得失敗。スキップする |
+| `⚠ Template update available` | **このセッションで一度だけ**、下記フォーマットで確認する |
+| セクション自体が無い | `.claude/template-version` が無いか hook が動いていない。スキップする |
+
+```
+テンプレート元（<owner/repo>）に新しい版があります: <ローカル版> → <最新版>
+Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
+
+このプロジェクトに更新用 Issue を起票しますか？（今の Issue の作業はそのまま続けます）
+ [Y] 起票する
+ [N] 今回はスキップ（このセッション中は再度聞きません）
+```
+
+- 作業中の Issue のブランチでテンプレートを直接更新しない（1 Issue = 1 PR）。[Y] でも動作は「更新用 Issue の起票」までで、その後は手順 1 に進む
+- [Y] の場合: `search_issues`（`owner` / `repo` にこのプロジェクト）で同じ版の更新 Issue（`テンプレートを <最新版> に更新`）が無いか確認し、無ければ `issue_write`（method: `create`）で起票する。タイトル `refactor: テンプレートを <最新版> に更新`、ラベル `refactor`。本文は現在の版 → 最新版、Release notes URL、差分 URL（`https://github.com/<owner/repo>/compare/<ローカル版>...<最新版>`）、完了条件（`.claude/rules/workflow-feedback.md`「取り込み手順」のチェックリスト）
+- **スケジュール実行の無人セッション**（`weekday-issue-start` 等）では質問も起票もせず、実行報告に「テンプレート更新あり（<ローカル版> → <最新版>）」と記載するだけに留める
+- 起票した更新 Issue はあとで通常どおり `/issue-start` する。その Phase 5 の手順は `.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」
+- いま `/issue-start` している Issue 自体が更新用 Issue なら、このチェックは不要
+
 ## 手順
 
 1. GitHub MCP の `issue_read`（method: `get`）で本文・ラベルを取得し、`issue_read`（method: `get_comments`）でコメントも取得する。`get` の結果には sub-issue の親子関係（`parent` / `sub_issues_summary`）と、この Issue をクローズする設定の PR（`closed_by_pull_requests`）も含まれる

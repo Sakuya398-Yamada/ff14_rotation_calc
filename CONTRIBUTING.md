@@ -177,6 +177,8 @@ npm run test:watch   # Vitest watch モード
 
 加えて、リポジトリ直下の `.mcp.json` に Claude Code が読み込む MCP サーバー（Playwright 等）を定義しています。
 
+セッション開始時には SessionStart hook（`.claude/hooks/session-start-info.sh`）がリポジトリ状態のバナーを出します。バナーの `## Template version` は、`.claude/template-version` の版とテンプレート元（issue-driven-dev-starter）の最新リリースを比べた結果です（24 時間キャッシュ、オフライン時は `unknown`）。新しい版があれば `/issue-start` が更新用 Issue の起票を一度だけ提案します。取り込み手順は `.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」を参照してください。
+
 詳細は `CLAUDE.md` を参照してください。
 
 ---
