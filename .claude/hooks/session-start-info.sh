@@ -97,6 +97,19 @@ fi
 # Network failures are silent (offline is fine); the result is cached for 24h
 # under the common git dir (shared by all worktrees) so the check does not slow
 # down every session start.
+#
+# Versions are compared with `sort -V`, not for equality: a cache written before the
+# project adopted a newer release would otherwise report a "downgrade" (local v2.0.1 →
+# latest v2.0.0) right after `.claude/template-version` was bumped, so such a cache is
+# treated as stale and refetched, and a remote that is older than local counts as up to date.
+version_newer() { # version_newer <a> <b>: true when tag <a> is a newer version than <b>
+  [[ "$1" != "$2" ]] || return 1
+  local top
+  # If `sort -V` is unavailable the pipeline fails and any difference counts as newer.
+  top=$(printf '%s\n%s\n' "$1" "$2" | sort -V 2>/dev/null | tail -n 1) || top="$1"
+  [[ "$top" == "$1" ]]
+}
+
 tv_file="${toplevel:-.}/.claude/template-version"
 if [[ -f "$tv_file" ]]; then
   tv_repo=$(sed -n 's/^repo=//p' "$tv_file" | head -n 1 | tr -d '[:space:]' || true)
@@ -106,15 +119,11 @@ if [[ -f "$tv_file" ]]; then
     cache="$git_dir/template-version-check"
     now=$(date +%s)
     cache_mtime=$(stat -c %Y "$cache" 2>/dev/null || stat -f %m "$cache" 2>/dev/null || echo 0)
-    # version_newer <a> <b>: true when tag <a> sorts after tag <b> (sort -V).
-    version_newer() { [[ "$1" != "$2" && "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n 1)" == "$1" ]]; }
     latest=""
     if [[ -f "$cache" ]] && (( now - cache_mtime < 86400 )); then
       latest=$(tr -d '[:space:]' <"$cache" || true)
-      # A cached tag older than the local version means the project adopted a
-      # release after the cache was written (#367): treat it as stale and refetch
-      # instead of waiting out the 24h, so a real newer release is not missed.
-      if version_newer "$tv_local" "$latest"; then
+      # Stale cache: it predates the version this project now has. Refetch instead.
+      if [[ -n "$latest" ]] && version_newer "$tv_local" "$latest"; then
         latest=""
       fi
     fi
@@ -136,9 +145,10 @@ if [[ -f "$tv_file" ]]; then
     printf '\n## Template version\n'
     if [[ -z "$latest" ]]; then
       printf -- '- Local: `%s` / Latest: unknown (offline or fetch failed) — skip the update check this session\n' "$tv_local"
-    elif ! version_newer "$latest" "$tv_local"; then
-      # Equal, or upstream older than local: never suggest a downgrade (#367).
+    elif [[ "$latest" == "$tv_local" ]]; then
       printf -- '- Local: `%s` / Latest: `%s` — up to date\n' "$tv_local" "$latest"
+    elif ! version_newer "$latest" "$tv_local"; then
+      printf -- '- Local: `%s` / Latest: `%s` — up to date (local is ahead of the latest release)\n' "$tv_local" "$latest"
     else
       printf -- '- ⚠ **Template update available**: local `%s` → latest `%s` (`%s`)\n' "$tv_local" "$latest" "$tv_repo"
       printf -- '- Release notes: https://github.com/%s/releases/tag/%s\n' "$tv_repo" "$latest"

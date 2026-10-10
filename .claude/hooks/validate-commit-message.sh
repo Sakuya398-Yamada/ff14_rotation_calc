@@ -98,14 +98,35 @@ msg_bare_re='(^|[[:space:]])(-[a-zA-Z]*m|--message)(=|[[:space:]]+)([^[:space:]"
 heredoc_re='<<-?[[:space:]]*["'"'"']?[A-Za-z_][A-Za-z0-9_]*["'"'"']?[^'"$NL"']*'"$NL"'+([^'"$NL"']+)'
 type_re='^(feat|fix|refactor|test|docs|chore|style)(\([^)]+\))?!?: [^[:space:]]'
 
+# ends_command <text>: true if <text> contains a command separator (newline ; & |) outside
+# single/double quotes. Quoted separators belong to an option value, e.g. `--author="A & B"`,
+# and must not hide the -m that follows them. A backslash escapes the next character outside
+# quotes and inside double quotes (not inside single quotes), as in bash.
+ends_command() {
+  local s="$1" i c q=""
+  for ((i = 0; i < ${#s}; i++)); do
+    c="${s:i:1}"
+    if [[ -n "$q" ]]; then
+      if [[ "$c" == "$q" ]]; then q=""; elif [[ "$q" == '"' && "$c" == '\' ]]; then i=$((i + 1)); fi
+    else
+      case "$c" in
+        "'"|'"') q="$c" ;;
+        '\') i=$((i + 1)) ;;
+        $'\n'|';'|'&'|'|') return 0 ;;
+      esac
+    fi
+  done
+  return 1
+}
+
 # own_match <regex> <group>: sets msg to the group if <regex> matches inside this commit's
-# own options, i.e. nothing before the match ends the command (newline, ; & |). Without this,
-# text in a heredoc body or in a later command is taken as the subject (e.g. a body line
-# that contains `-m "x"`, or `git commit -F msg.txt && cat <<EOF ...`).
+# own options, i.e. nothing before the match ends the command (unquoted newline, ; & |).
+# Without this, text in a heredoc body or in a later command is taken as the subject (e.g.
+# a body line that contains `-m "x"`, or `git commit -F msg.txt && cat <<EOF ...`).
 own_match() {
   [[ "$rest" =~ $1 ]] || return 1
   local value="${BASH_REMATCH[$2]}" prefix="${rest%%"${BASH_REMATCH[0]}"*}"
-  [[ "$prefix" == *[$'\n;&|']* ]] && return 1
+  ends_command "$prefix" && return 1
   msg="$value"
 }
 
