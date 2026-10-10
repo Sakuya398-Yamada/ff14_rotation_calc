@@ -149,7 +149,7 @@ export const XXX_BUFFS: BuffDefinition[] = [
 `id`, `name`, `potency`, `type`（`"gcd"` or `"ogcd"`）, `target`（`"enemy"` / `"party"` / `"self"`）, `icon`, `recastTime`, `animationLock`, `acquiredLevel`
 
 - GCD は `recastTime: 2.5`
-- oGCD は短い値（`DEFAULT_ANIMATION_LOCK = 0.65` あるいはジョブ固有値）。`cooldown` を**必ず**指定する（`whm-skills.ts:265, 277`）
+- oGCD は `recastTime: DEFAULT_ANIMATION_LOCK`（`const DEFAULT_ANIMATION_LOCK = 0.65` をファイル冒頭に定義）で全ジョブ統一する。oGCD の `recastTime` は計算に使われず、タイムライン上のブロック表示幅（`Timeline.tsx` の `getRecastTime`）にのみ使われるため、ジョブ固有値にするとアビリティの見た目がジョブ間で揃わなくなる（#350。`ogcd-recast-time.test.ts` が検証）。実際の再使用間隔は `cooldown` で表し、**必ず**指定する（`whm-skills.ts:265, 277`）
 - 命名規則: ファイル名は `kebab-case`、エクスポートは `<JOB>_ATTACK_SKILLS`
 
 ### よく使う任意フィールド
