@@ -1,6 +1,6 @@
 # MCP サーバー設定ガイド
 
-このファイルは `CLAUDE.md` から `@.claude/rules/mcp-setup.md` でインポートされる。
+`.claude/rules/` 配下のため起動時に自動で読み込まれる。
 リポジトリ直下の `.mcp.json` に登録された MCP サーバーの API キー管理・接続状態確認・トラブル対応をまとめる。
 
 ## 登録済み MCP サーバー

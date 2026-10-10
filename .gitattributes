@@ -1,0 +1,3 @@
+# Keep LF line endings for the Claude Code hook scripts even on Windows checkouts
+# (core.autocrlf=true would convert them to CRLF and bash would fail to run them).
+*.sh text eol=lf

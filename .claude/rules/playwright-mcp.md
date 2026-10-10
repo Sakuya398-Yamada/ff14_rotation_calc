@@ -1,6 +1,6 @@
 # Playwright MCP 利用ガイド（Claude 向け）
 
-このファイルは `CLAUDE.md` から `@.claude/rules/playwright-mcp.md` でインポートされる。
+`.claude/rules/` 配下のため起動時に自動で読み込まれる。
 **Claude が UI/フロントエンド変更時に自前で動作確認するためのランブック** であり、人間向けは `CONTRIBUTING.md` を参照。
 
 開発環境は **Windows 11 ローカル + Microsoft Edge** を前提とする（`.mcp.json` は `--browser msedge`）。
