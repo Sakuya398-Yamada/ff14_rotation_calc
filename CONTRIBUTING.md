@@ -169,10 +169,10 @@ npm run test:watch   # Vitest watch モード
 ```
 .claude/
 ├── agents/      # サブエージェント定義（code-explorer, code-architect, code-reviewer）
-├── rules/       # CLAUDE.md から @import される詳細規約
+├── rules/       # 詳細規約（Claude Code が起動時に自動で読み込む）
 ├── hooks/       # PreToolUse / SessionStart 用シェルスクリプト
 ├── settings.json # フック設定
-└── skills/      # スラッシュ起動可能なスキル（/issue-start, /dev-plan）
+└── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /dev-plan）
 ```
 
 加えて、リポジトリ直下の `.mcp.json` に Claude Code が読み込む MCP サーバー（Playwright 等）を定義しています。
