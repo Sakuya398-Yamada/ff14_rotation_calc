@@ -1144,7 +1144,9 @@ export function resolveTimeline(
     // スキル自身が付与する potency バフが内訳に含まれない（集約倍率との整合）。
     // 後段で buffApplications/comboBuffApplications/buffConsumptions/guaranteedCrit 消費等が走るが、
     // それらは「このスキルが実行された結果」であり、寄与判定の入力には含めない。
-    const activeBuffsAtUse: ActiveBuff[] = [...currentActiveBuffs];
+    // 要素も複製する: currentActiveBuffs の要素は後続の消費で stacks が書き換えられるため、
+    // 参照を共有すると使用時点のスタック数を表示できない（#388）。
+    const activeBuffsAtUse: ActiveBuff[] = currentActiveBuffs.map((ab) => ({ ...ab }));
 
     if (!hasError) {
       const onResourceApplied = (def: ResourceDefinition) => {
