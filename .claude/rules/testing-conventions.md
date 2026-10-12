@@ -1,7 +1,7 @@
 # テスト規約（既知の罠と回避パターン）
 
 `.claude/rules/` 配下のため起動時に自動で読み込まれる。
-`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289、発生元: #198 / #217）。
+`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389、発生元: #198 / #217 / #351）。
 
 ## 罠1: `resolveTimeline` の `activeBuffs` は要素オブジェクトを参照共有する
 
@@ -61,3 +61,29 @@ expect(after).toBe(/* 期待値。上限到達なら 10000 */);
 - **`before` が上限未満であることを assert に含める**。事前消費が効いていないケース（シーケンス誤り）を検出できる
 - 上限到達を期待する場合も「キャップされた結果 10000」であることをコメントで明示する
 - 他ジョブでも上限付きリソース（ゲージ類）の回復・蓄積量を観測する場合は同じ構造（事前消費 → before/after 比較）を踏襲する
+
+## 罠3: エラーのあるエントリは倍率が 1・CRT/DH ボーナスが 0 になる
+
+### 何が起きるか
+
+`resolveTimeline` は、ハードエラーのあるエントリ（`recastError` / `untargetableError` が true、`comboErrors` / `resourceErrors` が空でない）を「実行されなかった」扱いにし、`buffMultiplier` を 1、`critRateBonus` / `dhRateBonus` を 0 に倒す（`src/client/logic/resolve-timeline.ts` の `hasError` 判定と `buffMultiplierBeforeApply = hasError ? 1 : ...`）。期待威力も 0 になる（`expected-potency.ts`）。これはアプリの仕様として正しい。`wsComboError` はハードエラーではないので対象外。
+
+ただしテストで「倍率が 1 になる＝バフが乗っていない／切れている」と検証すると、**エラーで 1 に倒れているだけでも通ってしまい、assertion が意味を失う**。#351 ではランスチャージの失効境界を確かめるため 19.9 秒と 20 秒の GCD を同じタイムラインに置いた結果、20 秒側が `recastError` になり、`expireBuffs` の境界条件 `<=` を `<` に変えてもテストが通ってしまった。
+
+### テストでの回避パターン
+
+- **倍率 1／ボーナス 0 を検証するときは、同じエントリにエラーが無いことも assert する**：
+
+  ```ts
+  // NG: recastError で 1 に倒れていても通る
+  expect(entry.buffMultiplier).toBe(1);
+
+  // OK: エラーが無いことを確かめてから倍率を検証する
+  expect(entry.recastError).toBeFalsy();
+  expect(entry.untargetableError).toBeFalsy();
+  expect(entry.comboErrors).toEqual([]);
+  expect(entry.resourceErrors).toEqual([]);
+  expect(entry.buffMultiplier).toBe(1);
+  ```
+
+- **`manualStartTime` で GCD を GCD 間隔より詰めて置かない**。境界の前後など複数の時刻を確かめたいときは、時刻ごとに別のタイムラインで解決する（例: `src/client/logic/__tests__/drg-resources.test.ts` の「付与から %s 秒後のスキルの倍率は %s」。`it.each` で時刻を回し、各ケースで `resolveTimeline` を呼び直している）
