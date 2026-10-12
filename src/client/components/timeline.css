@@ -1,7 +1,7 @@
 .timeline-scroll,
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #555 #1a1a2e;
+  scrollbar-color: var(--color-field) transparent;
 }
 
 .timeline-scroll::-webkit-scrollbar {
@@ -14,17 +14,17 @@
 
 .timeline-scroll::-webkit-scrollbar-track,
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: transparent;
   border-radius: 4px;
 }
 
 .timeline-scroll::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #555;
+  background: var(--color-field);
   border-radius: 4px;
 }
 
 .timeline-scroll::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #777;
+  background: var(--color-muted);
 }

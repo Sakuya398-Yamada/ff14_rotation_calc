@@ -298,7 +298,10 @@ export function Timeline({
 
 
   // ドラッグオーバー時のstickyラベル背景色（ドロップゾーンの黄色みと視覚的に一致させる）
-  const labelBg = dragOver ? "#1b1921" : "#0f0f23";
+  // sticky ラベルは下のレーンを隠すため不透明にする（半透明のアクセントを背景色に混ぜて作る）
+  const labelBg = dragOver
+    ? "color-mix(in srgb, var(--color-accent) 5%, var(--color-bg))"
+    : "var(--color-bg)";
 
   // dnd-kit のドロップ先としてタイムライン全体を登録する
   const { setNodeRef: setDropZoneRef } = useDroppable({ id: TIMELINE_DROPZONE_ID });

@@ -44,7 +44,9 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                       ...styles.buffBar,
                       left,
                       width,
-                      backgroundColor: `${buffDef.color}30`,
+                      // バフ色はデータ側の固定色。地は背景と混ぜて薄め、残り時間の文字はテーマの本文色にする
+                      // （明るいバフ色をそのまま文字にするとライトテーマで読めないため）
+                      backgroundColor: `color-mix(in srgb, ${buffDef.color} 19%, transparent)`,
                       borderColor: buffDef.color,
                     }}
                     title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${endTimeLabel})`}
@@ -54,7 +56,7 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                       alt={buffDef.name}
                       style={styles.buffIcon}
                     />
-                    <span style={{ ...styles.buffDuration, color: buffDef.color }}>
+                    <span className="num" style={styles.buffDuration}>
                       {durationLabel}
                     </span>
                   </div>
