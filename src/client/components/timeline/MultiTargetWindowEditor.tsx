@@ -1,5 +1,7 @@
 import type { MultiTargetWindow } from "../../types/skill";
-import { styles } from "./styles";
+import { zoneEditorStyles } from "./zone-editor-styles";
+
+const zoneStyles = zoneEditorStyles("--color-zone-multi-target");
 
 interface MultiTargetWindowEditorProps {
   multiTargetWindows: MultiTargetWindow[];
@@ -12,11 +14,11 @@ export function MultiTargetWindowEditor({
   onMultiTargetWindowsChange,
 }: MultiTargetWindowEditorProps) {
   return (
-    <div style={styles.multiTargetEditor}>
-      <div style={styles.multiTargetHeader}>
-        <span style={styles.multiTargetTitle}>複数体ウィンドウ</span>
+    <div style={zoneStyles.editor}>
+      <div style={zoneStyles.header}>
+        <span style={zoneStyles.title}>複数体ウィンドウ</span>
         <button
-          style={styles.multiTargetAddButton}
+          style={zoneStyles.actionButton}
           onClick={() => {
             const lastEnd = multiTargetWindows.length > 0
               ? Math.max(...multiTargetWindows.map((w) => w.endTime))
@@ -31,18 +33,18 @@ export function MultiTargetWindowEditor({
         </button>
       </div>
       {multiTargetWindows.length === 0 && (
-        <div style={styles.multiTargetEmpty}>複数体ウィンドウが未設定です</div>
+        <div style={zoneStyles.empty}>複数体ウィンドウが未設定です</div>
       )}
       {multiTargetWindows.map((w, i) => (
-        <div key={i} style={styles.multiTargetRow}>
-          <label style={styles.multiTargetLabel}>
+        <div key={i} style={zoneStyles.row}>
+          <label style={zoneStyles.label}>
             開始:
             <input
               type="number"
               step="0.5"
               min="0"
               value={w.startTime}
-              style={styles.multiTargetInput}
+              style={zoneStyles.input}
               onChange={(e) => {
                 const val = parseFloat(e.target.value);
                 if (isNaN(val) || val < 0) return;
@@ -53,14 +55,14 @@ export function MultiTargetWindowEditor({
             />
             s
           </label>
-          <label style={styles.multiTargetLabel}>
+          <label style={zoneStyles.label}>
             終了:
             <input
               type="number"
               step="0.5"
               min="0"
               value={w.endTime}
-              style={styles.multiTargetInput}
+              style={zoneStyles.input}
               onChange={(e) => {
                 const val = parseFloat(e.target.value);
                 if (isNaN(val) || val < 0) return;
@@ -71,7 +73,7 @@ export function MultiTargetWindowEditor({
             />
             s
           </label>
-          <label style={styles.multiTargetLabel}>
+          <label style={zoneStyles.label}>
             敵の数:
             <input
               type="number"
@@ -79,7 +81,7 @@ export function MultiTargetWindowEditor({
               min="2"
               max="8"
               value={w.targetCount}
-              style={styles.multiTargetInput}
+              style={zoneStyles.input}
               onChange={(e) => {
                 const val = parseInt(e.target.value, 10);
                 if (isNaN(val) || val < 2) return;
@@ -90,7 +92,7 @@ export function MultiTargetWindowEditor({
             />
           </label>
           <button
-            style={styles.multiTargetDeleteButton}
+            style={zoneStyles.deleteButton}
             onClick={() => {
               onMultiTargetWindowsChange(multiTargetWindows.filter((_, idx) => idx !== i));
             }}
