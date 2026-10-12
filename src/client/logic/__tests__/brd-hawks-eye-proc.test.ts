@@ -33,6 +33,17 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118) と乱れ撃
     );
   });
 
+  // ホークアイ付与特性（バイトマスタリー II, Lv76）はコースティックバイト/ストームバイトが対象で、
+  // Lv64 で置き換わるベノムバイト/ウィンドバイトとは共存しない (#418)
+  it.each(["venomous-bite", "windbite"])("%s ではホークアイが付与されない", (skillId) => {
+    const result = resolve([entry(skillId), entry("straight-shot")]);
+
+    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "hawks-eye")).toBe(
+      false,
+    );
+    expect(result.entries[1].comboErrors.length).toBeGreaterThan(0);
+  });
+
   it("ホークアイ消費時のリフルジェントアローは期待値威力 241 になる", () => {
     const result = resolve([entry("burst-shot"), entry("refulgent-arrow")]);
 
