@@ -115,6 +115,24 @@ if [[ -f "$tv_file" ]]; then
   tv_repo=$(sed -n 's/^repo=//p' "$tv_file" | head -n 1 | tr -d '[:space:]' || true)
   tv_local=$(sed -n 's/^version=//p' "$tv_file" | head -n 1 | tr -d '[:space:]' || true)
   if [[ -n "$tv_repo" && -n "$tv_local" ]]; then
+    # Version adopted on the default branch (remote-tracking ref). A worktree on a branch
+    # that is merely behind the default branch would otherwise report an update the
+    # project has already taken in, and prompt for a duplicate update issue.
+    tv_default=""
+    default_ref=$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)
+    if [[ -z "$default_ref" ]] && git rev-parse -q --verify refs/remotes/origin/main >/dev/null 2>&1; then
+      default_ref=origin/main
+    fi
+    if [[ -n "$default_ref" ]]; then
+      # MSYS_NO_PATHCONV: Git Bash on Windows otherwise rewrites `origin/main:.claude/...` as a
+      # path list (`origin\main;.claude\...`), `git show` fails and the default branch is ignored.
+      tv_default=$(MSYS_NO_PATHCONV=1 git show "$default_ref:.claude/template-version" 2>/dev/null | sed -n 's/^version=//p' | head -n 1 | tr -d '[:space:]' || true)
+    fi
+    # Newest version the project is known to have adopted (this branch or the default branch).
+    tv_known="$tv_local"
+    if [[ -n "$tv_default" ]] && version_newer "$tv_default" "$tv_local"; then
+      tv_known="$tv_default"
+    fi
     git_dir=$(git rev-parse --git-common-dir 2>/dev/null || echo ".git")
     cache="$git_dir/template-version-check"
     now=$(date +%s)
@@ -123,7 +141,7 @@ if [[ -f "$tv_file" ]]; then
     if [[ -f "$cache" ]] && (( now - cache_mtime < 86400 )); then
       latest=$(tr -d '[:space:]' <"$cache" || true)
       # Stale cache: it predates the version this project now has. Refetch instead.
-      if [[ -n "$latest" ]] && version_newer "$tv_local" "$latest"; then
+      if [[ -n "$latest" ]] && version_newer "$tv_known" "$latest"; then
         latest=""
       fi
     fi
@@ -149,10 +167,16 @@ if [[ -f "$tv_file" ]]; then
       printf -- '- Local: `%s` / Latest: `%s` — up to date\n' "$tv_local" "$latest"
     elif ! version_newer "$latest" "$tv_local"; then
       printf -- '- Local: `%s` / Latest: `%s` — up to date (local is ahead of the latest release)\n' "$tv_local" "$latest"
+    elif [[ "$tv_known" != "$tv_local" ]] && ! version_newer "$latest" "$tv_known"; then
+      printf -- '- Local: `%s` (this branch) / `%s`: `%s` / Latest: `%s` — up to date on the default branch; this branch is behind it\n' "$tv_local" "$default_ref" "$tv_default" "$latest"
+      printf -- '- 更新用 Issue は起票済み。`git merge %s` でこのブランチに取り込めば、以降のセッションはテンプレートの最新の手順で動く\n' "$default_ref"
     else
       printf -- '- ⚠ **Template update available**: local `%s` → latest `%s` (`%s`)\n' "$tv_local" "$latest" "$tv_repo"
       printf -- '- Release notes: https://github.com/%s/releases/tag/%s\n' "$tv_repo" "$latest"
       printf -- '- Diff: https://github.com/%s/compare/%s...%s\n' "$tv_repo" "$tv_local" "$latest"
+      if [[ "$tv_known" != "$tv_local" ]]; then
+        printf -- '- `%s` is at `%s` (this branch is behind it); the update issue should target `%s`\n' "$default_ref" "$tv_default" "$latest"
+      fi
       printf -- '- `/issue-start` Phase 1 手順 0.5 で **一度だけ** ユーザーに更新用 Issue の起票を提案する（無人セッションでは実行報告に記載するだけ）。作業中の Issue のブランチでテンプレートを直接更新しない（1 Issue = 1 PR）\n'
     fi
   fi
