@@ -39,6 +39,8 @@ export interface TraitPotencyOverride {
   dotPotency?: number;
   /** 変更後の最大チャージ数（undefinedの場合は変更なし） */
   maxCharges?: number;
+  /** 変更後の個別リキャストタイム（秒）（undefinedの場合は変更なし） */
+  cooldown?: number;
 }
 
 /** サポートするプレイヤーレベル */

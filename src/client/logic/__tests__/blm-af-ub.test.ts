@@ -30,7 +30,7 @@ describe("BLM: AF/UB 排他と威力倍率", () => {
     expect(afterBlizzard.activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
   });
 
-  it("AF3 中のファイジャは威力倍率（AF3 fire +80% × エノキアン +23% ≒ 2.214）が適用される", () => {
+  it("AF3 中のファイジャは威力倍率（AF3 fire +80% × エノキアン +27% ≒ 2.286）が適用される", () => {
     // fire-3（ファイガ）で AF3 を付与 → fire-4（ファイジャ）
     const result = resolveTimeline(
       [entry("fire-3"), entry("fire-4")],
@@ -41,12 +41,12 @@ describe("BLM: AF/UB 排他と威力倍率", () => {
     );
 
     const fighjaEntry = result.entries[1];
-    // ファイジャは要求バフ AF3 を満たしており、威力倍率 ≒ 1.8 × 1.23 = 2.214
+    // ファイジャは要求バフ AF3 を満たしており、威力倍率 ≒ 1.8 × 1.27 = 2.286
     expect(fighjaEntry.comboErrors).toEqual([]);
-    expect(fighjaEntry.buffMultiplier).toBeCloseTo(1.8 * 1.23, 5);
+    expect(fighjaEntry.buffMultiplier).toBeCloseTo(1.8 * 1.27, 5);
   });
 
-  it("AF3 中のブリザド系は威力倍率（AF3 blizzard -30% × エノキアン +23% ≒ 0.861）が適用される", () => {
+  it("AF3 中のブリザド系は威力倍率（AF3 blizzard -30% × エノキアン +27% ≒ 0.889）が適用される", () => {
     const result = resolveTimeline(
       // ブリザドを AF3 中に使う異例ケース（AF3付与直後にブリザド）
       [entry("fire-3"), entry("blizzard")],
@@ -57,11 +57,11 @@ describe("BLM: AF/UB 排他と威力倍率", () => {
     );
 
     const blizzardEntry = result.entries[1];
-    // ブリザドは AF3 の -30% と enochian +23% の両方が適用される
-    expect(blizzardEntry.buffMultiplier).toBeCloseTo(0.7 * 1.23, 5);
+    // ブリザドは AF3 の -30% と enochian +27% の両方が適用される
+    expect(blizzardEntry.buffMultiplier).toBeCloseTo(0.7 * 1.27, 5);
   });
 
-  it("UB3 中のブリザジャは威力倍率がエノキアン +23% のみ（blizzard は UB でブースト対象外）", () => {
+  it("UB3 中のブリザジャは威力倍率がエノキアン +27% のみ（blizzard は UB でブースト対象外）", () => {
     // blizzard-3（ブリザガ）で UB3 を付与 → blizzard-4（ブリザジャ）
     const result = resolveTimeline(
       [entry("blizzard-3"), entry("blizzard-4")],
@@ -74,7 +74,7 @@ describe("BLM: AF/UB 排他と威力倍率", () => {
     const blizzja = result.entries[1];
     expect(blizzja.comboErrors).toEqual([]);
     // UB3 中のブリザジャ: エノキアン倍率のみ
-    expect(blizzja.buffMultiplier).toBeCloseTo(1.23, 5);
+    expect(blizzja.buffMultiplier).toBeCloseTo(1.27, 5);
   });
 
   it("AF/UB 以外のスキル（ハイサンダー）にもエノキアン倍率は適用される", () => {
@@ -89,8 +89,8 @@ describe("BLM: AF/UB 排他と威力倍率", () => {
 
     const highThunder = result.entries[1];
     // ハイサンダーは fire/blizzard どちらでもない → appliesToSkillIds フィルタに引っかからず
-    // エノキアン倍率 1.23 のみ適用される
-    expect(highThunder.buffMultiplier).toBeCloseTo(1.23, 5);
+    // エノキアン倍率 1.27 のみ適用される
+    expect(highThunder.buffMultiplier).toBeCloseTo(1.27, 5);
   });
 });
 

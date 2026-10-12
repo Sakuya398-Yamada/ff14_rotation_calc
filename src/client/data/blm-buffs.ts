@@ -18,16 +18,16 @@ import lucidDreamingIcon from "../assets/icons/blm/role_actions/Lucid_Dreaming.p
  * すべて `exclusiveGroup: "astral-umbral"` で相互排他する。
  * 段階ごとに威力倍率が異なるため、スタック式ではなく個別バフにしている。
  *
- * エノキアン（Lv86 特性で +23%、AF/UB 中常時適用）は、各 AF/UB バフに `potency 1.23`
+ * エノキアン（Lv96 特性で +27%、AF/UB 中常時適用）は、各 AF/UB バフに `potency 1.27`
  * エフェクトを同梱して表現する。これによりファイア/ブリザド系以外の
  * サンダー/ポリグロット/パラドックス等にもエノキアン倍率が適用される。
  *
- * ※ Lv86 未満の環境ではエノキアン倍率は近似値（本ツールは Lv100 を主想定）。
- *    正確な値は実機検証で必要に応じて調整する。
+ * ※ バフにレベル別の効果量を持たせる仕組みが無いため Lv100 の値で固定している。
+ *    Lv96 未満では近似値（ジョブガイド: Lv70 10% / Lv78 15% / Lv86 22% / Lv96 27%）。
  */
 
-/** エノキアン倍率（Lv86 特性、AF/UB 中常時）。Lv100 想定の近似値 */
-const ENOCHIAN_MULTIPLIER = 1.23;
+/** エノキアン倍率（Lv96 特性、AF/UB 中常時）。Lv100 想定 */
+const ENOCHIAN_MULTIPLIER = 1.27;
 
 const EXCLUSIVE_GROUP_AF_UB = "astral-umbral";
 
@@ -180,7 +180,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
     // 次のファイガ（fire-3）詠唱のみ Instant 化する。実機ではファイア・ファイジャ等は対象外
     effects: [{ type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] }],
     color: "#ff7043",
-    acquiredLevel: 2,
+    acquiredLevel: 42,
   },
 
   // ============================================================
