@@ -34,10 +34,12 @@ import swiftcastIcon from "../assets/icons/pct/role_actions/Swiftcast.png";
 const GCD_RECAST = 2.5;
 /** デフォルトアニメーションロック（秒） */
 const DEFAULT_ANIMATION_LOCK = 0.65;
+/** サブトラクティブ色魔法・ブラックコメットのリキャスト（秒） */
+const SUBTRACTIVE_RECAST = 3.3;
 
 /**
  * ピクトマンサー（PCT）攻撃スキル一覧
- * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #410
+ * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5 表記）とも照合済み（#410）
  */
 export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
@@ -54,6 +56,12 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 1.5,
     acquiredLevel: 1,
+    traitPotencyOverrides: [
+      { traitLevel: 54, potency: 310 },
+      { traitLevel: 74, potency: 380 },
+      { traitLevel: 84, potency: 420 },
+      { traitLevel: 94, potency: 490 },
+    ],
     buffApplications: ["aetherhues-2"],
     autoTransform: [
       { buffId: "subtractive-palette", skillId: "blizzard-in-cyan" },
@@ -72,6 +80,12 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 1.5,
     acquiredLevel: 5,
+    traitPotencyOverrides: [
+      { traitLevel: 54, potency: 350 },
+      { traitLevel: 74, potency: 420 },
+      { traitLevel: 84, potency: 460 },
+      { traitLevel: 94, potency: 530 },
+    ],
     buffApplications: ["aetherhues-3"],
     buffConsumptions: [{ buffId: "aetherhues-2", stacks: 1 }],
     requiredBuff: "aetherhues-2",
@@ -88,6 +102,12 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 1.5,
     acquiredLevel: 15,
+    traitPotencyOverrides: [
+      { traitLevel: 54, potency: 390 },
+      { traitLevel: 74, potency: 460 },
+      { traitLevel: 84, potency: 500 },
+      { traitLevel: 94, potency: 570 },
+    ],
     buffConsumptions: [{ buffId: "aetherhues-3", stacks: 1 }],
     requiredBuff: "aetherhues-3",
     resourceChanges: [
@@ -106,10 +126,16 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: blizzardInCyanIcon,
-    recastTime: GCD_RECAST,
+    recastTime: SUBTRACTIVE_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.3,
     acquiredLevel: 60,
+    traitPotencyOverrides: [
+      { traitLevel: 60, potency: 560 },
+      { traitLevel: 74, potency: 680 },
+      { traitLevel: 84, potency: 750 },
+      { traitLevel: 94, potency: 860 },
+    ],
     buffApplications: ["aetherhues-2"],
     buffConsumptions: [{ buffId: "subtractive-palette", stacks: 1 }],
     requiredBuff: "subtractive-palette",
@@ -125,10 +151,16 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: stoneInYellowIcon,
-    recastTime: GCD_RECAST,
+    recastTime: SUBTRACTIVE_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.3,
     acquiredLevel: 60,
+    traitPotencyOverrides: [
+      { traitLevel: 60, potency: 600 },
+      { traitLevel: 74, potency: 720 },
+      { traitLevel: 84, potency: 790 },
+      { traitLevel: 94, potency: 900 },
+    ],
     buffApplications: ["aetherhues-3"],
     buffConsumptions: [{ buffId: "aetherhues-2", stacks: 1 }, { buffId: "subtractive-palette", stacks: 1 }],
     requiredBuff: "aetherhues-2",
@@ -141,14 +173,19 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: thunderInMagentaIcon,
-    recastTime: GCD_RECAST,
+    recastTime: SUBTRACTIVE_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.3,
     acquiredLevel: 60,
+    traitPotencyOverrides: [
+      { traitLevel: 60, potency: 640 },
+      { traitLevel: 74, potency: 760 },
+      { traitLevel: 84, potency: 830 },
+      { traitLevel: 94, potency: 940 },
+    ],
     buffConsumptions: [{ buffId: "aetherhues-3", stacks: 1 }, { buffId: "subtractive-palette", stacks: 1 }],
     requiredBuff: "aetherhues-3",
     resourceChanges: [
-      { resourceId: "palette-gauge", amount: 25 },
       { resourceId: "white-paint", amount: 1 },
     ],
   },
@@ -169,6 +206,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     requiredBuff: "hammer-combo-ready",
     guaranteedCrit: true,
     guaranteedDh: true,
+    buffConsumptions: [{ buffId: "hammer-combo-ready", stacks: 1 }],
     buffApplications: ["hammer-brush-ready"],
     autoTransform: [
       { buffId: "hammer-polish-ready", skillId: "polishing-hammer" },
@@ -176,8 +214,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     ],
     traitPotencyOverrides: [
       { traitLevel: 54, potency: 420 },
-      { traitLevel: 84, potency: 500 },
-      { traitLevel: 86, potency: 540 },
+      { traitLevel: 74, potency: 500 },
+      { traitLevel: 84, potency: 540 },
       { traitLevel: 94, potency: 560 },
     ],
     // 対象とその周囲にヒット、2体目以降は威力70%減
@@ -198,7 +236,10 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     comboFrom: ["hammer-stamp"],
     guaranteedCrit: true,
     guaranteedDh: true,
-    buffConsumptions: [{ buffId: "hammer-brush-ready", stacks: 1 }],
+    buffConsumptions: [
+      { buffId: "hammer-combo-ready", stacks: 1 },
+      { buffId: "hammer-brush-ready", stacks: 1 },
+    ],
     buffApplications: ["hammer-polish-ready"],
     // 対象とその周囲にヒット、2体目以降は威力70%減
     maxTargets: Infinity,
@@ -245,6 +286,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     ],
     autoTransform: { buffId: "color-inversion", skillId: "comet-in-black" },
     traitPotencyOverrides: [
+      { traitLevel: 80, potency: 460 },
       { traitLevel: 84, potency: 500 },
       { traitLevel: 94, potency: 570 },
     ],
@@ -259,7 +301,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: cometInBlackIcon,
-    recastTime: GCD_RECAST,
+    recastTime: SUBTRACTIVE_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 90,
     resourceChanges: [
@@ -380,6 +422,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 40,
     maxCharges: 3,
+    cooldownGroup: "living-muse",
     acquiredLevel: 30,
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
@@ -391,8 +434,10 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
       { buffId: "wing-muse-ready", skillId: "winged-muse" },
     ],
     traitPotencyOverrides: [
+      { traitLevel: 30, maxCharges: 2 },
       { traitLevel: 54, potency: 700 },
       { traitLevel: 84, potency: 800 },
+      { traitLevel: 96, maxCharges: 3 },
     ],
     // 対象とその周囲にヒット、2体目以降は威力70%減
     maxTargets: Infinity,
@@ -409,6 +454,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 40,
     maxCharges: 3,
+    cooldownGroup: "living-muse",
     acquiredLevel: 30,
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
@@ -416,8 +462,10 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     buffConsumptions: [{ buffId: "wing-muse-ready", stacks: 1 }],
     buffApplications: ["moogle-symbol", "claw-muse-ready"],
     traitPotencyOverrides: [
+      { traitLevel: 30, maxCharges: 2 },
       { traitLevel: 54, potency: 700 },
       { traitLevel: 84, potency: 800 },
+      { traitLevel: 96, maxCharges: 3 },
     ],
     // 対象とその周囲にヒット、2体目以降は威力70%減
     maxTargets: Infinity,
@@ -434,6 +482,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 40,
     maxCharges: 3,
+    cooldownGroup: "living-muse",
     acquiredLevel: 96,
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
@@ -455,6 +504,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 40,
     maxCharges: 3,
+    cooldownGroup: "living-muse",
     acquiredLevel: 96,
     resourceChanges: [
       { resourceId: "animal-canvas", amount: -1 },
@@ -524,6 +574,10 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     cooldown: 60,
     maxCharges: 2,
     acquiredLevel: 50,
+    traitPotencyOverrides: [
+      { traitLevel: 50, maxCharges: 1 },
+      { traitLevel: 86, maxCharges: 2 },
+    ],
     resourceChanges: [
       { resourceId: "weapon-canvas", amount: -1 },
     ],
@@ -585,6 +639,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
     acquiredLevel: 18,
+    // ロール特性「迅速魔効果アップ」（Lv94）でリキャスト 40 秒
+    traitPotencyOverrides: [{ traitLevel: 94, cooldown: 40 }],
     buffApplications: ["swiftcast"],
   },
 ];

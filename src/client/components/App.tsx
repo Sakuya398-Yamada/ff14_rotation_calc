@@ -14,7 +14,7 @@ import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { JOB_DATA } from "../data/job-registry";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryExpectedPotency } from "../logic/expected-potency";
-import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel } from "../logic/skill-level";
+import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../logic/skill-level";
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { JobId } from "../data/job-registry";
 import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
@@ -117,16 +117,10 @@ export function App() {
   );
 
   // 全スキルマップ（autoTransform対象等を含む。タイムライン解決・表示用）
-  const allSkillMap = useMemo(() => {
-    const map = new Map(skills.map((s) => [s.id, s]));
-    // パレットからフィルタされたスキル（autoTransform対象・replacesSkillId対象）も追加
-    for (const s of jobData.skills) {
-      if (s.acquiredLevel <= level && !map.has(s.id)) {
-        map.set(s.id, s);
-      }
-    }
-    return map;
-  }, [skills, jobData.skills, level]);
+  const allSkillMap = useMemo(
+    () => getAllSkillMapForLevel(jobData.skills, skills, level, availableBuffIds, availableResourceIds),
+    [jobData.skills, skills, level, availableBuffIds, availableResourceIds]
+  );
 
   const timelineResult = useMemo(
     () => resolveTimeline(entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows),
