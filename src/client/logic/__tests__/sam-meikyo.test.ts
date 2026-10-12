@@ -68,7 +68,7 @@ describe("侍: 明鏡止水（bypassCombo + consumeOnGcd）", () => {
     expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(true);
   });
 
-  it("明鏡止水中: 満月使用時に風月バフが付与される（applyBuffOnSkill、範囲コンボ最終段も対象）", () => {
+  it("明鏡止水中: 満月使用時に風月バフが付与される（コンボ成立扱いで comboBuffApplications が効く）", () => {
     const result = resolveTimeline(
       [
         entry("meikyo-shisui-skill"),

@@ -33,6 +33,19 @@ const MEIKYO_BYPASS_TARGETS = [
 ];
 
 /**
+ * 明鏡止水のスタックを消費するWS群（「居合術および奥義波切を除くウェポンスキル」）。
+ * 燕返し系は居合術・奥義波切の再発動なので消費しない。
+ */
+const MEIKYO_CONSUME_TARGETS = [
+  ...MEIKYO_BYPASS_TARGETS,
+  "hakaze",
+  "gyofu",
+  "fuga",
+  "fuko",
+  "enpi",
+];
+
+/**
  * 侍（SAM）バフ定義
  */
 export const SAM_BUFFS: BuffDefinition[] = [
@@ -71,7 +84,8 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
 
   // ============================================================
-  // 明鏡止水（コンボ条件無視 + GCDで自動消費 + 月光/満月/花車/桜花使用時に風月/風花付与）
+  // 明鏡止水（コンボ条件無視 + WSで自動消費 + 月光/花車使用時に風月/風花付与）
+  // 満月/桜花の風月/風花はコンボ成立扱いにより comboBuffApplications 側で付与される
   // ============================================================
   {
     id: "meikyo-shisui",
@@ -88,20 +102,20 @@ export const SAM_BUFFS: BuffDefinition[] = [
       {
         type: "consumeOnGcd",
         value: 1,
-        appliesToSkillIds: MEIKYO_BYPASS_TARGETS,
+        appliesToSkillIds: MEIKYO_CONSUME_TARGETS,
       },
-      // 月光（単体コンボ最終段）・満月（範囲コンボ最終段）時に風月バフ付与
+      // 月光使用時に風月バフ付与
       {
         type: "applyBuffOnSkill",
         value: 1,
-        appliesToSkillIds: ["gekko", "mangetsu"],
+        appliesToSkillIds: ["gekko"],
         appliedBuffId: "fugetsu",
       },
-      // 花車・桜花使用時に風花バフ付与
+      // 花車使用時に風花バフ付与
       {
         type: "applyBuffOnSkill",
         value: 1,
-        appliesToSkillIds: ["kasha", "oka"],
+        appliesToSkillIds: ["kasha"],
         appliedBuffId: "fuka",
       },
     ],
@@ -126,18 +140,18 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
 
   // ============================================================
-  // 意気衝天（燕飛使用可）
+  // 燕飛効果アップ（必殺剣・夜天で付与。燕飛の威力を上げて消費される）
   // ============================================================
   {
-    id: "ikishoten-buff",
-    name: "意気衝天効果",
-    shortName: "意気\n衝天",
+    id: "enhanced-enpi",
+    name: "燕飛効果アップ",
+    shortName: "燕飛\nUP",
     icon: enpiIcon,
-    duration: 30,
+    duration: 15,
     effects: [],
     color: "#ff7043",
     maxStacks: 1,
-    acquiredLevel: 68,
+    acquiredLevel: 56,
   },
 
   // ============================================================
@@ -178,11 +192,11 @@ export const SAM_BUFFS: BuffDefinition[] = [
     name: "返し五剣準備",
     shortName: "返五剣\nﾚﾃﾞｨ",
     icon: kaeshiGokenIcon,
-    duration: 60,
+    duration: 30,
     effects: [],
     color: "#42a5f5",
     maxStacks: 1,
-    acquiredLevel: 76,
+    acquiredLevel: 74,
     exclusiveGroup: "tsubame-ready",
   },
   {
@@ -190,11 +204,11 @@ export const SAM_BUFFS: BuffDefinition[] = [
     name: "返し雪月花準備",
     shortName: "返雪月\nﾚﾃﾞｨ",
     icon: kaeshiSetsugekkaIcon,
-    duration: 60,
+    duration: 30,
     effects: [],
     color: "#5c6bc0",
     maxStacks: 1,
-    acquiredLevel: 76,
+    acquiredLevel: 74,
     exclusiveGroup: "tsubame-ready",
   },
   {
@@ -202,7 +216,7 @@ export const SAM_BUFFS: BuffDefinition[] = [
     name: "天道返し五剣準備",
     shortName: "天道\n返五剣",
     icon: tendoKaeshiGokenIcon,
-    duration: 60,
+    duration: 30,
     effects: [],
     color: "#ffa726",
     maxStacks: 1,
@@ -214,7 +228,7 @@ export const SAM_BUFFS: BuffDefinition[] = [
     name: "天道返し雪月花準備",
     shortName: "天道\n返雪月",
     icon: tendoKaeshiSetsugekkaIcon,
-    duration: 60,
+    duration: 30,
     effects: [],
     color: "#ffb74d",
     maxStacks: 1,

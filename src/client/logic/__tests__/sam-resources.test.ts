@@ -34,7 +34,7 @@ describe("侍: リソース定義（剣気・閃3種・剣圧）", () => {
   it("剣圧は最大3でキャップされる", () => {
     const meditation = SAM_RESOURCES.find((r) => r.id === "meditation");
     expect(meditation?.maxStacks).toBe(3);
-    expect(meditation?.acquiredLevel).toBe(90);
+    expect(meditation?.acquiredLevel).toBe(80);
   });
 
   it("葉隠: 1閃のみで剣気+10", () => {

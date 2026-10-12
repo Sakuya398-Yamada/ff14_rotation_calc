@@ -47,7 +47,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 侍（SAM）攻撃スキル定義（Lv100まで）
- * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #408
+ * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5 表記）とも #408 で照合済み
  *
  * 大別:
  * 1. 単体WSコンボ（月/花/雪の3系統、起点共通の刃風）
@@ -91,7 +91,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     id: "jinpu",
     name: "陣風",
     potency: 300,
-    nonComboPotency: 120,
+    nonComboPotency: 140,
     type: "gcd",
     target: "enemy",
     icon: jinpuIcon,
@@ -106,7 +106,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     id: "shifu",
     name: "士風",
     potency: 300,
-    nonComboPotency: 120,
+    nonComboPotency: 140,
     type: "gcd",
     target: "enemy",
     icon: shifuIcon,
@@ -135,13 +135,13 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
-    // 月光: コンボ成立時威力 370 + 背面ボーナス 50 = 420（方向指定成功前提）
+    // 月光: コンボ成立時威力 370 + 背面ボーナス 50 = 420、コンボ不成立時 160 + 50 = 210（方向指定成功前提）
     // 風月バフは陣風（2段目）のみが付与する。明鏡止水中の月光時の風月付与は、
     // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "gekko",
     name: "月光",
     potency: 420,
-    nonComboPotency: 170,
+    nonComboPotency: 210,
     type: "gcd",
     target: "enemy",
     icon: gekkoIcon,
@@ -155,13 +155,13 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
-    // 花車: コンボ成立時威力 370 + 側面ボーナス 50 = 420（方向指定成功前提）
+    // 花車: コンボ成立時威力 370 + 側面ボーナス 50 = 420、コンボ不成立時 160 + 50 = 210（方向指定成功前提）
     // 風花バフは士風（2段目）のみが付与する。明鏡止水中の花車時の風花付与は、
     // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "kasha",
     name: "花車",
     potency: 420,
-    nonComboPotency: 170,
+    nonComboPotency: 210,
     type: "gcd",
     target: "enemy",
     icon: kashaIcon,
@@ -181,7 +181,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "fuga",
     name: "風雅",
-    potency: 100,
+    potency: 90,
     type: "gcd",
     target: "enemy",
     icon: fugaIcon,
@@ -194,7 +194,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "fuko",
     name: "風光",
-    potency: 120,
+    potency: 100,
     type: "gcd",
     target: "enemy",
     icon: fukoIcon,
@@ -206,8 +206,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     maxTargets: Infinity,
   },
   {
-    // 満月: 範囲コンボ最終段。通常コンボ完走では風月バフは付与されない。
-    // 明鏡止水中の満月時の風月付与は、明鏡止水バフ側の applyBuffOnSkill で表現する。
+    // 満月: 範囲コンボ最終段。コンボ完走（明鏡止水中を含む）で風月を付与する。
     id: "mangetsu",
     name: "満月",
     potency: 120,
@@ -219,6 +218,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 35,
     comboFrom: ["fuga", "fuko"],
+    comboBuffApplications: ["fugetsu"],
     comboResourceChanges: [
       { resourceId: "getsu", amount: 1 },
       { resourceId: "kenki", amount: 10 },
@@ -226,7 +226,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     maxTargets: Infinity,
   },
   {
-    // 桜花: 範囲コンボ最終段。風花バフ付与の扱いは満月と同様（明鏡止水バフ側で表現）。
+    // 桜花: 範囲コンボ最終段。コンボ完走（明鏡止水中を含む）で風花を付与する。
     id: "oka",
     name: "桜花",
     potency: 120,
@@ -238,6 +238,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 45,
     comboFrom: ["fuga", "fuko"],
+    comboBuffApplications: ["fuka"],
     comboResourceChanges: [
       { resourceId: "ka", amount: 1 },
       { resourceId: "kenki", amount: 10 },
@@ -257,7 +258,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: iaijutsuIcon,
     recastTime: 2.5,
     animationLock: 0.65,
-    acquiredLevel: 6,
+    acquiredLevel: 30,
     castTime: 1.3,
     // 配列の先頭から優先評価。3閃天道 > 2閃天道 > 3閃通常 > 2閃通常 > 1閃 の順
     autoTransform: [
@@ -342,10 +343,11 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: higanbanaIcon,
     recastTime: 2.5,
     animationLock: 0.65,
-    acquiredLevel: 6,
+    acquiredLevel: 30,
     castTime: 1.3,
     hidden: true,
     consumeAllResources: ["setsu", "getsu", "ka"],
+    resourceChanges: [{ resourceId: "meditation", amount: 1 }],
     dotPotency: 50,
     dotDuration: 60,
   },
@@ -358,7 +360,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: tenkaGokenIcon,
     recastTime: 2.5,
     animationLock: 0.65,
-    acquiredLevel: 30,
+    acquiredLevel: 40,
     castTime: 1.3,
     hidden: true,
     consumeAllResources: ["setsu", "getsu", "ka"],
@@ -432,7 +434,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: tsubameGaeshiIcon,
     recastTime: 2.5,
     animationLock: 0.65,
-    acquiredLevel: 76,
+    acquiredLevel: 74,
     autoTransform: [
       { buffId: "tsubame-tendo-kaeshi-setsugekka-ready", skillId: "tendo-kaeshi-setsugekka" },
       { buffId: "tsubame-tendo-kaeshi-goken-ready", skillId: "tendo-kaeshi-goken" },
@@ -451,7 +453,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: kaeshiGokenIcon,
     recastTime: 2.5,
     animationLock: 0.65,
-    acquiredLevel: 76,
+    acquiredLevel: 74,
     hidden: true,
     requiredBuff: "tsubame-kaeshi-goken-ready",
     buffConsumptions: [{ buffId: "tsubame-kaeshi-goken-ready", stacks: 1 }],
@@ -466,7 +468,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: kaeshiSetsugekkaIcon,
     recastTime: 2.5,
     animationLock: 0.65,
-    acquiredLevel: 76,
+    acquiredLevel: 74,
     hidden: true,
     guaranteedCrit: true,
     requiredBuff: "tsubame-kaeshi-setsugekka-ready",
@@ -514,7 +516,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 90,
     hidden: true,
     guaranteedCrit: true,
-    guaranteedDh: true,
     requiredBuff: "tsubame-kaeshi-namikiri-ready",
     buffConsumptions: [{ buffId: "tsubame-kaeshi-namikiri-ready", stacks: 1 }],
     maxTargets: Infinity,
@@ -572,6 +573,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 56,
     cooldown: 10,
     resourceChanges: [{ resourceId: "kenki", amount: -10 }],
+    buffApplications: ["enhanced-enpi"],
   },
   {
     id: "hissatsu-shinten",
@@ -582,10 +584,12 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: hissatsuShintenIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: 0.65,
-    acquiredLevel: 62,
+    acquiredLevel: 52,
     cooldown: 1,
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
   },
+  // 紅蓮・閃影のリキャストは Lv94 特性「必殺剣効果アップ」で 120 秒から 60 秒に短縮される。
+  // レベル依存のリキャストは表現できないため、Lv94 以降の 60 秒で定義する
   {
     id: "hissatsu-guren",
     name: "必殺剣・紅蓮",
@@ -595,9 +599,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: hissatsuGurenIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: 0.65,
-    acquiredLevel: 62,
+    acquiredLevel: 70,
     cooldown: 60,
-    maxCharges: 2,
     cooldownGroup: "hissatsu-senei-guren",
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
     maxTargets: Infinity,
@@ -611,11 +614,9 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: hissatsuSeneiIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: 0.65,
-    acquiredLevel: 96,
+    acquiredLevel: 72,
     cooldown: 60,
-    maxCharges: 2,
     cooldownGroup: "hissatsu-senei-guren",
-    replacesSkillId: "hissatsu-guren",
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
   },
 
@@ -634,20 +635,20 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 68,
     cooldown: 120,
     resourceChanges: [{ resourceId: "kenki", amount: 50 }],
-    buffApplications: ["ikishoten-buff", "ogi-namikiri-ready", "zanshin-ready"],
+    buffApplications: ["ogi-namikiri-ready", "zanshin-ready"],
   },
   {
     id: "enpi",
     name: "燕飛",
-    potency: 860,
+    potency: 100,
     type: "gcd",
     target: "enemy",
     icon: enpiIcon,
     recastTime: 2.5,
     animationLock: 0.65,
-    acquiredLevel: 76,
-    requiredBuff: "ikishoten-buff",
-    buffConsumptions: [{ buffId: "ikishoten-buff", stacks: 1 }],
+    acquiredLevel: 15,
+    conditionalPotencyBuffs: [{ buffId: "enhanced-enpi", potency: 270 }],
+    resourceChanges: [{ resourceId: "kenki", amount: 10 }],
   },
   {
     id: "hagakure",
@@ -707,7 +708,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     icon: shohaIcon,
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: 0.65,
-    acquiredLevel: 82,
+    acquiredLevel: 80,
     cooldown: 15,
     resourceChanges: [{ resourceId: "meditation", amount: -3 }],
     maxTargets: Infinity,
