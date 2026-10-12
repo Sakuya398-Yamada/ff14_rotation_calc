@@ -34,8 +34,8 @@ export interface JobData {
 }
 
 /**
- * ジョブデータレジストリ。
- * キーの記述順がジョブセレクタの表示順になる（JOB_OPTIONS が派生元として参照する）。
+ * ジョブデータレジストリ（実装済みジョブ）。
+ * ジョブピッカーの表示順・ロールは job-catalog.ts の JOB_CATALOG で決まる。ここにジョブを追加したら JOB_CATALOG にも揃える。
  */
 export const JOB_DATA: Record<JobId, JobData> = {
   whm: { name: "白魔道士", abbreviation: "WHM", skills: WHM_ATTACK_SKILLS, buffs: WHM_BUFFS, resources: WHM_RESOURCES },
@@ -46,8 +46,3 @@ export const JOB_DATA: Record<JobId, JobData> = {
   sam: { name: "侍", abbreviation: "SAM", skills: SAM_ATTACK_SKILLS, buffs: SAM_BUFFS, resources: SAM_RESOURCES },
   mnk: { name: "モンク", abbreviation: "MNK", skills: MNK_ATTACK_SKILLS, buffs: MNK_BUFFS, resources: MNK_RESOURCES },
 };
-
-/** ジョブセレクタ表示用の選択肢（JOB_DATA のキー順から派生） */
-export const JOB_OPTIONS: { id: JobId; name: string }[] = (
-  Object.keys(JOB_DATA) as JobId[]
-).map((id) => ({ id, name: JOB_DATA[id].name }));
