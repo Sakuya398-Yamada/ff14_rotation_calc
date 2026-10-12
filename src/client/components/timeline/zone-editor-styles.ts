@@ -29,7 +29,7 @@ export function zoneEditorStyles(colorVar: string): Record<
       fontWeight: "bold",
       color,
     },
-    /** 追加・全体などヘッダー右のボタン */
+    /** 追加（ヘッダー右）・全体（PPS の行内）などの操作ボタン */
     actionButton: {
       background: "none",
       border: `1px solid ${tint(40)}`,
