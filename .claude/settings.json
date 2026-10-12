@@ -40,6 +40,7 @@
       "Bash(echo *)",
       "Bash(which *)",
       "Bash(node --version)",
+      "Bash(node .claude/scripts/knowledge-board.cjs *)",
       "Bash(npm --version)",
       "Edit",
       "Write",
