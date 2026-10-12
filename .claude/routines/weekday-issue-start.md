@@ -19,25 +19,30 @@ description: Open Issue を 1 件選び、/issue-start の手順で実装して 
 Issue を選ぶ前に、過去の実行が残した PR とブランチを点検する。Open PR が上限に達していても手順 1-2〜1-4 は行う（人がレビュー中の PR を古くしないため）。
 
 1. `git -C <repo> fetch origin` する
-2. 自分の Open PR を取得する（draft も含める）。GitHub MCP なら `search_pull_requests`（query: `is:open in:body "スケジュール実行（weekday-issue-start）による無人実装"`）で番号を取り、`pull_request_read`（method: `get`）で `mergeable` と head ブランチを読む。`gh` なら次の 1 コマンドで済む
+2. 自分の Open PR を取得する（draft も含める）。本文にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` が **単独の行として** ある PR だけを自分の PR とみなす（人の PR も変更点の説明にこの文字列を引用することがあるので、本文検索だけでは絞れない。前例: PR #449）。`gh` なら次の 1 コマンドで済む。GitHub MCP なら `search_pull_requests`（`owner` / `repo` を指定、query: `is:open in:body "スケジュール実行（weekday-issue-start）による無人実装"`）で候補を取り、`pull_request_read`（method: `get`）の `body` で同じ行の有無を確かめ、`mergeable` と head ブランチを読む
 
    ```bash
    gh pr list -R Sakuya398-Yamada/ff14_rotation_calc --state open \
      --search 'in:body "スケジュール実行（weekday-issue-start）による無人実装"' \
-     --json number,isDraft,mergeable,headRefName
+     --json number,isDraft,mergeable,headRefName,body \
+     --jq '[.[] | select(.body | test("(?m)^_スケジュール実行（weekday-issue-start）による無人実装_[[:space:]]*$")) | del(.body)]'
    ```
 
-3. **conflict の解消**: `mergeable` が `CONFLICTING` の PR ごとに、そのブランチへ `origin/main` を取り込んで push する。force push はしない
+   正規表現にバックスラッシュを使わない（`gh` の jq は文字列中の `\s` を拒否し、Git Bash 経由では `\\` も 1 本に潰れる）
+
+3. **conflict の解消**: `mergeable` が `CONFLICTING` の PR ごとに、そのブランチへ `origin/main` を取り込み、conflict を解消して push する。GitHub の `CONFLICTING` は手元の `git merge origin/main` と同じ 3-way マージの結果なので、マージは必ず conflict で止まる。止まったら自分で解消する（触るのは手順 1-2 で絞った自分の PR だけ）。force push はしない
 
    ```bash
    W=<repo>/.claude/worktrees/weekday-sync-<PR番号>
    git -C <repo> worktree add --detach "$W" origin/<headRefName>
-   git -C "$W" merge origin/main            # conflict で止まったら git -C "$W" merge --abort
+   git -C "$W" merge origin/main            # conflict で止まる → 該当ファイルを解消して git -C "$W" add <file>
+   git -C "$W" commit --no-edit             # 件名は git が用意した Merge ... のまま
+   # "$W" の直下で npm ci → npx tsc --noEmit → npm test を通す
    git -C "$W" push origin HEAD:<headRefName>
    git -C <repo> worktree remove "$W"
    ```
 
-   - マージが conflict で止まったら `merge --abort` して触らず、実行報告の「conflict 解消」に `conflict 未解消: PR #N` と書く（解消は人が行う）
+   - 解消の判断がつかない、または `tsc` / `npm test` が通らないときは push せず（コミット前なら `git -C "$W" merge --abort`）、worktree を削除して、実行報告の「conflict 解消」に `conflict 未解消: PR #N（理由）` と書く（解消は人が行う）
    - `mergeable` が `UNKNOWN`（GitHub が計算中）なら 30 秒ほど待って取り直す。それでも `UNKNOWN` なら触らず、`mergeable 未判定: PR #N` と書く
    - detached HEAD で作業するのは、過去の実行の worktree（`weekday-<番号>`）が同じブランチを checkout したまま残っていても衝突しないようにするため
 4. **取り残しブランチの報告**: リモートの `<type>/#<番号>-*` ブランチのうち、**Issue が Open で、そのブランチを head にした Open PR が無い** ものを実行報告に列挙する（削除はしない。削除は人が判断する）。途中で落ちた実行の残りで、その Issue は手順 2 の条件により黙って選ばれなくなっている。クローズ済み Issue のブランチ（マージ済み PR の残り）は多数あるので列挙しない
@@ -100,7 +105,7 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 ```
 ## weekday-issue-start 実行報告（YYYY-MM-DD）
 - Open PR 数: K 件（上限 5、draft 含む）
-- conflict 解消: PR #N を origin/main と同期 ／ conflict 未解消: PR #M ／ なし
+- conflict 解消: PR #N を origin/main と同期（tsc / npm test 通過）／ conflict 未解消: PR #M（理由）／ mergeable 未判定: PR #L ／ なし
 - 取り残しブランチ: <ブランチ名>（#N、Open PR 無し）… ／ なし
 - 対象: #N タイトル（選定理由: 優先度・番号）／ または「対象なし」「対象なし（Open PR 上限 5 件に到達）」
 - PR: <URL>（draft かどうか）

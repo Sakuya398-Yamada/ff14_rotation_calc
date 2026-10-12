@@ -36,7 +36,7 @@ description: メモ inbox・知見ボード・パッチ情報・コードスキ�
 
 系統1 に入る前に 1 回だけ数える。数は実行報告の「その他」に書く。
 
-1. **着手可能な Open Issue** を数える: Open Issue のうち、`.claude/routines/weekday-issue-start.md` 手順 1-2 の選定条件をすべて満たすもの（日次ルーティンが次に選び得る Issue）。条件はその時点の `origin/main` のファイルを読む（`git -C <repo> show origin/main:.claude/routines/weekday-issue-start.md`）
+1. **着手可能な Open Issue** を数える: Open Issue のうち、`.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」の条件をすべて満たすもの（日次ルーティンが次に選び得る Issue）。条件はその時点の `origin/main` のファイルを読む（`git -C <repo> show origin/main:.claude/routines/weekday-issue-start.md`）
 2. **10 件以上なら系統2（知見ボード棚卸し）と系統4（コードスキャン）を見送る**（その系統の手順全体を飛ばす）。バックログ上限 10 件は、日次が週に消化できる最大 7 件の約 1.5 週分。実行報告の「見送り」に「バックログ上限 10 件に到達（着手可能 N 件）」と書く。系統1（メモ inbox）と系統3（パッチ情報監視）は人と外部が起点なので見送らない
 3. **無人実装の Open PR** も数える: Open PR のうち、本文末尾に `_スケジュール実行（weekday-issue-start）による無人実装_` のフッターがあるもの。数は実行報告に書くだけで、見送りの判定には使わない
 
