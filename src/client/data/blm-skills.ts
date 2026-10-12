@@ -39,7 +39,8 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 黒魔道士のスキル定義。
- * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #407
+ * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5）の数値とも照合済み（#407）。
+ * 未モデル化の既知の差分: MP 消費・詠唱半減 #415、サンダーヘッド／パラドックスの付与条件 #416、発動条件 #417
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
@@ -168,7 +169,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   {
     id: "fire-2",
     name: "ファイラ",
-    potency: 100,
+    potency: 80,
     type: "gcd",
     target: "enemy",
     icon: fire2Icon,
@@ -186,14 +187,14 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   {
     id: "high-fire-2",
     name: "ハイファイラ",
-    potency: 140,
+    potency: 100,
     type: "gcd",
     target: "enemy",
     icon: highFire2Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 3.0,
-    acquiredLevel: 35,
+    acquiredLevel: 82,
     replacesSkillId: "fire-2",
     resourceChanges: [
       { resourceId: "mp", amount: -1500 },
@@ -270,7 +271,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   {
     id: "blizzard-4",
     name: "ブリザジャ",
-    potency: 310,
+    potency: 300,
     type: "gcd",
     target: "enemy",
     icon: blizzard4Icon,
@@ -293,7 +294,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   {
     id: "blizzard-2",
     name: "ブリザラ",
-    potency: 50,
+    potency: 80,
     type: "gcd",
     target: "enemy",
     icon: blizzard2Icon,
@@ -308,14 +309,14 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   {
     id: "high-blizzard-2",
     name: "ハイブリザラ",
-    potency: 140,
+    potency: 100,
     type: "gcd",
     target: "enemy",
     icon: highBlizzard2Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 3.0,
-    acquiredLevel: 45,
+    acquiredLevel: 82,
     replacesSkillId: "blizzard-2",
     buffApplications: ["umbral-ice-3", "thunderhead"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
@@ -358,8 +359,12 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "paradox-gauge", amount: -1 },
     ],
-    // AF 中に使用するとファイアスターター付与（実機仕様）
-    buffApplications: ["firestarter"],
+    // AF 中はファイアスターターを付与する隠しスキルに切替（UB 中は付与しない）
+    autoTransform: [
+      { buffId: "astral-fire-3", skillId: "paradox-af" },
+      { buffId: "astral-fire-2", skillId: "paradox-af" },
+      { buffId: "astral-fire-1", skillId: "paradox-af" },
+    ],
   },
 
   // ============================================================
@@ -370,7 +375,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   {
     id: "high-thunder",
     name: "ハイサンダー",
-    potency: 240,
+    potency: 150,
     type: "gcd",
     target: "enemy",
     icon: highThunderIcon,
@@ -380,7 +385,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     replacesSkillId: "thunder-3",
     requiredBuff: "thunderhead",
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
-    dotPotency: 65,
+    dotPotency: 60,
     dotDuration: 30,
     refreshesDots: ["high-thunder"],
   },
@@ -397,7 +402,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     requiredBuff: "thunderhead",
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
     dotPotency: 50,
-    dotDuration: 30,
+    dotDuration: 27,
     refreshesDots: ["thunder-3"],
     // Lv92 で high-thunder に置き換えられる。skill-level の replacedIds により自動除外される
   },
@@ -410,12 +415,12 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     icon: highThunder2Icon,
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
-    acquiredLevel: 100,
+    acquiredLevel: 92,
     replacesSkillId: "thunder-4",
     requiredBuff: "thunderhead",
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
     dotPotency: 40,
-    dotDuration: 30,
+    dotDuration: 24,
     refreshesDots: ["high-thunder-2"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
@@ -432,8 +437,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 64,
     requiredBuff: "thunderhead",
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
-    dotPotency: 30,
-    dotDuration: 30,
+    dotPotency: 35,
+    dotDuration: 21,
     refreshesDots: ["thunder-4"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
@@ -520,6 +525,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 120,
+    maxCharges: 2,
     acquiredLevel: 52,
     buffApplications: ["ley-lines"],
   },
@@ -574,6 +580,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
     acquiredLevel: 18,
+    // Lv94 ロール特性「迅速魔効果アップ」でリキャスト 40 秒
+    traitPotencyOverrides: [{ traitLevel: 94, cooldown: 40 }],
     buffApplications: ["swiftcast"],
   },
   // MP 回復は `lucid-dreaming` バフ + `BLM_RESOURCES` の `autoGenerateWhileBuff` 連携で駆動する。
@@ -593,7 +601,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   },
 
   // ============================================================
-  // 隠しスキル: AF/UB 段階進行（fire/blizzard/transpose の autoTransform 先）
+  // 隠しスキル: AF/UB 段階進行・AF 中のパラドックス（fire/blizzard/transpose/paradox の autoTransform 先）
   // UI 非表示。元スキルから威力・コスト・キャストを引き継ぎ、付与バフのみが異なる
   // ============================================================
   {
@@ -684,6 +692,22 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 1,
     hidden: true,
     buffApplications: ["umbral-ice-3", "thunderhead"],
+  },
+  {
+    id: "paradox-af",
+    name: "パラドックス (AF)",
+    potency: 540,
+    type: "gcd",
+    target: "enemy",
+    icon: paradoxIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 90,
+    hidden: true,
+    resourceChanges: [
+      { resourceId: "paradox-gauge", amount: -1 },
+    ],
+    buffApplications: ["firestarter"],
   },
   {
     id: "transpose-to-ub1",

@@ -28,9 +28,9 @@ describe("BLM: フレア（#316）", () => {
     expect(result.entries[0].resourceSnapshot["mp"]).toBe(8000);
     expect(flare.resourceSnapshot["mp"]).toBe(0);
     expect(flare.resourceSnapshot["astral-soul"]).toBe(3);
-    // AF3 維持（ファイア系ブースト 1.8 × エノキアン 1.23）
+    // AF3 維持（ファイア系ブースト 1.8 × エノキアン 1.27）
     expect(flare.activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
-    expect(flare.buffMultiplier).toBeCloseTo(1.8 * 1.23, 5);
+    expect(flare.buffMultiplier).toBeCloseTo(1.8 * 1.27, 5);
   });
 
   it("トランス後の AF1 でも使用でき、AF3 へ引き上げる（requiredBuffAnyOf）", () => {
@@ -48,8 +48,8 @@ describe("BLM: フレア（#316）", () => {
 
     const flare = result.entries[2];
     expect(flare.comboErrors).toEqual([]);
-    // AF1 中の使用: ファイア系ブースト 1.4 × エノキアン 1.23
-    expect(flare.buffMultiplier).toBeCloseTo(1.4 * 1.23, 5);
+    // AF1 中の使用: ファイア系ブースト 1.4 × エノキアン 1.27
+    expect(flare.buffMultiplier).toBeCloseTo(1.4 * 1.27, 5);
     // 使用後は最大スタック分の AF（AF3）へ引き上げ
     expect(flare.activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
     expect(flare.activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(false);
