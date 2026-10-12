@@ -152,6 +152,23 @@ describe("DRG: ランスチャージの威力倍率と効果時間 (#351)", () =
     }
   });
 
+  it.each([
+    [19.9, multiplier],
+    [20, 1],
+  ])("付与から %s 秒後のスキルの倍率は %s（効果時間ちょうどで切れる）", (time, expected) => {
+    // 同じタイムラインに GCD を続けて置くと recastError（倍率 1 扱い）になるため、時刻ごとに別々に解決する
+    const at = (skillId: string, manualStartTime: number): TimelineEntry => ({ ...entry(skillId), manualStartTime });
+    const result = resolveTimeline(
+      [at("lance-charge", 0), at("true-thrust", time)],
+      skillMap, DRG_RESOURCES, undefined, DRG_BUFFS,
+    );
+    const thrust = result.entries[1];
+
+    expect(thrust.startTime).toBe(time);
+    expect(thrust.recastError).toBeFalsy();
+    expect(thrust.buffMultiplier).toBeCloseTo(expected, 5);
+  });
+
   it("竜槍と同時に有効なときは乗算される", () => {
     // 竜槍（power-surge）はディセムボウルのコンボで付与される
     const result = resolve(["true-thrust", "disembowel", "lance-charge", "chaos-thrust"]);
