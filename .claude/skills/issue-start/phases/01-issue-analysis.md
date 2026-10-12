@@ -63,6 +63,22 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
    - Issue が `OPEN` でも PR がマージ済みのことがあるので、Issue の state だけで判断しない
    - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は後述「オープンな旧 PR／既存ブランチがある場合」
 3. 本文中のリンクや関連ラベルから、関連する過去の Issue を参照する。親 Issue がある場合（`parent`）はその本文も読む
+   - **外部リポジトリの特定タグのファイルが参照元に指定されている場合**（テンプレート元の `vX.Y.Z` 等）: 毎回 `gh api` の呼び出し形を組み立てず、以下の定型で版固定して取得する。出力が長いときは scratchpad 等の一時領域にリダイレクトし、必要な範囲だけ読む
+
+     ```bash
+     # ファイル本体を raw で取得（ref はタグ・ブランチ・コミット SHA のいずれも可）
+     gh api "repos/<owner/repo>/contents/<path>?ref=<tag>" -H "Accept: application/vnd.github.raw"
+
+     # 2 つの版の間の変更ファイル一覧
+     gh api "repos/<owner/repo>/compare/<old-tag>...<new-tag>" --jq '.files[].filename'
+
+     # 特定ファイルの patch だけ抽出（test() 内のドットは "\." ではなく "[.]" で書く）
+     gh api "repos/<owner/repo>/compare/<old-tag>...<new-tag>" \
+       --jq '.files[] | select(.filename | test("hooks/session-start-info[.]sh$")) | .patch'
+     ```
+
+     - `test("\.sh$")` のように `\.` と書くと gojq が `invalid escape sequence "\."` で失敗する。`[.]` で書けばエスケープ不要
+     - URL に `?` を含むのでパス引数はクォートする。`gh` が PATH に無い Git Bash では `"/c/Program Files/GitHub CLI/gh.exe"` で起動する（`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）
 4. **【MCP: Brave Search】** IssueがFF14のスキルデータやゲーム仕様に関わる場合、`brave_web_search` で公式ジョブガイドや関連情報を検索し、実装に必要な数値・仕様を収集する
    - 検索例: `"FF14 竜騎士 ジョブガイド スキル一覧"`, `"FFXIV dragoon job guide skill potency"`
    - **利用前の準備**: `ToolSearch query: "select:brave_web_search"` でスキーマをロード
