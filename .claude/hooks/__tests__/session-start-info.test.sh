@@ -169,6 +169,73 @@ run_hook "$repo" "$TAGS_V2" 0
 check "local ahead: no update warning" "$(lacks 'Template update available')"
 check "local ahead: shown as up to date" "$(contains 'Local: `v2.0.1` / Latest: `v2.0.0` — up to date')"
 
+# The default branch's version (origin/HEAD -> origin/main) also counts as adopted: a worktree
+# whose branch is merely behind the default branch must not prompt for a duplicate update issue.
+# make_repo_with_default <name> <branch version> <default-branch version>  -> prints repo path.
+# Commits .claude/template-version at the default version, points origin/main and origin/HEAD at
+# that commit, then leaves the working-tree file at the branch version (what the hook reads).
+make_repo_with_default() {
+  local dir
+  dir=$(make_repo "$1" "$3")
+  "$REAL_GIT" -C "$dir" add .claude/template-version
+  "$REAL_GIT" -C "$dir" -c user.name=t -c user.email=t@example.com commit -q -m "default at $3"
+  "$REAL_GIT" -C "$dir" update-ref refs/remotes/origin/main HEAD
+  "$REAL_GIT" -C "$dir" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+  printf 'repo=example-owner/example-template\nversion=%s\n' "$2" >"$dir/.claude/template-version"
+  printf '%s' "$dir"
+}
+
+cache_is() { [[ "$(tr -d '[:space:]' <"$repo/.git/template-version-check")" == "$1" ]] && echo 1 || echo 0; }
+
+TAGS_V203=$'0123456789abcdef0123456789abcdef01234567\trefs/tags/v2.0.3'
+TAGS_V210=$'0123456789abcdef0123456789abcdef01234567\trefs/tags/v2.1.0'
+
+# 10. Branch behind the default branch, which already has the latest: adopted, no warning
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo_with_default behind-default-latest v2.0.2 v2.0.3)
+run_hook "$repo" "$TAGS_V203" 0
+check "behind default (default == latest): exit 0" "$([[ $rc -eq 0 ]] && echo 1 || echo 0)"
+check "behind default (default == latest): up to date on the default branch" "$(contains 'Local: `v2.0.2` (this branch) / `origin/main`: `v2.0.3` / Latest: `v2.0.3` — up to date on the default branch; this branch is behind it')"
+check "behind default (default == latest): no update warning" "$(lacks 'Template update available')"
+check "behind default (default == latest): cache written" "$(cache_is v2.0.3)"
+
+# 11. Branch behind the default branch, latest newer than both: warning as before
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo_with_default behind-default-outdated v2.0.2 v2.0.3)
+run_hook "$repo" "$TAGS_V210" 0
+check "behind default, latest newer: warning shown" "$(contains '⚠ **Template update available**: local `v2.0.2` → latest `v2.1.0`')"
+check "behind default, latest newer: default branch version noted" "$(contains '`origin/main` is at `v2.0.3` (this branch is behind it)')"
+
+# 12. Branch == default branch, latest newer: warning as before, no "behind" note
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo_with_default same-as-default v2.0.3 v2.0.3)
+run_hook "$repo" "$TAGS_V210" 0
+check "branch == default: warning shown" "$(contains '⚠ **Template update available**: local `v2.0.3` → latest `v2.1.0`')"
+check "branch == default: no behind note" "$(lacks 'this branch is behind it')"
+
+# 13. Cache older than the default branch's version: stale, refetched
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo_with_default behind-default-stalecache v2.0.2 v2.0.3)
+printf 'v2.0.2\n' >"$repo/.git/template-version-check"
+run_hook "$repo" "$TAGS_V203" 0
+check "behind default, stale cache: refetched from upstream" "$([[ $(ls_remote_calls) -eq 1 ]] && echo 1 || echo 0)"
+check "behind default, stale cache: up to date on the default branch" "$(contains 'up to date on the default branch')"
+check "behind default, stale cache: cache refreshed" "$(cache_is v2.0.3)"
+
+# 14. Branch behind the default branch and offline: unknown, no warning
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo_with_default behind-default-offline v2.0.2 v2.0.3)
+run_hook "$repo" "" 128
+check "behind default offline: Latest unknown" "$(contains 'Local: `v2.0.2` / Latest: unknown')"
+check "behind default offline: no update warning" "$(lacks 'Template update available')"
+
+# 15. Branch ahead of the default branch: judged by this branch alone
+rm -f "$TMP_ROOT/ls-remote.log"
+repo=$(make_repo_with_default ahead-of-default v2.0.3 v2.0.2)
+run_hook "$repo" "$TAGS_V203" 0
+check "ahead of default: up to date" "$(contains 'Local: `v2.0.3` / Latest: `v2.0.3` — up to date')"
+check "ahead of default: not reported via the default branch" "$(lacks 'on the default branch')"
+
 echo
 printf 'Result: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]
