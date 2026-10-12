@@ -240,7 +240,8 @@ export function App() {
       timelineResult.dotTicks,
       0,
       timelineResult.timelineEndTime,
-      stats
+      stats,
+      { includeEnd: true }
     );
   }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, stats]);
 
@@ -268,9 +269,11 @@ export function App() {
       timelineResult.dotTicks,
       ppsRange.startTime,
       ppsRange.endTime,
-      stats
+      stats,
+      // 区間がタイムライン終端まで届くときは、終端ちょうどの最終ティックも含める（#400）
+      { includeEnd: ppsRange.endTime >= timelineResult.timelineEndTime }
     );
-  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, ppsRange, stats]);
+  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, ppsRange, stats]);
 
   return (
     <div style={styles.app}>

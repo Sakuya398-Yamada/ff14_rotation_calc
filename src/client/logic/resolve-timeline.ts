@@ -1621,6 +1621,9 @@ export function resolveTimeline(
  * - 直接威力: startTime が範囲内にあるスキルの威力を合算（resolvedPotencyを使用）
  * - DoT威力: time が範囲内にあるDoTティックの威力を合算
  * - PPS = 合計威力 / 範囲の秒数
+ * - 範囲は既定で [rangeStart, rangeEnd) の半開区間（隣り合う区間で境界を二重に数えない）。
+ *   includeEnd を指定すると rangeEnd ちょうども含める。タイムライン終端（= 最終 DoT ティック時刻に
+ *   なり得る）までを数えるときに使う。半開区間のままだと最終ティックが漏れる（#400）。
  */
 export function calcPps(
   resolvedEntries: ResolvedTimelineEntry[],
@@ -1628,14 +1631,16 @@ export function calcPps(
   dotTicks: DoTTick[],
   rangeStart: number,
   rangeEnd: number,
-  stats: CharacterStats
+  stats: CharacterStats,
+  options: { includeEnd?: boolean } = {}
 ): { pps: number; totalPotency: number; directPotency: number; dotPotency: number } {
   const duration = rangeEnd - rangeStart;
   if (duration <= 0) return { pps: 0, totalPotency: 0, directPotency: 0, dotPotency: 0 };
+  const inRange = (t: number) => t >= rangeStart && (t < rangeEnd || (options.includeEnd === true && t === rangeEnd));
 
   let directPotency = 0;
   for (const entry of resolvedEntries) {
-    if (entry.startTime >= rangeStart && entry.startTime < rangeEnd) {
+    if (inRange(entry.startTime)) {
       const skill = skillMap.get(entry.resolvedSkillId);
       directPotency += calcEntryExpectedPotency(entry, skill, stats);
     }
@@ -1643,7 +1648,7 @@ export function calcPps(
 
   let dotPotency = 0;
   for (const tick of dotTicks) {
-    if (tick.time >= rangeStart && tick.time < rangeEnd) {
+    if (inRange(tick.time)) {
       const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
       dotPotency += Math.floor(tick.potency * dotMul);
     }
