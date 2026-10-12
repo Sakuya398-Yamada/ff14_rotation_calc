@@ -15,7 +15,8 @@ export const THEME_PREFERENCES: readonly ThemePreference[] = ["light", "dark", "
 export const ACCENT_COLORS: readonly AccentColor[] = ["blue", "pink", "purple", "green"];
 
 // 旧アクセント「橙」は PPS 区間色・警告色と見分けにくいため廃止し、ピンクに置き換えた（#396）。保存済みの値は読み替える
-const LEGACY_ACCENTS: Record<string, AccentColor> = { orange: "pink" };
+// Map にするのは、通常のオブジェクトだと "constructor" 等のプロトタイプのキーを拾ってしまうため
+const LEGACY_ACCENTS = new Map<string, AccentColor>([["orange", "pink"]]);
 
 // 子パネルが旧配色のうちはダークの方が外枠と揃うため、初回はダーク（#382 / #383 で決定）
 export const DEFAULT_SETTINGS: AppSettings = { theme: "dark", accent: "blue" };
@@ -37,7 +38,7 @@ export function deserializeSettings(json: string | null): AppSettings {
       : DEFAULT_SETTINGS.theme,
     accent: ACCENT_COLORS.includes(obj.accent as AccentColor)
       ? (obj.accent as AccentColor)
-      : (typeof obj.accent === "string" && LEGACY_ACCENTS[obj.accent]) || DEFAULT_SETTINGS.accent,
+      : (typeof obj.accent === "string" ? LEGACY_ACCENTS.get(obj.accent) : undefined) ?? DEFAULT_SETTINGS.accent,
   };
 }
 

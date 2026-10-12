@@ -31,6 +31,12 @@ describe("deserializeSettings", () => {
       accent: "pink",
     });
   });
+
+  it("プロトタイプのキー（constructor 等）は読み替えず既定値に戻す", () => {
+    for (const accent of ["constructor", "toString", "__proto__"]) {
+      expect(deserializeSettings(JSON.stringify({ theme: "dark", accent })).accent).toBe("blue");
+    }
+  });
 });
 
 describe("resolveTheme", () => {
