@@ -49,15 +49,6 @@ export const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     whiteSpace: "nowrap" as const,
   },
-  potencyDisplay: {
-    fontSize: "16px",
-    color: "var(--color-muted)",
-  },
-  potencyValue: {
-    fontSize: "22px",
-    fontWeight: "bold",
-    color: "var(--color-accent)",
-  },
   dropZone: {
     flex: 1,
     display: "flex",
@@ -754,11 +745,6 @@ export const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1,
   },
   // PPS表示
-  ppsDisplay: {
-    fontSize: "14px",
-    color: "var(--color-zone-pps)",
-    marginLeft: "8px",
-  },
   ppsValue: {
     fontSize: "18px",
     fontWeight: "bold",

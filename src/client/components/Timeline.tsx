@@ -30,8 +30,6 @@ interface TimelineProps {
   onMoveEntry: (uid: string, insertBeforeUid?: string) => void;
   resources: ResourceDefinition[];
   buffs: BuffDefinition[];
-  totalExpectedPotency: number;
-  dotExpectedPotency: number;
   stats: CharacterStats;
   dotTicks: DoTTick[];
   activeDoTs: ActiveDoT[];
@@ -39,7 +37,6 @@ interface TimelineProps {
   onUntargetableWindowsChange: (windows: BossUntargetableWindow[]) => void;
   multiTargetWindows: MultiTargetWindow[];
   onMultiTargetWindowsChange: (windows: MultiTargetWindow[]) => void;
-  overallPps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
   rangePps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
   ppsRange: PpsRange | null;
   onPpsRangeChange: (range: PpsRange | null) => void;
@@ -57,8 +54,6 @@ export function Timeline({
   onMoveEntry,
   resources,
   buffs,
-  totalExpectedPotency,
-  dotExpectedPotency,
   stats,
   dotTicks,
   activeDoTs,
@@ -66,7 +61,6 @@ export function Timeline({
   onUntargetableWindowsChange,
   multiTargetWindows,
   onMultiTargetWindowsChange,
-  overallPps,
   rangePps,
   ppsRange,
   onPpsRangeChange,
@@ -349,9 +343,6 @@ export function Timeline({
         ppsRange={ppsRange}
         onPpsRangeChange={onPpsRangeChange}
         lastGcdEndTime={lastGcdEndTime}
-        totalExpectedPotency={totalExpectedPotency}
-        dotExpectedPotency={dotExpectedPotency}
-        overallPps={overallPps}
       />
 
       {showPpsRange && (

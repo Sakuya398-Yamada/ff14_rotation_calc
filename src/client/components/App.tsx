@@ -6,6 +6,7 @@ import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsDialog } from "./SettingsDialog";
+import { SummaryBar } from "./SummaryBar";
 import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { JOB_DATA } from "../data/job-registry";
@@ -297,6 +298,14 @@ export function App() {
         onClose={() => setSettingsOpen(false)}
         returnFocusRef={settingsButtonRef}
       />
+      <SummaryBar
+        totalExpectedPotency={totalExpectedPotency}
+        dotExpectedPotency={dotExpectedPotency}
+        overallPps={overallPps}
+        rangePps={rangePps}
+        ppsRange={ppsRange}
+        duration={timelineResult.timelineEndTime}
+      />
       <DndContext
         sensors={dndSensors}
         collisionDetection={pointerWithin}
@@ -325,8 +334,6 @@ export function App() {
               onMoveEntry={handleMoveEntry}
               resources={levelResources}
               buffs={levelBuffs}
-              totalExpectedPotency={totalExpectedPotency}
-              dotExpectedPotency={dotExpectedPotency}
               stats={stats}
               dotTicks={timelineResult.dotTicks}
               activeDoTs={timelineResult.activeDoTs}
@@ -334,7 +341,6 @@ export function App() {
               onUntargetableWindowsChange={setUntargetableWindows}
               multiTargetWindows={multiTargetWindows}
               onMultiTargetWindowsChange={setMultiTargetWindows}
-              overallPps={overallPps}
               rangePps={rangePps}
               ppsRange={ppsRange}
               onPpsRangeChange={setPpsRange}
