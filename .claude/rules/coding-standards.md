@@ -48,7 +48,7 @@ ff14_rotation_calc/
 | 定数 | `UPPER_SNAKE_CASE` | `MAX_BUFF_STACK` |
 | 型・インターフェース | `PascalCase` | `SkillData` |
 
-## hooks 用 Node.js スクリプトの拡張子
+## hooks / scripts 用 Node.js スクリプトの拡張子
 
 - `.claude/hooks/` / `.claude/scripts/` に単独の Node.js スクリプトを追加する場合は **`.cjs` 拡張子を使う**
 - 理由: ルート `package.json` に `"type": "module"` があるため、`.js` は ESM として読み込まれ `require('fs')` 等が `ReferenceError: require is not defined in ES module scope` で失敗する

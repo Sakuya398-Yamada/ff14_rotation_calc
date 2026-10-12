@@ -17,7 +17,7 @@
 
 ```bash
 node .claude/scripts/knowledge-board.cjs open            # 未回収の知見を 1 件 1 行（ID・日付・作業Issue・重要度・還元先・気づきの冒頭）
-node .claude/scripts/knowledge-board.cjs grep <pattern>  # 本文を検索（大文字小文字を区別しない正規表現）。当たったコメントの ID・見出しと該当行だけ
+node .claude/scripts/knowledge-board.cjs grep <pattern>  # 本文を検索（大文字小文字を区別しない正規表現）。当たったコメントの ID・日付・作業Issue・回収状況と該当行だけ
 node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
 ```
 
