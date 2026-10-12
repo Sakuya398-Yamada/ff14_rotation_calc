@@ -89,7 +89,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 6,
     dotPotency: 15,
     dotDuration: 45,
-    buffApplications: ["hawks-eye"],
   },
   {
     id: "windbite",
@@ -103,7 +102,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 30,
     dotPotency: 20,
     dotDuration: 45,
-    buffApplications: ["hawks-eye"],
   },
   {
     id: "iron-jaws",
