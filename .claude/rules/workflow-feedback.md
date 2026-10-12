@@ -168,11 +168,18 @@ Phase 5 の実装内容は以下。テンプレートのファイルはこのプ
    - Release notes に「手動対応」が書かれていればそれに従う
 3. `.claude/template-version` の `version` を新しい版に更新する
 4. hooks を変更した場合は `.claude/hooks/__tests__/*.test.sh` を実行し、必要ならテストケースを追従する
-5. 完了条件（更新用 Issue の DoD）:
+5. SessionStart hook を直接実行してバナーが `up to date` になることを確認する（Claude Code の再起動は不要。キャッシュの版が `.claude/template-version` より古ければ hook が取り直す）:
+
+   ```bash
+   bash .claude/hooks/session-start-info.sh </dev/null | grep -A2 '## Template version'
+   ```
+
+6. 完了条件（更新用 Issue の DoD）:
    - [ ] Release notes の変更ファイルをすべて確認した
    - [ ] カスタマイズ済みファイルのプロジェクト固有記述が失われていない
    - [ ] `.claude/template-version` の `version` を更新した
    - [ ] hooks テストが通る
+   - [ ] SessionStart バナーが `up to date` になる（上記の直接実行で確認）
 
 ### 3-way マージの定型手順
 
@@ -197,6 +204,15 @@ done
 1. `conflicts=0` のファイルは `$W/<path>.merged` をそのままプロジェクト側に書き戻す
 2. `conflicts=N`（N > 0）のファイルは `<<<<<<< ours` 〜 `>>>>>>> vNEW` の箇所だけを上記の方針で解消してから書き戻す。マーカーが残っていないことを `grep -n '^<<<<<<<\|^>>>>>>>' <file>` で確かめる
 3. **書き戻したら、テンプレート版との残差を確認する**: `diff <(git -C "$SRC" show "vNEW:template/<path>") <path>`。残ってよいのは意図したプロジェクト固有の記述だけで、到達不能な分岐・重複した関数定義・同じ内容の二重の箇条書きが出ていたら手で除く。`merge-file` は両側が同じ領域を別の文面で変えていても、変更行が重ならなければコンフリクトにせず隣接する追記として黙って合成する。**プロジェクト側で先行修正したファイル（テンプレートへ還元した知見を自前でも直していた場合など）は `conflicts=0` でも必須**
+   固有記述の多いファイルでは、取り込み後の残差だけ見ると今回の変化が従来の固有記述に埋もれる。取り込み前（`vOLD` 対 `HEAD`）の残差も作って突き合わせると、取り込みで変わった残差だけが出る。両者が一致すれば固有記述は失われていない:
+
+   ```bash
+   p=<path>
+   diff <(git -C "$SRC" show "vOLD:template/$p") <(git show "HEAD:$p")  >"$W/$p.before"
+   diff <(git -C "$SRC" show "vNEW:template/$p") <(sed 's/\r$//' "$p") >"$W/$p.after"
+   diff <(grep -v '^[0-9]' "$W/$p.before") <(grep -v '^[0-9]' "$W/$p.after")   # 行番号行を除いて比較
+   ```
+
 4. ループが `continue` で飛ばしたファイルは手で判断する
    - **project にない / vNEW で追加**: 新規ファイルとして `vNEW` の内容を置く（プロジェクトで意図的に削除していたなら置かない）
    - **vNEW で削除**: プロジェクト側でも削除してよいか確認してから削除する

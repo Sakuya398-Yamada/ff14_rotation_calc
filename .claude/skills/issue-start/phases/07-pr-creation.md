@@ -8,7 +8,9 @@
   - 含まれていれば `.gitignore` を確認・修正し、`git rm --cached <path>` で追跡から外す
 - [ ] `git log origin/main..HEAD --stat` にこの Issue と無関係な変更（他 Issue の修正・無関係なリファクタ）が混ざっていない
   - 混ざっていれば `git reset --soft <正しい基点>` で巻き戻して staging を整理し直す
-- [ ] テスト・リントが最新のコミットで通っている（Phase 6 の手順 1 以降に変更があれば再実行）
+- [ ] `git fetch origin main` のあと `git rev-list --count HEAD..origin/main` が 0 である（並行して進めた兄弟 Issue の PR が先にマージされていると、ここで遅れている）
+  - 0 でなければ `git merge origin/main` で取り込み、コンフリクトがあれば解消してから次の項目へ（Phase 2「古い main 派生の検知」と同じ手順）
+- [ ] テスト・リントが最新のコミットで通っている（Phase 6 の手順 1 以降に変更があれば再実行。`origin/main` を取り込んだ場合も再実行）
 
 ## 手順
 
