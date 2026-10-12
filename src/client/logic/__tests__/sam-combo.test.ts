@@ -72,7 +72,7 @@ describe("侍: 3系統 WS コンボ（月/花/雪）", () => {
     );
 
     expect(result.entries[0].wsComboError).toBe(true);
-    expect(result.entries[0].resolvedPotency).toBe(120);
+    expect(result.entries[0].resolvedPotency).toBe(140);
     // 風月バフは付与されない
     expect(result.entries[0].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(false);
   });
@@ -108,7 +108,7 @@ describe("侍: 3系統 WS コンボ（月/花/雪）", () => {
     expect(fugetsuAtGekko?.startTime).toBeCloseTo(result.entries[1].startTime, 2);
   });
 
-  it("満月の通常コンボ完走では風月バフは付与されない（実機準拠）", () => {
+  it("満月の通常コンボ完走で風月バフが付与される（コンボボーナス）", () => {
     const result = resolveTimeline(
       [entry("fuga"), entry("mangetsu")],
       skillMap,
@@ -119,10 +119,10 @@ describe("侍: 3系統 WS コンボ（月/花/雪）", () => {
 
     expect(result.entries[1].wsComboError).toBe(false);
     expect(result.entries[1].resourceSnapshot.getsu).toBe(1);
-    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(false);
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fugetsu")).toBe(true);
   });
 
-  it("桜花の通常コンボ完走では風花バフは付与されない（実機準拠）", () => {
+  it("桜花の通常コンボ完走で風花バフが付与される（コンボボーナス）", () => {
     const result = resolveTimeline(
       [entry("fuga"), entry("oka")],
       skillMap,
@@ -131,7 +131,7 @@ describe("侍: 3系統 WS コンボ（月/花/雪）", () => {
       SAM_BUFFS
     );
 
-    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(false);
+    expect(result.entries[1].activeBuffs.some((b) => b.buffId === "fuka")).toBe(true);
   });
 
   it("暁風（Lv92置換）からも陣風コンボが成立する", () => {

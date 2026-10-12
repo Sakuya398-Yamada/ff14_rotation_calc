@@ -6,7 +6,7 @@ import type { ResourceDefinition } from "../types/skill";
  * - 剣気（Kenki）: WSコンボ完走・必殺剣使用で増減（最大100）
  * - 閃（Sen）: 雪・月・花の3種。WSコンボ完走で1つ付与、居合術で消費（合計最大3）
  *   雪/月/花は1つの「閃」レーンに統合表示する
- * - 剣圧（Meditation）: 居合術・燕返し・奥義波切で+1（最大3、Lv90以降）
+ * - 剣圧（Meditation）: 居合術・奥義波切で+1（最大3、Lv80以降）。黙想でも付与されるが未実装
  */
 export const SAM_RESOURCES: ResourceDefinition[] = [
   // ============================================================
@@ -18,7 +18,7 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
     shortName: "剣気",
     maxStacks: 100,
     color: "#d32f2f",
-    acquiredLevel: 4,
+    acquiredLevel: 52,
   },
 
   // ============================================================
@@ -67,6 +67,6 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
     shortName: "剣圧",
     maxStacks: 3,
     color: "#ff6f00",
-    acquiredLevel: 90,
+    acquiredLevel: 80,
   },
 ];
