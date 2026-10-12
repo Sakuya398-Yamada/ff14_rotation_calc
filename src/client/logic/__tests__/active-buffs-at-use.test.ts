@@ -101,4 +101,37 @@ describe("ResolvedTimelineEntry.activeBuffsAtUse", () => {
     expect(gcdEntry.activeBuffs.some((ab) => ab.buffId === "power")).toBe(true);
     expect(gcdEntry.activeBuffsAtUse.some((ab) => ab.buffId === "power")).toBe(true);
   });
+
+  it("スタック数は使用時点の値を保ち、後続エントリの消費で書き換わらない（#388）", () => {
+    const tripleLikeBuff: BuffDefinition = {
+      id: "triple",
+      name: "三連",
+      shortName: "三連",
+      icon: "",
+      duration: 15,
+      maxStacks: 3,
+      effects: [{ type: "instantCast", value: 0 }],
+      color: "#ffee58",
+    };
+    const apply = makeSkill({ id: "apply-triple", type: "ogcd", potency: 0, buffApplications: ["triple"] });
+    const cast = makeSkill({ id: "cast-gcd", potency: 200, castTime: 2.5 });
+    const skillMap = new Map([
+      [apply.id, apply],
+      [cast.id, cast],
+    ]);
+
+    const result = resolveTimeline(
+      [makeEntry(apply.id), makeEntry(cast.id), makeEntry(cast.id), makeEntry(cast.id)],
+      skillMap,
+      [],
+      undefined,
+      [tripleLikeBuff],
+      []
+    );
+
+    const stacksAtUse = result.entries
+      .slice(1)
+      .map((e) => e.activeBuffsAtUse.find((ab) => ab.buffId === "triple")?.stacks);
+    expect(stacksAtUse).toEqual([3, 2, 1]);
+  });
 });

@@ -314,42 +314,46 @@ export function App() {
           selectedJob={selectedJob}
           onJobChange={handleJobChange}
         />
-        <Timeline
-          skills={skills}
-          allSkillMap={allSkillMap}
-          resolvedEntries={resolvedEntries}
-          onAddEntry={handleAddEntry}
-          onRemoveEntry={handleRemoveEntry}
-          onMoveEntry={handleMoveEntry}
-          resources={levelResources}
-          buffs={levelBuffs}
-          totalExpectedPotency={totalExpectedPotency}
-          dotExpectedPotency={dotExpectedPotency}
-          stats={stats}
-          dotTicks={timelineResult.dotTicks}
-          activeDoTs={timelineResult.activeDoTs}
-          untargetableWindows={untargetableWindows}
-          onUntargetableWindowsChange={setUntargetableWindows}
-          multiTargetWindows={multiTargetWindows}
-          onMultiTargetWindowsChange={setMultiTargetWindows}
-          overallPps={overallPps}
-          rangePps={rangePps}
-          ppsRange={ppsRange}
-          onPpsRangeChange={setPpsRange}
-          lastGcdEndTime={timelineResult.lastGcdEndTime}
-          selectedEntryUid={selectedEntryUid}
-          onSelectEntry={setSelectedEntryUid}
-        />
-        {selectedEntry && selectedSkill && (
-          <SkillDetailPanel
-            entry={selectedEntry}
-            resolvedSkill={selectedSkill}
-            buffDefMap={buffDefMap}
-            stats={stats}
-            onClose={() => setSelectedEntryUid(null)}
-            onManualStartTimeChange={handleManualStartTimeChange}
-          />
-        )}
+        <div style={styles.workArea}>
+          <div style={styles.timelineSlot}>
+            <Timeline
+              skills={skills}
+              allSkillMap={allSkillMap}
+              resolvedEntries={resolvedEntries}
+              onAddEntry={handleAddEntry}
+              onRemoveEntry={handleRemoveEntry}
+              onMoveEntry={handleMoveEntry}
+              resources={levelResources}
+              buffs={levelBuffs}
+              totalExpectedPotency={totalExpectedPotency}
+              dotExpectedPotency={dotExpectedPotency}
+              stats={stats}
+              dotTicks={timelineResult.dotTicks}
+              activeDoTs={timelineResult.activeDoTs}
+              untargetableWindows={untargetableWindows}
+              onUntargetableWindowsChange={setUntargetableWindows}
+              multiTargetWindows={multiTargetWindows}
+              onMultiTargetWindowsChange={setMultiTargetWindows}
+              overallPps={overallPps}
+              rangePps={rangePps}
+              ppsRange={ppsRange}
+              onPpsRangeChange={setPpsRange}
+              lastGcdEndTime={timelineResult.lastGcdEndTime}
+              selectedEntryUid={selectedEntryUid}
+              onSelectEntry={setSelectedEntryUid}
+            />
+          </div>
+          {selectedEntry && selectedSkill && (
+            <SkillDetailPanel
+              entry={selectedEntry}
+              resolvedSkill={selectedSkill}
+              buffDefMap={buffDefMap}
+              stats={stats}
+              onClose={() => setSelectedEntryUid(null)}
+              onManualStartTimeChange={handleManualStartTimeChange}
+            />
+          )}
+        </div>
       </div>
       <DragOverlay dropAnimation={null}>
         {activeDragSkill && (
@@ -442,6 +446,18 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flex: 1,
     overflow: "hidden",
+  },
+  workArea: {
+    flex: 1,
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+  },
+  // Timeline のルートは横方向の flex: 1 で伸びる作りのため、縦方向の伸縮はこの行ラッパーが受け持つ
+  timelineSlot: {
+    flex: 1,
+    minHeight: 0,
+    display: "flex",
   },
   dragOverlayIcon: {
     width: "36px",
