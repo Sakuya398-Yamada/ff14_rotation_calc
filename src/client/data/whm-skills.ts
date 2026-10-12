@@ -28,6 +28,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 白魔道士（WHM）攻撃スキル一覧
+ * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #411
  * 威力はジョブガイド準拠（基本値 = 特性適用前）
  * Lv94特性「White Magic Mastery」による威力変動はtraitPotencyOverridesで定義
  */
