@@ -111,6 +111,47 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 3. **ユースケース**: ジョブセレクター切り替え・ステータス入力欄編集・フィルター変更など、UI 視覚検証で頻出
 4. 可能なら `browser_evaluate` ではなく `browser_select_option` / `browser_type`（ref 指定）を優先する。これらは実ブラウザ操作をエミュレートするため React とも整合する。`browser_evaluate` でのワークアラウンドは、snapshot の ref が使えない一括操作スクリプト等で必要になった場合の手段
 
+## 保存データを注入して検証する
+
+検証用のタイムライン等を localStorage（キー `ff14-rotation-calc:app-state`）に書いてからリロードしても、**復元されず空のまま** になる。アプリはページ離脱（`pagehide`）で現在の状態を即時保存する（`src/client/components/App.tsx`）ため、リロード直前に書いた値が離脱時の保存で上書きされる（#387 で発生）。
+
+ページの読み込み前に書き込めば上書きされない。アプリのページを開いた状態で `browser_run_code_unsafe` から `page.addInitScript` を登録してリロードする（Windows 11 + Microsoft Edge で動作検証済、2026-10-13、Issue #434）：
+
+```js
+async (page) => {
+  // 保存形式は src/client/logic/timeline-storage.ts の PersistedAppState。
+  // version 不一致・型不正なら初期状態に、選択ジョブに無い skillId のエントリは除外して復元される
+  const state = {
+    version: 1,
+    selectedJob: 'whm',
+    level: 100,
+    entries: [
+      { uid: 'entry-1', skillId: 'glare3' },
+      { uid: 'entry-2', skillId: 'glare3' },
+    ],
+    stats: { critical: 420, directHit: 420, determination: 440, speed: 420 },
+    untargetableWindows: [],
+    multiTargetWindows: [],
+  };
+  const flag = `seeded-app-state:${Date.now()}`;
+  await page.addInitScript(([json, flag]) => {
+    if (sessionStorage.getItem(flag)) return;   // 2 回目以降の読み込みでは書き込まない
+    localStorage.setItem('ff14-rotation-calc:app-state', json);
+    sessionStorage.setItem(flag, '1');
+  }, [JSON.stringify(state), flag]);
+  await page.reload();
+  await page.locator('[data-skill-entry-uid]').first().waitFor();
+  return await page.locator('[data-skill-entry-uid]').count();
+}
+```
+
+ポイント:
+
+1. **sessionStorage のフラグで 1 回だけ書き込む**: `addInitScript` は以後のページ読み込みのたびに実行される。フラグが無いと、注入後に UI で編集してリロードしたときも注入データに戻り、保存・復元の確認ができない
+2. **フラグ名は注入ごとに変える**: 別のデータを注入し直すときは、もう一度スニペットを実行するだけでよい。前回登録したスクリプトも残って実行されるが、そちらのフラグは立っているので書き込まない（フラグ名が同じだと新しい方も書き込まなくなる）
+3. **アプリのページを開いてから実行する**: localStorage はオリジン単位なので、`browser_navigate` で Vite の URL を開いた状態から `page.reload()` する
+4. 保存データの中身を手で組むのが面倒なときは、UI で状態を作ってから `localStorage.getItem('ff14-rotation-calc:app-state')` で取り出し、`JSON.parse` した値を `state` に使ってよい
+
 ## 失敗時の診断
 
 | 症状 | 原因 | 対処 |
@@ -123,6 +164,7 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 | 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
 | `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | dnd-kit の MouseSensor activation（distance: 4）と `dragTo` の一括ジェスチャが競合し、drop 前にドラッグが確定しない | 上記「dnd-kit ベース DnD の検証方法」のステップ分割マウス操作を `browser_run_code_unsafe` で実行する |
 | `browser_evaluate` で `select.value = '...'` を代入して `change` を dispatch しても UI が変化しない（値が空に戻る） | React の制御コンポーネントは value 代入を内部状態と同期しないため、直接代入では onChange が発火しない | 上記「React 制御フォーム要素の操作ワークアラウンド」の native setter スニペットを使う |
+| localStorage に保存データを書いてからリロードしても復元されない（タイムラインが空のまま） | アプリが `pagehide` で現在の状態を即時保存するため、リロード前に書いた値が離脱時の保存で上書きされる | 上記「保存データを注入して検証する」の `page.addInitScript` スニペットで、ページの読み込み前に書き込む |
 
 ## 切断時の再接続手順（Claude 向け）
 
