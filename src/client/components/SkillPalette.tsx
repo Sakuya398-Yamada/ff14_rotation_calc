@@ -102,7 +102,7 @@ export function SkillPalette({
   ];
 
   return (
-    <div className="custom-scrollbar" style={styles.container}>
+    <div className="custom-scrollbar skill-palette" style={styles.container}>
       <div style={styles.titleRow}>
         <h2 style={styles.title}>ジョブパレット</h2>
       </div>
@@ -169,10 +169,8 @@ const statItemBase: React.CSSProperties = {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    width: "280px",
     boxSizing: "border-box",
     backgroundColor: "var(--color-surface)",
-    borderRight: "1px solid var(--color-line)",
     padding: "var(--space-5) var(--space-4)",
     overflowY: "auto",
     flexShrink: 0,

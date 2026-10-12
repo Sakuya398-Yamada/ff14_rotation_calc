@@ -27,6 +27,8 @@ function roleOf(job: CatalogJob) {
 /** ヘッダーのジョブ・レベル選択（ボタン＋ロール別パネル） */
 export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: JobPickerProps) {
   const [open, setOpen] = useState(false);
+  // 狭い画面ではパネルを position: fixed で出すため、開いた時点のボタン下端を基準にする（layout.css の --job-picker-top）
+  const [panelTop, setPanelTop] = useState(0);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<JobId[]>(loadRecentJobs);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -45,6 +47,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
 
   useEffect(() => {
     if (!open) return;
+    setPanelTop((buttonRef.current?.getBoundingClientRect().bottom ?? 64) + 8);
     searchRef.current?.focus();
     const handleMouseDown = (e: MouseEvent) => {
       if (rootRef.current?.contains(e.target as Node)) return;
@@ -96,7 +99,8 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
           id={panelId}
           role="dialog"
           aria-label="ジョブとレベルを選択"
-          style={styles.panel}
+          className="job-picker-panel"
+          style={{ ...styles.panel, ["--job-picker-top" as string]: `${panelTop}px` }}
           onKeyDown={(e) => {
             if (e.key !== "Escape") return;
             // SkillDetailPanel は document で Esc を拾って閉じるため、ここで止める
@@ -267,13 +271,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--color-muted)",
   },
   panel: {
-    position: "absolute",
-    right: 0,
-    top: "calc(100% + 8px)",
     zIndex: 50,
-    width: "600px",
-    maxWidth: "calc(100vw - 32px)",
-    maxHeight: "calc(100vh - 96px)",
     overflowY: "auto",
     boxSizing: "border-box",
     padding: "var(--space-4)",

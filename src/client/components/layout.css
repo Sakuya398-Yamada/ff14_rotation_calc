@@ -1,0 +1,71 @@
+/*
+ * 画面幅で切り替わるレイアウトだけをここに置く（インライン style ではメディアクエリを書けないため）。
+ * ここで扱うプロパティはインライン側に書かない（インラインがクラスより優先されて上書きできなくなる）。
+ */
+
+.app-root {
+  height: 100vh;
+}
+
+.app-header {
+  padding: var(--space-3) var(--space-6);
+}
+
+.app-main {
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.skill-palette {
+  width: 280px;
+  border-right: 1px solid var(--color-line);
+}
+
+.job-picker-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 600px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 96px);
+}
+
+/* 狭い画面: ページ全体をスクロールさせ、パレットをタイムラインの上に積む（#398） */
+@media (max-width: 767px) {
+  .app-root {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .app-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .app-main {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .skill-palette {
+    width: 100%;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .app-work-area {
+    min-height: 70vh;
+  }
+
+  /* ヘッダーの折り返しでボタン位置が変わるため、パネルは画面に固定して左右に余白を取る。
+     上端は開いた時点のボタン下端（JobPicker が --job-picker-top に設定） */
+  .job-picker-panel {
+    position: fixed;
+    left: var(--space-4);
+    right: var(--space-4);
+    top: var(--job-picker-top, 72px);
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - var(--job-picker-top, 72px) - 16px);
+  }
+}
