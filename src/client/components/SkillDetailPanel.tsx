@@ -3,6 +3,7 @@ import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats } fro
 import { calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
+import { describeBuffEffects, formatBuffRemaining } from "../logic/buff-format";
 
 interface SkillDetailPanelProps {
   entry: ResolvedTimelineEntry;
@@ -131,62 +132,75 @@ export function SkillDetailPanel({
   if (entry.untargetableError) errorMessages.push("ボス離脱中");
   if (entry.recastError) errorMessages.push("リキャスト中");
 
+
+  // 使用時点で有効なバフを全件表示する（威力に関係しないバフも含む）。寄与の内訳と違いエラー時も表示する
+  const appliedBuffs = entry.activeBuffsAtUse.flatMap((ab) => {
+    const def = buffDefMap.get(ab.buffId);
+    return def ? [{ activeBuff: ab, def }] : [];
+  });
+
   return (
     <aside ref={panelRef} style={styles.panel} aria-label="スキル詳細パネル">
       <div style={styles.header}>
         <img src={resolvedSkill.icon} alt={resolvedSkill.name} style={styles.headerIcon} />
-        <div style={styles.headerText}>
-          <div style={styles.headerName}>{resolvedSkill.name}</div>
-          <div style={styles.headerStartTimeRow}>
-            <label style={styles.headerStartTimeLabel} htmlFor="manual-start-time-input">開始時刻:</label>
-            <input
-              id="manual-start-time-input"
-              type="number"
-              step="0.01"
-              min="0"
-              value={startTimeDraft}
-              onChange={(e) => setStartTimeDraft(e.target.value)}
-              onBlur={(e) => commitStartTime(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  commitStartTime((e.target as HTMLInputElement).value);
-                  (e.target as HTMLInputElement).blur();
-                } else if (e.key === "Escape") {
-                  // パネル全体の Escape ハンドラ（onClose）への伝播を止める。
-                  // 入力中の Escape は「編集キャンセル」だけを意図しており、パネル自体は閉じない。
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setStartTimeDraft((entry.manualStartTime ?? entry.autoStartTime).toFixed(2));
-                  (e.target as HTMLInputElement).blur();
-                }
-              }}
-              style={isManual ? { ...styles.startTimeInput, ...styles.startTimeInputManual } : styles.startTimeInput}
-              aria-label="開始時刻"
-            />
-            <span style={styles.startTimeUnit}>s</span>
-            {isManual && (
-              <button
-                type="button"
-                onClick={handleResetStartTime}
-                style={styles.resetButton}
-                aria-label="自動計算に戻す"
-              >
-                自動に戻す
-              </button>
-            )}
-          </div>
+        <div style={styles.headerName}>{resolvedSkill.name}</div>
+        <div style={styles.headerStartTimeRow}>
+          <label style={styles.headerStartTimeLabel} htmlFor="manual-start-time-input">開始時刻</label>
+          <input
+            id="manual-start-time-input"
+            type="number"
+            step="0.01"
+            min="0"
+            className="num"
+            value={startTimeDraft}
+            onChange={(e) => setStartTimeDraft(e.target.value)}
+            onBlur={(e) => commitStartTime(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitStartTime((e.target as HTMLInputElement).value);
+                (e.target as HTMLInputElement).blur();
+              } else if (e.key === "Escape") {
+                // パネル全体の Escape ハンドラ（onClose）への伝播を止める。
+                // 入力中の Escape は「編集キャンセル」だけを意図しており、パネル自体は閉じない。
+                e.preventDefault();
+                e.stopPropagation();
+                setStartTimeDraft((entry.manualStartTime ?? entry.autoStartTime).toFixed(2));
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            style={isManual ? { ...styles.startTimeInput, ...styles.startTimeInputManual } : styles.startTimeInput}
+            aria-label="開始時刻"
+          />
+          <span style={styles.startTimeUnit}>s</span>
           {isManual && (
-            <div style={styles.headerAutoHint}>
+            <button
+              type="button"
+              onClick={handleResetStartTime}
+              style={styles.resetButton}
+              aria-label="自動計算に戻す"
+            >
+              自動に戻す
+            </button>
+          )}
+          {isManual && (
+            <span className="num" style={styles.headerAutoHint}>
               （自動計算値: {entry.autoStartTime.toFixed(2)}s）
-            </div>
+            </span>
           )}
         </div>
-        <button type="button" onClick={onClose} style={styles.closeButton} aria-label="閉じる">×</button>
+        <button type="button" onClick={onClose} style={styles.closeButton} aria-label="閉じる">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <path d="M3 3l10 10M13 3L3 13" />
+          </svg>
+        </button>
       </div>
 
-      <div style={styles.body}>
-        <Row label="基本威力" value={`${entry.resolvedPotency}`} />
+      <div style={styles.metrics}>
+        <div style={styles.cell}>
+          <div style={styles.cellLabel}>基本威力</div>
+          <div className="num" style={styles.cellValue}>{entry.resolvedPotency}</div>
+        </div>
 
         <Section label="バフ倍率" value={`×${entry.buffMultiplier.toFixed(2)}`}>
           {potencyContribs.length === 0 ? (
@@ -237,20 +251,20 @@ export function SkillDetailPanel({
           )}
         </Section>
 
-        <div style={styles.expectedBox}>
-          <div style={styles.sectionLabel}>
+        <div style={styles.cell}>
+          <div style={styles.cellLabel}>
             期待値{isMultiTargetHit && breakdown ? ` (×${breakdown.targets.length}体 合算)` : ""}
           </div>
-          <div style={styles.expectedValue}>
+          <div className="num" style={styles.expectedValue}>
             {expectedValue !== null ? expectedValue : "—"}
           </div>
           {singleTargetExpected !== null && !isMultiTargetHit && (
-            <div style={styles.expectedFormula}>
+            <div className="num" style={styles.expectedFormula}>
               {entry.resolvedPotency} × {entry.buffMultiplier.toFixed(2)} × {expectedMul.toFixed(3)} = {singleTargetExpected}
             </div>
           )}
           {isMultiTargetHit && breakdown && (
-            <div style={styles.expectedFormula}>
+            <div className="num" style={styles.expectedFormula}>
               1体: {breakdown.singleTargetPotency}
               {breakdown.targets.slice(1).map((t, i) => ` / ${i + 2}体目: ${t}`).join("")}
               {" = "}{breakdown.total}
@@ -258,21 +272,47 @@ export function SkillDetailPanel({
           )}
         </div>
 
-        <div style={styles.metaRow}>
-          <span style={styles.metaLabel}>コンボ:</span>
-          <span style={entry.wsComboError ? styles.metaWarning : styles.metaOk}>
-            {entry.wsComboError ? "不成立" : "成立"}
-          </span>
+        <div style={styles.cell}>
+          <div style={styles.metaRow}>
+            <span style={styles.cellLabel}>コンボ</span>
+            <span style={entry.wsComboError ? styles.metaWarning : styles.metaOk}>
+              {entry.wsComboError ? "不成立" : "成立"}
+            </span>
+          </div>
+          <div style={styles.metaRow}>
+            <span style={styles.cellLabel}>エラー</span>
+            {errorMessages.length === 0 ? (
+              <span style={styles.metaOk}>なし</span>
+            ) : (
+              <span style={styles.metaError}>{errorMessages.join(" / ")}</span>
+            )}
+          </div>
         </div>
+      </div>
 
-        <div style={styles.metaRow}>
-          <span style={styles.metaLabel}>エラー:</span>
-          {errorMessages.length === 0 ? (
-            <span style={styles.metaOk}>なし</span>
-          ) : (
-            <span style={styles.metaError}>{errorMessages.join(" / ")}</span>
-          )}
-        </div>
+      <div style={styles.appliedRow}>
+        <span style={styles.cellLabel}>適用中のバフ</span>
+        {appliedBuffs.length === 0 ? (
+          <span style={styles.emptyContrib}>なし</span>
+        ) : (
+          <ul style={styles.appliedList} aria-label="適用中のバフ">
+            {appliedBuffs.map(({ activeBuff, def }) => {
+              const effects = describeBuffEffects(def);
+              return (
+                <li key={activeBuff.buffId} style={styles.appliedChip} title={def.name}>
+                  <span style={{ ...styles.contribBullet, backgroundColor: def.color }} />
+                  {def.icon && <img src={def.icon} alt="" style={styles.appliedIcon} />}
+                  <span>{def.name}</span>
+                  {effects.length > 0 && <span style={styles.appliedMeta}>{effects.join(" / ")}</span>}
+                  {def.maxStacks !== undefined && activeBuff.stacks !== undefined && (
+                    <span className="num" style={styles.appliedMeta}>×{activeBuff.stacks}</span>
+                  )}
+                  <span className="num" style={styles.appliedMeta}>残 {formatBuffRemaining(activeBuff, entry.startTime)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </aside>
   );
@@ -284,21 +324,12 @@ function formatPercent(value: number): string {
   return `${sign}${pct.toFixed(1)}%`;
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={styles.row}>
-      <span style={styles.rowLabel}>{label}</span>
-      <span style={styles.rowValue}>{value}</span>
-    </div>
-  );
-}
-
 function Section({ label, value, children }: { label: string; value: string; children: React.ReactNode }) {
   return (
-    <div style={styles.section}>
+    <div style={styles.cell}>
       <div style={styles.sectionHeader}>
-        <span style={styles.sectionLabel}>■ {label}</span>
-        <span style={styles.sectionValue}>{value}</span>
+        <span style={styles.cellLabel}>{label}</span>
+        <span className="num" style={styles.sectionValue}>{value}</span>
       </div>
       <div style={styles.contribList}>{children}</div>
     </div>
@@ -310,153 +341,134 @@ function ContribRow({ name, value, color }: { name: string; value: string; color
     <div style={styles.contribRow}>
       <span style={{ ...styles.contribBullet, backgroundColor: color }} />
       <span style={styles.contribName}>{name}</span>
-      <span style={styles.contribValue}>{value}</span>
+      <span className="num" style={styles.contribValue}>{value}</span>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
-    width: "320px",
     flexShrink: 0,
-    backgroundColor: "#1a1a2e",
-    borderLeft: "1px solid #333",
-    color: "#e0e0e0",
+    maxHeight: "45vh",
+    overflowY: "auto",
     display: "flex",
     flexDirection: "column",
-    overflow: "hidden",
+    gap: "var(--space-3)",
+    padding: "var(--space-3) var(--space-4)",
+    borderTop: "1px solid var(--color-line)",
+    backgroundColor: "var(--color-surface)",
+    color: "var(--color-text)",
   },
   header: {
     display: "flex",
+    flexWrap: "wrap",
     alignItems: "center",
-    gap: "10px",
-    padding: "12px",
-    backgroundColor: "#16213e",
-    borderBottom: "1px solid #333",
+    gap: "var(--space-3)",
   },
   headerIcon: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "6px",
+    width: "36px",
+    height: "36px",
+    borderRadius: "var(--radius-md)",
     flexShrink: 0,
-  },
-  headerText: {
-    flex: 1,
-    minWidth: 0,
   },
   headerName: {
     fontSize: "15px",
-    fontWeight: "bold",
-    color: "#ffd700",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
-  },
-  headerStartTime: {
-    fontSize: "11px",
-    color: "#888",
-    marginTop: "2px",
+    fontWeight: 700,
   },
   headerStartTimeRow: {
     display: "flex",
+    flexWrap: "wrap",
     alignItems: "center",
-    gap: "4px",
-    marginTop: "4px",
-    fontSize: "11px",
-    color: "#aaa",
-    flexWrap: "wrap" as const,
+    gap: "6px",
+    flex: "1 1 auto",
   },
   headerStartTimeLabel: {
-    color: "#aaa",
+    fontSize: "12px",
+    color: "var(--color-muted)",
   },
   startTimeInput: {
-    width: "64px",
-    padding: "2px 4px",
-    fontSize: "12px",
-    backgroundColor: "#0f0f23",
+    width: "80px",
+    boxSizing: "border-box",
+    minHeight: "32px",
+    padding: "0 var(--space-2)",
+    fontSize: "13px",
+    textAlign: "right",
+    backgroundColor: "var(--color-raised)",
     borderWidth: "1px",
     borderStyle: "solid",
-    borderColor: "#444",
-    borderRadius: "3px",
-    color: "#e0e0e0",
-    fontFamily: "monospace",
+    borderColor: "var(--color-field)",
+    borderRadius: "var(--radius-md)",
+    color: "var(--color-text)",
   },
   startTimeInputManual: {
-    borderColor: "#ffa726",
-    color: "#ffa726",
+    borderColor: "var(--color-warning)",
+    color: "var(--color-warning)",
   },
   startTimeUnit: {
-    color: "#888",
+    fontSize: "12px",
+    color: "var(--color-muted)",
   },
   resetButton: {
-    padding: "1px 6px",
-    fontSize: "10px",
-    backgroundColor: "transparent",
-    border: "1px solid #555",
-    borderRadius: "3px",
-    color: "#aaa",
+    minHeight: "32px",
+    padding: "0 10px",
+    fontSize: "12px",
+    background: "transparent",
+    border: "1px solid var(--color-field)",
+    borderRadius: "var(--radius-md)",
+    color: "var(--color-text)",
     cursor: "pointer",
-    marginLeft: "2px",
   },
   headerAutoHint: {
-    fontSize: "10px",
-    color: "#666",
-    marginTop: "2px",
+    fontSize: "11px",
+    color: "var(--color-muted)",
   },
   closeButton: {
-    background: "none",
-    border: "1px solid #555",
-    borderRadius: "4px",
-    color: "#aaa",
-    fontSize: "16px",
-    width: "24px",
-    height: "24px",
-    cursor: "pointer",
-    padding: 0,
-    lineHeight: 1,
-    flexShrink: 0,
-  },
-  body: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "12px",
-  },
-  row: {
+    marginLeft: "auto",
+    width: "40px",
+    height: "40px",
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: "6px 0",
-    borderBottom: "1px solid #222",
+    justifyContent: "center",
+    border: "none",
+    borderRadius: "var(--radius-md)",
+    background: "transparent",
+    color: "var(--color-muted)",
+    cursor: "pointer",
   },
-  rowLabel: {
-    fontSize: "12px",
-    color: "#aaa",
+  metrics: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))",
+    gap: "var(--space-2)",
   },
-  rowValue: {
-    fontSize: "14px",
-    color: "#e0e0e0",
-    fontWeight: "bold",
+  cell: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "var(--space-1)",
+    padding: "var(--space-2) 10px",
+    border: "1px solid var(--color-line)",
+    borderRadius: "var(--radius-md)",
+    backgroundColor: "var(--color-raised)",
+    minWidth: 0,
   },
-  section: {
-    marginTop: "12px",
+  cellLabel: {
+    fontSize: "11px",
+    color: "var(--color-muted)",
+  },
+  cellValue: {
+    fontSize: "18px",
+    fontWeight: 500,
   },
   sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    fontSize: "12px",
-  },
-  sectionLabel: {
-    color: "#aaa",
+    alignItems: "baseline",
+    gap: "var(--space-2)",
   },
   sectionValue: {
-    color: "#ffd700",
-    fontWeight: "bold",
-    fontSize: "13px",
+    fontSize: "15px",
+    fontWeight: 500,
   },
   contribList: {
-    marginTop: "4px",
-    paddingLeft: "12px",
     display: "flex",
     flexDirection: "column",
     gap: "2px",
@@ -465,65 +477,87 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    fontSize: "11px",
+    fontSize: "12px",
   },
   contribBullet: {
     width: "8px",
     height: "8px",
-    borderRadius: "50%",
+    borderRadius: "2px",
     flexShrink: 0,
   },
   contribName: {
     flex: 1,
-    color: "#ccc",
+    minWidth: 0,
     overflow: "hidden",
     textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
+    whiteSpace: "nowrap",
   },
   contribValue: {
-    color: "#e0e0e0",
+    color: "var(--color-muted)",
   },
   emptyContrib: {
     fontSize: "11px",
-    color: "#666",
-    fontStyle: "italic" as const,
-  },
-  expectedBox: {
-    marginTop: "16px",
-    padding: "10px",
-    backgroundColor: "#0f0f23",
-    border: "1px solid #333",
-    borderRadius: "6px",
+    color: "var(--color-muted)",
   },
   expectedValue: {
     fontSize: "22px",
-    fontWeight: "bold",
-    color: "#ffd700",
-    marginTop: "2px",
+    fontWeight: 500,
+    color: "var(--color-accent)",
   },
   expectedFormula: {
     fontSize: "11px",
-    color: "#888",
-    marginTop: "4px",
-    fontFamily: "monospace",
+    color: "var(--color-muted)",
+    overflowWrap: "anywhere",
   },
   metaRow: {
     display: "flex",
-    gap: "8px",
-    marginTop: "10px",
+    alignItems: "baseline",
+    gap: "var(--space-2)",
     fontSize: "12px",
   },
-  metaLabel: {
-    color: "#aaa",
-    flexShrink: 0,
-  },
   metaOk: {
-    color: "#88dd88",
+    color: "var(--color-dot)",
   },
   metaWarning: {
-    color: "#ff9800",
+    color: "var(--color-warning)",
   },
   metaError: {
-    color: "#ef5350",
+    color: "var(--color-error)",
+  },
+  appliedRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "var(--space-2)",
+    paddingTop: "var(--space-3)",
+    borderTop: "1px solid var(--color-line-soft)",
+  },
+  appliedList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+    margin: 0,
+    padding: 0,
+    listStyle: "none",
+  },
+  appliedChip: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    minHeight: "28px",
+    padding: "0 10px 0 var(--space-2)",
+    border: "1px solid var(--color-field)",
+    borderRadius: "14px",
+    backgroundColor: "var(--color-raised)",
+    fontSize: "12px",
+  },
+  appliedIcon: {
+    width: "18px",
+    height: "18px",
+    borderRadius: "3px",
+  },
+  appliedMeta: {
+    fontSize: "11px",
+    color: "var(--color-muted)",
   },
 };
