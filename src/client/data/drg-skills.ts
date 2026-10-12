@@ -48,7 +48,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 竜騎士（DRG）攻撃スキル一覧
- * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #412
+ * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（パッチ7.5）との差分は #412 で解消済み
  * 威力はジョブガイド準拠（コンボ時威力を基本potencyに採用、方向指定ボーナスなし）
  * comboFrom: コンボ元スキルIDリスト
  * nonComboPotency: コンボ不成立時の威力
@@ -490,7 +490,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 30,
     acquiredLevel: 80,
-    buffConsumptions: [{ buffId: "stardiver-ready", stacks: 1 }],
+    // 発動条件は「紅の竜血」効果中。リキャスト30秒 > 紅の竜血20秒のため1回の紅の竜血につき1回まで
+    requiredBuff: "life-of-the-dragon",
     buffApplications: ["starcross-ready"],
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 840 },
@@ -511,6 +512,8 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     cooldown: 1,
     acquiredLevel: 100,
     buffConsumptions: [{ buffId: "starcross-ready", stacks: 1 }],
+    // スタークロッサー実行可は「紅の竜血」の効果が切れると解除される
+    requiredBuff: "life-of-the-dragon",
     maxTargets: Infinity,
     falloffRate: 0.4,
   },
@@ -529,7 +532,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
     acquiredLevel: 60,
-    buffApplications: ["life-of-the-dragon", "nastrond-ready", "stardiver-ready"],
+    buffApplications: ["life-of-the-dragon", "nastrond-ready"],
     traitPotencyOverrides: [
       { traitLevel: 90, potency: 280 },
     ],
@@ -572,8 +575,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     traitPotencyOverrides: [
       { traitLevel: 94, potency: 440 },
     ],
-    // 前方直線範囲。減衰なしでヒット（対象数上限なし）
+    // 前方直線範囲、2体目以降は威力50%減
     maxTargets: Infinity,
+    falloffRate: 0.5,
   },
 
   // ============================================================
@@ -603,6 +607,9 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
     acquiredLevel: 45,
+    traitPotencyOverrides: [
+      { traitLevel: 84, maxCharges: 2 },
+    ],
   },
 
   // ============================================================

@@ -17,6 +17,11 @@ export interface ResourceChange {
    * 例: サブトラクティブパレットの WP-1 / BP+1 — WP が 0 なら両方とも適用されない。
    */
   skipIfInsufficient?: boolean;
+  /**
+   * 指定バフのいずれかがアクティブなときだけこの変動を適用する（未アクティブ時はエラーにせず変動しない）。
+   * 例: エンピリアルアローの詩心付与 — 歌の実行中のみ。
+   */
+  requiredBuffAnyOf?: string[];
 }
 
 /** バフスタック消費（スキル使用時） */
@@ -39,7 +44,7 @@ export interface TraitPotencyOverride {
   dotPotency?: number;
   /** 変更後の最大チャージ数（undefinedの場合は変更なし） */
   maxCharges?: number;
-  /** 変更後のリキャスト（cooldown、秒）（undefinedの場合は変更なし） */
+  /** 変更後の個別リキャストタイム（秒）（undefinedの場合は変更なし） */
   cooldown?: number;
 }
 
@@ -101,8 +106,8 @@ export interface Skill {
   maxCharges?: number;
   /**
    * 共有リキャストグループ識別子。同一グループのスキル間でチャージ・クールダウンを共有する。
-   * 例: 必殺剣・紅蓮（Lv62）と置換後の必殺剣・閃影（Lv96）は同じ "hissatsu-senei-guren" を持ち、
-   * どちらを使ってもチャージが共有消費される。
+   * 例: 必殺剣・紅蓮（Lv70）と必殺剣・閃影（Lv72）は同じ "hissatsu-senei-guren" を持ち、
+   * どちらを使ってもリキャストが共有される。
    * 未設定の場合は従来通りスキル個別のチャージ管理（後方互換）。
    * 注: 同一グループ内では `cooldown` / `maxCharges` を揃える前提。
    * 不一致時は「最後に使用したスキルの値」が採用されるため、グループ全体で一意になるように設定すること。
@@ -135,6 +140,14 @@ export interface Skill {
     minPotency: number;
     maxAmount: number;
     maxPotency: number;
+  };
+  /**
+   * 実行前のリソース量に応じた段階威力（index 0 = 1個のとき）。配列長を超える量は末尾の威力。
+   * 例: ピッチパーフェクト — 詩心 1/2/3 で威力 100/220/360。
+   */
+  potencyByResourceAmount?: {
+    resourceId: string;
+    potencies: number[];
   };
   /** consumeAllResources消費数に応じたバフ適用テーブル（index 0 = 1個消費時のbuffId[]） */
   buffApplicationsByConsumedCount?: string[][];
@@ -305,6 +318,8 @@ export interface BuffEffect {
    * 同一バフが複数スキル群に異なる倍率を適用するケースで使用する。
    */
   appliesToSkillIds?: string[];
+  /** consumeOnGcd 専用: 使用しても消費しないスキルIDのリスト（竜眼を遠隔WSのピアシングタロンで消費しない等） */
+  excludedSkillIds?: string[];
   /** applyBuffOnSkill / applyBuffOnDeplete 専用: 付与するバフID */
   appliedBuffId?: string;
   /**

@@ -26,7 +26,13 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     }
   }
 
-  if (potency === skill.potency && nonComboPotency === skill.nonComboPotency && dotPotency === skill.dotPotency && maxCharges === skill.maxCharges && cooldown === skill.cooldown) {
+  if (
+    potency === skill.potency &&
+    nonComboPotency === skill.nonComboPotency &&
+    dotPotency === skill.dotPotency &&
+    maxCharges === skill.maxCharges &&
+    cooldown === skill.cooldown
+  ) {
     return skill;
   }
 
