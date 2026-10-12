@@ -97,8 +97,6 @@ function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {})
     onMoveEntry: vi.fn(),
     resources: [],
     buffs: [],
-    totalExpectedPotency: 0,
-    dotExpectedPotency: 0,
     stats: defaultStats,
     dotTicks: [],
     activeDoTs: [],
@@ -106,7 +104,6 @@ function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {})
     onUntargetableWindowsChange: vi.fn(),
     multiTargetWindows: [],
     onMultiTargetWindowsChange: vi.fn(),
-    overallPps: null,
     rangePps: null,
     ppsRange: null,
     onPpsRangeChange: vi.fn(),
@@ -156,15 +153,6 @@ describe("Timeline", () => {
     expect(screen.getByText(String(ogcdExpected))).toBeInTheDocument();
   });
 
-  it("合計期待威力がヘッダーに表示され、0のときは非表示", () => {
-    const { props, rerender } = renderTimeline({ totalExpectedPotency: 1234 });
-    expect(screen.getByText(/期待威力:/)).toBeInTheDocument();
-    expect(screen.getByText("1234")).toBeInTheDocument();
-
-    rerender(<Timeline {...props} totalExpectedPotency={0} />);
-    expect(screen.queryByText(/期待威力:/)).not.toBeInTheDocument();
-  });
-
   it("エントリのドラッグ開始で削除ゾーンが出現し、ドロップで onRemoveEntry が呼ばれる", () => {
     const resolvedEntries = resolve([
       makeEntry(gcdSkill.id),
@@ -191,25 +179,20 @@ describe("Timeline", () => {
     expect(screen.queryByText("ここにドロップして削除")).not.toBeInTheDocument();
   });
 
-  it("エントリ削除の反映（props更新）で当該エントリが消え、合計威力表示が更新される", () => {
+  // 合計期待威力の表示は #385 で SummaryBar に移した（summary-bar.test.tsx）
+  it("エントリ削除の反映（props更新）で当該エントリが消える", () => {
     // Timeline は制御コンポーネントで、エントリ削除の実体は親側の state 更新。
     // onRemoveEntry 後に親が渡し直す props をシミュレートして表示追従を検証する
     const twoEntries = resolve([makeEntry(gcdSkill.id), makeEntry(ogcdSkill.id)]);
-    const { props, rerender } = renderTimeline({
-      resolvedEntries: twoEntries,
-      totalExpectedPotency: 500,
-    });
+    const { props, rerender } = renderTimeline({ resolvedEntries: twoEntries });
     expect(screen.getByAltText("テストoGCD")).toBeInTheDocument();
-    expect(screen.getByText("500")).toBeInTheDocument();
 
     const remaining = resolve([makeEntry(gcdSkill.id)]);
     rerender(
-      <Timeline {...props} resolvedEntries={remaining} totalExpectedPotency={350} />
+      <Timeline {...props} resolvedEntries={remaining} />
     );
     expect(screen.queryByAltText("テストoGCD")).not.toBeInTheDocument();
     expect(screen.getByAltText("テストGCD")).toBeInTheDocument();
-    expect(screen.getByText("350")).toBeInTheDocument();
-    expect(screen.queryByText("500")).not.toBeInTheDocument();
   });
 
   it("ジョブ切替相当のprops更新で表示が追従する（タイムライン全消去→別ジョブのエントリ）", () => {

@@ -26,12 +26,9 @@ interface TimelineHeaderProps {
   ppsRange: PpsRange | null;
   onPpsRangeChange: (range: PpsRange | null) => void;
   lastGcdEndTime: number;
-  totalExpectedPotency: number;
-  dotExpectedPotency: number;
-  overallPps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
 }
 
-/** タイムライン上部のヘッダー（レーン表示トグル群・エディタ開閉・期待威力/PPSサマリ） */
+/** タイムライン上部のヘッダー（レーン表示トグル群・エディタ開閉） */
 export function TimelineHeader({
   untargetableWindows,
   multiTargetWindows,
@@ -56,9 +53,6 @@ export function TimelineHeader({
   ppsRange,
   onPpsRangeChange,
   lastGcdEndTime,
-  totalExpectedPotency,
-  dotExpectedPotency,
-  overallPps,
 }: TimelineHeaderProps) {
   return (
     <div style={styles.header}>
@@ -141,23 +135,6 @@ export function TimelineHeader({
         >
           {showPpsRange ? "PPS範囲 ▼" : "PPS範囲 ▶"}
         </button>
-        <div style={styles.potencyDisplay}>
-          {totalExpectedPotency > 0 && (
-            <>
-              期待威力: <span style={styles.potencyValue}>{totalExpectedPotency}</span>
-              {dotExpectedPotency > 0 && (
-                <span style={{ fontSize: "13px", color: "var(--color-dot)" }}>
-                  {" "}(DoT: {dotExpectedPotency})
-                </span>
-              )}
-            </>
-          )}
-          {overallPps !== null && (
-            <span style={styles.ppsDisplay}>
-              {" "}PPS: <span style={styles.ppsValue}>{overallPps.pps.toFixed(2)}</span>
-            </span>
-          )}
-        </div>
       </div>
     </div>
   );
