@@ -117,9 +117,11 @@ function getSpeedMultiplier(
  * その値でスキル定義の recastTime を置き換える（例: レインボードリップ効果アップ中の 6 秒 → 2.5 秒）。
  * 置換後の値にスキルスピード補正（calcGcd）と speed バフを掛けるため、呼び出し側は
  * skill.recastTime の代わりにこの戻り値を使う。
+ * appliesToSkillIds の判定は skillId（パレット上の変化元 ID）で行う。
  */
 function getBaseRecastTime(
-  skill: Skill,
+  skillId: string,
+  recastTime: number,
   activeBuffs: ActiveBuff[],
   buffDefMap: Map<string, BuffDefinition>
 ): number {
@@ -128,11 +130,11 @@ function getBaseRecastTime(
     if (!def) continue;
     for (const effect of def.effects) {
       if (effect.type !== "recastOverride") continue;
-      if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(skill.id)) continue;
+      if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(skillId)) continue;
       return effect.value;
     }
   }
-  return skill.recastTime;
+  return recastTime;
 }
 
 /**
@@ -647,12 +649,15 @@ function applyBuffResourceGainOnSkill(
 /**
  * 正の ResourceChange について、アクティブバフの redirectResourceGain に従って振替先リソースに書き換える。
  * 負の変動はそのまま返す。未登録の toResourceId へのリダイレクトは無視する（onExpireResourceTransfer と同様に安全側倒し）。
+ * 振替先が個別の maxStacks に達している場合も振り替えず、元のリソースに積む
+ * （例: ブラックペイントは 1 つまでで、色調反転中でも 2 つ目以降のペイントはホワイトペイントになる）。
  */
 function applyBuffRedirects(
   changes: ResourceChange[],
   activeBuffs: ActiveBuff[],
   buffDefMap: Map<string, BuffDefinition>,
-  resourceDefMap: Map<string, ResourceDefinition>
+  resourceDefMap: Map<string, ResourceDefinition>,
+  resourceState: ResourceSnapshot
 ): ResourceChange[] {
   if (activeBuffs.length === 0) return changes;
   const redirectMap = new Map<string, string>();
@@ -667,7 +672,8 @@ function applyBuffRedirects(
   return changes.map((c) => {
     if (c.amount <= 0) return c;
     const to = redirectMap.get(c.resourceId);
-    return to ? { ...c, resourceId: to } : c;
+    if (!to || (resourceState[to] ?? 0) >= resourceDefMap.get(to)!.maxStacks) return c;
+    return { ...c, resourceId: to };
   });
 }
 
@@ -678,6 +684,8 @@ function applyBuffRedirects(
  *
  * skipIfInsufficient フラグ付き変動は一括でアトミックに処理する:
  *   フラグ付きの負変動のうち 1 つでも残量不足があれば、フラグ付きの全変動（正負問わず）を一括スキップする。
+ *   フラグ付きの正変動の対象が個別の maxStacks に達している場合も同様に一括スキップする
+ *   （例: BP が 1 の状態でのサブトラクティブパレットは WP→BP の色変化を行わず、WP を減らさない）。
  */
 function applyResourceChanges(
   resourceState: ResourceSnapshot,
@@ -686,12 +694,13 @@ function applyResourceChanges(
   resources: ResourceDefinition[],
   onApplied?: (def: ResourceDefinition) => void
 ): void {
-  const skipFlagged = changes.some(
-    (c) =>
-      c.skipIfInsufficient === true &&
-      c.amount < 0 &&
-      (resourceState[c.resourceId] ?? 0) < Math.abs(c.amount)
-  );
+  const skipFlagged = changes.some((c) => {
+    if (c.skipIfInsufficient !== true) return false;
+    const current = resourceState[c.resourceId] ?? 0;
+    if (c.amount < 0) return current < Math.abs(c.amount);
+    const def = resourceDefMap.get(c.resourceId);
+    return def !== undefined && current >= def.maxStacks;
+  });
   const effective = skipFlagged ? changes.filter((c) => !c.skipIfInsufficient) : changes;
 
   for (const change of effective) {
@@ -774,25 +783,6 @@ export function resolveTimeline(
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
       expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
 
-      // recastOverride バフ（レインボードリップ効果アップ等）があれば基礎リキャストを置き換えてから補正を掛ける
-      const overriddenRecast = getBaseRecastTime(originalSkill, currentActiveBuffs, buffDefMap);
-      const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
-      // 速度バフを適用してリキャスト・詠唱時間計算
-      // 対象スキル限定の speed バフ（インスタレーション等）を正しくフィルタするため originalSkill.id を渡す
-      const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
-      const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
-      // instantCast バフがアクティブなら詠唱時間を 0 に上書きする（三連魔・ファイアスターター等）
-      // 対象スキル限定バフ（appliesToSkillIds）を正しくフィルタするため originalSkill.id を渡す
-      const instantCast = originalSkill.castTime
-        ? hasInstantCastBuff(currentActiveBuffs, buffDefMap, originalSkill.id)
-        : false;
-      resolvedCastTime = originalSkill.castTime && !instantCast
-        ? Math.round(originalSkill.castTime * speedMul * 1000) / 1000
-        : 0;
-
-      gcdAvailableAt = startTime + recastTime;
-      // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
-      actionAvailableAt = startTime + Math.max(resolvedCastTime, originalSkill.animationLock);
     } else {
       autoStartTime = actionAvailableAt;
       autoStartTime = Math.round(autoStartTime * 1000) / 1000;
@@ -844,6 +834,29 @@ export function resolveTimeline(
       }
     }
 
+    // GCD のリキャスト・詠唱時間は変化先スキルの値で計算する（例: レッドファイア → シアンブリザドで 2.5 秒 → 3.3 秒）
+    if (originalSkill.type === "gcd") {
+      // recastOverride バフ（レインボードリップ効果アップ等）があれば基礎リキャストを置き換えてから補正を掛ける
+      const overriddenRecast = getBaseRecastTime(originalSkill.id, skill.recastTime, currentActiveBuffs, buffDefMap);
+      const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
+      // 速度バフを適用してリキャスト・詠唱時間計算
+      // 対象スキル限定の speed バフ（インスタレーション等）を正しくフィルタするため originalSkill.id を渡す
+      const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
+      const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
+      // instantCast バフがアクティブなら詠唱時間を 0 に上書きする（三連魔・ファイアスターター等）
+      // 対象スキル限定バフ（appliesToSkillIds）を正しくフィルタするため originalSkill.id を渡す
+      const instantCast = skill.castTime
+        ? hasInstantCastBuff(currentActiveBuffs, buffDefMap, originalSkill.id)
+        : false;
+      resolvedCastTime = skill.castTime && !instantCast
+        ? Math.round(skill.castTime * speedMul * 1000) / 1000
+        : 0;
+
+      gcdAvailableAt = startTime + recastTime;
+      // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
+      actionAvailableAt = startTime + Math.max(resolvedCastTime, skill.animationLock);
+    }
+
     // 自動生成リソースを時刻に応じて加算
     for (const res of resources) {
       if (res.autoGenerateInterval) {
@@ -892,9 +905,15 @@ export function resolveTimeline(
     // バフの resourceCostMultiplier 効果でリソース消費量を動的にスケールしたものを以降で使用する
     // （リソース不足判定・実適用の両方が同じ実効値を参照するように、ここで一度だけ計算する）
     // さらに resourceGainOnSkill 効果（UB 段階別 MP 回復等）の正変動も同じタイミングで上乗せする
-    const baseResourceChanges = skill.resourceChanges
+    // requiredBuffAnyOf 付きの変動は、指定バフがいずれも未アクティブなら適用しない
+    const buffGatedResourceChanges = skill.resourceChanges?.filter(
+      (c) =>
+        !c.requiredBuffAnyOf ||
+        c.requiredBuffAnyOf.some((buffId) => currentActiveBuffs.some((ab) => ab.buffId === buffId))
+    );
+    const baseResourceChanges = buffGatedResourceChanges
       ? applyBuffResourceCostMultipliers(
-          skill.resourceChanges,
+          buffGatedResourceChanges,
           skill.id,
           currentActiveBuffs,
           resourceState,
@@ -1041,6 +1060,15 @@ export function resolveTimeline(
       resolvedPotency = Math.floor(minPotency + (maxPotency - minPotency) * ratio);
     }
 
+    // potencyByResourceAmount: リソース量に応じた段階威力（量 0 はリソース不足エラー側で扱うため基本威力のまま）
+    if (skill.potencyByResourceAmount) {
+      const { resourceId, potencies } = skill.potencyByResourceAmount;
+      const currentAmount = resourceState[resourceId] ?? 0;
+      if (currentAmount >= 1 && potencies.length > 0) {
+        resolvedPotency = potencies[Math.min(currentAmount, potencies.length) - 1];
+      }
+    }
+
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
     const untargetableError = skill.target === "enemy" && untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
@@ -1082,13 +1110,14 @@ export function resolveTimeline(
     // （スキル実行中に新たに付与されたバフは消費対象外）
     // - consumeOnGcd: 全 GCD スキル実行後に消費
     //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（明鏡止水で特定WSに限定する用途）
+    //   excludedSkillIds 指定時は該当スキルIDでは消費しない（竜眼はピアシングタロンでは消費しない）
     // - instantCast: 詠唱時間 > 0 の GCD スキル実行後にのみ消費（非詠唱 GCD / oGCD では消費しない）
     //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（例: firestarter は fire-3 限定）
     //   複数の instantCast バフが同時アクティブな場合は 1 発につき 1 つだけ消費する
     //   （例: 迅速魔 + 三連魔 → 迅速魔のみ消費、三連魔は据え置き）
     const consumeBuffTargets = new Set<string>();
     if (skill.type === "gcd") {
-      const isCastingGcd = !!originalSkill.castTime && originalSkill.castTime > 0;
+      const isCastingGcd = !!skill.castTime && skill.castTime > 0;
       const instantCastCandidates: string[] = [];
       for (const ab of currentActiveBuffs) {
         const def = buffDefMap.get(ab.buffId);
@@ -1096,6 +1125,7 @@ export function resolveTimeline(
         const hasConsumeOnGcd = def.effects.some((e) => {
           if (e.type !== "consumeOnGcd") return false;
           if (e.appliesToSkillIds && !e.appliesToSkillIds.includes(resolvedSkillId)) return false;
+          if (e.excludedSkillIds?.includes(resolvedSkillId)) return false;
           return true;
         });
         if (hasConsumeOnGcd) {
@@ -1168,7 +1198,7 @@ export function resolveTimeline(
               (c) => !(c.resourceId === skippedResourceId && c.amount < 0)
             )
           : effectiveResourceChanges;
-        const redirected = applyBuffRedirects(filtered, currentActiveBuffs, buffDefMap, resourceDefMap);
+        const redirected = applyBuffRedirects(filtered, currentActiveBuffs, buffDefMap, resourceDefMap, resourceState);
         applyResourceChanges(resourceState, redirected, resourceDefMap, resources, onResourceApplied);
       }
 
@@ -1189,7 +1219,7 @@ export function resolveTimeline(
 
       // コンボ成立時のみのリソース変動を適用
       if (!wsComboError && skill.comboResourceChanges) {
-        const comboRedirected = applyBuffRedirects(skill.comboResourceChanges, currentActiveBuffs, buffDefMap, resourceDefMap);
+        const comboRedirected = applyBuffRedirects(skill.comboResourceChanges, currentActiveBuffs, buffDefMap, resourceDefMap, resourceState);
         applyResourceChanges(resourceState, comboRedirected, resourceDefMap, resources, onResourceApplied);
       }
 

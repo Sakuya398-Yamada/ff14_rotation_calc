@@ -96,7 +96,7 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
     expect(last.critRateBonus).toBe(1);
   });
 
-  it("奥義波切後 → 返し波切（威力1000、確定クリ・確定DH）", () => {
+  it("奥義波切後 → 返し波切（威力1000、確定クリ）", () => {
     const result = resolveTimeline(
       [
         entry("ikishoten"),         // 奥義波切Ready付与
@@ -114,7 +114,7 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
     expect(last.resolvedSkillId).toBe("kaeshi-namikiri");
     expect(last.resolvedPotency).toBe(1000);
     expect(last.critRateBonus).toBe(1);
-    expect(last.dhRateBonus).toBe(1);
+    expect(last.dhRateBonus).toBe(0);
   });
 
   it("Ready バフが排他グループ tsubame-ready で重複付与されない", () => {

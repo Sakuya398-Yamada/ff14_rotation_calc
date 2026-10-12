@@ -20,11 +20,16 @@ function heavyShots(count: number): TimelineEntry[] {
 }
 
 describe("BRD: ピッチパーフェクトのメヌエット限定条件 (#108)", () => {
-  it("スキル定義: requiredBuff がメヌエット、詩心 3 消費", () => {
+  it("スキル定義: requiredBuff がメヌエット、詩心 1 以上で全消費、詩心数に応じた段階威力 (#409)", () => {
     const pitch = skillMap.get("pitch-perfect");
     expect(pitch).toBeDefined();
     expect(pitch!.requiredBuff).toBe("wanderers-minuet");
-    expect(pitch!.resourceChanges).toEqual([{ resourceId: "repertoire", amount: -3 }]);
+    expect(pitch!.resourceChanges).toEqual([{ resourceId: "repertoire", amount: -1 }]);
+    expect(pitch!.consumeAllOfResource).toBe("repertoire");
+    expect(pitch!.potencyByResourceAmount).toEqual({
+      resourceId: "repertoire",
+      potencies: [100, 220, 360],
+    });
   });
 
   it("歌なしでは使用できない（comboErrors）", () => {
@@ -68,6 +73,32 @@ describe("BRD: ピッチパーフェクトのメヌエット限定条件 (#108)"
     expect(pitch.comboErrors).toEqual([]);
     expect(pitch.resourceErrors).toEqual([]);
     expect(pitch.resolvedPotency).toBe(360);
+    expect(pitch.resourceSnapshot["repertoire"]).toBe(0);
+  });
+
+  it("詩心 1 で威力 100、詩心 2 で威力 220 になり、いずれも詩心を全て消費する (#409)", () => {
+    // メヌエット直後のエンピリアルアローで詩心 1（自動付与の初回 tick より前）
+    const one = resolve([
+      entry("wanderers-minuet"),
+      entry("empyreal-arrow"),
+      entry("pitch-perfect"),
+    ]);
+    expect(one.entries[1].resourceSnapshot["repertoire"]).toBe(1);
+    expect(one.entries[2].resourceErrors).toEqual([]);
+    expect(one.entries[2].resolvedPotency).toBe(100);
+    expect(one.entries[2].resourceSnapshot["repertoire"]).toBe(0);
+
+    // エンピリアルアロー +1 と自動付与 1 tick で詩心 2
+    const two = resolve([
+      entry("wanderers-minuet"),
+      entry("empyreal-arrow"),
+      ...heavyShots(3),
+      entry("pitch-perfect"),
+    ]);
+    const pitch = two.entries[two.entries.length - 1];
+    expect(two.entries[two.entries.length - 2].resourceSnapshot["repertoire"]).toBe(2);
+    expect(pitch.resourceErrors).toEqual([]);
+    expect(pitch.resolvedPotency).toBe(220);
     expect(pitch.resourceSnapshot["repertoire"]).toBe(0);
   });
 });

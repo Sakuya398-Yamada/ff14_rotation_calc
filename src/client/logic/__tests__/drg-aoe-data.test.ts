@@ -42,8 +42,8 @@ const DRG_AOE_SKILLS = [
   { id: "sonic-thrust", falloffRate: undefined },
   { id: "coerthan-torment", falloffRate: undefined },
   { id: "draconian-fury", falloffRate: undefined },
-  { id: "wyrmwind-thrust", falloffRate: undefined },
-  // 2体目以降50%減
+  // 2体目以降50%減（天竜点睛は #412 でジョブガイドに合わせて減衰あり）
+  { id: "wyrmwind-thrust", falloffRate: 0.5 },
   { id: "dragonfire-dive", falloffRate: 0.5 },
   { id: "rise-of-the-dragon", falloffRate: 0.5 },
   { id: "geirskogul", falloffRate: 0.5 },
@@ -84,6 +84,20 @@ describe("DRG AoE データ（#270）", () => {
     const single = Math.floor(doomSpike.potency * DEFAULT_MUL);
     expect(breakdown.targets).toHaveLength(5);
     expect(breakdown.total).toBe(single * 5);
+  });
+
+  it("天竜点睛: 3体ヒットで2体目以降が50%減", () => {
+    const wyrmwind = skillMap.get("wyrmwind-thrust")!;
+    const entry = makeResolvedEntry({
+      skillId: "wyrmwind-thrust",
+      resolvedSkillId: "wyrmwind-thrust",
+      resolvedPotency: wyrmwind.potency,
+      targetCount: 3,
+    });
+    const breakdown = calcEntryPotencyBreakdown(entry, wyrmwind, DEFAULT_STATS);
+    const single = Math.floor(wyrmwind.potency * DEFAULT_MUL);
+    const reduced = Math.floor(single * 0.5);
+    expect(breakdown.targets).toEqual([single, reduced, reduced]);
   });
 
   it("ゲイルスコグル: 3体ヒットで2体目以降が50%減", () => {

@@ -52,6 +52,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "色調\n反転",
     icon: subtractivePaletteIcon,
     duration: null,
+    acquiredLevel: 90,
     effects: [],
     color: "#546e7a",
     // 色調反転中は WP の獲得を BP へ振り替える（枠内でのペイント色変化）
@@ -66,7 +67,8 @@ export const PCT_BUFFS: BuffDefinition[] = [
     name: "ハンマーコンボ実行可",
     shortName: "ﾊﾝﾏｰ\nｺﾝﾎﾞ",
     icon: hammerStampIcon,
-    duration: null,
+    duration: 30,
+    maxStacks: 3,
     effects: [],
     color: "#ffb74d",
   },
@@ -76,6 +78,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "ﾌﾞﾗｯｼｭ\nReady",
     icon: hammerStampIcon,
     duration: 30,
+    acquiredLevel: 86,
     effects: [],
     color: "#ffcc80",
   },
@@ -85,6 +88,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "ﾎﾟﾘｯｼｭ\nReady",
     icon: hammerStampIcon,
     duration: 30,
+    acquiredLevel: 86,
     effects: [],
     color: "#ffe0b2",
   },
@@ -110,6 +114,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     icon: starryMuseIcon,
     duration: 30,
     maxStacks: 5,
+    acquiredLevel: 82,
     effects: [
       // 25% キャスト/リキャスト短縮の対象は色魔法・スタープリズム・ホワイトホーリー/ブラックコメットに限定。
       // ハンマーコンボ・描画スキル・レインボードリップは対象外。
@@ -128,7 +133,22 @@ export const PCT_BUFFS: BuffDefinition[] = [
           "comet-in-black",
         ],
       },
-      { type: "consumeOnGcd", value: 1 },
+      // 短縮が発動するスキル（色魔法・スタープリズム・ホワイトホーリー/ブラックコメット）の実行時のみ 1 スタック消費する
+      {
+        type: "consumeOnGcd",
+        value: 1,
+        appliesToSkillIds: [
+          "fire-in-red",
+          "aero-in-green",
+          "water-in-blue",
+          "blizzard-in-cyan",
+          "stone-in-yellow",
+          "thunder-in-magenta",
+          "star-prism",
+          "holy-in-white",
+          "comet-in-black",
+        ],
+      },
       // 5 スタックを消費し切ると「レインボードリップ効果アップ」を付与する（公式ジョブガイド: イマジンスカイ）
       { type: "applyBuffOnDeplete", value: 0, appliedBuffId: "rainbow-drip-ready" },
     ],
@@ -153,6 +173,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "ｽﾀｰ\nﾌﾟﾘｽﾞﾑ",
     icon: starPrismIcon,
     duration: 20,
+    acquiredLevel: 100,
     effects: [],
     color: "#f06292",
   },
@@ -168,6 +189,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     duration: 30,
     // 公式ジョブガイドは「リキャストタイムが短縮され、詠唱時間無しで唱えられる」とのみ記載し数値は無い。
     // 短縮後の基礎リキャストは The Balance の「標準 2.5 秒 GCD 相当」に従い 2.5 秒とする（#349）。
+    acquiredLevel: 92,
     effects: [
       { type: "instantCast", value: 0, appliesToSkillIds: ["rainbow-drip"] },
       { type: "recastOverride", value: 2.5, appliesToSkillIds: ["rainbow-drip"] },
@@ -196,6 +218,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "ｸﾛｰ\nReady",
     icon: mogOfTheAgesIcon,
     duration: null,
+    acquiredLevel: 96,
     effects: [],
     color: "#81c784",
   },
@@ -205,6 +228,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     shortName: "ﾌｧﾝｸﾞ\nReady",
     icon: mogOfTheAgesIcon,
     duration: null,
+    acquiredLevel: 96,
     effects: [],
     color: "#66bb6a",
   },

@@ -10,9 +10,9 @@ function entry(skillId: string): TimelineEntry {
 }
 
 /**
- * 必殺剣・紅蓮（Lv62）と必殺剣・閃影（Lv96 トレイトで紅蓮を置換）は
- * 共有リキャスト 60 秒 / 2 チャージを持つ実機仕様。
- * cooldownGroup="hissatsu-senei-guren" でチャージを共有する。
+ * 必殺剣・紅蓮（Lv70）と必殺剣・閃影（Lv72）は別アクションで、
+ * リキャストタイマー 60 秒（Lv94 以降）を共有する（公式ジョブガイド、#408）。
+ * cooldownGroup="hissatsu-senei-guren" でリキャストを共有する。
  *
  * 本テストは「データの cooldownGroup 配線が正しく機能するか」の検証が目的。
  * 剣気不足による resourceErrors を回避するため、resources / buffs を渡さずに
@@ -20,67 +20,56 @@ function entry(skillId: string): TimelineEntry {
  * スキップされる仕様のため）。
  */
 describe("侍: 必殺剣・紅蓮 / 閃影 の共有リキャスト", () => {
-  it("紅蓮の威力は 400 / Lv62 / cooldown=60 / maxCharges=2 / cooldownGroup 設定", () => {
+  it("紅蓮の威力は 400 / Lv70 / cooldown=60 / チャージ無し / cooldownGroup 設定", () => {
     const guren = skillMap.get("hissatsu-guren");
     expect(guren).toBeDefined();
     expect(guren?.potency).toBe(400);
-    expect(guren?.acquiredLevel).toBe(62);
+    expect(guren?.acquiredLevel).toBe(70);
     expect(guren?.cooldown).toBe(60);
-    expect(guren?.maxCharges).toBe(2);
+    expect(guren?.maxCharges).toBeUndefined();
     expect(guren?.cooldownGroup).toBe("hissatsu-senei-guren");
   });
 
-  it("閃影は紅蓮を置換し、同じ cooldownGroup / maxCharges=2 を持つ", () => {
+  it("閃影は紅蓮を置換しない独立アクションで、同じ cooldownGroup を持つ", () => {
     const senei = skillMap.get("hissatsu-senei");
     expect(senei).toBeDefined();
-    expect(senei?.replacesSkillId).toBe("hissatsu-guren");
+    expect(senei?.replacesSkillId).toBeUndefined();
     expect(senei?.cooldown).toBe(60);
-    expect(senei?.maxCharges).toBe(2);
+    expect(senei?.maxCharges).toBeUndefined();
     expect(senei?.cooldownGroup).toBe("hissatsu-senei-guren");
-    expect(senei?.acquiredLevel).toBe(96);
+    expect(senei?.acquiredLevel).toBe(72);
   });
 
-  it("紅蓮を 2 連続で使えるが、3 連続目はリキャストエラー", () => {
+  it("紅蓮を 2 連続で使うと 2 発目はリキャストエラー", () => {
     const result = resolveTimeline(
-      [entry("hissatsu-guren"), entry("hissatsu-guren"), entry("hissatsu-guren")],
+      [entry("hissatsu-guren"), entry("hissatsu-guren")],
       skillMap,
       []
     );
 
     expect(result.entries[0].recastError).toBe(false);
-    expect(result.entries[1].recastError).toBe(false);
-    expect(result.entries[2].recastError).toBe(true);
+    expect(result.entries[1].recastError).toBe(true);
   });
 
-  it("紅蓮 → 閃影 でチャージが共有消費される（閃影 2 発目はエラー）", () => {
+  it("紅蓮 → 閃影 でリキャストが共有される（閃影はエラー）", () => {
     const result = resolveTimeline(
-      [
-        entry("hissatsu-guren"),
-        entry("hissatsu-senei"),
-        entry("hissatsu-senei"),
-      ],
+      [entry("hissatsu-guren"), entry("hissatsu-senei")],
       skillMap,
       []
     );
 
     expect(result.entries[0].recastError).toBe(false);
-    expect(result.entries[1].recastError).toBe(false);
-    expect(result.entries[2].recastError).toBe(true);
+    expect(result.entries[1].recastError).toBe(true);
   });
 
-  it("閃影 → 紅蓮 でも同様にチャージ共有（紅蓮 2 発目はエラー）", () => {
+  it("閃影 → 紅蓮 でも同様にリキャスト共有（紅蓮はエラー）", () => {
     const result = resolveTimeline(
-      [
-        entry("hissatsu-senei"),
-        entry("hissatsu-guren"),
-        entry("hissatsu-guren"),
-      ],
+      [entry("hissatsu-senei"), entry("hissatsu-guren")],
       skillMap,
       []
     );
 
     expect(result.entries[0].recastError).toBe(false);
-    expect(result.entries[1].recastError).toBe(false);
-    expect(result.entries[2].recastError).toBe(true);
+    expect(result.entries[1].recastError).toBe(true);
   });
 });
