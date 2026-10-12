@@ -1,10 +1,12 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, pointerWithin } from "@dnd-kit/core";
 import type { DragStartEvent } from "@dnd-kit/core";
 import type { TimelineDragData } from "./timeline/dnd-types";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
+import { SettingsDialog } from "./SettingsDialog";
+import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { JOB_DATA } from "../data/job-registry";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
@@ -23,6 +25,20 @@ let nextUid = 1;
 const SAVE_DEBOUNCE_MS = 500;
 
 export function App() {
+  const [settings, setSettings] = useState(loadSettings);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    saveSettings(settings);
+    applySettings(settings, prefersDarkScheme());
+    if (settings.theme !== "system" || typeof window.matchMedia !== "function") return;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSchemeChange = (e: MediaQueryListEvent) => applySettings(settings, e.matches);
+    mediaQuery.addEventListener("change", handleSchemeChange);
+    return () => mediaQuery.removeEventListener("change", handleSchemeChange);
+  }, [settings]);
+
   // 初回マウント時に LocalStorage から復元（復元不能時は null → 各 state の初期値にフォールバック）
   const [restored] = useState(() => {
     const state = loadAppState();
@@ -259,7 +275,28 @@ export function App() {
       <header style={styles.header}>
         <h1 style={styles.headerTitle}>FF14 Rotation Calculator</h1>
         <span style={styles.headerJob}>{jobData.name} ({jobData.abbreviation})</span>
+        <button
+          ref={settingsButtonRef}
+          type="button"
+          aria-label="設定"
+          title="設定"
+          aria-haspopup="dialog"
+          onClick={() => setSettingsOpen(true)}
+          style={styles.settingsButton}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
       </header>
+      <SettingsDialog
+        open={settingsOpen}
+        settings={settings}
+        onChange={setSettings}
+        onClose={() => setSettingsOpen(false)}
+        returnFocusRef={settingsButtonRef}
+      />
       <DndContext
         sensors={dndSensors}
         collisionDetection={pointerWithin}
@@ -387,6 +424,19 @@ const styles: Record<string, React.CSSProperties> = {
   headerJob: {
     fontSize: "13px",
     color: "var(--color-muted)",
+  },
+  settingsButton: {
+    marginLeft: "auto",
+    width: "40px",
+    height: "40px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid var(--color-field)",
+    borderRadius: "var(--radius-lg)",
+    background: "var(--color-raised)",
+    color: "var(--color-text)",
+    cursor: "pointer",
   },
   main: {
     display: "flex",

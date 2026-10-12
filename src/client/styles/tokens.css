@@ -26,7 +26,10 @@
   --color-field: #d2cfc7;
   --color-text: #1b1c1e;
   --color-muted: #5c6066;
-  --color-accent: #1f55c2;
+  --accent-blue: #1f55c2;
+  --accent-orange: #a64f17;
+  --accent-purple: #6b3fa0;
+  --accent-green: #1e7a5e;
 }
 
 :root[data-theme="dark"] {
@@ -39,7 +42,28 @@
   --color-field: #3a3f46;
   --color-text: #e9e7e2;
   --color-muted: #a3a7ad;
-  --color-accent: #8ab4ff;
+  --accent-blue: #8ab4ff;
+  --accent-orange: #f0a866;
+  --accent-purple: #c3a6ff;
+  --accent-green: #6fd1b3;
+}
+
+/* アクセントは <html data-accent> で選ぶ。値はテーマ側の --accent-* を参照するため、テーマ切替にも追従する */
+:root,
+:root[data-accent="blue"] {
+  --color-accent: var(--accent-blue);
+}
+
+:root[data-accent="orange"] {
+  --color-accent: var(--accent-orange);
+}
+
+:root[data-accent="purple"] {
+  --color-accent: var(--accent-purple);
+}
+
+:root[data-accent="green"] {
+  --color-accent: var(--accent-green);
 }
 
 body {
