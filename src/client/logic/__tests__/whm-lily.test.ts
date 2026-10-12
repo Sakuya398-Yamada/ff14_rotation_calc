@@ -29,6 +29,8 @@ describe("WHM: ヒーリングリリーの自動生成 (#322)", () => {
     expect(lily!.maxStacks).toBe(LILY_MAX);
     expect(lily!.initialStacks).toBe(LILY_MAX);
     expect(lily!.autoGenerateInterval).toBe(LILY_INTERVAL);
+    // ジョブガイド: 特性「シークレットリリー」Lv52 (#411)
+    expect(lily!.acquiredLevel).toBe(52);
   });
 
   it("初期満タン（3/3）の間は時間が経過しても増えない（上限キャップ）", () => {

@@ -15,6 +15,7 @@ export const WHM_RESOURCES: ResourceDefinition[] = [
     maxStacks: 3,
     initialStacks: 3,
     autoGenerateInterval: 20,
+    acquiredLevel: 52,
     color: "#4fc3f7",
   },
   {

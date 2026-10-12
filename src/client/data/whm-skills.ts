@@ -126,7 +126,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     dotPotency: 30,
-    dotDuration: 18,
+    dotDuration: 30,
     acquiredLevel: 4,
   },
   {
@@ -139,7 +139,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     dotPotency: 50,
-    dotDuration: 18,
+    dotDuration: 30,
     acquiredLevel: 46,
     replacesSkillId: "aero",
   },
