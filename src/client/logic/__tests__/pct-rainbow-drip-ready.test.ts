@@ -161,6 +161,26 @@ describe("PCT: レインボードリップ効果アップ（rainbow-drip-ready�
     expect(hasBuff(second, "swiftcast")).toBe(false);
   });
 
+  it("迅速魔が Ready より先に付いていても rainbow-drip では Ready のみ消費され、迅速魔は据え置かれる", () => {
+    // 5 発目をインスタントのホワイトホーリーにして、迅速魔を残したまま Ready を付与させる
+    const result = resolve([
+      makeEntry("scenic-muse"),
+      ...Array.from({ length: 4 }, () => makeEntry("fire-in-red")),
+      makeEntry("swiftcast"),
+      makeEntry("holy-in-white"),
+      makeEntry("rainbow-drip"),
+    ]);
+    const holy = result.entries[6];
+    const drip = result.entries[7];
+
+    expect(hasBuff(holy, "swiftcast")).toBe(true);
+    expect(hasBuff(holy, "rainbow-drip-ready")).toBe(true);
+    expect(drip.castTime).toBe(0);
+    expect(recastOf(drip)).toBe(2.5);
+    expect(hasBuff(drip, "rainbow-drip-ready")).toBe(false);
+    expect(hasBuff(drip, "swiftcast")).toBe(true);
+  });
+
   it("Ready はレインボードリップ以外の詠唱 GCD では消費されない", () => {
     const result = resolve([
       makeEntry("scenic-muse"),

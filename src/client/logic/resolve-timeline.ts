@@ -1112,7 +1112,12 @@ export function resolveTimeline(
           }
         }
       }
-      if (instantCastCandidates.length > 0) {
+      // consumeOnGcd で既に消費される instantCast バフ（レインボードリップ効果アップ等）があれば、
+      // それで詠唱破棄が成立するので迅速魔等の別バフを追加で消費しない
+      if (
+        instantCastCandidates.length > 0 &&
+        !instantCastCandidates.some((id) => consumeBuffTargets.has(id))
+      ) {
         consumeBuffTargets.add(pickInstantCastBuffId(instantCastCandidates, buffDefMap));
       }
     }
