@@ -684,6 +684,8 @@ function applyBuffRedirects(
  *
  * skipIfInsufficient フラグ付き変動は一括でアトミックに処理する:
  *   フラグ付きの負変動のうち 1 つでも残量不足があれば、フラグ付きの全変動（正負問わず）を一括スキップする。
+ *   フラグ付きの正変動の対象が個別の maxStacks に達している場合も同様に一括スキップする
+ *   （例: BP が 1 の状態でのサブトラクティブパレットは WP→BP の色変化を行わず、WP を減らさない）。
  */
 function applyResourceChanges(
   resourceState: ResourceSnapshot,
@@ -692,12 +694,13 @@ function applyResourceChanges(
   resources: ResourceDefinition[],
   onApplied?: (def: ResourceDefinition) => void
 ): void {
-  const skipFlagged = changes.some(
-    (c) =>
-      c.skipIfInsufficient === true &&
-      c.amount < 0 &&
-      (resourceState[c.resourceId] ?? 0) < Math.abs(c.amount)
-  );
+  const skipFlagged = changes.some((c) => {
+    if (c.skipIfInsufficient !== true) return false;
+    const current = resourceState[c.resourceId] ?? 0;
+    if (c.amount < 0) return current < Math.abs(c.amount);
+    const def = resourceDefMap.get(c.resourceId);
+    return def !== undefined && current >= def.maxStacks;
+  });
   const effective = skipFlagged ? changes.filter((c) => !c.skipIfInsufficient) : changes;
 
   for (const change of effective) {

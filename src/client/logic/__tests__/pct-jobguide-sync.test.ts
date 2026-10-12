@@ -206,4 +206,16 @@ describe("PCT: ペイント", () => {
     expect(holy.resourceErrors).toEqual([]);
     expect(holy.resourceSnapshot["white-paint"]).toBe(1);
   });
+
+  it("BP が残ったままサブトラクティブパレットを再使用しても WP は減らない", () => {
+    const entries = setup(100).resolve([
+      ...buildUp, "subtractive-palette", "fire-in-red", "fire-in-red", "fire-in-red",
+      // イマジンスカイの「サブトラクティブパレット実行可」でゲージを使わず再使用する
+      "scenic-muse", "subtractive-palette",
+    ]);
+    const palette = entries[entries.length - 1];
+    expect(palette.resourceErrors).toEqual([]);
+    expect(palette.resourceSnapshot["white-paint"]).toBe(2);
+    expect(palette.resourceSnapshot["black-paint"]).toBe(1);
+  });
 });
