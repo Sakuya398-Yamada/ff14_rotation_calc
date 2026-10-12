@@ -1,5 +1,8 @@
 import type { PpsRange } from "../../types/skill";
 import { styles } from "./styles";
+import { zoneEditorStyles } from "./zone-editor-styles";
+
+const zoneStyles = zoneEditorStyles("--color-zone-pps");
 
 interface PpsRangeEditorProps {
   ppsRange: PpsRange | null;
@@ -16,19 +19,19 @@ export function PpsRangeEditor({
   rangePps,
 }: PpsRangeEditorProps) {
   return (
-    <div style={styles.ppsRangeEditor}>
-      <div style={styles.ppsRangeHeader}>
-        <span style={styles.ppsRangeTitle}>PPS範囲選択</span>
+    <div style={zoneStyles.editor}>
+      <div style={zoneStyles.header}>
+        <span style={zoneStyles.title}>PPS範囲選択</span>
       </div>
-      <div style={styles.ppsRangeRow}>
-        <label style={styles.ppsRangeLabel}>
+      <div style={zoneStyles.row}>
+        <label style={zoneStyles.label}>
           開始:
           <input
             type="number"
             step="0.5"
             min="0"
             value={ppsRange?.startTime ?? 0}
-            style={styles.ppsRangeInput}
+            style={zoneStyles.input}
             onChange={(e) => {
               const val = parseFloat(e.target.value);
               if (isNaN(val) || val < 0) return;
@@ -40,14 +43,14 @@ export function PpsRangeEditor({
           />
           s
         </label>
-        <label style={styles.ppsRangeLabel}>
+        <label style={zoneStyles.label}>
           終了:
           <input
             type="number"
             step="0.5"
             min="0"
             value={ppsRange?.endTime ?? lastGcdEndTime}
-            style={styles.ppsRangeInput}
+            style={zoneStyles.input}
             onChange={(e) => {
               const val = parseFloat(e.target.value);
               if (isNaN(val) || val < 0) return;
@@ -60,7 +63,7 @@ export function PpsRangeEditor({
           s
         </label>
         <button
-          style={styles.ppsRangeResetButton}
+          style={zoneStyles.actionButton}
           onClick={() => onPpsRangeChange({ startTime: 0, endTime: lastGcdEndTime })}
           title="全体範囲にリセット"
         >

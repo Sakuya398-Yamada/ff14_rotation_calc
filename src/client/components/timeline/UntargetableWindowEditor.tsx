@@ -1,5 +1,7 @@
 import type { BossUntargetableWindow } from "../../types/skill";
-import { styles } from "./styles";
+import { zoneEditorStyles } from "./zone-editor-styles";
+
+const zoneStyles = zoneEditorStyles("--color-zone-untargetable");
 
 interface UntargetableWindowEditorProps {
   untargetableWindows: BossUntargetableWindow[];
@@ -12,11 +14,11 @@ export function UntargetableWindowEditor({
   onUntargetableWindowsChange,
 }: UntargetableWindowEditorProps) {
   return (
-    <div style={styles.untargetableEditor}>
-      <div style={styles.untargetableHeader}>
-        <span style={styles.untargetableTitle}>ボス離脱タイミング</span>
+    <div style={zoneStyles.editor}>
+      <div style={zoneStyles.header}>
+        <span style={zoneStyles.title}>ボス離脱タイミング</span>
         <button
-          style={styles.untargetableAddButton}
+          style={zoneStyles.actionButton}
           onClick={() => {
             const lastEnd = untargetableWindows.length > 0
               ? Math.max(...untargetableWindows.map((w) => w.endTime))
@@ -31,18 +33,18 @@ export function UntargetableWindowEditor({
         </button>
       </div>
       {untargetableWindows.length === 0 && (
-        <div style={styles.untargetableEmpty}>離脱タイミングが未設定です</div>
+        <div style={zoneStyles.empty}>離脱タイミングが未設定です</div>
       )}
       {untargetableWindows.map((w, i) => (
-        <div key={i} style={styles.untargetableRow}>
-          <label style={styles.untargetableLabel}>
+        <div key={i} style={zoneStyles.row}>
+          <label style={zoneStyles.label}>
             開始:
             <input
               type="number"
               step="0.5"
               min="0"
               value={w.startTime}
-              style={styles.untargetableInput}
+              style={zoneStyles.input}
               onChange={(e) => {
                 const val = parseFloat(e.target.value);
                 if (isNaN(val) || val < 0) return;
@@ -53,14 +55,14 @@ export function UntargetableWindowEditor({
             />
             s
           </label>
-          <label style={styles.untargetableLabel}>
+          <label style={zoneStyles.label}>
             終了:
             <input
               type="number"
               step="0.5"
               min="0"
               value={w.endTime}
-              style={styles.untargetableInput}
+              style={zoneStyles.input}
               onChange={(e) => {
                 const val = parseFloat(e.target.value);
                 if (isNaN(val) || val < 0) return;
@@ -72,7 +74,7 @@ export function UntargetableWindowEditor({
             s
           </label>
           <button
-            style={styles.untargetableDeleteButton}
+            style={zoneStyles.deleteButton}
             onClick={() => {
               onUntargetableWindowsChange(untargetableWindows.filter((_, idx) => idx !== i));
             }}
