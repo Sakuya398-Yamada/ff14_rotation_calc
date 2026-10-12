@@ -19,9 +19,16 @@ describe("deserializeSettings", () => {
   });
 
   it("不正な項目だけ既定値に戻し、正しい項目は残す", () => {
-    expect(deserializeSettings(JSON.stringify({ theme: "sepia", accent: "orange" }))).toEqual({
+    expect(deserializeSettings(JSON.stringify({ theme: "sepia", accent: "green" }))).toEqual({
       theme: "dark",
-      accent: "orange",
+      accent: "green",
+    });
+  });
+
+  it("廃止した旧アクセント「orange」はピンクとして復元する（#396）", () => {
+    expect(deserializeSettings(JSON.stringify({ theme: "light", accent: "orange" }))).toEqual({
+      theme: "light",
+      accent: "pink",
     });
   });
 });
