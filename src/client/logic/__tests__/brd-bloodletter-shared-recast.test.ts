@@ -46,7 +46,11 @@ describe("BRD: ブラッドレッター / レイン・オブ・デス / ハー�
 
   it("Lv84 未満ではレイン・オブ・デスもブラッドレッターと同じく特性によるチャージ増加前の値になる", () => {
     const map = skillMapForLevel(80);
-    expect(map.get("rain-of-death")?.maxCharges).toBe(map.get("bloodletter")?.maxCharges);
+    expect(map.get("rain-of-death")).toBeDefined();
+    expect(map.get("bloodletter")).toBeDefined();
+    // maxCharges 未設定 = 1 チャージ
+    expect(map.get("rain-of-death")!.maxCharges ?? 1).toBe(1);
+    expect(map.get("bloodletter")!.maxCharges ?? 1).toBe(1);
   });
 
   it("Lv100: ハートブレイクショット 3 回でチャージを使い切ると、レイン・オブ・デスもリキャスト中になる", () => {
