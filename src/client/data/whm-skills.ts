@@ -28,7 +28,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 白魔道士（WHM）攻撃スキル一覧
- * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #411
+ * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5）の数値とも照合済み（#411）
  * 威力はジョブガイド準拠（基本値 = 特性適用前）
  * Lv94特性「White Magic Mastery」による威力変動はtraitPotencyOverridesで定義
  */
@@ -126,7 +126,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     dotPotency: 30,
-    dotDuration: 18,
+    dotDuration: 30,
     acquiredLevel: 4,
   },
   {
@@ -139,7 +139,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     dotPotency: 50,
-    dotDuration: 18,
+    dotDuration: 30,
     acquiredLevel: 46,
     replacesSkillId: "aero",
   },
@@ -301,6 +301,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 60,
     acquiredLevel: 18,
+    traitPotencyOverrides: [{ traitLevel: 94, cooldown: 40 }],
     buffApplications: ["swiftcast"],
   },
 ];
