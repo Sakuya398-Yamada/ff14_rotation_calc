@@ -57,14 +57,15 @@
     min-height: 70vh;
   }
 
-  /* ヘッダーが折り返すとボタン位置が読めないため、パネルは画面に固定して左右に余白を取る */
+  /* ヘッダーの折り返しでボタン位置が変わるため、パネルは画面に固定して左右に余白を取る。
+     上端は開いた時点のボタン下端（JobPicker が --job-picker-top に設定） */
   .job-picker-panel {
     position: fixed;
     left: var(--space-4);
     right: var(--space-4);
-    top: 72px;
+    top: var(--job-picker-top, 72px);
     width: auto;
     max-width: none;
-    max-height: calc(100vh - 88px);
+    max-height: calc(100vh - var(--job-picker-top, 72px) - 16px);
   }
 }
