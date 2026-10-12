@@ -7,6 +7,7 @@ import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsDialog } from "./SettingsDialog";
 import { SummaryBar } from "./SummaryBar";
+import { JobPicker } from "./JobPicker";
 import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { JOB_DATA } from "../data/job-registry";
@@ -275,7 +276,12 @@ export function App() {
     <div style={styles.app}>
       <header style={styles.header}>
         <h1 style={styles.headerTitle}>FF14 Rotation Calculator</h1>
-        <span style={styles.headerJob}>{jobData.name} ({jobData.abbreviation})</span>
+        <JobPicker
+          selectedJob={selectedJob}
+          level={level}
+          onJobChange={handleJobChange}
+          onLevelChange={setLevel}
+        />
         <button
           ref={settingsButtonRef}
           type="button"
@@ -318,10 +324,6 @@ export function App() {
           skills={skills}
           stats={stats}
           onStatsChange={setStats}
-          level={level}
-          onLevelChange={setLevel}
-          selectedJob={selectedJob}
-          onJobChange={handleJobChange}
         />
         <div style={styles.workArea}>
           <div style={styles.timelineSlot}>
@@ -431,12 +433,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: "0.02em",
     color: "var(--color-text)",
   },
-  headerJob: {
-    fontSize: "13px",
-    color: "var(--color-muted)",
-  },
   settingsButton: {
-    marginLeft: "auto",
     width: "40px",
     height: "40px",
     display: "flex",

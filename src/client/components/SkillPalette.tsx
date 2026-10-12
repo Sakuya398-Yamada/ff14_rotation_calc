@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import type { Skill, CharacterStats, PlayerLevel } from "../types/skill";
+import type { Skill, CharacterStats } from "../types/skill";
 import type { PaletteDragData } from "./timeline/dnd-types";
-import type { JobId } from "./App";
-import { JOB_OPTIONS } from "../data/job-registry";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
-
-const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
 
 interface CollapsibleSectionProps {
   title: React.ReactNode;
@@ -76,20 +72,12 @@ interface SkillPaletteProps {
   skills: Skill[];
   stats: CharacterStats;
   onStatsChange: (stats: CharacterStats) => void;
-  level: PlayerLevel;
-  onLevelChange: (level: PlayerLevel) => void;
-  selectedJob: JobId;
-  onJobChange: (jobId: JobId) => void;
 }
 
 export function SkillPalette({
   skills,
   stats,
   onStatsChange,
-  level,
-  onLevelChange,
-  selectedJob,
-  onJobChange,
 }: SkillPaletteProps) {
   const gcdSkills = skills.filter((s) => s.type === "gcd" && !s.hidden);
   const ogcdSkills = skills.filter((s) => s.type === "ogcd" && !s.hidden);
@@ -98,10 +86,6 @@ export function SkillPalette({
     const num = parseInt(value, 10);
     if (isNaN(num)) return;
     onStatsChange({ ...stats, [key]: num });
-  };
-
-  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onLevelChange(Number(e.target.value) as PlayerLevel);
   };
 
   const statFields: { key: keyof CharacterStats; label: string; abbr: string; min: number; detail: string }[] = [
@@ -121,44 +105,7 @@ export function SkillPalette({
     <div className="custom-scrollbar" style={styles.container}>
       <div style={styles.titleRow}>
         <h2 style={styles.title}>ジョブパレット</h2>
-        <select
-          style={styles.jobSelect}
-          value={selectedJob}
-          onChange={(e) => onJobChange(e.target.value as JobId)}
-        >
-          {JOB_OPTIONS.map((job) => (
-            <option key={job.id} value={job.id}>
-              {job.name}
-            </option>
-          ))}
-        </select>
       </div>
-
-      {/* レベル設定 */}
-      <CollapsibleSection title="レベル（α版）" defaultOpen={false}>
-        <div style={styles.alphaNotice}>
-          他レベルでのスキルの有無・威力は保証されていません
-        </div>
-        <div style={styles.levelRow}>
-          <label style={styles.levelLabel}>Lv.</label>
-          <select
-            value={level}
-            onChange={handleLevelChange}
-            style={styles.levelSelect}
-          >
-            {SUPPORTED_LEVELS.map((lv) => (
-              <option key={lv} value={lv}>
-                {lv}
-              </option>
-            ))}
-          </select>
-        </div>
-        {level < 100 && (
-          <div style={styles.levelWarning}>
-            Lv{level}の威力値は正確でない可能性があります
-          </div>
-        )}
-      </CollapsibleSection>
 
       {/* ステータス入力セクション */}
       <CollapsibleSection title="ステータス">
@@ -243,14 +190,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--color-text)",
     flexShrink: 0,
   },
-  jobSelect: {
-    ...fieldBase,
-    flex: 1,
-    minHeight: "32px",
-    padding: "0 var(--space-2)",
-    cursor: "pointer",
-    minWidth: 0,
-  },
   section: {
     marginBottom: "var(--space-5)",
   },
@@ -279,40 +218,6 @@ const styles: Record<string, React.CSSProperties> = {
     width: "12px",
     display: "inline-block",
     color: "var(--color-muted)",
-  },
-  levelRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "var(--space-2)",
-  },
-  levelLabel: {
-    fontSize: "13px",
-    fontWeight: 700,
-    color: "var(--color-text)",
-    flexShrink: 0,
-  },
-  levelSelect: {
-    ...fieldBase,
-    flex: 1,
-    minHeight: "32px",
-    padding: "0 var(--space-2)",
-    cursor: "pointer",
-  },
-  alphaNotice: {
-    marginBottom: "var(--space-2)",
-    padding: "var(--space-1) var(--space-2)",
-    fontSize: "11px",
-    color: "var(--color-muted)",
-    borderRadius: "var(--radius-sm)",
-    border: "1px solid var(--color-line)",
-  },
-  levelWarning: {
-    marginTop: "6px",
-    padding: "var(--space-1) var(--space-2)",
-    fontSize: "11px",
-    color: "var(--color-warning)",
-    borderRadius: "var(--radius-sm)",
-    border: "1px solid currentColor",
   },
   statTable: {
     display: "flex",
