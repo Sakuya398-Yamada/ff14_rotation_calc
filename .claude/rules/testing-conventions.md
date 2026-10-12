@@ -1,7 +1,7 @@
 # テスト規約（既知の罠と回避パターン）
 
 `.claude/rules/` 配下のため起動時に自動で読み込まれる。
-`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389、発生元: #198 / #217 / #351）。
+`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389 / #433、発生元: #198 / #217 / #351 / #410 / #412）。
 
 ## 罠1: `resolveTimeline` の `activeBuffs` は要素オブジェクトを参照共有する
 
@@ -87,3 +87,56 @@ expect(after).toBe(/* 期待値。上限到達なら 10000 */);
   ```
 
 - **`manualStartTime` で GCD を GCD 間隔より詰めて置かない**。境界の前後など複数の時刻を確かめたいときは、時刻ごとに別のタイムラインで解決する（例: `src/client/logic/__tests__/drg-resources.test.ts` の「付与から %s 秒後のスキルの倍率は %s」。`it.each` で時刻を回し、各ケースで `resolveTimeline` を呼び直している）
+
+## 罠4: レベル別の実データテストで skillMap を `getSkillsForLevel` の結果だけで作るとスキルが欠ける
+
+### 何が起きるか
+
+`getSkillsForLevel` が返すのは **パレットに並べるスキル** で、次の 2 種類は含まれない：
+
+- **autoTransform の変化先**（雲蒸竜変・竜眼雷電など、パレットに出さず変化元から自動で切り替わるスキル）
+- **上位版の習得で置き換えられたスキル**（`replacesSkillId` の置き換え元。Lv96 以降のボーパルスラスト → スラストラッシュ等。習得済みだがパレットからは外れる）
+
+アプリ本体はこれらを足した全スキルマップ（`src/client/components/App.tsx` の `allSkillMap`）で `resolveTimeline` を呼んでいる。テストで `getSkillsForLevel` の結果だけを skillMap にすると、該当エントリが解決から消える／自動変化しないといった、アプリでは起きない症状になる。#412 では原因の特定に数往復かかった。
+
+### テストでの回避パターン
+
+- **`App.tsx` の `allSkillMap` と同じく、`getSkillsForLevel` → `getAllSkillMapForLevel`（`src/client/logic/skill-level.ts`）の順で skillMap を作る**。`getAllSkillMapForLevel` は、パレットから外れたスキルにも同じレベル調整（`adjustSkillForLevel`）をかけて足す：
+
+  ```ts
+  const buffs = getBuffsForLevel(XXX_BUFFS, level);
+  const resources = getResourcesForLevel(XXX_RESOURCES, level);
+  const buffIds = new Set(buffs.map((b) => b.id));
+  const resourceIds = new Set(resources.map((r) => r.id));
+  const skills = getSkillsForLevel(XXX_ATTACK_SKILLS, level, buffIds, resourceIds);
+  const skillMap = getAllSkillMapForLevel(XXX_ATTACK_SKILLS, skills, level, buffIds, resourceIds);
+  resolveTimeline(entries, skillMap, resources, undefined, buffs);
+  ```
+
+- 参考実装: `src/client/logic/__tests__/pct-jobguide-sync.test.ts` の `setup`
+- `src/client/logic/__tests__/drg-job-guide-7-5.test.ts` の `resolveAtLevel` も同じ目的のヘルパーだが、`getAllSkillMapForLevel` ができる前（#412）に書かれたもので、ループを手書きしている。足したスキルにはレベル調整がかからないので、新しく書くテストではこちらを真似ない
+
+## 罠5: データ値を見るテストは、エンジンがその値を使っていることまでは保証しない
+
+### 何が起きるか
+
+`skillMap.get(id)?.recastTime` のようにデータの値を直接見るテストは、データが正しいことしか確かめていない。`resolveTimeline` がその値を実際に参照しているかは別の話になる。
+
+#410 では、サブトラクティブ色魔法のリキャストを 3.3 秒に直し、スキルマップの `recastTime` を見るテストも通った。しかし `resolveTimeline` は GCD のリキャスト・詠唱を、autoTransform を解決する前の **変化元スキル** から読んでいたため、タイムライン上の間隔は変わっていなかった。ブラウザで確認するまで気付けなかった。
+
+### テストでの回避パターン
+
+- **データ修正の Issue では、少なくとも 1 項目を `resolveTimeline` の結果で検証する**。エントリ間隔（`startTime` の差）・`castTime`・`resolvedPotency`・`resourceSnapshot` など、アプリの表示に直結する値を見る
+- **autoTransform の変化先の値は特に注意する**。変化先は変化元の経路を通って解決されるため、データだけ見るテストでは取りこぼしやすい。`resolvedSkillId` で変化先に切り替わったことも併せて確かめる：
+
+  ```ts
+  // これだけでは不十分: データの値しか見ていない
+  expect(skillMap.get("blizzard-in-cyan")?.recastTime).toBe(3.3);
+
+  // OK: タイムライン上で変化先に切り替わり、その値で間隔が決まっていることを見る
+  expect(cyan.resolvedSkillId).toBe("blizzard-in-cyan");
+  expect(Math.round((yellow.startTime - cyan.startTime) * 1000) / 1000).toBe(3.3);
+  ```
+
+- 参考実装: `src/client/logic/__tests__/pct-jobguide-sync.test.ts` の「タイムライン上でもサブトラクティブ色魔法・ブラックコメットは詠唱 2.3 秒・リキャスト 3.3 秒になる」
+- skillMap の組み方は罠4 に従う（組み方が違うと、アプリでは起きない差分が出る）
