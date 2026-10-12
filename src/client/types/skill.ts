@@ -266,7 +266,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -288,6 +288,8 @@ export interface BuffEffect {
    * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
    * - bypassCombo: バフアクティブ中、対象GCD WSのコンボ条件判定を強制成立扱いにする（値は未使用、appliesToSkillIds で対象限定）
    * - applyBuffOnSkill: バフアクティブ中、対象 GCD/oGCD 使用時に appliedBuffId のバフを追加付与する（値は未使用、明鏡止水中の月光→風月等）
+   * - applyBuffOnDeplete: スタック式バフが消費により 0 スタックになった時点で appliedBuffId のバフを付与する（値は未使用、インスタレーション枯渇→レインボードリップ効果アップ等）
+   * - recastOverride: 対象 GCD の基礎リキャスト（秒）を value で置き換える。スキルスピード補正・speed バフは置換後の値に適用される（appliesToSkillIds で対象限定、Ready 中のレインボードリップ等）
    */
   value: number;
   /** statバフの対象ステータスキー */
@@ -301,7 +303,7 @@ export interface BuffEffect {
    * 同一バフが複数スキル群に異なる倍率を適用するケースで使用する。
    */
   appliesToSkillIds?: string[];
-  /** applyBuffOnSkill 専用: 付与するバフID */
+  /** applyBuffOnSkill / applyBuffOnDeplete 専用: 付与するバフID */
   appliedBuffId?: string;
   /**
    * resourceCostMultiplier 専用: 指定リソースが消費可能な量だけ残っていれば倍率を打ち消す。
