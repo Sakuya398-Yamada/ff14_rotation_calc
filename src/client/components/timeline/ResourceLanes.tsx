@@ -3,6 +3,9 @@ import type { ResourceGroup } from "./types";
 import { styles } from "./styles";
 import { PX_PER_SEC, RESOURCE_DOT_SIZE, RESOURCE_DOT_GAP } from "./constants";
 
+/** 未充填スロットの色。リソース色はデータ固定だが、空スロットは背景に馴染ませるためテーマに従う */
+const EMPTY_SLOT_COLOR = "var(--color-line)";
+
 interface ResourceLanesProps {
   resourceGroups: ResourceGroup[];
   resolvedEntries: ResolvedTimelineEntry[];
@@ -49,7 +52,7 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                         }
                       }
                       while (slotColors.length < groupMax) {
-                        slotColors.push("rgba(255,255,255,0.15)");
+                        slotColors.push(EMPTY_SLOT_COLOR);
                       }
                       const stacksPerRow = group.stacksPerRow ?? groupMax;
                       const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
@@ -101,7 +104,7 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                                     ? (res.overflowColor ?? res.color)
                                     : i < count
                                       ? res.color
-                                      : "rgba(255,255,255,0.15)",
+                                      : EMPTY_SLOT_COLOR,
                               }}
                             />
                           ))}

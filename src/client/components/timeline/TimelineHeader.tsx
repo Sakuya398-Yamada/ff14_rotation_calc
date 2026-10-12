@@ -67,7 +67,7 @@ export function TimelineHeader({
         <button
           style={{
             ...styles.toggleButton,
-            ...(untargetableWindows.length > 0 ? { borderColor: "rgba(255, 80, 80, 0.5)", color: "#ef5350" } : {}),
+            ...(untargetableWindows.length > 0 ? { borderColor: "color-mix(in srgb, var(--color-zone-untargetable) 50%, transparent)", color: "var(--color-zone-untargetable)" } : {}),
           }}
           onClick={() => setShowUntargetableEditor((v) => !v)}
           title="ボス離脱タイミング設定"
@@ -78,7 +78,7 @@ export function TimelineHeader({
         <button
           style={{
             ...styles.toggleButton,
-            ...(multiTargetWindows.length > 0 ? { borderColor: "rgba(180, 100, 220, 0.5)", color: "#b864dc" } : {}),
+            ...(multiTargetWindows.length > 0 ? { borderColor: "color-mix(in srgb, var(--color-zone-multi-target) 50%, transparent)", color: "var(--color-zone-multi-target)" } : {}),
           }}
           onClick={() => setShowMultiTargetEditor((v) => !v)}
           title="複数体ウィンドウ設定（敵の数を指定する時間帯）"
@@ -125,7 +125,7 @@ export function TimelineHeader({
         <button
           style={{
             ...styles.toggleButton,
-            ...(ppsRange ? { borderColor: "rgba(255, 183, 77, 0.5)", color: "#ffb74d" } : {}),
+            ...(ppsRange ? { borderColor: "color-mix(in srgb, var(--color-zone-pps) 50%, transparent)", color: "var(--color-zone-pps)" } : {}),
           }}
           onClick={() => {
             const next = !showPpsRange;
@@ -146,7 +146,7 @@ export function TimelineHeader({
             <>
               期待威力: <span style={styles.potencyValue}>{totalExpectedPotency}</span>
               {dotExpectedPotency > 0 && (
-                <span style={{ fontSize: "13px", color: "#a5d6a7" }}>
+                <span style={{ fontSize: "13px", color: "var(--color-dot)" }}>
                   {" "}(DoT: {dotExpectedPotency})
                 </span>
               )}

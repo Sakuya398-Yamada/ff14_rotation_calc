@@ -156,7 +156,7 @@ export function SkillLanes({
                 </DraggableEntryIcon>
                 <div style={{
                   ...styles.skillPotency,
-                  ...(entry.wsComboError ? { color: "#ff9800" } : {}),
+                  ...(entry.wsComboError ? { color: "var(--color-warning)" } : {}),
                 }}>
                   {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                 </div>
