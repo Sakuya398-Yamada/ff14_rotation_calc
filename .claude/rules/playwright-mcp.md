@@ -60,15 +60,20 @@ browser_close                             # 検証終わりに必ず閉じる
 
 ```js
 async (page) => {
+  await page.setViewportSize({ width: 1800, height: 2400 });       // パレット下部（ロールアクション等）も画面内に収める
   const source = page.getByRole('button', { name: /グレアガ/ }).first();
-  const zone = page.locator('.timeline-scroll'); // 空タイムラインならプレースホルダー文言で特定
+  // 空タイムラインには .timeline-scroll が無いので、プレースホルダー文言をドロップ先にする
+  const scroll = page.locator('.timeline-scroll');
+  const zone = (await scroll.count()) > 0
+    ? scroll
+    : page.getByText('スキルパレットからドラッグ', { exact: false });
   const sb = await source.boundingBox();
   const zb = await zone.boundingBox();
   await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(100);                                  // センサー activation 猶予
   await page.mouse.move(sb.x + 60, sb.y + 10, { steps: 5 });       // distance 制約を超える小移動
-  await page.mouse.move(zb.x + 400, zb.y + 40, { steps: 15 });     // ターゲットへ段階移動
+  await page.mouse.move(zb.x + Math.min(400, zb.width / 2), zb.y + Math.min(40, zb.height / 2), { steps: 15 }); // ターゲットへ段階移動
   await page.waitForTimeout(200);                                  // over 判定の安定待ち
   await page.mouse.up();
   return await page.locator('[data-skill-entry-uid]').count();
@@ -82,6 +87,8 @@ async (page) => {
 3. **削除ゾーンはドラッグ中のみ表示**: ドラッグ開始（activation 後）に「ここにドロップして削除」の座標を取得してから移動する
 4. **並び替えの成否は順序で検証**: `page.$$eval('[data-skill-entry-uid]', els => els.map(e => e.getAttribute('title')))` でエントリ順を比較する
 5. **エントリのクリック選択との共存**: MouseSensor は distance: 4 未満の移動ならクリック扱いになる。選択の回帰確認は通常の `click()` でよい（詳細パネルの表示で判定）
+6. **ビューポートを先に拡大する**: 既定サイズではパレット下部（ロールアクション等）が画面外にあり、`boundingBox` の座標がビューポート外になってドロップを取りこぼす。スニペット冒頭の `setViewportSize` で全体を画面内に収める（#350 で発生）
+7. **空タイムラインでは `.timeline-scroll` が存在しない**: エントリ 0 件のときはプレースホルダー（「スキルパレットからドラッグ＆ドロップしてスキルを追加」）だけが描画されるため、`.timeline-scroll` の `boundingBox` はタイムアウトする。スニペットのようにプレースホルダー文言へフォールバックする
 
 ## React 制御フォーム要素の操作ワークアラウンド（`value` 直接代入が効かない場合）
 
