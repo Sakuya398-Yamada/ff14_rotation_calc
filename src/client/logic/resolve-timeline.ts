@@ -892,9 +892,15 @@ export function resolveTimeline(
     // バフの resourceCostMultiplier 効果でリソース消費量を動的にスケールしたものを以降で使用する
     // （リソース不足判定・実適用の両方が同じ実効値を参照するように、ここで一度だけ計算する）
     // さらに resourceGainOnSkill 効果（UB 段階別 MP 回復等）の正変動も同じタイミングで上乗せする
-    const baseResourceChanges = skill.resourceChanges
+    // requiredBuffAnyOf 付きの変動は、指定バフがいずれも未アクティブなら適用しない
+    const buffGatedResourceChanges = skill.resourceChanges?.filter(
+      (c) =>
+        !c.requiredBuffAnyOf ||
+        c.requiredBuffAnyOf.some((buffId) => currentActiveBuffs.some((ab) => ab.buffId === buffId))
+    );
+    const baseResourceChanges = buffGatedResourceChanges
       ? applyBuffResourceCostMultipliers(
-          skill.resourceChanges,
+          buffGatedResourceChanges,
           skill.id,
           currentActiveBuffs,
           resourceState,
@@ -1039,6 +1045,15 @@ export function resolveTimeline(
       const clamped = Math.max(minAmount, Math.min(currentAmount, maxAmount));
       const ratio = (clamped - minAmount) / (maxAmount - minAmount);
       resolvedPotency = Math.floor(minPotency + (maxPotency - minPotency) * ratio);
+    }
+
+    // potencyByResourceAmount: リソース量に応じた段階威力（量 0 はリソース不足エラー側で扱うため基本威力のまま）
+    if (skill.potencyByResourceAmount) {
+      const { resourceId, potencies } = skill.potencyByResourceAmount;
+      const currentAmount = resourceState[resourceId] ?? 0;
+      if (currentAmount >= 1 && potencies.length > 0) {
+        resolvedPotency = potencies[Math.min(currentAmount, potencies.length) - 1];
+      }
     }
 
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）

@@ -62,13 +62,16 @@ describe("BRD: ソウルボイスゲージの蓄積 (#116)", () => {
     expect(last.resourceSnapshot["soul-voice"]).toBeLessThan(SV_MAX);
   });
 
-  it("エンピリアルアローでソウルボイス +5（歌なしでも蓄積する）", () => {
-    const result = resolve([entry("empyreal-arrow")]);
+  it("エンピリアルアローは歌の実行中のみソウルボイス +5（歌なしでは蓄積しない。#409）", () => {
+    const withoutSong = resolve([entry("empyreal-arrow")]);
+    expect(withoutSong.entries[0].recastError).toBeFalsy();
+    expect(withoutSong.entries[0].resourceSnapshot["soul-voice"]).toBe(0);
+    expect(withoutSong.entries[0].resourceSnapshot["repertoire"]).toBe(0);
 
-    const e = result.entries[0];
-    expect(e.recastError).toBeFalsy();
-    expect(e.resourceSnapshot["soul-voice"]).toBe(5);
-    expect(e.resourceSnapshot["repertoire"]).toBe(1);
+    // 歌の直後（自動蓄積の初回 tick より前）に撃ち、エンピリアルアロー分だけを観測する
+    const withSong = resolve([entry("mages-ballad"), entry("empyreal-arrow")]);
+    expect(withSong.entries[1].resourceSnapshot["soul-voice"]).toBe(5);
+    expect(withSong.entries[1].resourceSnapshot["repertoire"]).toBe(1);
   });
 
   it("歌を繋いで長時間経過させると 100 で頭打ちになる（上限クリップ）", () => {
