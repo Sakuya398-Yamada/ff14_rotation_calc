@@ -150,7 +150,7 @@ Low / Medium / High（判定基準は上記と同じ）
 
 1. バナーに更新ありが出ていたら、**そのセッションで一度だけ** ユーザーに「更新用 Issue を起票するか」を聞く。一致していれば何も言わない。`Latest: unknown`（オフライン等）ならスキップする
 2. **作業中の Issue のブランチでテンプレートを直接更新しない**（1 Issue = 1 PR）。承認された場合の動作は「このプロジェクトに更新用 Issue を起票する」までで、現在の Issue の作業はそのまま続ける
-3. 起票前に `search_issues`（`owner` / `repo` にこのプロジェクトを指定）で同じ版の更新 Issue が既に無いか確認する（あればリンクを示して起票しない）
+3. 起票前に `search_issues`（`owner` / `repo` にこのプロジェクトを指定）で同じ版の更新 Issue が既に無いか確認する（あればリンクを示して起票しない）。既存の更新 Issue の版とバナーの版が食い違う場合は hook のキャッシュ（24 時間）が原因なので、`git ls-remote --tags --refs --sort=-v:refname https://github.com/<repo>.git 'v*' | head -n 1` で直接確認し、新しい方の版を正とする
 4. 更新用 Issue の内容：
    - タイトル: `refactor: テンプレートを vX.Y.Z に更新`
    - ラベル: `refactor`
@@ -176,12 +176,12 @@ Phase 5 の実装内容は以下。テンプレートのファイルはこのプ
 
 ### 3-way マージの定型手順
 
-`<repo>` は `.claude/template-version` の `repo`、`vOLD` / `vNEW` は取り込み前後の版。作業ファイルはプロジェクトの外（scratchpad 等）に置く。
+`<repo>` は `.claude/template-version` の `repo`、`vOLD` / `vNEW` は取り込み前後の版。作業ファイルはプロジェクトの外（scratchpad 等）に置く。テンプレート元の clone は `--no-checkout` で作業ツリーを作らない（以下の手順は `git show` / `git diff` しか使わないので作業ツリーは不要。Windows では scratchpad の深いパスとテンプレート元の深いパスが合わさって MAX_PATH を超え、チェックアウトが `Filename too long` で止まる）。
 
 ```bash
-SRC=<scratchpad>/template-src   # テンプレート元のクローン
+SRC=<scratchpad>/template-src   # テンプレート元のクローン（作業ツリー無し）
 W=<scratchpad>/template-merge   # 作業ディレクトリ
-git clone -q https://github.com/<repo>.git "$SRC"
+git clone -q --no-checkout https://github.com/<repo>.git "$SRC"
 
 git -C "$SRC" diff --name-only vOLD vNEW -- template/ | while read -r t; do
   p=${t#template/}  # プロジェクト側のパス

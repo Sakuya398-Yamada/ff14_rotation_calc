@@ -35,6 +35,7 @@ git checkout -b <type>/#<issue番号>-<kebab-case説明>
 - 説明は小文字英数字とハイフンのみ（例: `feature/#42-add-user-model`）。PreToolUse hook（`.claude/hooks/validate-branch-name.sh`）が検証し、違反はブロックされる
 - **ブランチ名はクォートで囲まず裸で渡す**: `#` を含むためクォートしたくなるが、シェル的に不要（`#` が単語先頭でなければコメント扱いされない）。hook 側もクォートを strip して検証するが（#290 対応）、裸で渡すのが正
 - 作業中の変更がある場合は、ユーザーに確認してから切り替える
+- **同名ブランチが既にある**（ローカルまたは `origin`）場合は過去の試行の残り。黙って `-B` / force-push で上書きせず、Phase 1 手順 2「オープンな旧 PR／既存ブランチがある場合」の確認結果に従う（作り直すなら `-v2` 等を付けた別名で切る）
 - `claude --worktree` で起動したセッション（`.claude/worktrees/<name>/`、初期ブランチ `worktree-<name>`）でも Issue ブランチを切ってから作業する。`main` は他の worktree で checkout 済みのことが多く `git checkout main` が失敗するため、`git fetch origin main` → `git checkout -b <type>/#<issue番号>-<kebab-case説明> origin/main` で切る
 
 ## 古い main 派生の検知
