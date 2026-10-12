@@ -135,7 +135,7 @@ export function SkillPalette({
       </div>
 
       {/* レベル設定 */}
-      <CollapsibleSection title={<>レベル<span style={{ textTransform: "none" }}>（α版）</span></>} defaultOpen={false}>
+      <CollapsibleSection title="レベル（α版）" defaultOpen={false}>
         <div style={styles.alphaNotice}>
           他レベルでのスキルの有無・威力は保証されていません
         </div>
