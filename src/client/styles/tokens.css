@@ -40,7 +40,7 @@
   --color-cast: #e08a1e;
   --color-anim-lock: #d9534f;
   --accent-blue: #1f55c2;
-  --accent-orange: #a64f17;
+  --accent-pink: #a8325e;
   --accent-purple: #6b3fa0;
   --accent-green: #1e7a5e;
 }
@@ -66,7 +66,7 @@
   --color-cast: #ffb74d;
   --color-anim-lock: #ff6464;
   --accent-blue: #8ab4ff;
-  --accent-orange: #f0a866;
+  --accent-pink: #f48fb8;
   --accent-purple: #c3a6ff;
   --accent-green: #6fd1b3;
 }
@@ -77,8 +77,8 @@
   --color-accent: var(--accent-blue);
 }
 
-:root[data-accent="orange"] {
-  --color-accent: var(--accent-orange);
+:root[data-accent="pink"] {
+  --color-accent: var(--accent-pink);
 }
 
 :root[data-accent="purple"] {

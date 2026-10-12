@@ -11,7 +11,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
 
 const ACCENT_OPTIONS: { value: AccentColor; label: string }[] = [
   { value: "blue", label: "青" },
-  { value: "orange", label: "橙" },
+  { value: "pink", label: "ピンク" },
   { value: "purple", label: "紫" },
   { value: "green", label: "緑" },
 ];
