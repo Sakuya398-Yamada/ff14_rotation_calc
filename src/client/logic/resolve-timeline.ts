@@ -113,6 +113,29 @@ function getSpeedMultiplier(
 }
 
 /**
+ * 対象 GCD の基礎リキャストを返す。recastOverride 効果を持つバフがアクティブなら
+ * その値でスキル定義の recastTime を置き換える（例: レインボードリップ効果アップ中の 6 秒 → 2.5 秒）。
+ * 置換後の値にスキルスピード補正（calcGcd）と speed バフを掛けるため、呼び出し側は
+ * skill.recastTime の代わりにこの戻り値を使う。
+ */
+function getBaseRecastTime(
+  skill: Skill,
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>
+): number {
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type !== "recastOverride") continue;
+      if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(skill.id)) continue;
+      return effect.value;
+    }
+  }
+  return skill.recastTime;
+}
+
+/**
  * アクティブなバフに詠唱破棄（instantCast）効果を持つものが含まれるか判定する。
  * targetSkillId が指定されている場合、appliesToSkillIds に
  * 該当スキルIDが含まれないエフェクトは無視する（例: ファイアスターターはファイガ限定）。
@@ -373,6 +396,39 @@ function removeExclusiveGroupBuffs(
     const existingDef = buffDefMap.get(activeBuffs[i].buffId);
     if (existingDef?.exclusiveGroup === buffDef.exclusiveGroup && activeBuffs[i].buffId !== buffDef.id) {
       activeBuffs.splice(i, 1);
+    }
+  }
+}
+
+/**
+ * スタック式バフが消費により 0 スタックになった直後に呼び、
+ * そのバフ定義の applyBuffOnDeplete 効果に従って別バフを付与する。
+ * 付与ロジックは buffApplications と同じ（排他グループ解除・既存ならリフレッシュ）。
+ */
+function applyBuffsOnDeplete(
+  activeBuffs: ActiveBuff[],
+  depletedBuffId: string,
+  startTime: number,
+  buffDefMap: Map<string, BuffDefinition>
+): void {
+  const depletedDef = buffDefMap.get(depletedBuffId);
+  if (!depletedDef) return;
+  for (const effect of depletedDef.effects) {
+    if (effect.type !== "applyBuffOnDeplete" || !effect.appliedBuffId) continue;
+    const buffDef = buffDefMap.get(effect.appliedBuffId);
+    if (!buffDef) continue;
+    removeExclusiveGroupBuffs(activeBuffs, buffDef, buffDefMap);
+    const newBuff: ActiveBuff = {
+      buffId: buffDef.id,
+      startTime,
+      endTime: computeBuffEndTime(startTime, buffDef.duration),
+      stacks: buffDef.maxStacks,
+    };
+    const existingIdx = activeBuffs.findIndex((ab) => ab.buffId === buffDef.id);
+    if (existingIdx >= 0) {
+      activeBuffs[existingIdx] = newBuff;
+    } else {
+      activeBuffs.push(newBuff);
     }
   }
 }
@@ -707,7 +763,6 @@ export function resolveTimeline(
     let autoStartTime: number;
 
     if (originalSkill.type === "gcd") {
-      const baseRecast = stats ? calcGcd(originalSkill.recastTime, stats) : originalSkill.recastTime;
       autoStartTime = Math.max(gcdAvailableAt, actionAvailableAt);
       autoStartTime = Math.round(autoStartTime * 1000) / 1000;
       // entry.manualStartTime が設定されていれば自動計算値を上書き（候補A: 強制上書き）。
@@ -719,6 +774,9 @@ export function resolveTimeline(
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
       expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
 
+      // recastOverride バフ（レインボードリップ効果アップ等）があれば基礎リキャストを置き換えてから補正を掛ける
+      const overriddenRecast = getBaseRecastTime(originalSkill, currentActiveBuffs, buffDefMap);
+      const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
       // 速度バフを適用してリキャスト・詠唱時間計算
       // 対象スキル限定の speed バフ（インスタレーション等）を正しくフィルタするため originalSkill.id を渡す
       const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
@@ -1423,6 +1481,9 @@ export function resolveTimeline(
             ab.stacks = Math.max(0, ab.stacks - 1);
             if (ab.stacks === 0) {
               currentActiveBuffs.splice(idx, 1);
+              // applyBuffOnDeplete: スタックを消費し切った時点で別バフを付与する
+              // （例: インスタレーション 5 スタック枯渇 → レインボードリップ効果アップ）
+              applyBuffsOnDeplete(currentActiveBuffs, buffId, startTime, buffDefMap);
             }
           } else {
             currentActiveBuffs.splice(idx, 1);
@@ -1529,10 +1590,8 @@ export function resolveTimeline(
   for (const entry of resolved) {
     const skill = skillMap.get(entry.resolvedSkillId);
     if (!skill || skill.type !== "gcd") continue;
-    const baseRecast = stats ? calcGcd(skill.recastTime, stats) : skill.recastTime;
-    const speedMul = getSpeedMultiplier(entry.activeBuffs, buffDefMap, entry.resolvedSkillId);
-    const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
-    const endTime = entry.startTime + recastTime;
+    // gcdAvailableAt は実行前バフ（recastOverride / speed）で算出済みの値をそのまま使う
+    const endTime = entry.gcdAvailableAt;
     if (endTime > lastGcdEndTime) lastGcdEndTime = endTime;
   }
 
