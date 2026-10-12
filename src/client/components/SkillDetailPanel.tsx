@@ -542,6 +542,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   appliedChip: {
     display: "inline-flex",
+    flexWrap: "wrap",
     alignItems: "center",
     gap: "6px",
     minHeight: "28px",

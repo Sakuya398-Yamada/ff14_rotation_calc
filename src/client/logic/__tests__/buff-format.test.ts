@@ -29,6 +29,12 @@ describe("describeBuffEffects", () => {
     ]);
   });
 
+  it("威力以外の効果も対象スキル限定なら「一部スキル」と添える", () => {
+    expect(describeBuffEffects(makeBuff([{ type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] }]))).toEqual([
+      "即時詠唱（一部スキル）",
+    ]);
+  });
+
   it("内部挙動の種別は出さず、同じ文言は1つにまとめる", () => {
     expect(
       describeBuffEffects(

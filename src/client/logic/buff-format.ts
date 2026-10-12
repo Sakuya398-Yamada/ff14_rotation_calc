@@ -11,11 +11,10 @@ function formatRate(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
 }
 
-function describeEffect(effect: BuffEffect): string | null {
-  const limited = effect.appliesToSkillIds ? "（一部スキル）" : "";
+function describeEffectBody(effect: BuffEffect): string | null {
   switch (effect.type) {
     case "potency":
-      return `威力×${effect.value.toFixed(2)}${limited}`;
+      return `威力×${effect.value.toFixed(2)}`;
     case "critRate":
       return `CRT+${formatRate(effect.value)}`;
     case "dhRate":
@@ -34,6 +33,12 @@ function describeEffect(effect: BuffEffect): string | null {
       // コンボ判定・リソース操作など計算の内部挙動を表す種別は、利用者向けの要約に出さない
       return null;
   }
+}
+
+function describeEffect(effect: BuffEffect): string | null {
+  const body = describeEffectBody(effect);
+  if (body === null) return null;
+  return effect.appliesToSkillIds ? `${body}（一部スキル）` : body;
 }
 
 /** バフ効果の利用者向け要約（重複は除く）。表示できる効果が無ければ空配列 */
