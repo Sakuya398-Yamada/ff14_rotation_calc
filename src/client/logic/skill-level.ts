@@ -12,6 +12,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   let nonComboPotency = skill.nonComboPotency;
   let dotPotency = skill.dotPotency;
   let maxCharges = skill.maxCharges;
+  let cooldown = skill.cooldown;
 
   // traitLevelの昇順で適用（低い方から順に上書き）
   const sorted = [...skill.traitPotencyOverrides].sort((a, b) => a.traitLevel - b.traitLevel);
@@ -21,14 +22,21 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
       if (override.nonComboPotency !== undefined) nonComboPotency = override.nonComboPotency;
       if (override.dotPotency !== undefined) dotPotency = override.dotPotency;
       if (override.maxCharges !== undefined) maxCharges = override.maxCharges;
+      if (override.cooldown !== undefined) cooldown = override.cooldown;
     }
   }
 
-  if (potency === skill.potency && nonComboPotency === skill.nonComboPotency && dotPotency === skill.dotPotency && maxCharges === skill.maxCharges) {
+  if (
+    potency === skill.potency &&
+    nonComboPotency === skill.nonComboPotency &&
+    dotPotency === skill.dotPotency &&
+    maxCharges === skill.maxCharges &&
+    cooldown === skill.cooldown
+  ) {
     return skill;
   }
 
-  return { ...skill, potency, nonComboPotency, dotPotency, maxCharges };
+  return { ...skill, potency, nonComboPotency, dotPotency, maxCharges, cooldown };
 }
 
 /**
