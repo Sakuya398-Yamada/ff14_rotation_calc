@@ -1082,6 +1082,7 @@ export function resolveTimeline(
     // （スキル実行中に新たに付与されたバフは消費対象外）
     // - consumeOnGcd: 全 GCD スキル実行後に消費
     //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（明鏡止水で特定WSに限定する用途）
+    //   excludedSkillIds 指定時は該当スキルIDでは消費しない（竜眼はピアシングタロンでは消費しない）
     // - instantCast: 詠唱時間 > 0 の GCD スキル実行後にのみ消費（非詠唱 GCD / oGCD では消費しない）
     //   appliesToSkillIds 指定時は該当スキルIDのみ消費対象（例: firestarter は fire-3 限定）
     //   複数の instantCast バフが同時アクティブな場合は 1 発につき 1 つだけ消費する
@@ -1096,6 +1097,7 @@ export function resolveTimeline(
         const hasConsumeOnGcd = def.effects.some((e) => {
           if (e.type !== "consumeOnGcd") return false;
           if (e.appliesToSkillIds && !e.appliesToSkillIds.includes(resolvedSkillId)) return false;
+          if (e.excludedSkillIds?.includes(resolvedSkillId)) return false;
           return true;
         });
         if (hasConsumeOnGcd) {

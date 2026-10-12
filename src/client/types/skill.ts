@@ -303,6 +303,8 @@ export interface BuffEffect {
    * 同一バフが複数スキル群に異なる倍率を適用するケースで使用する。
    */
   appliesToSkillIds?: string[];
+  /** consumeOnGcd 専用: 使用しても消費しないスキルIDのリスト（竜眼を遠隔WSのピアシングタロンで消費しない等） */
+  excludedSkillIds?: string[];
   /** applyBuffOnSkill / applyBuffOnDeplete 専用: 付与するバフID */
   appliedBuffId?: string;
   /**

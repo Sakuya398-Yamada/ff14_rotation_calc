@@ -38,10 +38,10 @@ describe("竜騎士バフ条件による使用制限", () => {
   const diveReady = makeReadyBuff("dive-ready");
   const dragonsFlightBuff = makeReadyBuff("dragons-flight");
   const nastrondReady = makeReadyBuff("nastrond-ready");
-  const stardiverReady = makeReadyBuff("stardiver-ready");
+  const lifeOfTheDragon = makeReadyBuff("life-of-the-dragon");
   const starcrossReady = makeReadyBuff("starcross-ready");
 
-  const allBuffs = [diveReady, dragonsFlightBuff, nastrondReady, stardiverReady, starcrossReady];
+  const allBuffs = [diveReady, dragonsFlightBuff, nastrondReady, lifeOfTheDragon, starcrossReady];
 
   describe("ミラージュダイブ → ダイブレディが必要", () => {
     it("ダイブレディなしで使用するとcomboErrorになる", () => {
@@ -138,7 +138,7 @@ describe("竜騎士バフ条件による使用制限", () => {
       const geirskogul = makeSkill({
         id: "geirskogul",
         cooldown: 60,
-        buffApplications: ["life-of-the-dragon", "nastrond-ready", "stardiver-ready"],
+        buffApplications: ["life-of-the-dragon", "nastrond-ready"],
       });
       const nastrond = makeSkill({
         id: "nastrond",
@@ -148,7 +148,7 @@ describe("竜騎士バフ条件による使用制限", () => {
       const stardiver = makeSkill({
         id: "stardiver",
         cooldown: 30,
-        buffConsumptions: [{ buffId: "stardiver-ready", stacks: 1 }],
+        requiredBuff: "life-of-the-dragon",
         buffApplications: ["starcross-ready"],
       });
       const skillMap = new Map([
@@ -171,7 +171,7 @@ describe("竜騎士バフ条件による使用制限", () => {
       const geirskogul = makeSkill({
         id: "geirskogul",
         cooldown: 60,
-        buffApplications: ["life-of-the-dragon", "nastrond-ready", "stardiver-ready"],
+        buffApplications: ["life-of-the-dragon", "nastrond-ready"],
       });
       const nastrond = makeSkill({
         id: "nastrond",
@@ -198,18 +198,19 @@ describe("竜騎士バフ条件による使用制限", () => {
       const geirskogul = makeSkill({
         id: "geirskogul",
         cooldown: 60,
-        buffApplications: ["life-of-the-dragon", "nastrond-ready", "stardiver-ready"],
+        buffApplications: ["life-of-the-dragon", "nastrond-ready"],
       });
       const stardiver = makeSkill({
         id: "stardiver",
         cooldown: 30,
-        buffConsumptions: [{ buffId: "stardiver-ready", stacks: 1 }],
+        requiredBuff: "life-of-the-dragon",
         buffApplications: ["starcross-ready"],
       });
       const starcross = makeSkill({
         id: "starcross",
         cooldown: 1,
         buffConsumptions: [{ buffId: "starcross-ready", stacks: 1 }],
+        requiredBuff: "life-of-the-dragon",
       });
       const skillMap = new Map([
         [geirskogul.id, geirskogul],
