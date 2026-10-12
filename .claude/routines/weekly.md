@@ -26,7 +26,7 @@ description: メモ inbox・知見ボード・パッチ情報・コードスキ�
    ```
 
 6. 起票は全系統合わせて **1 回の実行で 10 件まで**。超えた分は実行報告の「見送り」に挙げる
-7. **新規コメントは投稿しない**。許可されているのは #195 / #305 の既存コメントへのマーカー追記編集だけ（`.claude/rules/workflow-feedback.md`「自動化しないこと」で事前承認済み）。編集の直前に最新の本文を取得し、末尾に 1 行追記する
+7. **新規コメントは投稿しない**。例外は「実行報告」節で定める実行ログ Issue #448 への実行報告だけ。既存コメントへの編集は、#195 / #305 へのマーカー追記だけが許可されている（`.claude/rules/workflow-feedback.md`「自動化しないこと」で事前承認済み）。編集の直前に最新の本文を取得し、末尾に 1 行追記する
 8. テンプレート元（`Sakuya398-Yamada/issue-driven-dev-starter`）への起票・コメントはしない
 9. #195 / #305 のコメントは MCP の `issue_read` で丸読みしない
    - **#195** は `.claude/scripts/knowledge-board.cjs` で必要な分だけ読む（使い方は `.claude/rules/workflow-feedback.md`「知見ボードの読み方」）。`<repo>` の作業ツリーは `origin/main` より古いことがあるので、スクリプトは `git -C <repo> show origin/main:.claude/scripts/knowledge-board.cjs > <scratchpad>/knowledge-board.cjs` で取り出し、**カレントディレクトリを `<repo>` にして** `node <scratchpad>/knowledge-board.cjs open` のように実行する（リポジトリ名をカレントの git リモートから解決するため）。2 回目以降は `--cached` を付ける
@@ -77,7 +77,7 @@ description: メモ inbox・知見ボード・パッチ情報・コードスキ�
 
 ## 実行報告
 
-最後に、次の形式で報告する。
+最後に、次の形式で報告する。報告本文は実行ログ Issue #448（`meta: ルーティン実行ログ`）にもコメントとして投稿する（**1 実行 1 コメント**。起票が 0 件の実行も投稿する。この投稿は `.claude/rules/workflow-feedback.md`「自動化しないこと」の例外として事前承認済み）。投稿できなければ（GitHub MCP も gh も使えない等）、従来どおりセッションに報告を出すだけにする。
 
 ```
 ## weekly-issue-intake 実行報告（YYYY-MM-DD）
