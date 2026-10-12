@@ -40,6 +40,7 @@
      ```
 
    - レビューを待たせずに先に見せたい場合は `draft: true` で作成し、Phase 8 の記録が終わったら ready にする
+   - 作成がタイムアウトや 5xx で失敗扱いになっても、PR 自体は作成されていることがある。**再実行する前に** `search_pull_requests`（query に `head:<ブランチ名>`、`owner` / `repo` を指定）か `gh pr list --head <ブランチ名> --state all` で作成有無を確認し、作成済みならその URL で手順 3 に進む（同一ブランチから重複 PR を作らない）
 
 3. 作成された PR の URL をユーザーに返す
 4. PR購読の可否は **ツールの存在確認をしてから** 提案する（環境によっては `subscribe_pr_activity` が GitHub MCP に存在しない。`github/github-mcp-server` v1.x には無い）：

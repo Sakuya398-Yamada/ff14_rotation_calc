@@ -154,7 +154,7 @@ Low / Medium / High（判定基準は上記と同じ）
 4. 更新用 Issue の内容：
    - タイトル: `refactor: テンプレートを vX.Y.Z に更新`
    - ラベル: `refactor`
-   - 本文: 現在の版 → 最新版、Release notes の URL（`https://github.com/<repo>/releases/tag/vX.Y.Z`）、差分の URL（`https://github.com/<repo>/compare/vOLD...vNEW`）、完了条件（下記「取り込み手順」のチェックリスト）
+   - 本文: 現在の版 → 最新版、Release notes の URL（`https://github.com/<repo>/releases/tag/vX.Y.Z`）、差分の URL（`https://github.com/<repo>/compare/vOLD...vNEW`）、`template/` 配下の変更ファイル一覧（compare URL の Files changed、またはテンプレート元のクローンで `git diff --name-only vOLD vNEW -- template/`。Release notes は Issue 単位で `template/` 外の変更と混ざるので、手で起こさず機械的に得た一覧を貼る。取り込み時の DoD「変更ファイルをすべて確認した」の照合元になる）、完了条件（下記「取り込み手順」のチェックリスト）
 5. ユーザーが「今回はスキップ」を選んだら、そのセッション中は再度聞かない（次のセッションでバナーが出れば改めて聞く）
 6. スケジュール実行の無人セッション（`weekday-issue-start` 等）では質問も起票もせず、実行報告に「テンプレート更新あり」と記載するだけに留める
 
@@ -196,10 +196,11 @@ done
 
 1. `conflicts=0` のファイルは `$W/<path>.merged` をそのままプロジェクト側に書き戻す
 2. `conflicts=N`（N > 0）のファイルは `<<<<<<< ours` 〜 `>>>>>>> vNEW` の箇所だけを上記の方針で解消してから書き戻す。マーカーが残っていないことを `grep -n '^<<<<<<<\|^>>>>>>>' <file>` で確かめる
-3. ループが `continue` で飛ばしたファイルは手で判断する
+3. **書き戻したら、テンプレート版との残差を確認する**: `diff <(git -C "$SRC" show "vNEW:template/<path>") <path>`。残ってよいのは意図したプロジェクト固有の記述だけで、到達不能な分岐・重複した関数定義・同じ内容の二重の箇条書きが出ていたら手で除く。`merge-file` は両側が同じ領域を別の文面で変えていても、変更行が重ならなければコンフリクトにせず隣接する追記として黙って合成する。**プロジェクト側で先行修正したファイル（テンプレートへ還元した知見を自前でも直していた場合など）は `conflicts=0` でも必須**
+4. ループが `continue` で飛ばしたファイルは手で判断する
    - **project にない / vNEW で追加**: 新規ファイルとして `vNEW` の内容を置く（プロジェクトで意図的に削除していたなら置かない）
    - **vNEW で削除**: プロジェクト側でも削除してよいか確認してから削除する
-4. **「現プロジェクト版」は作業ツリーではなく `git show HEAD:<path>` から取る**。Windows で `core.autocrlf=true` だと作業ツリーのファイルは CRLF になっていて、LF のテンプレート側と全行が衝突する。`HEAD` の内容（リポジトリ内の LF）を使えば改行コードの差は出ない。このため取り込み作業は未コミットの変更が無い状態で始める
+5. **「現プロジェクト版」は作業ツリーではなく `git show HEAD:<path>` から取る**。Windows で `core.autocrlf=true` だと作業ツリーのファイルは CRLF になっていて、LF のテンプレート側と全行が衝突する。`HEAD` の内容（リポジトリ内の LF）を使えば改行コードの差は出ない。このため取り込み作業は未コミットの変更が無い状態で始める
 
 ## 棚卸し運用（週次ルーティンが正）
 
