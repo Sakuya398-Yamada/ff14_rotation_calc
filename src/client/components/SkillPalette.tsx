@@ -19,12 +19,15 @@ function CollapsibleSection({ title, defaultOpen = true, children }: Collapsible
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div style={styles.section}>
+      {/* 開閉は h3 で受ける（ボタンのクリック・Enter/Space もここへバブリングする） */}
       <h3
         style={styles.collapsibleTitle}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span style={styles.collapseIcon}>{open ? "▼" : "▶"}</span>
-        {title}
+        <button type="button" aria-expanded={open} style={styles.collapsibleButton}>
+          <span aria-hidden="true" style={styles.collapseIcon}>{open ? "▼" : "▶"}</span>
+          {title}
+        </button>
       </h3>
       {open && children}
     </div>
@@ -38,6 +41,8 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
     id: `palette-${skill.id}`,
     data,
   });
+  // GCD は角丸四角・実線枠、アビリティは円形アイコン・破線枠で形でも区別する
+  const isOgcd = skill.type === "ogcd";
   return (
     <div
       ref={setNodeRef}
@@ -45,6 +50,7 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
       {...attributes}
       style={{
         ...styles.skillCard,
+        borderStyle: isOgcd ? "dashed" : "solid",
         // none にするとカード上から始まるスワイプでパレットがスクロールできなくなる。
         // delay 式 TouchSensor では manipulation で十分（長押し成立後は dnd-kit が preventDefault する）
         touchAction: "manipulation",
@@ -55,12 +61,12 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
       <img
         src={skill.icon}
         alt={skill.name}
-        style={styles.skillIcon}
+        style={{ ...styles.skillIcon, borderRadius: isOgcd ? "50%" : "var(--radius-md)" }}
         draggable={false}
       />
       <div style={styles.skillInfo}>
         <div style={styles.skillName}>{skill.name}</div>
-        <div style={styles.skillPotency}>威力 {skill.potency}</div>
+        <div className="num" style={styles.skillPotency}>威力 {skill.potency}</div>
       </div>
     </div>
   );
@@ -97,6 +103,19 @@ export function SkillPalette({
   const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onLevelChange(Number(e.target.value) as PlayerLevel);
   };
+
+  const statFields: { key: keyof CharacterStats; label: string; abbr: string; min: number; detail: string }[] = [
+    {
+      key: "critical",
+      label: "クリティカル",
+      abbr: "CRT",
+      min: 420,
+      detail: `発生率 ${(calcCritRate(stats) * 100).toFixed(1)}% / 倍率 x${calcCritMultiplier(stats).toFixed(3)}`,
+    },
+    { key: "directHit", label: "ダイレクトヒット", abbr: "DH", min: 420, detail: `発生率 ${(calcDhRate(stats) * 100).toFixed(1)}%` },
+    { key: "determination", label: "意思力", abbr: "DET", min: 440, detail: `倍率 x${calcDetMultiplier(stats).toFixed(3)}` },
+    { key: "speed", label: "スピード", abbr: "SS", min: 420, detail: `GCD ${calcGcd(2.5, stats).toFixed(2)}s` },
+  ];
 
   return (
     <div className="custom-scrollbar" style={styles.container}>
@@ -143,59 +162,26 @@ export function SkillPalette({
 
       {/* ステータス入力セクション */}
       <CollapsibleSection title="ステータス">
-        <div style={styles.statInputs}>
-          <div style={styles.statRow}>
-            <label style={styles.statLabel}>CRT</label>
-            <input
-              type="number"
-              value={stats.critical}
-              onChange={(e) => handleStatChange("critical", e.target.value)}
-              style={styles.statInput}
-              min={420}
-            />
-          </div>
-          <div style={styles.statDetail}>
-            発生率: {(calcCritRate(stats) * 100).toFixed(1)}% / 倍率: x{calcCritMultiplier(stats).toFixed(3)}
-          </div>
-          <div style={styles.statRow}>
-            <label style={styles.statLabel}>DH</label>
-            <input
-              type="number"
-              value={stats.directHit}
-              onChange={(e) => handleStatChange("directHit", e.target.value)}
-              style={styles.statInput}
-              min={420}
-            />
-          </div>
-          <div style={styles.statDetail}>
-            発生率: {(calcDhRate(stats) * 100).toFixed(1)}%
-          </div>
-          <div style={styles.statRow}>
-            <label style={styles.statLabel}>DET</label>
-            <input
-              type="number"
-              value={stats.determination}
-              onChange={(e) => handleStatChange("determination", e.target.value)}
-              style={styles.statInput}
-              min={440}
-            />
-          </div>
-          <div style={styles.statDetail}>
-            倍率: x{calcDetMultiplier(stats).toFixed(3)}
-          </div>
-          <div style={styles.statRow}>
-            <label style={styles.statLabel}>SS</label>
-            <input
-              type="number"
-              value={stats.speed}
-              onChange={(e) => handleStatChange("speed", e.target.value)}
-              style={styles.statInput}
-              min={420}
-            />
-          </div>
-          <div style={styles.statDetail}>
-            GCD: {calcGcd(2.5, stats).toFixed(2)}s
-          </div>
+        <div style={styles.statTable}>
+          {statFields.map((field, i) => (
+            <div key={field.key} style={i === statFields.length - 1 ? styles.statItemLast : styles.statItem}>
+              <label style={styles.statRow}>
+                <span style={styles.statLabel}>
+                  {field.label}
+                  <span style={styles.statAbbr}>{field.abbr}</span>
+                </span>
+                <input
+                  type="number"
+                  className="num"
+                  value={stats[field.key]}
+                  onChange={(e) => handleStatChange(field.key, e.target.value)}
+                  style={styles.statInput}
+                  min={field.min}
+                />
+              </label>
+              <div className="num" style={styles.statDetail}>{field.detail}</div>
+            </div>
+          ))}
         </div>
       </CollapsibleSection>
 
@@ -218,139 +204,156 @@ export function SkillPalette({
   );
 }
 
+const fieldBase: React.CSSProperties = {
+  fontSize: "13px",
+  backgroundColor: "var(--color-raised)",
+  border: "1px solid var(--color-field)",
+  borderRadius: "var(--radius-md)",
+  color: "var(--color-text)",
+  fontFamily: "inherit",
+};
+
+const statItemBase: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "2px",
+  padding: "var(--space-2) 10px",
+};
+
 const styles: Record<string, React.CSSProperties> = {
   container: {
     width: "280px",
-    backgroundColor: "#1a1a2e",
-    borderRight: "1px solid #333",
-    padding: "16px",
+    boxSizing: "border-box",
+    backgroundColor: "var(--color-surface)",
+    borderRight: "1px solid var(--color-line)",
+    padding: "var(--space-5) var(--space-4)",
     overflowY: "auto",
     flexShrink: 0,
   },
   titleRow: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    marginBottom: "16px",
+    gap: "var(--space-2)",
+    marginBottom: "var(--space-5)",
   },
   title: {
     margin: 0,
-    fontSize: "18px",
-    color: "#e0e0e0",
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "var(--color-text)",
     flexShrink: 0,
   },
   jobSelect: {
+    ...fieldBase,
     flex: 1,
-    padding: "4px 6px",
-    fontSize: "13px",
-    backgroundColor: "#16213e",
-    border: "1px solid #444",
-    borderRadius: "4px",
-    color: "#e0e0e0",
-    outline: "none",
+    minHeight: "32px",
+    padding: "0 var(--space-2)",
     cursor: "pointer",
     minWidth: 0,
   },
   section: {
-    marginBottom: "20px",
+    marginBottom: "var(--space-5)",
   },
   collapsibleTitle: {
-    margin: "0 0 8px 0",
-    fontSize: "14px",
-    color: "#888",
-    textTransform: "uppercase" as const,
-    letterSpacing: "1px",
-    cursor: "pointer",
-    userSelect: "none" as const,
+    margin: "0 0 var(--space-2) 0",
+    fontSize: "13px",
+    fontWeight: 700,
+  },
+  collapsibleButton: {
     display: "flex",
     alignItems: "center",
     gap: "6px",
+    width: "100%",
+    minHeight: "28px",
+    padding: 0,
+    border: "none",
+    background: "transparent",
+    color: "var(--color-text)",
+    font: "inherit",
+    textAlign: "left" as const,
+    cursor: "pointer",
+    userSelect: "none" as const,
   },
   collapseIcon: {
-    fontSize: "10px",
+    fontSize: "8px",
     width: "12px",
     display: "inline-block",
-  },
-  sectionTitle: {
-    margin: "0 0 8px 0",
-    fontSize: "14px",
-    color: "#888",
-    textTransform: "uppercase" as const,
-    letterSpacing: "1px",
+    color: "var(--color-muted)",
   },
   levelRow: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "var(--space-2)",
   },
   levelLabel: {
-    fontSize: "14px",
-    fontWeight: "bold",
-    color: "#e0e0e0",
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "var(--color-text)",
     flexShrink: 0,
   },
   levelSelect: {
+    ...fieldBase,
     flex: 1,
-    padding: "6px 8px",
-    fontSize: "14px",
-    backgroundColor: "#16213e",
-    border: "1px solid #444",
-    borderRadius: "4px",
-    color: "#e0e0e0",
-    outline: "none",
+    minHeight: "32px",
+    padding: "0 var(--space-2)",
     cursor: "pointer",
   },
   alphaNotice: {
-    marginBottom: "8px",
-    padding: "4px 8px",
+    marginBottom: "var(--space-2)",
+    padding: "var(--space-1) var(--space-2)",
     fontSize: "11px",
-    color: "#90caf9",
-    backgroundColor: "rgba(144, 202, 249, 0.1)",
-    borderRadius: "4px",
-    border: "1px solid rgba(144, 202, 249, 0.3)",
+    color: "var(--color-muted)",
+    borderRadius: "var(--radius-sm)",
+    border: "1px solid var(--color-line)",
   },
   levelWarning: {
     marginTop: "6px",
-    padding: "4px 8px",
+    padding: "var(--space-1) var(--space-2)",
     fontSize: "11px",
-    color: "#ffa726",
-    backgroundColor: "rgba(255, 167, 38, 0.1)",
-    borderRadius: "4px",
-    border: "1px solid rgba(255, 167, 38, 0.3)",
+    color: "var(--color-warning)",
+    borderRadius: "var(--radius-sm)",
+    border: "1px solid currentColor",
   },
-  statInputs: {
+  statTable: {
     display: "flex",
     flexDirection: "column",
-    gap: "6px",
+    border: "1px solid var(--color-line)",
+    borderRadius: "var(--radius-md)",
+    backgroundColor: "var(--color-raised)",
   },
+  statItem: {
+    ...statItemBase,
+    borderBottom: "1px solid var(--color-line-soft)",
+  },
+  statItemLast: statItemBase,
   statRow: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    justifyContent: "space-between",
+    gap: "var(--space-2)",
   },
   statLabel: {
-    width: "32px",
+    display: "flex",
+    alignItems: "baseline",
+    gap: "6px",
     fontSize: "12px",
-    fontWeight: "bold",
-    color: "#aaa",
-    flexShrink: 0,
+    color: "var(--color-text)",
+    minWidth: 0,
+  },
+  statAbbr: {
+    fontSize: "10px",
+    color: "var(--color-muted)",
   },
   statInput: {
-    flex: 1,
-    padding: "4px 8px",
-    fontSize: "13px",
-    backgroundColor: "#16213e",
-    border: "1px solid #444",
-    borderRadius: "4px",
-    color: "#e0e0e0",
-    outline: "none",
+    ...fieldBase,
+    width: "76px",
+    boxSizing: "border-box",
+    padding: "var(--space-1) 6px",
+    textAlign: "right" as const,
   },
   statDetail: {
     fontSize: "11px",
-    color: "#4fc3f7",
-    paddingLeft: "40px",
-    marginTop: "-2px",
-    marginBottom: "2px",
+    color: "var(--color-muted)",
   },
   skillGrid: {
     display: "flex",
@@ -360,20 +363,20 @@ const styles: Record<string, React.CSSProperties> = {
   skillCard: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    padding: "6px 8px",
-    backgroundColor: "#16213e",
-    borderRadius: "6px",
+    gap: "10px",
+    padding: "6px var(--space-2)",
+    backgroundColor: "var(--color-raised)",
+    borderWidth: "1px",
+    borderColor: "var(--color-field)",
+    borderRadius: "var(--radius-md)",
     cursor: "grab",
     userSelect: "none" as const,
-    transition: "background-color 0.15s",
   },
   skillIcon: {
     width: "32px",
     height: "32px",
-    borderRadius: "4px",
     flexShrink: 0,
-    objectFit: "contain" as const,
+    objectFit: "cover" as const,
   },
   skillInfo: {
     minWidth: 0,
@@ -381,13 +384,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   skillName: {
     fontSize: "13px",
-    color: "#e0e0e0",
+    color: "var(--color-text)",
     whiteSpace: "nowrap" as const,
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
   skillPotency: {
     fontSize: "11px",
-    color: "#888",
+    color: "var(--color-muted)",
   },
 };
