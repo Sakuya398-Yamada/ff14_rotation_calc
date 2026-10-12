@@ -20,12 +20,29 @@ function heavyShots(count: number): TimelineEntry[] {
 }
 
 /**
- * エンピリアルアロー（cd15s、ソウルボイス+5）を GCD 7 回挟みで n 回撃ち、
- * 歌なし（自動蓄積なし）でソウルボイスを 5n に確定させるシーケンス。
+ * 歌によるソウルボイスの自動蓄積だけを外したリソース定義。
+ * エンピリアルアローのソウルボイス +5 は歌の実行中のみ（#409）なので、
+ * 歌を流しつつソウルボイスをエンピリアルアロー分だけに確定させるために使う。
+ */
+const RESOURCES_WITHOUT_SV_TICK = BRD_RESOURCES.map((r) =>
+  r.id === "soul-voice"
+    ? { ...r, autoGenerateInterval: undefined, autoGenerateAmount: undefined, autoGenerateWhileBuff: undefined }
+    : r,
+);
+
+function resolveWithoutSvTick(entries: TimelineEntry[]) {
+  return resolveTimeline(entries, skillMap, RESOURCES_WITHOUT_SV_TICK, undefined, BRD_BUFFS);
+}
+
+/**
+ * エンピリアルアロー（cd15s、歌の実行中はソウルボイス+5）を GCD 7 回挟みで n 回撃ち、
+ * resolveWithoutSvTick でソウルボイスを 5n に確定させるシーケンス。
+ * 歌の効果時間（45 秒）内に収まるよう、3 回目までは賢人のバラード、4 回目以降は軍神のパイオンを流す。
  */
 function empyrealCycles(times: number): TimelineEntry[] {
-  const entries: TimelineEntry[] = [];
+  const entries: TimelineEntry[] = [entry("mages-ballad")];
   for (let i = 0; i < times; i++) {
+    if (i === 3) entries.push(entry("armys-paeon"));
     entries.push(entry("empyreal-arrow"));
     if (i < times - 1) {
       entries.push(...heavyShots(7));
@@ -72,7 +89,7 @@ describe("BRD: エイペックスアローのソウルボイス残量による�
   });
 
   it("ソウルボイス 15（20 未満）でも使用できない", () => {
-    const result = resolve([...empyrealCycles(3), entry("apex-arrow")]);
+    const result = resolveWithoutSvTick([...empyrealCycles(3), entry("apex-arrow")]);
     assertNoEmpyrealRecastError(result);
 
     const apex = result.entries[result.entries.length - 1];
@@ -81,7 +98,7 @@ describe("BRD: エイペックスアローのソウルボイス残量による�
   });
 
   it("ソウルボイス 20（最低値）で威力 140", () => {
-    const result = resolve([...empyrealCycles(4), entry("apex-arrow")]);
+    const result = resolveWithoutSvTick([...empyrealCycles(4), entry("apex-arrow")]);
     assertNoEmpyrealRecastError(result);
 
     const apex = result.entries[result.entries.length - 1];
@@ -95,7 +112,7 @@ describe("BRD: エイペックスアローのソウルボイス残量による�
   });
 
   it("ソウルボイス 25 で威力 175（線形補間）、消費は 20 ではなく全量", () => {
-    const result = resolve([...empyrealCycles(5), entry("apex-arrow")]);
+    const result = resolveWithoutSvTick([...empyrealCycles(5), entry("apex-arrow")]);
     assertNoEmpyrealRecastError(result);
 
     const apex = result.entries[result.entries.length - 1];

@@ -43,7 +43,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 
 /**
  * 詩人（BRD）攻撃スキル一覧
- * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #409
+ * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイドとの既知の差分は #418 / #419 / #420
  * 威力は公式ジョブガイド準拠
  */
 export const BRD_ATTACK_SKILLS: Skill[] = [
@@ -321,6 +321,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 15,
+    cooldownGroup: "brd-bloodletter",
     acquiredLevel: 12,
     traitPotencyOverrides: [
       { traitLevel: 84, maxCharges: 3 },
@@ -336,8 +337,11 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 15,
+    cooldownGroup: "brd-bloodletter",
     acquiredLevel: 45,
-    maxCharges: 3,
+    traitPotencyOverrides: [
+      { traitLevel: 84, maxCharges: 3 },
+    ],
     // 対象とその周囲にヒット。減衰なし（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -353,8 +357,9 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     cooldown: 15,
     acquiredLevel: 54,
     resourceChanges: [
-      { resourceId: "repertoire", amount: 1 },
-      { resourceId: "soul-voice", amount: 5 },
+      // 詩心（と同時に蓄積するソウルボイス）は歌の実行中のみ付与される
+      { resourceId: "repertoire", amount: 1, requiredBuffAnyOf: ["mages-ballad", "armys-paeon", "wanderers-minuet"] },
+      { resourceId: "soul-voice", amount: 5, requiredBuffAnyOf: ["mages-ballad", "armys-paeon", "wanderers-minuet"] },
     ],
   },
   {
@@ -369,9 +374,12 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     cooldown: 1,
     acquiredLevel: 52,
     requiredBuff: "wanderers-minuet",
+    // 詩心 1 以上で実行でき、詩心を全消費する。威力は消費前の詩心数で決まる
     resourceChanges: [
-      { resourceId: "repertoire", amount: -3 },
+      { resourceId: "repertoire", amount: -1 },
     ],
+    consumeAllOfResource: "repertoire",
+    potencyByResourceAmount: { resourceId: "repertoire", potencies: [100, 220, 360] },
     // 対象とその周囲にヒット、2体目以降は威力50%減
     maxTargets: Infinity,
     falloffRate: 0.5,
@@ -398,6 +406,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 15,
+    cooldownGroup: "brd-bloodletter",
     acquiredLevel: 92,
     replacesSkillId: "bloodletter",
     maxCharges: 3,

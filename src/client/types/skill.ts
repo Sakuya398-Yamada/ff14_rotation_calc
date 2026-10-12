@@ -17,6 +17,11 @@ export interface ResourceChange {
    * 例: サブトラクティブパレットの WP-1 / BP+1 — WP が 0 なら両方とも適用されない。
    */
   skipIfInsufficient?: boolean;
+  /**
+   * 指定バフのいずれかがアクティブなときだけこの変動を適用する（未アクティブ時はエラーにせず変動しない）。
+   * 例: エンピリアルアローの詩心付与 — 歌の実行中のみ。
+   */
+  requiredBuffAnyOf?: string[];
 }
 
 /** バフスタック消費（スキル使用時） */
@@ -135,6 +140,14 @@ export interface Skill {
     minPotency: number;
     maxAmount: number;
     maxPotency: number;
+  };
+  /**
+   * 実行前のリソース量に応じた段階威力（index 0 = 1個のとき）。配列長を超える量は末尾の威力。
+   * 例: ピッチパーフェクト — 詩心 1/2/3 で威力 100/220/360。
+   */
+  potencyByResourceAmount?: {
+    resourceId: string;
+    potencies: number[];
   };
   /** consumeAllResources消費数に応じたバフ適用テーブル（index 0 = 1個消費時のbuffId[]） */
   buffApplicationsByConsumedCount?: string[][];
