@@ -10,7 +10,7 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     shortName: "ﾊﾟﾚｯﾄ",
     maxStacks: 100,
     color: "#7e57c2",
-    acquiredLevel: 1,
+    acquiredLevel: 60,
   },
 
   // ============================================================
@@ -22,7 +22,7 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     shortName: "WP",
     maxStacks: 5,
     color: "#ffffff",
-    acquiredLevel: 15,
+    acquiredLevel: 80,
     displayGroup: "paint",
     stacksPerRow: 3,
     groupMaxStacks: 5,
@@ -32,7 +32,8 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     id: "black-paint",
     name: "ブラックペイント",
     shortName: "BP",
-    maxStacks: 5,
+    // 色調反転で黒く変化するペイントは 1 つだけ（公式ジョブガイド「ホワイトペイントが1スタックのみブラックペイントに変化する」）
+    maxStacks: 1,
     // 「黒」よりも紫として認識される方が直感的なため、濃い紫にする
     color: "#7b1fa2",
     acquiredLevel: 90,
