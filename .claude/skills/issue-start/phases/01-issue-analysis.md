@@ -50,7 +50,7 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
 
 - 作業中の Issue のブランチでテンプレートを直接更新しない（1 Issue = 1 PR）。[Y] でも動作は「更新用 Issue の起票」までで、その後は手順 1 に進む
 - バナーの版は hook が 24 時間キャッシュした値なので、最新リリースを反映していないことがある。既に起票済みの更新用 Issue の版（`テンプレートを vX.Y.Z に更新`）とバナーの版が食い違ったら、`git ls-remote --tags --refs --sort=-v:refname https://github.com/<owner/repo>.git 'v*' | head -n 1` で直接確認し、新しい方の版を正とする
-- [Y] の場合: `search_issues`（`owner` / `repo` にこのプロジェクト）で同じ版の更新 Issue（`テンプレートを <最新版> に更新`）が無いか確認し、無ければ `issue_write`（method: `create`）で起票する。タイトル `refactor: テンプレートを <最新版> に更新`、ラベル `refactor`。本文は現在の版 → 最新版、Release notes URL、差分 URL（`https://github.com/<owner/repo>/compare/<ローカル版>...<最新版>`）、完了条件（`.claude/rules/workflow-feedback.md`「取り込み手順」のチェックリスト）
+- [Y] の場合: `search_issues`（`owner` / `repo` にこのプロジェクト）で同じ版の更新 Issue（`テンプレートを <最新版> に更新`）が無いか確認し、無ければ `issue_write`（method: `create`）で起票する。タイトル `refactor: テンプレートを <最新版> に更新`、ラベル `refactor`。本文は現在の版 → 最新版、Release notes URL、差分 URL（`https://github.com/<owner/repo>/compare/<ローカル版>...<最新版>`）、`template/` 配下の変更ファイル一覧（compare URL の Files changed、またはテンプレート元のクローンで `git diff --name-only <ローカル版> <最新版> -- template/`。Release notes から手で起こさず機械的に得た一覧を貼る）、完了条件（`.claude/rules/workflow-feedback.md`「取り込み手順」のチェックリスト）
 - **スケジュール実行の無人セッション**（`weekday-issue-start` 等）では質問も起票もせず、実行報告に「テンプレート更新あり（<ローカル版> → <最新版>）」と記載するだけに留める
 - 起票した更新 Issue はあとで通常どおり `/issue-start` する。その Phase 5 の手順は `.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」
 - いま `/issue-start` している Issue 自体が更新用 Issue なら、このチェックは不要
@@ -63,22 +63,8 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
    - Issue が `OPEN` でも PR がマージ済みのことがあるので、Issue の state だけで判断しない
    - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は後述「オープンな旧 PR／既存ブランチがある場合」
 3. 本文中のリンクや関連ラベルから、関連する過去の Issue を参照する。親 Issue がある場合（`parent`）はその本文も読む
-   - **外部リポジトリの特定タグのファイルが参照元に指定されている場合**（テンプレート元の `vX.Y.Z` 等）: 毎回 `gh api` の呼び出し形を組み立てず、以下の定型で版固定して取得する。出力が長いときは scratchpad 等の一時領域にリダイレクトし、必要な範囲だけ読む
-
-     ```bash
-     # ファイル本体を raw で取得（ref はタグ・ブランチ・コミット SHA のいずれも可）
-     gh api "repos/<owner/repo>/contents/<path>?ref=<tag>" -H "Accept: application/vnd.github.raw"
-
-     # 2 つの版の間の変更ファイル一覧
-     gh api "repos/<owner/repo>/compare/<old-tag>...<new-tag>" --jq '.files[].filename'
-
-     # 特定ファイルの patch だけ抽出（test() 内のドットは "\." ではなく "[.]" で書く）
-     gh api "repos/<owner/repo>/compare/<old-tag>...<new-tag>" \
-       --jq '.files[] | select(.filename | test("hooks/session-start-info[.]sh$")) | .patch'
-     ```
-
-     - `test("\.sh$")` のように `\.` と書くと gojq が `invalid escape sequence "\."` で失敗する。`[.]` で書けばエスケープ不要
-     - URL に `?` を含むのでパス引数はクォートする。`gh` が PATH に無い Git Bash では `"/c/Program Files/GitHub CLI/gh.exe"` で起動する（`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）
+   - 外部リポジトリの **特定タグのファイル** が参照元に指定されている場合は、`get_file_contents`（`owner` / `repo` / `path` に加えて `ref` にタグを指定）で版固定で読む。`gh` なら `gh api "repos/<owner/repo>/contents/<path>?ref=<tag>" -H "Accept: application/vnd.github.raw"`（`?` を含むのでクォートする）
+   - 2 つの版の間の差分や特定ファイルの patch が要るときは、compare API の JSON を jq で漉すより、`git clone --no-checkout` したクローンで `git diff --name-only vOLD vNEW` / `git show vNEW:<path>` を使う（`.claude/rules/workflow-feedback.md`「3-way マージの定型手順」と同じ形）。`gh api --jq` を使う場合、`test("\.sh$")` のような `\.` は gojq が `invalid escape sequence` で拒否するので `[.]` と書く
 4. **【MCP: Brave Search】** IssueがFF14のスキルデータやゲーム仕様に関わる場合、`brave_web_search` で公式ジョブガイドや関連情報を検索し、実装に必要な数値・仕様を収集する
    - 検索例: `"FF14 竜騎士 ジョブガイド スキル一覧"`, `"FFXIV dragoon job guide skill potency"`
    - **利用前の準備**: `ToolSearch query: "select:brave_web_search"` でスキーマをロード
