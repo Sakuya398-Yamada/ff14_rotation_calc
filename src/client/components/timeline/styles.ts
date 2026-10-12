@@ -23,19 +23,24 @@ export const styles: Record<string, React.CSSProperties> = {
   },
   header: {
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "var(--space-2) var(--space-4)",
     marginBottom: "16px",
   },
   title: {
     margin: 0,
     fontSize: "18px",
     color: "var(--color-text)",
+    whiteSpace: "nowrap" as const,
   },
   headerControls: {
     display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
     alignItems: "center",
-    gap: "16px",
+    gap: "var(--space-2)",
   },
   toggleButton: {
     background: "none",

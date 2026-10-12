@@ -96,6 +96,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
           id={panelId}
           role="dialog"
           aria-label="ジョブとレベルを選択"
+          className="job-picker-panel"
           style={styles.panel}
           onKeyDown={(e) => {
             if (e.key !== "Escape") return;
@@ -267,13 +268,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--color-muted)",
   },
   panel: {
-    position: "absolute",
-    right: 0,
-    top: "calc(100% + 8px)",
     zIndex: 50,
-    width: "600px",
-    maxWidth: "calc(100vw - 32px)",
-    maxHeight: "calc(100vh - 96px)",
     overflowY: "auto",
     boxSizing: "border-box",
     padding: "var(--space-4)",

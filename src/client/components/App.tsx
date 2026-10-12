@@ -8,6 +8,7 @@ import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsDialog } from "./SettingsDialog";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
+import "./layout.css";
 import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { JOB_DATA } from "../data/job-registry";
@@ -276,8 +277,8 @@ export function App() {
   }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, ppsRange, stats]);
 
   return (
-    <div style={styles.app}>
-      <header style={styles.header}>
+    <div className="app-root" style={styles.app}>
+      <header className="app-header" style={styles.header}>
         <h1 style={styles.headerTitle}>FF14 Rotation Calculator</h1>
         <JobPicker
           selectedJob={selectedJob}
@@ -322,13 +323,13 @@ export function App() {
         onDragEnd={handleDndDragFinish}
         onDragCancel={handleDndDragFinish}
       >
-      <div style={styles.main}>
+      <div className="app-main" style={styles.main}>
         <SkillPalette
           skills={skills}
           stats={stats}
           onStatsChange={setStats}
         />
-        <div style={styles.workArea}>
+        <div className="app-work-area" style={styles.workArea}>
           <div style={styles.timelineSlot}>
             <Timeline
               skills={skills}
@@ -416,16 +417,15 @@ const styles: Record<string, React.CSSProperties> = {
   app: {
     display: "flex",
     flexDirection: "column",
-    height: "100vh",
     backgroundColor: "var(--color-bg)",
     color: "var(--color-text)",
     fontFamily: "var(--font-sans)",
   },
   header: {
     display: "flex",
+    flexWrap: "wrap",
     alignItems: "center",
-    gap: "var(--space-4)",
-    padding: "var(--space-3) var(--space-6)",
+    gap: "var(--space-2) var(--space-4)",
     backgroundColor: "var(--color-surface)",
     borderBottom: "1px solid var(--color-line)",
   },
@@ -451,7 +451,6 @@ const styles: Record<string, React.CSSProperties> = {
   main: {
     display: "flex",
     flex: 1,
-    overflow: "hidden",
   },
   workArea: {
     flex: 1,
