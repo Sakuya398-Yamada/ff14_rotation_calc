@@ -9,7 +9,6 @@ import disembowelIcon from "../assets/icons/drg/Disembowel.png";
 import mirageDiveIcon from "../assets/icons/drg/Mirage_Dive.png";
 import dragonfireDiveIcon from "../assets/icons/drg/Dragonfire_Dive.png";
 import nastrondIcon from "../assets/icons/drg/Nastrond.png";
-import stardiverIcon from "../assets/icons/drg/Stardiver.png";
 import starcrossIcon from "../assets/icons/drg/Starcross.png";
 import drakesbaneIcon from "../assets/icons/drg/Drakesbane.png";
 import piercingTalonIcon from "../assets/icons/drg/Piercing_Talon.png";
@@ -72,13 +71,15 @@ export const DRG_BUFFS: BuffDefinition[] = [
     duration: 30,
     effects: [
       {
+        // ウェポンスキルによる近接攻撃で解除される（遠隔のピアシングタロンでは解除されない）
         type: "consumeOnGcd",
         value: 1,
+        excludedSkillIds: ["piercing-talon"],
       },
     ],
     color: "#e91e63",
     maxStacks: 1,
-    acquiredLevel: 64,
+    acquiredLevel: 76,
   },
   {
     id: "power-surge",
@@ -142,17 +143,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
     color: "#d50000",
     maxStacks: 1,
     acquiredLevel: 70,
-  },
-  {
-    id: "stardiver-ready",
-    name: "スターダイバーレディ",
-    shortName: "ｽﾀﾀﾞｲ\nﾚﾃﾞｨ",
-    icon: stardiverIcon,
-    duration: 20,
-    effects: [],
-    color: "#aa00ff",
-    maxStacks: 1,
-    acquiredLevel: 80,
   },
   {
     id: "starcross-ready",
