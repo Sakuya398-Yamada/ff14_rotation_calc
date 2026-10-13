@@ -37,10 +37,15 @@ const GCD_RECAST = 2.5;
 /** デフォルトアニメーションロック（秒） */
 const DEFAULT_ANIMATION_LOCK = 0.65;
 
+/** AF 中（段階不問）を発動条件にするための requiredBuffAnyOf */
+const ASTRAL_FIRE_ANY = ["astral-fire-1", "astral-fire-2", "astral-fire-3"];
+/** UB 中（段階不問）を発動条件にするための requiredBuffAnyOf */
+const UMBRAL_ICE_ANY = ["umbral-ice-1", "umbral-ice-2", "umbral-ice-3"];
+
 /**
  * 黒魔道士のスキル定義。
  * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5）の数値とも照合済み（#407）。
- * 未モデル化の既知の差分: MP 消費・詠唱半減 #415、サンダーヘッド／パラドックスの付与条件 #416、発動条件 #417
+ * 未モデル化の既知の差分: MP 消費・詠唱半減 #415、サンダーヘッド／パラドックスの付与条件 #416
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
@@ -55,9 +60,10 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
  * 同じ exclusiveGroup ("astral-umbral") により相互排他される。
  * スタック式ではないため、段階の引き上げは個別にバフを差し替える形で表現する。
  *
- * 現行では単純化のため、各ファイア／ブリザド系スキルは「AF3／UB3 を直接付与」する
- * 挙動で実装する（実機では 1→2→3 と段階的に上がるが、ビルド目的では AF3/UB3 に
- * 到達した状態で威力計算するのが一般的のため実用上の差は小さい）。
+ * ファイア／ブリザドは autoTransform の隠しスキルで 1→2→3 と段階を進め、
+ * ファイガ／ブリザガ・ファイラ系／ブリザラ系・デスペア・フレア・マナフォントは
+ * 最大段階（AF3／UB3）を直接付与する。ファイジャ・デスペア・ブリザジャ・フリーズは
+ * AF／UB 中なら段階不問で使用でき、ファイジャ・ブリザジャ・フリーズは段階を変えない（#417）。
  *
  * ### サンダーヘッド・ファイアスターター
  * 7.2 以降は proc ではなく AF/UB 切替時の確定付与に変更されている（永続）。
@@ -119,13 +125,12 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.0,
     acquiredLevel: 60,
-    // AF3 中でのみ実用、AF1/AF2 でもゲーム上は使用可能
-    requiredBuff: "astral-fire-3",
+    // AF 中のみ使用可（段階不問）。AF を付与する追加効果は無いので段階は変えない
+    requiredBuffAnyOf: ASTRAL_FIRE_ANY,
     resourceChanges: [
       { resourceId: "mp", amount: -800 },
       { resourceId: "astral-soul", amount: 1 },
     ],
-    buffApplications: ["astral-fire-3"],
   },
   {
     id: "despair",
@@ -137,8 +142,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 72,
-    // AF 中のみ使用可（AF3 へ直接引き上げる）
-    requiredBuff: "astral-fire-3",
+    // AF 中のみ使用可（段階不問）。最大スタック分の AF を付与するので AF3 へ引き上げる
+    requiredBuffAnyOf: ASTRAL_FIRE_ANY,
     // MP を全消費する（最低 500 必要）
     consumeAllOfResource: "mp",
     buffApplications: ["astral-fire-3"],
@@ -215,7 +220,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 50,
     // AF 中のみ使用可（AF1〜AF3 いずれでも可。トランス→フレアの範囲ローテに対応）
-    requiredBuffAnyOf: ["astral-fire-1", "astral-fire-2", "astral-fire-3"],
+    requiredBuffAnyOf: ASTRAL_FIRE_ANY,
     // MP を全消費する。アンブラルハート全消費時の「消費 MP 2/3」は
     // 既存の MP 機構（resourceCostMultiplier は固定コストのみ対象）では
     // 表現できないためモデル化しない（Issue #316 で決定）
@@ -279,13 +284,12 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.0,
     acquiredLevel: 58,
-    // UB 中のみ使用可
-    requiredBuff: "umbral-ice-3",
-    // UB3 中の使用が前提のため MP 消費は 0 として扱う（resourceChanges 省略）
+    // UB 中のみ使用可（段階不問）。UB を付与する追加効果は無いので段階は変えない
+    requiredBuffAnyOf: UMBRAL_ICE_ANY,
+    // UB 中の使用が前提のため MP 消費は 0 として扱う（resourceChanges 省略）
     resourceChanges: [
       { resourceId: "umbral-heart", amount: 3 },
     ],
-    buffApplications: ["umbral-ice-3"],
   },
 
   // ============================================================
@@ -333,11 +337,14 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.0,
     acquiredLevel: 40,
+    // UB 中のみ使用可（段階不問）。UB を付与する追加効果は無いので段階は変えない
+    requiredBuffAnyOf: UMBRAL_ICE_ANY,
     resourceChanges: [
       { resourceId: "mp", amount: -1000 },
       { resourceId: "umbral-heart", amount: 3 },
     ],
-    buffApplications: ["umbral-ice-3", "thunderhead"],
+    // サンダーヘッドの付与条件は #416 で扱う
+    buffApplications: ["thunderhead"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
