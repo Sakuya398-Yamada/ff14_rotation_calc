@@ -291,7 +291,7 @@ describe("BLM: UB 段階別 MP 回復", () => {
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(false);
   });
 
-  it("AF/UB 外で初手ブリザドを撃った場合、MP は変化せず UB1 のみ付与される", () => {
+  it("AF/UB 外で初手ブリザドを撃った場合、MP 400 を消費するだけで回復せず UB1 のみ付与される", () => {
     const result = resolveTimeline(
       [entry("blizzard")],
       skillMap,
@@ -299,8 +299,8 @@ describe("BLM: UB 段階別 MP 回復", () => {
       undefined,
       BLM_BUFFS,
     );
-    // 初期 MP（10000）から変化しない
-    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000);
+    // 初期 MP（10000）から基本コスト 400 だけ減る（UB 未付与なので回復なし）
+    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000 - 400);
     expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
   });
 });
@@ -340,8 +340,8 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
-  it("UB 外（AF 中）でブリザガを撃ったときは MP を回復しない（コストのみ消費）", () => {
-    // fire-3（AF3 付与, MP -2000）→ blizzard-3（AF3 中, UB バフ非アクティブのため回復なし、MP -800）
+  it("UB 外（AF 中）でブリザガを撃ったときは MP を回復せず、消費も 0 になる", () => {
+    // fire-3（AF3 付与, MP -2000）→ blizzard-3（AF3 中, UB バフ非アクティブのため回復なし、AF の効果で MP 消費 0）
     const result = resolveTimeline(
       [entry("fire-3"), entry("blizzard-3")],
       skillMap,
@@ -351,8 +351,10 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     );
     const before = result.entries[0].resourceSnapshot["mp"];
     const after = result.entries[1].resourceSnapshot["mp"];
-    // ブリザガは BLM_BLIZZARD_FAMILY_IDS で AF の倍率対象外、UB バフ非アクティブのため回復もなし
-    expect(after - before).toBe(-800);
+    // AF 中の氷属性魔法は MP 消費 0（極性マスタリー、#415）、UB バフ非アクティブのため回復もなし
+    expect(before).toBeLessThan(10000);
+    expect(result.entries[1].resourceErrors).toEqual([]);
+    expect(after - before).toBe(0);
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
@@ -662,8 +664,8 @@ describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
     const fire4Entry = result.entries[3];
     expect(fire4Entry.resourceErrors).toEqual([]);
     // blizzard-4 後は UB3 の resourceGainOnSkill +10000（cap 10000）で MP=10000、UH=3
-    // fire-3 で MP -2000 → 8000、fire-4 で UH 1 消費して MP -800（倍化打ち消し）→ 7200
-    expect(fire4Entry.resourceSnapshot["mp"]).toBe(10000 - 2000 - 800);
+    // fire-3 は UB3 中なので MP 消費 0 → 10000、fire-4 で UH 1 消費して MP -800（倍化打ち消し）→ 9200
+    expect(fire4Entry.resourceSnapshot["mp"]).toBe(10000 - 800);
     expect(fire4Entry.resourceSnapshot["umbral-heart"]).toBe(2);
   });
 
@@ -677,15 +679,15 @@ describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
       BLM_BUFFS,
     );
     expect(result.entries[1].resourceErrors).toEqual([]);
-    // blizzard: UB 未付与なので MP +400 回復、初期 10000 上限なので 10000 維持
-    // blizzard-3: UB1 中なので MP -800 が 0 になる → 10000 維持
-    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000);
+    // blizzard: UB 未付与なので基本コスト 400 を消費 → 9600
+    // blizzard-3: UB1 中なので MP -800 が 0 になり、UB1 の回復 +2500 で上限 10000 にキャップ
+    expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000 - 400);
     expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000);
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
-  it("UB 中でも UB を付与する側のスキル（fire-3）には MP 倍率は適用されない", () => {
-    // blizzard で UB1 → fire-3 (UB 中だが FIRE 系なので UB の resourceCostMultiplier 対象外)
+  it("UB 中のファイア系（fire-3）は MP 消費が 0 になる（#415）", () => {
+    // blizzard で UB1（MP -400）→ fire-3（UB1 中の火属性魔法なので MP 消費 0）
     const result = resolveTimeline(
       [entry("blizzard"), entry("fire-3")],
       skillMap,
@@ -693,8 +695,8 @@ describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
       undefined,
       BLM_BUFFS,
     );
-    // fire-3 は通常通り MP -2000 消費（UB の倍率は BLM_BLIZZARD_FAMILY_IDS のみに適用）
-    expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000 - 2000);
+    expect(result.entries[1].resourceErrors).toEqual([]);
+    expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000 - 400);
   });
 
   it("AF 中でも UH が足りなければ MP は 2 倍消費される（UH 残量 0 の場合は打ち消し不成立）", () => {
@@ -716,10 +718,10 @@ describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
       BLM_BUFFS,
     );
     // blizzard-4 後は UB3 の resourceGainOnSkill +10000（cap 10000）で MP=10000、UH=3
-    // fire-3 で MP -2000 → 8000、fire-4×3（UH 3→0、各 MP -800）→ 5600、4 発目（UH 0、打ち消し不成立、MP -1600）→ 4000
+    // fire-3 は UB3 中なので MP 消費 0 → 10000、fire-4×3（UH 3→0、各 MP -800）→ 7600、4 発目（UH 0、打ち消し不成立、MP -1600）→ 6000
     const lastFire4 = result.entries[result.entries.length - 1];
     expect(lastFire4.resourceErrors).toEqual([]);
-    expect(lastFire4.resourceSnapshot["mp"]).toBe(10000 - 2000 - 800 * 3 - 1600);
+    expect(lastFire4.resourceSnapshot["mp"]).toBe(10000 - 800 * 3 - 1600);
     expect(lastFire4.resourceSnapshot["umbral-heart"]).toBe(0);
   });
 });
