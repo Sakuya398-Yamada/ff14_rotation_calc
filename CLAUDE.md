@@ -29,7 +29,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 | `context-efficiency.md` | コンテキスト効率・ファイル読解・サブエージェント委譲 |
 | `mcp-setup.md` | MCP サーバー設定・API キー管理 |
 | `playwright-mcp.md` | Playwright MCP による UI 検証手順 |
-| `workflow-feedback.md` | 知見ボード運用、テンプレート元への還元・更新取り込み |
+| `workflow-feedback.md` | 知見ボード運用、テンプレート元への還元・更新取り込みの判定（手順は phases と `/template-update`）、定期ルーティン |
 | `documentation-policy.md` | CLAUDE.md と rules の書き分け方針 |
 
 ## 開発フロー
@@ -40,27 +40,13 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 4. **PR作成（Claude Code）**: `closes #<issue番号>` を含めたPRを作成し、Issueに実装メモを記録
 5. **最終確認＆マージ（ユーザー）**: PRを承認・マージ。Issueが自動クローズされる
 
-`/issue-start` の各Phase詳細は `.claude/skills/issue-start/SKILL.md`、Issue の分割・起票（`/issue-plan`）は `.claude/skills/issue-plan/SKILL.md` を参照。1 セッションで扱う Issue は 1 件を基本とし、別の Issue に移るときは `/clear` してから始める。
+`/issue-start` の各Phase詳細は `.claude/skills/issue-start/SKILL.md`、Issue の分割・起票（`/issue-plan`）は `.claude/skills/issue-plan/SKILL.md` を参照。1 セッションで扱う Issue は 1 件を基本とし、別の Issue に移るときは `/clear` してから始める。スコープ外問題の起票判定と起票フローは `.claude/skills/issue-start/SKILL.md`「スコープ外問題の起票提案」。
 
 精度向上のためのチェック項目（Issue 本文乖離検出 / スコープ乖離判定 / 系統スキル網羅性 / 系統横断ユニットテスト）は対応する `.claude/skills/issue-start/phases/*.md` 内のチェック節を参照（Issue #231 で導入）。
 
-### スコープ外問題の取り扱い
-
-`/issue-start` 実行中（Phase 3/5/6）にスコープ外の問題を検出した場合は、以下のいずれかに当てはまるものだけを起票候補として扱う：
-
-- **起票する**: 機能不具合・仕様乖離・データ誤り・ユーザー体験を損なう振る舞い・複数ジョブ横断の類似問題
-- **起票しない**: コードスタイルの好み・影響の無いリファクタ案・当該Issueの DoD に含まれる範囲・既存Issueの重複
-
-起票前に GitHub MCP の `search_issues`（または `gh issue list --search`）で重複を確認し、ユーザー確認（Y=そのまま起票 / E=編集して起票 / N=起票しない）を挟んでから起票する。子Issue は GitHub の sub-issue として親に紐づけ、Phase 8 で親Issueにも一覧をコメントする。
-
 ## 自動ガードレール
 
-`.claude/settings.json` の PreToolUse hook が、Claude Code の `Bash` ツール呼び出しに対して以下を機械的に検証する（exit 2 でブロックし、理由を Claude に返す）：
-
-- ブランチ名規約: `<feature|fix|refactor|docs>/#<issue>-<kebab-case-desc>`（`claude/*` / `copilot/*` は除外）
-- コミットメッセージ規約: `<type>[(scope)][!]: <subject> #<issue>`（`claude/*` / `copilot/*` 上はissue番号省略可）
-
-規約は CLAUDE.md への記述だけでは長いセッションで守られなくなるため、機械判定できるものは hook で強制する。ブロックされたら規約に合わせて直す。`--no-verify` や hook の無効化で回避しない。
+`.claude/settings.json` の PreToolUse hook が、ブランチ名とコミット件名の規約を機械的に検証し、違反を exit 2 でブロックして理由を返す（対象と規約は `.claude/rules/git-conventions.md`「自動検証」）。規約は CLAUDE.md への記述だけでは長いセッションで守られなくなるため、機械判定できるものは hook で強制する。ブロックされたら規約に合わせて直す。`--no-verify` や hook の無効化で回避しない。
 
 ## ドキュメントの更新
 

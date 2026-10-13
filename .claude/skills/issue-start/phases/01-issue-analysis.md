@@ -30,6 +30,8 @@ git worktree list
 
 ## 0.5 テンプレート更新チェック（セッションで一度だけ）
 
+更新の検知と更新用 Issue の起票の手順はこの節が正本（`.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」は判定だけ）。取り込み自体は `.claude/skills/template-update/SKILL.md`。
+
 SessionStart hook 出力の `## Template version` を確認する。
 
 | バナーの状態 | 動作 |
@@ -50,10 +52,11 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
 ```
 
 - 作業中の Issue のブランチでテンプレートを直接更新しない（1 Issue = 1 PR）。[Y] でも動作は「更新用 Issue の起票」までで、その後は手順 1 に進む
-- バナーの版は hook が 24 時間キャッシュした値なので、最新リリースを反映していないことがある。既に起票済みの更新用 Issue の版（`テンプレートを vX.Y.Z に更新`）とバナーの版が食い違ったら、`git ls-remote --tags --refs --sort=-v:refname https://github.com/<owner/repo>.git 'v*' | head -n 1` で直接確認し、新しい方の版を正とする
-- [Y] の場合: `search_issues`（`owner` / `repo` にこのプロジェクト）で同じ版の更新 Issue（`テンプレートを <最新版> に更新`）が無いか確認し、無ければ `issue_write`（method: `create`）で起票する。タイトル `refactor: テンプレートを <最新版> に更新`、ラベル `refactor`。本文は現在の版 → 最新版、Release notes URL、差分 URL（`https://github.com/<owner/repo>/compare/<ローカル版>...<最新版>`）、`template/` 配下の変更ファイル一覧（compare URL の Files changed、またはテンプレート元のクローンで `git diff --name-only <ローカル版> <最新版> -- template/`。Release notes から手で起こさず機械的に得た一覧を貼る）、完了条件（`.claude/rules/workflow-feedback.md`「取り込み手順」のチェックリスト）
+- バナーの `Latest` は、hook がセッション開始時にテンプレート元から取得した版。取得に失敗したときだけ前回取得した版（キャッシュ）を使い、`(cached Nh ago; fetch failed, ...)` と付く。この表示があるときは最新リリースを反映していないことがあるので、版を前提に判断・回答する前に `git ls-remote --tags --refs --sort=-v:refname https://github.com/<owner/repo>.git 'v*' | head -n 1` で直接確認し、新しい方の版を正とする
+- バナーは hook が実行されたチェックアウトの状態で出る。`## Repository status` の `Checkout:` がこのセッションの作業ディレクトリ（`git rev-parse --show-toplevel`）と違えば、古いメインチェックアウトの hook と版で判定されている可能性がある。起票する前に、作業ツリーの `.claude/template-version` と既定ブランチの版（`MSYS_NO_PATHCONV=1 git show origin/main:.claude/template-version`。`MSYS_NO_PATHCONV=1` は Git Bash のパス変換を止めるためで他環境では無害）を見て、どちらかが最新版なら取り込み済みなので起票しない
+- [Y] の場合: `search_issues`（`owner` / `repo` にこのプロジェクト）で同じ版の更新 Issue（`テンプレートを <最新版> に更新`）が無いか確認し、無ければ `issue_write`（method: `create`）で起票する。タイトル `refactor: テンプレートを <最新版> に更新`、ラベル `refactor`。本文は現在の版 → 最新版、Release notes URL、差分 URL（`https://github.com/<owner/repo>/compare/<ローカル版>...<最新版>`）、`template/` 配下の変更ファイル一覧（compare URL の Files changed、またはテンプレート元のクローンで `git diff --name-only <ローカル版> <最新版> -- template/`。Release notes は Issue 単位で `template/` 外の変更と混ざるので、手で起こさず機械的に得た一覧を貼る。取り込み時の DoD「変更ファイルをすべて確認した」の照合元になる）、完了条件（`.claude/skills/template-update/SKILL.md`「取り込み手順」のチェックリスト）
 - **スケジュール実行の無人セッション**（`weekday-issue-start` 等）では質問も起票もせず、実行報告に「テンプレート更新あり（<ローカル版> → <最新版>）」と記載するだけに留める
-- 起票した更新 Issue はあとで通常どおり `/issue-start` する。その Phase 5 の手順は `.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」
+- 起票した更新 Issue はあとで通常どおり `/issue-start` する。その Phase 5 の手順は `.claude/skills/template-update/SKILL.md`（`/template-update`）
 - いま `/issue-start` している Issue 自体が更新用 Issue なら、このチェックは不要
 
 ## 手順
@@ -64,8 +67,9 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
    - Issue が `OPEN` でも PR がマージ済みのことがあるので、Issue の state だけで判断しない
    - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は後述「オープンな旧 PR／既存ブランチがある場合」
 3. 本文中のリンクや関連ラベルから、関連する過去の Issue を参照する。親 Issue がある場合（`parent`）はその本文も読む
+   - **兄弟 Issue との重なり（親 Issue がある場合）**: `issue_read`（method: `get_sub_issues`、`issue_number` に親の番号）で同じ親の sub-issue 一覧を取り、同じ型・関数・共通データ・共通ロジックに触れる兄弟 Issue が無いか本文を照合する。あれば `search_pull_requests`（query に兄弟 Issue の番号）と `git ls-remote --heads origin '*/#<兄弟の番号>-*'` で、その兄弟に作業ブランチやオープン PR が既にあるかを見る。重なりがあるときは、共通部分をどの Issue で実装し、他方はそのマージ後に取り込むのかを **着手前に** ユーザーへ確認する。並行セッションが同じ仕組みを二重に実装してコンフリクトするのを防ぐためで、Issue 本文に重なりが書かれていなくても確認する
    - 外部リポジトリの **特定タグのファイル** が参照元に指定されている場合は、`get_file_contents`（`owner` / `repo` / `path` に加えて `ref` にタグを指定）で版固定で読む。`gh` なら `gh api "repos/<owner/repo>/contents/<path>?ref=<tag>" -H "Accept: application/vnd.github.raw"`（`?` を含むのでクォートする）
-   - 2 つの版の間の差分や特定ファイルの patch が要るときは、compare API の JSON を jq で漉すより、`git clone --no-checkout` したクローンで `git diff --name-only vOLD vNEW` / `git show vNEW:<path>` を使う（`.claude/rules/workflow-feedback.md`「3-way マージの定型手順」と同じ形）。`gh api --jq` を使う場合、`test("\.sh$")` のような `\.` は gojq が `invalid escape sequence` で拒否するので `[.]` と書く
+   - 2 つの版の間の差分や特定ファイルの patch が要るときは、compare API の JSON を jq で漉すより、`git clone --no-checkout` したクローンで `git diff --name-only vOLD vNEW` / `git show vNEW:<path>` を使う（`.claude/skills/template-update/SKILL.md`「3-way マージの定型手順」と同じ形）。`gh api --jq` で正規表現を書くときの注意は `.claude/skills/issue-start/pitfalls.md`「gojq が `\.` を拒否する」
 4. **【MCP: Brave Search】** IssueがFF14のスキルデータやゲーム仕様に関わる場合、`brave_web_search` で公式ジョブガイドや関連情報を検索し、実装に必要な数値・仕様を収集する
    - 検索例: `"FF14 竜騎士 ジョブガイド スキル一覧"`, `"FFXIV dragoon job guide skill potency"`
    - **利用前の準備**: `ToolSearch query: "select:brave_web_search"` でスキーマをロード

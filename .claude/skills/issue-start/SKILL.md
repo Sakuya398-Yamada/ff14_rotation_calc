@@ -21,7 +21,7 @@ argument-hint: "#<Issue番号>"
 | 3 | コード探索（code-explorer） | `phases/03-exploration.md` | 修正箇所が明確な bug / docs は可 |
 | 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可 |
 | 5 | 実装・検証・コミット | `phases/05-implementation.md` | 不可 |
-| 6 | コードレビュー（code-reviewer） | `phases/06-review.md` | docs は可 |
+| 6 | コードレビュー（code-reviewer） | `phases/06-review.md` | 散文のみの docs は可（手順・コマンドを含むランブックは不可） |
 | 7 | PR作成 | `phases/07-pr-creation.md` | 不可 |
 | 8 | Issueへの記録（+ 知見ボード・テンプレート元への還元） | `phases/08-issue-recording.md` | 不可 |
 
@@ -43,7 +43,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 | `code-architect` | 実装ブループリント（1 案に絞って提案） | `.claude/agents/code-architect.md` |
 | `code-reviewer` | 実装者とは別の新しいコンテキストでの批判的レビュー（信頼度80以上のみ報告） | `.claude/agents/code-reviewer.md` |
 
-起動数はタスクの複雑さに合わせる（`.claude/rules/context-efficiency.md`「起動数の目安」）。単純な変更は 1 個、観点が複数あるときだけ 2〜3 個を並列に起動する。サブエージェントはチャット 1 往復の十数倍のトークンを使うので、Grep 1 回で済むことには使わない。プロンプトには目的・スコープ・返却フォーマットと上限・除外事項を含める。
+起動数は各 Phase の起動数表に従う（単純な変更は 1 個、観点が複数あるときだけ 2〜3 個を並列）。サブエージェントはチャット 1 往復の十数倍のトークンを使うので、Grep 1 回で済むことには使わない。プロンプトには目的・スコープ・返却フォーマットと上限・除外事項を含める。
 
 ## MCP ツール
 
@@ -93,7 +93,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
     [N] 起票しない（口頭報告のみ）
    ```
 
-3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で **sub-issue として** 作成する。本文は `.claude/rules/git-conventions.md` の「Issueに含める内容」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く
+3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で **sub-issue として** 作成する。本文は `.claude/rules/git-conventions.md` の「タイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く
 4. **親Issueへの記録**: Phase 8 で親 Issue に子 Issue の一覧をコメントする（`phases/08-issue-recording.md`）
 
 無人起票はしない。スコープ外問題を自動修正もしない（口頭報告か起票のみ）。
