@@ -93,7 +93,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
     [N] 起票しない（口頭報告のみ）
    ```
 
-3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で **sub-issue として** 作成する。本文は `.claude/rules/git-conventions.md` の「タイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く
+3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で **sub-issue として** 作成する。本文は `.claude/rules/git-conventions.md` の「Issue」→「タイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く
 4. **親Issueへの記録**: Phase 8 で親 Issue に子 Issue の一覧をコメントする（`phases/08-issue-recording.md`）
 
 無人起票はしない。スコープ外問題を自動修正もしない（口頭報告か起票のみ）。
