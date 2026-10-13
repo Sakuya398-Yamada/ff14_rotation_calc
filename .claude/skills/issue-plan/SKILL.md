@@ -24,10 +24,27 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 
 ## 判断基準
 
-- **粒度・依存関係・親Issue**: `.claude/rules/git-conventions.md` の「Issue」節（「粒度」「依存関係と親Issue」）に従う
-- **本文の構成**: `.claude/rules/git-conventions.md`「Issueに含める内容」の見出し構成（背景・目的 / 要件（やること・やらないこと）/ 完了条件（DoD）/ 未確定事項）。Issue は実装の仕様書になるので、完了条件は検証可能な形で書く
+- **粒度・依存関係・親Issue**: 既定の粒度は `.claude/rules/git-conventions.md`「粒度」。分ける／分けないの判定と親Issue・sub-issue の扱いは後述「粒度の判定」（正本）
+- **本文の構成**: `.claude/rules/git-conventions.md`「Issue」→「タイトルと本文」の見出し構成（背景・目的 / 要件（やること・やらないこと）/ 完了条件（DoD）/ 未確定事項）。Issue は実装の仕様書になるので、完了条件は検証可能な形で書く
 - **タイトル・ラベル**: `<ラベル名>: <簡潔な説明>`、ラベルは `feature` / `bug` / `refactor` / `docs` のいずれか
 - **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ、`.claude/rules/mcp-setup.md`）。未接続時は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe`）、それも無ければ整形済み本文を提示して起票を依頼する
+
+## 粒度の判定
+
+既定（目的 1 つ・1 セッションで完走できる量・単独で検証可能・独立性）は `.claude/rules/git-conventions.md`「粒度」。分けるかどうかは以下で判定する。
+
+| 分ける（複数 Issue にする） | 分けない（1 Issue に保つ） |
+|---------------------------|--------------------------|
+| 「やること」に目的の異なる項目が並ぶ（「○○を追加し、ついでに△△を直す」） | 片方だけ入れると動作しない・検証できない（型定義とその唯一の利用箇所など） |
+| 層ごとに単独で検証できる（DB → API → UI をそれぞれ動作確認できる） | 層をまたいでも 1 画面・1 機能として縦に切った方が検証しやすい |
+| 片方が先に完了しないともう片方の設計が決まらない（依存順に分け、後続に `依存: #N`） | 分けた片方が DoD 1 個・差分数十行で、PR として意味を成さない |
+| 完了条件が 7 個を超える／ラベルが複数（`feature` と `refactor` 等）にまたがる | ― |
+
+迷ったら **「このIssueのPRだけをマージしても、壊れず・単独で説明できるか」** で判定する。Yes なら粒度は適切。
+
+- 先に別 Issue の完了が必要な場合は、本文の「## 関連Issue」に `依存: #N` と書く（`/issue-start` Phase 1 で依存先が未完了なら着手前に確認される）
+- 1 つの要望を 3 件以上に分割したときは、進捗管理用の **親Issue** を作ってよい。親Issue 自体は実装対象ではないので `/issue-start` しない
+- 親子関係は GitHub の **sub-issue** で紐づける（GitHub MCP: `issue_write` の `parent_issue_number`、既存 Issue なら `sub_issue_write`）。親Issue には進捗が自動集計される。sub-issue を作れない環境（`gh` CLI フォールバック等）では、親本文のタスクリスト（`- [ ] #N <タイトル>`）と子本文末尾の `親Issue: #N` で代用する。`/issue-start` がスコープ外問題で起票する子Issue も同じ扱い
 
 ---
 
@@ -55,7 +72,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 
 ### 3. 分割案の作成
 
-1. 粒度規約の「分ける／分けない」表に従って Issue 候補に分割する。迷ったら **「この Issue の PR だけをマージしても、壊れず・単独で説明できるか」** で判定する
+1. 「粒度の判定」表に従って Issue 候補に分割する
 2. **依存順に並べる**（基盤 → 利用側）。並列に進められる候補はそう明記する
 3. 各候補に以下を揃える：
    - タイトル（`<ラベル名>: <簡潔な説明>`）とラベル
@@ -65,7 +82,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
    - 依存（`依存: #N`。まだ番号が無い候補への依存は「候補 2 に依存」と書き、起票時に実番号へ置き換える）
    - 未確定事項（あれば。要確認の仕様は `[要確認]` を付けて本文に残す）
    - 手がかり（分かる範囲で関連ファイルや既存の類似実装。`/issue-start` の探索が速くなる）
-4. 候補が **3 件以上** になったら、進捗管理用の **親Issue** を作るかを選べるようにする（規約「依存関係と親Issue」）
+4. 候補が **3 件以上** になったら、進捗管理用の **親Issue** を作るかを選べるようにする（「粒度の判定」）
 
 ### 4. ユーザー確認（必須）
 
@@ -100,7 +117,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 ### 5. 起票
 
 1. **親Issue を作る場合は先に作る**（`issue_write`、method: `create`）。ラベルは子 Issue の多数派（例: `feature`）。本文に目的と「このIssueは進捗管理用。`/issue-start` の対象にしない」を明記する。sub-issue の進捗は GitHub が自動集計する
-2. 子 Issue を **依存順に** 1 件ずつ起票する（`issue_write`、method: `create`）。親がある場合は `parent_issue_number` に親の番号を渡して **sub-issue として** 作る。本文は `git-conventions.md`「Issueに含める内容」の構成に揃える
+2. 子 Issue を **依存順に** 1 件ずつ起票する（`issue_write`、method: `create`）。親がある場合は `parent_issue_number` に親の番号を渡して **sub-issue として** 作る。本文は `git-conventions.md`「Issue」→「タイトルと本文」の構成に揃える
 3. 後続 Issue の `依存: #N` は、先行 Issue の実番号に置き換えてから起票する
 4. ラベルを付ける（権限が無ければ省略してよい。`/issue-start` Phase 2 で判定される）
 5. sub-issue を作れない環境（`gh issue create` が `--parent` を持たない版など）では、親本文のタスクリスト `- [ ] #N <タイトル>` と各子 Issue 末尾の `親Issue: #<親番号>` で代用する（`issue_write` method: `update` / `gh issue edit`）
