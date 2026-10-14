@@ -1,4 +1,4 @@
-import type { Skill } from "../types/skill";
+import type { AutoTransformEntry, Skill } from "../types/skill";
 
 // === GCD アイコン ===
 import fireIcon from "../assets/icons/blm/Fire.png";
@@ -42,10 +42,21 @@ const ASTRAL_FIRE_ANY = ["astral-fire-1", "astral-fire-2", "astral-fire-3"];
 /** UB 中（段階不問）を発動条件にするための requiredBuffAnyOf */
 const UMBRAL_ICE_ANY = ["umbral-ice-1", "umbral-ice-2", "umbral-ice-3"];
 
+/** UB→AF の反転でパラドックスが付く条件（UB3 かつアンブラルハート 3） */
+const UB3_FULL_HEARTS = {
+  buffId: "umbral-ice-3",
+  resourceConditions: [{ resourceId: "umbral-heart", minAmount: 3 }],
+};
+
+/** いずれかのバフがアクティブなら skillId に変化させる autoTransform エントリ群 */
+function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEntry[] {
+  return buffIds.map((buffId) => ({ buffId, skillId }));
+}
+
 /**
  * 黒魔道士のスキル定義。
  * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5）の数値とも照合済み（#407）。
- * 未モデル化の既知の差分: MP 消費・詠唱半減 #415、サンダーヘッド／パラドックスの付与条件 #416
+ * 未モデル化の既知の差分: MP 消費・詠唱半減 #415
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
@@ -65,12 +76,16 @@ const UMBRAL_ICE_ANY = ["umbral-ice-1", "umbral-ice-2", "umbral-ice-3"];
  * 最大段階（AF3／UB3）を直接付与する。ファイジャ・デスペア・ブリザジャ・フリーズは
  * AF／UB 中なら段階不問で使用でき、ファイジャ・ブリザジャ・フリーズは段階を変えない（#417）。
  *
- * ### サンダーヘッド・ファイアスターター
- * 7.2 以降は proc ではなく AF/UB 切替時の確定付与に変更されている（永続）。
- * ファイア/ブリザド系で AF/UB を付与するタイミングで `thunderhead` も同時付与する。
+ * ### サンダーヘッド・パラドックス・ファイアスターター（#416）
+ * サンダーヘッドは AF/UB が無い状態からいずれかが付与されたとき、または AF⇔UB が反転したときだけ付与する
+ * （段階の維持・上昇では付与しない）。トランスによる反転では付与しない（#219 の判断を維持）。
+ * パラドックスゲージ（Lv90）は AF3 から UB へ、または UB3 かつアンブラルハート 3 から AF へ反転したときに +1 する。
+ * どちらも実行前の AF/UB の状態で付与内容が変わるため、変化元スキルの autoTransform で隠しスキル
+ * （`*-in-af` / `*-in-ub` / `*-from-af3` / `*-from-ub3`。末尾の `deriveHidden` で生成）に切り替える。
+ * AF/UB は時間で切れない（duration: null）ため、「AF/UB の解除でパラドックスが消える」は表現する場面が無い。
  * `firestarter` はパラドックス使用時（AF 中）に同時付与する。
  */
-export const BLM_ATTACK_SKILLS: Skill[] = [
+const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   // GCD: ファイア系（単体）
   // ============================================================
@@ -90,11 +105,13 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     ],
     // 通常時（AF外/UB外）または UB 中（exclusiveGroup により UB が解除されて AF1 となる）に AF1 を付与
     buffApplications: ["astral-fire-1", "thunderhead"],
-    // AF 中は段階を進める。AF3 中は維持
+    // AF 中は段階を進める（サンダーヘッドは付与しない）。AF3 中は維持
+    // UB3 かつアンブラルハート 3 からの反転はパラドックスも付与する
     autoTransform: [
       { buffId: "astral-fire-3", skillId: "fire-stay-af3" },
       { buffId: "astral-fire-2", skillId: "fire-up-af3" },
       { buffId: "astral-fire-1", skillId: "fire-up-af2" },
+      { ...UB3_FULL_HEARTS, skillId: "fire-from-ub3" },
     ],
   },
   {
@@ -113,6 +130,10 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     ],
     // AF3 直接付与（AF を一気に 3 段階まで引き上げる）
     buffApplications: ["astral-fire-3", "thunderhead"],
+    autoTransform: [
+      ...transformWhileAny(ASTRAL_FIRE_ANY, "fire-3-in-af"),
+      { ...UB3_FULL_HEARTS, skillId: "fire-3-from-ub3" },
+    ],
   },
   {
     id: "fire-4",
@@ -186,6 +207,10 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "mp", amount: -1500 },
     ],
     buffApplications: ["astral-fire-3", "thunderhead"],
+    autoTransform: [
+      ...transformWhileAny(ASTRAL_FIRE_ANY, "fire-2-in-af"),
+      { ...UB3_FULL_HEARTS, skillId: "fire-2-from-ub3" },
+    ],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -205,6 +230,10 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "mp", amount: -1500 },
     ],
     buffApplications: ["astral-fire-3", "thunderhead"],
+    autoTransform: [
+      ...transformWhileAny(ASTRAL_FIRE_ANY, "high-fire-2-in-af"),
+      { ...UB3_FULL_HEARTS, skillId: "high-fire-2-from-ub3" },
+    ],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -250,11 +279,13 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 1,
     // UB外/AF中→UB1 付与時は MP 回復なし（UB 段階遷移時の回復は隠しスキル側で表現）
     buffApplications: ["umbral-ice-1", "thunderhead"],
-    // UB 中は段階を進めつつヒット時 MP を回復する（隠しスキルに委譲）。UB3 中は維持＋全回復
+    // UB 中は段階を進めつつヒット時 MP を回復する（隠しスキルに委譲、サンダーヘッドは付与しない）。UB3 中は維持＋全回復
+    // AF3 からの反転はパラドックスも付与する
     autoTransform: [
       { buffId: "umbral-ice-3", skillId: "blizzard-stay-ub3" },
       { buffId: "umbral-ice-2", skillId: "blizzard-up-ub3" },
       { buffId: "umbral-ice-1", skillId: "blizzard-up-ub2" },
+      { buffId: "astral-fire-3", skillId: "blizzard-from-af3" },
     ],
   },
   {
@@ -272,6 +303,10 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "mp", amount: -800 },
     ],
     buffApplications: ["umbral-ice-3", "thunderhead"],
+    autoTransform: [
+      ...transformWhileAny(UMBRAL_ICE_ANY, "blizzard-3-in-ub"),
+      { buffId: "astral-fire-3", skillId: "blizzard-3-from-af3" },
+    ],
   },
   {
     id: "blizzard-4",
@@ -307,6 +342,10 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 3.0,
     acquiredLevel: 12,
     buffApplications: ["umbral-ice-3", "thunderhead"],
+    autoTransform: [
+      ...transformWhileAny(UMBRAL_ICE_ANY, "blizzard-2-in-ub"),
+      { buffId: "astral-fire-3", skillId: "blizzard-2-from-af3" },
+    ],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -323,6 +362,10 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 82,
     replacesSkillId: "blizzard-2",
     buffApplications: ["umbral-ice-3", "thunderhead"],
+    autoTransform: [
+      ...transformWhileAny(UMBRAL_ICE_ANY, "high-blizzard-2-in-ub"),
+      { buffId: "astral-fire-3", skillId: "high-blizzard-2-from-af3" },
+    ],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -343,8 +386,6 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
       { resourceId: "mp", amount: -1000 },
       { resourceId: "umbral-heart", amount: 3 },
     ],
-    // サンダーヘッドの付与条件は #416 で扱う
-    buffApplications: ["thunderhead"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -549,9 +590,11 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 4,
     // 無極性時は何もしない（cooldown 消費のみ）。AF/UB 中は autoTransform で隠しスキルに切替 (Issue #218)
     buffApplications: [],
-    // AF 中は UB1 へ、UB 中は AF1 へ切替
+    // AF 中は UB1 へ、UB 中は AF1 へ切替。サンダーヘッドは付与しない（#219）
+    // AF3 から、または UB3 かつアンブラルハート 3 からの反転はパラドックスも付与する
     autoTransform: [
-      { buffId: "astral-fire-3", skillId: "transpose-to-ub1" },
+      { buffId: "astral-fire-3", skillId: "transpose-to-ub1-from-af3" },
+      { ...UB3_FULL_HEARTS, skillId: "transpose-to-af1-from-ub3" },
       { buffId: "astral-fire-2", skillId: "transpose-to-ub1" },
       { buffId: "astral-fire-1", skillId: "transpose-to-ub1" },
       { buffId: "umbral-ice-3", skillId: "transpose-to-af1" },
@@ -608,7 +651,8 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   },
 
   // ============================================================
-  // 隠しスキル: AF/UB 段階進行・AF 中のパラドックス（fire/blizzard/transpose/paradox の autoTransform 先）
+  // 隠しスキル: AF/UB 段階進行・AF 中のパラドックス・トランス（fire/blizzard/transpose/paradox の autoTransform 先）
+  // 反転時のサンダーヘッド・パラドックス付与用の隠しスキルは BLM_ATTACK_SKILLS で deriveHidden から作る
   // UI 非表示。元スキルから威力・コスト・キャストを引き継ぎ、付与バフのみが異なる
   // ============================================================
   {
@@ -624,7 +668,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 2,
     hidden: true,
     resourceChanges: [{ resourceId: "mp", amount: -800 }],
-    buffApplications: ["astral-fire-2", "thunderhead"],
+    buffApplications: ["astral-fire-2"],
   },
   {
     id: "fire-up-af3",
@@ -639,7 +683,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 2,
     hidden: true,
     resourceChanges: [{ resourceId: "mp", amount: -800 }],
-    buffApplications: ["astral-fire-3", "thunderhead"],
+    buffApplications: ["astral-fire-3"],
   },
   {
     id: "fire-stay-af3",
@@ -654,7 +698,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 2,
     hidden: true,
     resourceChanges: [{ resourceId: "mp", amount: -800 }],
-    buffApplications: ["astral-fire-3", "thunderhead"],
+    buffApplications: ["astral-fire-3"],
   },
   // 注: ブリザド系の段階別 MP 回復（UB1: +2500, UB2: +5000, UB3: +10000）は
   // UB バフの `resourceGainOnSkill` 効果で自動発動するため、隠しスキル側に MP 回復を持たせない。
@@ -670,7 +714,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
-    buffApplications: ["umbral-ice-2", "thunderhead"],
+    buffApplications: ["umbral-ice-2"],
   },
   {
     id: "blizzard-up-ub3",
@@ -684,7 +728,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
-    buffApplications: ["umbral-ice-3", "thunderhead"],
+    buffApplications: ["umbral-ice-3"],
   },
   {
     id: "blizzard-stay-ub3",
@@ -698,7 +742,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
-    buffApplications: ["umbral-ice-3", "thunderhead"],
+    buffApplications: ["umbral-ice-3"],
   },
   {
     id: "paradox-af",
@@ -746,6 +790,61 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   },
 ];
 
+/**
+ * 実行前の AF/UB の状態でサンダーヘッド・パラドックスの付与だけが変わる隠しスキルを、変化元スキルから作る（#416）。
+ * 威力・MP・詠唱などは変化元の値をそのまま使うので、変化元を直せば追従する。
+ * `addsParadox` はパラドックスゲージ +1 を足す（Lv90 未満ではゲージごとレベル調整で外れる）。
+ */
+function deriveHidden(
+  baseId: string,
+  id: string,
+  name: string,
+  buffApplications: string[],
+  addsParadox = false,
+): Skill {
+  const base = BLM_BASE_SKILLS.find((s) => s.id === baseId);
+  if (!base) throw new Error(`BLM skill not found: ${baseId}`);
+  const resourceChanges = addsParadox
+    ? [...(base.resourceChanges ?? []), { resourceId: "paradox-gauge", amount: 1 }]
+    : base.resourceChanges;
+  return {
+    ...base,
+    id,
+    name,
+    hidden: true,
+    replacesSkillId: undefined,
+    autoTransform: undefined,
+    buffApplications,
+    resourceChanges,
+  };
+}
+
+export const BLM_ATTACK_SKILLS: Skill[] = [
+  ...BLM_BASE_SKILLS,
+  // AF 中のファイア系（AF3 付与）: 反転ではないのでサンダーヘッドは付かない
+  deriveHidden("fire-3", "fire-3-in-af", "ファイガ (AF 中)", ["astral-fire-3"]),
+  deriveHidden("fire-2", "fire-2-in-af", "ファイラ (AF 中)", ["astral-fire-3"]),
+  deriveHidden("high-fire-2", "high-fire-2-in-af", "ハイファイラ (AF 中)", ["astral-fire-3"]),
+  // UB3 かつアンブラルハート 3 から AF への反転: サンダーヘッド＋パラドックス
+  deriveHidden("fire", "fire-from-ub3", "ファイア (UB3→AF1)", ["astral-fire-1", "thunderhead"], true),
+  deriveHidden("fire-3", "fire-3-from-ub3", "ファイガ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
+  deriveHidden("fire-2", "fire-2-from-ub3", "ファイラ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
+  deriveHidden("high-fire-2", "high-fire-2-from-ub3", "ハイファイラ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
+  // トランスはパラドックスのみ（サンダーヘッドは付与しない。#219）
+  deriveHidden("transpose", "transpose-to-af1-from-ub3", "トランス (UB3→AF1)", ["astral-fire-1"], true),
+  // UB 中のブリザド系（UB3 付与）: 反転ではないのでサンダーヘッドは付かない
+  deriveHidden("blizzard-3", "blizzard-3-in-ub", "ブリザガ (UB 中)", ["umbral-ice-3"]),
+  deriveHidden("blizzard-2", "blizzard-2-in-ub", "ブリザラ (UB 中)", ["umbral-ice-3"]),
+  deriveHidden("high-blizzard-2", "high-blizzard-2-in-ub", "ハイブリザラ (UB 中)", ["umbral-ice-3"]),
+  // AF3 から UB への反転: サンダーヘッド＋パラドックス
+  deriveHidden("blizzard", "blizzard-from-af3", "ブリザド (AF3→UB1)", ["umbral-ice-1", "thunderhead"], true),
+  deriveHidden("blizzard-3", "blizzard-3-from-af3", "ブリザガ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
+  deriveHidden("blizzard-2", "blizzard-2-from-af3", "ブリザラ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
+  deriveHidden("high-blizzard-2", "high-blizzard-2-from-af3", "ハイブリザラ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
+  // トランスはパラドックスのみ（サンダーヘッドは付与しない。#219）
+  deriveHidden("transpose", "transpose-to-ub1-from-af3", "トランス (AF3→UB1)", ["umbral-ice-1"], true),
+];
+
 // ============================================================
 // AF/UB バフ効果の対象スキル ID 群
 // ============================================================
@@ -768,6 +867,13 @@ export const BLM_FIRE_FAMILY_IDS = [
   "fire-up-af2",
   "fire-up-af3",
   "fire-stay-af3",
+  "fire-3-in-af",
+  "fire-2-in-af",
+  "high-fire-2-in-af",
+  "fire-from-ub3",
+  "fire-3-from-ub3",
+  "fire-2-from-ub3",
+  "high-fire-2-from-ub3",
 ];
 
 /** UB（アンブラルブリザード）効果の対象となるブリザド系スキル ID 群 */
@@ -781,4 +887,11 @@ export const BLM_BLIZZARD_FAMILY_IDS = [
   "blizzard-up-ub2",
   "blizzard-up-ub3",
   "blizzard-stay-ub3",
+  "blizzard-3-in-ub",
+  "blizzard-2-in-ub",
+  "high-blizzard-2-in-ub",
+  "blizzard-from-af3",
+  "blizzard-3-from-af3",
+  "blizzard-2-from-af3",
+  "high-blizzard-2-from-af3",
 ];
