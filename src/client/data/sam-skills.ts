@@ -35,10 +35,13 @@ import hissatsuYatenIcon from "../assets/icons/sam/Hissatsu_Yaten.png";
 import hissatsuShintenIcon from "../assets/icons/sam/Hissatsu_Shinten.png";
 import hissatsuGurenIcon from "../assets/icons/sam/Hissatsu_Guren.png";
 import hissatsuSeneiIcon from "../assets/icons/sam/Hissatsu_Senei.png";
+import hissatsuKyutenIcon from "../assets/icons/sam/Hissatsu_Kyuten.png";
 import ikishotenIcon from "../assets/icons/sam/Ikishoten.png";
 import hagakureIcon from "../assets/icons/sam/Hagakure.png";
 import meikyoShisuiIcon from "../assets/icons/sam/Meikyo_Shisui.png";
 import zanshinIcon from "../assets/icons/sam/Zanshin.png";
+import thirdEyeIcon from "../assets/icons/sam/Third_Eye.png";
+import tengentsuIcon from "../assets/icons/sam/Tengentsu.png";
 
 // === ロールアクション アイコン ===
 import trueNorthIcon from "../assets/icons/sam/role_actions/True_North.png";
@@ -56,7 +59,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
  * 4. 燕返し系（autoTransform で Ready バフに応じて変化、5種）
  * 5. 奥義波切系（Lv90、確定クリ）
  * 6. 必殺剣系（剣気消費 oGCD/GCD）
- * 7. その他（意気衝天・葉隠・明鏡止水・残心・燕飛・照破）
+ * 7. その他（意気衝天・葉隠・明鏡止水・残心・燕飛・照破・心眼/天眼通）
  */
 export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
@@ -619,6 +622,20 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     cooldownGroup: "hissatsu-senei-guren",
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
   },
+  {
+    id: "hissatsu-kyuten",
+    name: "必殺剣・九天",
+    potency: 100,
+    type: "ogcd",
+    target: "enemy",
+    icon: hissatsuKyutenIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: 0.65,
+    acquiredLevel: 62,
+    cooldown: 1,
+    resourceChanges: [{ resourceId: "kenki", amount: -25 }],
+    maxTargets: Infinity,
+  },
 
   // ============================================================
   // 7. その他
@@ -713,6 +730,35 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "meditation", amount: -3 }],
     maxTargets: Infinity,
     falloffRate: 0.4,
+  },
+  // 心眼・天眼通は被弾に成功した前提で、実行時に剣気 +10 する。
+  // 被ダメージ軽減・天眼通：生（軽減＋HP 継続回復）は計算対象外のため、バフは定義しない（#424）
+  {
+    id: "third-eye",
+    name: "心眼",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: thirdEyeIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: 0.65,
+    acquiredLevel: 6,
+    cooldown: 15,
+    resourceChanges: [{ resourceId: "kenki", amount: 10 }],
+  },
+  {
+    id: "tengentsu",
+    name: "天眼通",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: tengentsuIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: 0.65,
+    acquiredLevel: 82,
+    replacesSkillId: "third-eye",
+    cooldown: 15,
+    resourceChanges: [{ resourceId: "kenki", amount: 10 }],
   },
 
   // ============================================================
