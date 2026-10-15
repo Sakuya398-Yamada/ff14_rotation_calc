@@ -7,7 +7,7 @@ import type { ResourceDefinition } from "../types/skill";
  *   → エイペックスアローで全消費
  * - コーダシンボル（Coda）: 各歌の実行時に付与（最大3）
  *   → 光神のフィナーレ / 光神のアンコールで消費
- * - 詩心（Repertoire）: 歌の効果中にDoTクリティカル時等で付与（最大3）
+ * - 詩心（Repertoire）: 歌の効果中にDoTクリティカル時等で付与（最大3。軍神のパイオン中は最大4）
  *   → メヌエット中はピッチパーフェクトで消費
  */
 export const BRD_RESOURCES: ResourceDefinition[] = [
@@ -58,5 +58,11 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     acquiredLevel: 52,
     autoGenerateInterval: 3.75,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
+    whileBuffModifiers: [
+      // 軍神のパイオン: 詩心は最大 4、詩心 1 つにつき 4% のヘイスト
+      { buffId: "armys-paeon", maxStacks: 4, gcdHastePerStack: 0.04 },
+      // 賢人のバラード: 詩心が付与されるとブラッドレッター系のリキャストが 7.5 秒短縮
+      { buffId: "mages-ballad", cooldownReductionOnGain: { chargeKey: "brd-bloodletter", seconds: 7.5 } },
+    ],
   },
 ];

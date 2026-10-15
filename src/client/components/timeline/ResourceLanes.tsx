@@ -1,10 +1,15 @@
-import type { ResolvedTimelineEntry } from "../../types/skill";
+import type { ResolvedTimelineEntry, ResourceDefinition } from "../../types/skill";
 import type { ResourceGroup } from "./types";
 import { styles } from "./styles";
 import { PX_PER_SEC, RESOURCE_DOT_SIZE, RESOURCE_DOT_GAP } from "./constants";
 
 /** 未充填スロットの色。リソース色はデータ固定だが、空スロットは背景に馴染ませるためテーマに従う */
 const EMPTY_SLOT_COLOR = "var(--color-line)";
+
+/** バフの効果中に上がる最大スタック数（whileBuffModifiers）も含めた、表示上の上限 */
+function getMaxStacksUpperBound(res: ResourceDefinition): number {
+  return Math.max(res.maxStacks, ...(res.whileBuffModifiers ?? []).map((m) => m.maxStacks ?? 0));
+}
 
 interface ResourceLanesProps {
   resourceGroups: ResourceGroup[];
@@ -36,7 +41,7 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                       ? group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}`).join(" / ") +
                         ` (合計 ${group.resources.reduce((s, r) => s + (entry.resourceSnapshot[r.id] ?? 0), 0)}/${group.groupMaxStacks})` +
                         (hasError ? " (不足)" : "")
-                      : group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${r.maxStacks}`).join(", ") +
+                      : group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${getMaxStacksUpperBound(r)}`).join(", ") +
                         (hasError ? " (不足)" : "")
                   }
                 >
@@ -83,7 +88,7 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                         );
                       }
                       // displayMaxStacks 指定時はドット数を絞り、超過分は overflowColor で同じドットを塗り直す
-                      const displayMax = res.displayMaxStacks ?? res.maxStacks;
+                      const displayMax = res.displayMaxStacks ?? getMaxStacksUpperBound(res);
                       const stacksPerRow = res.stacksPerRow ?? displayMax;
                       const gridWidth = stacksPerRow * RESOURCE_DOT_SIZE + (stacksPerRow - 1) * RESOURCE_DOT_GAP;
                       return (

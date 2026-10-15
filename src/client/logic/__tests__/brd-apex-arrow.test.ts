@@ -35,7 +35,7 @@ function resolveWithoutSvTick(entries: TimelineEntry[]) {
 }
 
 /**
- * エンピリアルアロー（cd15s、歌の実行中はソウルボイス+5）を GCD 7 回挟みで n 回撃ち、
+ * エンピリアルアロー（cd15s、歌の実行中はソウルボイス+5）を GCD 8 回挟みで n 回撃ち、
  * resolveWithoutSvTick でソウルボイスを 5n に確定させるシーケンス。
  * 歌の効果時間（45 秒）内に収まるよう、3 回目までは賢人のバラード、4 回目以降は軍神のパイオンを流す。
  */
@@ -45,7 +45,8 @@ function empyrealCycles(times: number): TimelineEntry[] {
     if (i === 3) entries.push(entry("armys-paeon"));
     entries.push(entry("empyreal-arrow"));
     if (i < times - 1) {
-      entries.push(...heavyShots(7));
+      // 軍神のパイオン中は詩心のヘイストで GCD が最短 2.1 秒になるため、8 回挟んで 15 秒を確保する
+      entries.push(...heavyShots(8));
     }
   }
   return entries;

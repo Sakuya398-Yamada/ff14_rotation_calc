@@ -223,6 +223,22 @@ export interface TimelineEntry {
   manualStartTime?: number;
 }
 
+/** 指定バフの効果中だけ変わるリソースの性質 */
+export interface ResourceBuffModifier {
+  /** このバフの効果中だけ適用する */
+  buffId: string;
+  /** 効果中の最大スタック数（ResourceDefinition.maxStacks を上書き） */
+  maxStacks?: number;
+  /** スタック 1 つあたりのヘイスト（GCD のリキャスト・詠唱時間を 1 - 値×スタック数 倍にする。0.04 = 4%） */
+  gcdHastePerStack?: number;
+  /**
+   * 効果中にこのリソースが付与されるたびに、指定のリキャストを短縮する。
+   * 上限に達していても付与は発生したものとして扱い、自動生成も止めない。
+   * chargeKey は短縮対象スキルの cooldownGroup（未設定ならスキル ID）
+   */
+  cooldownReductionOnGain?: { chargeKey: string; seconds: number };
+}
+
 /** リソースの定義データ */
 export interface ResourceDefinition {
   /** リソースの一意識別子 */
@@ -241,6 +257,8 @@ export interface ResourceDefinition {
   autoGenerateAmount?: number;
   /** 自動生成条件: 指定バフのいずれかがアクティブ時のみ自動生成する */
   autoGenerateWhileBuff?: string[];
+  /** 指定バフの効果中だけ変わる性質（例: 軍神のパイオン中の詩心最大 4・ヘイスト） */
+  whileBuffModifiers?: ResourceBuffModifier[];
   /** 表示色 */
   color: string;
   /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
