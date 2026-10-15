@@ -97,7 +97,9 @@ describe("侍: 心眼・天眼通", () => {
     const back = resolve([skillId, skillId]);
     expect(back[1].recastError).toBe(true);
 
-    // 15 秒後なら撃てる
+    // 14.9 秒後はまだリキャスト中、15 秒後なら撃てる（時刻ごとに別のタイムラインで解決する）
+    const early = resolveEntries([makeEntry(skillId), { ...makeEntry(skillId), manualStartTime: 14.9 }]);
+    expect(early[1].recastError).toBe(true);
     const spaced = resolveEntries([makeEntry(skillId), { ...makeEntry(skillId), manualStartTime: 15 }]);
     expectNoError(spaced[1]);
     expect(spaced[1].resourceSnapshot.kenki).toBe(20);
