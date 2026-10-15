@@ -25,7 +25,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 ## 判断基準
 
 - **粒度・依存関係・親Issue**: 既定の粒度は `.claude/rules/git-conventions.md`「粒度」。分ける／分けないの判定と親Issue・sub-issue の扱いは後述「粒度の判定」（正本）
-- **本文の構成**: `.claude/rules/git-conventions.md`「Issue」→「タイトルと本文」の見出し構成（背景・目的 / 要件（やること・やらないこと）/ 完了条件（DoD）/ 未確定事項）。Issue は実装の仕様書になるので、完了条件は検証可能な形で書く
+- **本文の構成**: `.claude/rules/git-conventions.md`「Issue のタイトルと本文」の見出し構成（背景・目的 / 要件（やること・やらないこと）/ 完了条件（DoD）/ 未確定事項）。Issue は実装の仕様書になるので、完了条件は検証可能な形で書く
 - **タイトル・ラベル**: `<ラベル名>: <簡潔な説明>`、ラベルは `feature` / `bug` / `refactor` / `docs` のいずれか
 - **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ、`.claude/rules/mcp-setup.md`）。未接続時は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe`）、それも無ければ整形済み本文を提示して起票を依頼する
 
@@ -117,7 +117,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 ### 5. 起票
 
 1. **親Issue を作る場合は先に作る**（`issue_write`、method: `create`）。ラベルは子 Issue の多数派（例: `feature`）。本文に目的と「このIssueは進捗管理用。`/issue-start` の対象にしない」を明記する。sub-issue の進捗は GitHub が自動集計する
-2. 子 Issue を **依存順に** 1 件ずつ起票する（`issue_write`、method: `create`）。親がある場合は `parent_issue_number` に親の番号を渡して **sub-issue として** 作る。本文は `git-conventions.md`「Issue」→「タイトルと本文」の構成に揃える
+2. 子 Issue を **依存順に** 1 件ずつ起票する（`issue_write`、method: `create`）。親がある場合は `parent_issue_number` に親の番号を渡して **sub-issue として** 作る。本文は `git-conventions.md`「Issue のタイトルと本文」の構成に揃える
 3. 後続 Issue の `依存: #N` は、先行 Issue の実番号に置き換えてから起票する
 4. ラベルを付ける（権限が無ければ省略してよい。`/issue-start` Phase 2 で判定される）
 5. sub-issue を作れない環境（`gh issue create` が `--parent` を持たない版など）では、親本文のタスクリスト `- [ ] #N <タイトル>` と各子 Issue 末尾の `親Issue: #<親番号>` で代用する（`issue_write` method: `update` / `gh issue edit`）

@@ -108,8 +108,9 @@ fi
 #
 # Versions are compared with `sort -V`, not for equality: a cache written before the
 # project adopted a newer release would otherwise report a "downgrade" (local v2.0.1 →
-# latest v2.0.0) right after `.claude/template-version` was bumped, so such a cache is
-# treated as stale and refetched, and a remote that is older than local counts as up to date.
+# latest v2.0.0) right after `.claude/template-version` was bumped. So when offline, a cached
+# tag older than the adopted version is not used as the fallback, and a remote that is older
+# than local counts as up to date.
 version_newer() { # version_newer <a> <b>: true when tag <a> is a newer version than <b>
   [[ "$1" != "$2" ]] || return 1
   local top

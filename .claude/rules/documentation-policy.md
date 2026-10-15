@@ -11,7 +11,7 @@
 - **手順の正本は 1 ファイル**: 同じ手順を 2 箇所に書かない。rules には判定基準と「正本はどこか」（パスと見出し名）だけを置き、手順本文は skill / phases に置く
 - **CLAUDE.md は索引・コア原則のみ**: rules の一覧とスコープは CLAUDE.md「詳細規約」の表が正本。新しい規約は、コア原則の再定義か全 Phase 横断の絶対ルールでない限り、対応する rules ファイルに書く
 - **強調語は本当に効かせたい 1 行だけに使う**: 「必ず」「禁止」を多用すると、どれも目立たなくなる。機械判定できる規約は文章で念押しせず hook で強制する（`git-conventions.md`「自動検証」）
-- **常駐量に予算を置く**: CLAUDE.md と `paths:` なし rules の合計（frontmatter を除く）を 400 行以下に保つ。テンプレート元では `tests/check-context-budget.py` が CI で検査する。超えたら `refactor: rules 棚卸し` Issue を切り、`/doctor prompt-audit` で矛盾・古い記述を洗って統合・削除し、`pitfalls.md` の期限切れも消す。閾値を変えるときは理由をコミットメッセージに書く
+- **常駐量に予算を置く**: CLAUDE.md と `paths:` なし rules の合計（frontmatter を除く）を 1000 行以下に保つ。超えたら棚卸しの合図として `refactor: rules 棚卸し` Issue を切り、`/doctor prompt-audit` で矛盾・古い記述を洗って統合・削除し、`pitfalls.md` の期限切れも消す。テンプレート元は、プロジェクト固有の rules の枠を残すため、素のテンプレート分を `tests/check-context-budget.py` で 400 行以下に CI 検査している。閾値を変えるときは理由をコミットメッセージに書く
 
 ## ハマりどころの書き先
 
