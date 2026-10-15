@@ -165,6 +165,7 @@ async (page) => {
 |------|------|------|
 | `Failed to launch ... executable doesn't exist at /opt/...` | ローカル: `.mcp.json` が古い Linux パス前提のまま／クラウド: `PLAYWRIGHT_MCP_EXECUTABLE_PATH` のパスがイメージに無い | ローカルは `.mcp.json` の playwright 引数が `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` か確認して Claude Desktop 再起動。クラウドは `ls -la /opt/pw-browsers` で実在するパスをユーザーに伝え、環境変数を直してもらう |
 | `Browser "chrome-for-testing" is not installed` | `--browser` 引数が欠落している、またはクラウドで `PLAYWRIGHT_MCP_EXECUTABLE_PATH` が未設定のまま `chromium` を指定している | ローカルは `.mcp.json` の `--browser` を確認 → Claude Desktop 再起動。クラウドは「クラウドセッション」の環境変数を 2 つとも設定してもらう |
+| `Chromium sandboxing failed!`（`Running as root without --no-sandbox is not supported`） | クラウドで `--browser` が `msedge` のまま、実行ファイルだけ Chromium を指している（`PLAYWRIGHT_MCP_BROWSER` が未設定、または `.mcp.json` が `--browser msedge` 固定の古いブランチ）。`msedge` 指定だと sandbox が有効になり、root のコンテナでは起動できない | `PLAYWRIGHT_MCP_BROWSER=chromium` を設定してもらう。古いブランチなら `main` を取り込んでからセッションを開き直す |
 | `InputValidationError` / ツールが呼べない | ToolSearch 未実行でスキーマが未ロード | `ToolSearch select:<tool_name>` で先にロード |
 | `browser_navigate` でタイムアウト／接続拒否 | Vite が起動していない・ポート違い | `npm run dev:client` のログで実 URL（5173 or 5174）を確認 |
 | `msedge` が見つからない／起動しない | システム Edge がアンインストールされている／プロファイル破損／クラウドで `PLAYWRIGHT_MCP_BROWSER` が未設定 | Edge を再インストール、または `--browser chrome` に切り替え（Chrome がインストールされている場合）。クラウドは「クラウドセッション」の環境変数を設定してもらう |
