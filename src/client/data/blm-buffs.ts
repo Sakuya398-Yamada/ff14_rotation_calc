@@ -1,5 +1,5 @@
 import type { BuffDefinition } from "../types/skill";
-import { BLM_FIRE_FAMILY_IDS, BLM_BLIZZARD_FAMILY_IDS } from "./blm-skills";
+import { BLM_FIRE_FAMILY_IDS, BLM_BLIZZARD_FAMILY_IDS, BLM_FIRE_3_IDS } from "./blm-skills";
 
 // === バフアイコン ===
 import fireIcon from "../assets/icons/blm/Fire.png";
@@ -192,10 +192,11 @@ export const BLM_BUFFS: BuffDefinition[] = [
     shortName: "ﾌｧｲｱ\nｽﾀｰﾀｰ",
     icon: fire3Icon,
     duration: null,
-    // 次のファイガ（fire-3）のみ詠唱時間と MP 消費を 0 にする。実機ではファイア・ファイジャ等は対象外
+    // 次のファイガのみ詠唱時間と MP 消費を 0 にする。実機ではファイア・ファイジャ等は対象外
+    // 詠唱破棄は変化前、MP 倍率は変化後のスキル ID で判定されるため、MP 側は AF/UB の状態で切り替わるファイガの隠しスキルも含める（#416）
     effects: [
       { type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] },
-      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: ["fire-3"] },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_FIRE_3_IDS },
     ],
     color: "#ff7043",
     acquiredLevel: 42,

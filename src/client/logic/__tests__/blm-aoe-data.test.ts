@@ -54,6 +54,15 @@ const BLM_AOE_NO_FALLOFF_IDS = [
   "freeze",
   "high-thunder-2",
   "thunder-4",
+  // AF/UB の状態で付与内容だけが変わる隠しスキル（#416）
+  "fire-2-in-af",
+  "fire-2-from-ub3",
+  "high-fire-2-in-af",
+  "high-fire-2-from-ub3",
+  "blizzard-2-in-ub",
+  "blizzard-2-from-af3",
+  "high-blizzard-2-in-ub",
+  "high-blizzard-2-from-af3",
 ] as const;
 
 const BLM_AOE_IDS = new Set<string>([
