@@ -281,7 +281,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride";
+export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride" | "castTimeMultiplier";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -305,6 +305,7 @@ export interface BuffEffect {
    * - applyBuffOnSkill: バフアクティブ中、対象 GCD/oGCD 使用時に appliedBuffId のバフを追加付与する（値は未使用、明鏡止水中の月光→風月等）
    * - applyBuffOnDeplete: スタック式バフが消費により 0 スタックになった時点で appliedBuffId のバフを付与する（値は未使用、インスタレーション枯渇→レインボードリップ効果アップ等）
    * - recastOverride: 対象 GCD の基礎リキャスト（秒）を value で置き換える。スキルスピード補正・speed バフは置換後の値に適用される（appliesToSkillIds で対象限定、Ready 中のレインボードリップ等）
+   * - castTimeMultiplier: 対象 GCD の詠唱時間に乗じる倍率。リキャストには作用しない（0.5 = 詠唱半減、appliesToSkillIds で対象限定、AF3 中の氷属性魔法等）
    */
   value: number;
   /** statバフの対象ステータスキー */
@@ -514,7 +515,7 @@ export interface ResolvedTimelineEntry {
   actionAvailableAt: number;
   /**
    * 実行時に適用された詠唱時間（秒）。
-   * 速度バフ・instantCast バフ（三連魔・ファイアスターター等）を反映済み。
+   * 速度バフ・castTimeMultiplier バフ・instantCast バフ（三連魔・ファイアスターター等）を反映済み。
    * 非詠唱スキル・oGCDでは 0。
    * UI 側で activeBuffs を再解釈しなくても、この値を直接描画できる。
    */

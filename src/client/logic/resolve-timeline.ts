@@ -138,6 +138,28 @@ function getBaseRecastTime(
 }
 
 /**
+ * アクティブなバフの castTimeMultiplier 効果から詠唱時間の倍率を計算する（乗算）。
+ * speed と違いリキャストには作用しない（例: AF3 中の氷属性魔法の詠唱半減）。
+ */
+function getCastTimeMultiplier(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>,
+  targetSkillId: string
+): number {
+  let multiplier = 1;
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type !== "castTimeMultiplier") continue;
+      if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(targetSkillId)) continue;
+      multiplier *= effect.value;
+    }
+  }
+  return multiplier;
+}
+
+/**
  * アクティブなバフに詠唱破棄（instantCast）効果を持つものが含まれるか判定する。
  * targetSkillId が指定されている場合、appliesToSkillIds に
  * 該当スキルIDが含まれないエフェクトは無視する（例: ファイアスターターはファイガ限定）。
@@ -551,7 +573,7 @@ function expireBuffs(
  * 処理:
  * - アクティブバフの effects から `resourceCostMultiplier` 型を抽出し、`appliesToSkillIds` で絞り込み
  * - 同一 resourceId に対する倍率は乗算で集約（AF/UB は exclusiveGroup 排他なので実質単独）
- * - 倍率が 1 を超え、`negatedByResource` 指定があり対象リソース残量が足り、かつ入力 changes に倍率対象リソースの負変動が存在する場合のみ、倍率を 1 に戻して当該リソースを消費する追加 ResourceChange を末尾に付与
+ * - 倍率が 1 を超え、`negatedByResource` 指定があり対象リソース残量が足り、かつ入力 changes に倍率対象リソースの負変動が存在する場合のみ、倍率を 1 に戻して当該リソースを消費する追加 ResourceChange を末尾に付与（他の効果で最終倍率が 0 になる場合は付与しない）
  * - 入力 changes の負変動のうち resourceId が一致するものは amount に倍率を掛けて返す
  *
  * 正変動には作用しない。
@@ -566,7 +588,8 @@ function applyBuffResourceCostMultipliers(
   if (activeBuffs.length === 0) return changes;
 
   const multipliers = new Map<string, number>();
-  const negationConsumptions: ResourceChange[] = [];
+  // costResourceId は打ち消した倍率の対象リソース（最終倍率が 0 なら打ち消し消費を取り消すために保持する）
+  const negationConsumptions: { change: ResourceChange; costResourceId: string }[] = [];
   // 同じ打ち消しリソースを複数バフが奪い合う場合に備え、消費可能残量を追跡する
   const negationRemaining = new Map<string, number>();
 
@@ -591,7 +614,10 @@ function applyBuffResourceCostMultipliers(
         if (remaining >= consumeAmount) {
           multiplier = 1;
           negationRemaining.set(negResId, remaining - consumeAmount);
-          negationConsumptions.push({ resourceId: negResId, amount: -consumeAmount });
+          negationConsumptions.push({
+            change: { resourceId: negResId, amount: -consumeAmount },
+            costResourceId: eff.resourceId,
+          });
         }
       }
 
@@ -609,7 +635,13 @@ function applyBuffResourceCostMultipliers(
     return { ...c, amount: c.amount * m };
   });
 
-  return negationConsumptions.length > 0 ? [...scaled, ...negationConsumptions] : scaled;
+  // 別のバフで消費が 0 になるなら、打ち消すべき増加分も無いので打ち消しリソースを消費しない
+  // （AF 中にファイガ効果アップで撃つファイガがアンブラルハートを消費しない等、#415）
+  const appliedNegations = negationConsumptions
+    .filter((n) => multipliers.get(n.costResourceId) !== 0)
+    .map((n) => n.change);
+
+  return appliedNegations.length > 0 ? [...scaled, ...appliedNegations] : scaled;
 }
 
 /**
@@ -848,8 +880,9 @@ export function resolveTimeline(
       const instantCast = skill.castTime
         ? hasInstantCastBuff(currentActiveBuffs, buffDefMap, originalSkill.id)
         : false;
+      const castMul = getCastTimeMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
       resolvedCastTime = skill.castTime && !instantCast
-        ? Math.round(skill.castTime * speedMul * 1000) / 1000
+        ? Math.round(skill.castTime * speedMul * castMul * 1000) / 1000
         : 0;
 
       gcdAvailableAt = startTime + recastTime;

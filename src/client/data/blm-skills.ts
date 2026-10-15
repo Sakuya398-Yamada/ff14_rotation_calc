@@ -45,7 +45,7 @@ const UMBRAL_ICE_ANY = ["umbral-ice-1", "umbral-ice-2", "umbral-ice-3"];
 /**
  * 黒魔道士のスキル定義。
  * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5）の数値とも照合済み（#407）。
- * 未モデル化の既知の差分: MP 消費・詠唱半減 #415、サンダーヘッド／パラドックスの付与条件 #416
+ * 未モデル化の既知の差分: サンダーヘッド／パラドックスの付与条件 #416
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
@@ -248,6 +248,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.0,
     acquiredLevel: 1,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     // UB外/AF中→UB1 付与時は MP 回復なし（UB 段階遷移時の回復は隠しスキル側で表現）
     buffApplications: ["umbral-ice-1", "thunderhead"],
     // UB 中は段階を進めつつヒット時 MP を回復する（隠しスキルに委譲）。UB3 中は維持＋全回復
@@ -286,8 +287,9 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 58,
     // UB 中のみ使用可（段階不問）。UB を付与する追加効果は無いので段階は変えない
     requiredBuffAnyOf: UMBRAL_ICE_ANY,
-    // UB 中の使用が前提のため MP 消費は 0 として扱う（resourceChanges 省略）
+    // MP 800 は UB 中なら UB バフの効果で 0 になる
     resourceChanges: [
+      { resourceId: "mp", amount: -800 },
       { resourceId: "umbral-heart", amount: 3 },
     ],
   },
@@ -306,6 +308,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 3.0,
     acquiredLevel: 12,
+    resourceChanges: [{ resourceId: "mp", amount: -800 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
@@ -322,6 +325,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 3.0,
     acquiredLevel: 82,
     replacesSkillId: "blizzard-2",
+    resourceChanges: [{ resourceId: "mp", amount: -800 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
@@ -364,6 +368,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 90,
     // パラドックスゲージを 1 消費
     resourceChanges: [
+      { resourceId: "mp", amount: -1600 },
       { resourceId: "paradox-gauge", amount: -1 },
     ],
     // AF 中はファイアスターターを付与する隠しスキルに切替（UB 中は付与しない）
@@ -670,6 +675,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     buffApplications: ["umbral-ice-2", "thunderhead"],
   },
   {
@@ -684,6 +690,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
   },
   {
@@ -698,6 +705,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
   },
   {
@@ -712,6 +720,7 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 90,
     hidden: true,
     resourceChanges: [
+      { resourceId: "mp", amount: -1600 },
       { resourceId: "paradox-gauge", amount: -1 },
     ],
     buffApplications: ["firestarter"],

@@ -31,11 +31,15 @@ const ENOCHIAN_MULTIPLIER = 1.27;
 
 const EXCLUSIVE_GROUP_AF_UB = "astral-umbral";
 
+/** UB 中に MP 消費が 0 になるブリザド系以外のスキル（火属性魔法とパラドックス） */
+const UB_MP_FREE_SKILL_IDS = [...BLM_FIRE_FAMILY_IDS, "paradox"];
+
 export const BLM_BUFFS: BuffDefinition[] = [
   // ============================================================
   // アストラルファイア（AF）: ファイア系威力増、ブリザド系威力減
   // ============================================================
   // AF 中はファイア系の MP 消費が 2 倍になる。アンブラルハートが残っていれば 1 消費して打ち消す
+  // 反対属性のブリザド系は MP 消費 0（極性マスタリー）
   {
     id: "astral-fire-1",
     name: "アストラルファイア I",
@@ -54,6 +58,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
         appliesToSkillIds: BLM_FIRE_FAMILY_IDS,
         negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
       },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
     ],
     color: "#ef5350",
     acquiredLevel: 2,
@@ -76,6 +81,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
         appliesToSkillIds: BLM_FIRE_FAMILY_IDS,
         negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
       },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
     ],
     color: "#e53935",
     acquiredLevel: 2,
@@ -98,6 +104,9 @@ export const BLM_BUFFS: BuffDefinition[] = [
         appliesToSkillIds: BLM_FIRE_FAMILY_IDS,
         negatedByResource: { resourceId: "umbral-heart", consumeAmount: 1 },
       },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
+      // 極性マスタリー III（Lv35）: AF3 中は氷属性魔法の詠唱時間が半減する
+      { type: "castTimeMultiplier", value: 0.5, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
     ],
     color: "#c62828",
     acquiredLevel: 2,
@@ -108,6 +117,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // （7.x ではアイス側に倍率ボーナスはなく、MP 回復・MP 消費 0 が主効果）
   // ============================================================
   // UB 中はブリザド系の MP 消費が 0 になる（#209 では段階別倍率（UB1:50%/UB2:25%）は簡易対応で全段階 0、別Issue #210 で対応）
+  // 反対属性のファイア系と、UB 中のパラドックスも MP 消費 0
   {
     id: "umbral-ice-1",
     name: "アンブラルブリザード I",
@@ -121,6 +131,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
       { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
       // UB1 中にブリザド系を撃つと命中時に MP +2500（実行前バフで判定）
       { type: "resourceGainOnSkill", resourceId: "mp", value: 2500, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: UB_MP_FREE_SKILL_IDS },
     ],
     color: "#42a5f5",
     acquiredLevel: 1,
@@ -137,6 +148,7 @@ export const BLM_BUFFS: BuffDefinition[] = [
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
       { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
       { type: "resourceGainOnSkill", resourceId: "mp", value: 5000, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: UB_MP_FREE_SKILL_IDS },
     ],
     color: "#1e88e5",
     acquiredLevel: 1,
@@ -153,6 +165,9 @@ export const BLM_BUFFS: BuffDefinition[] = [
       { type: "potency", value: ENOCHIAN_MULTIPLIER },
       { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
       { type: "resourceGainOnSkill", resourceId: "mp", value: 10000, appliesToSkillIds: BLM_BLIZZARD_FAMILY_IDS },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: UB_MP_FREE_SKILL_IDS },
+      // 極性マスタリー III（Lv35）: UB3 中は火属性魔法の詠唱時間が半減する
+      { type: "castTimeMultiplier", value: 0.5, appliesToSkillIds: BLM_FIRE_FAMILY_IDS },
     ],
     color: "#1565c0",
     acquiredLevel: 1,
@@ -177,8 +192,11 @@ export const BLM_BUFFS: BuffDefinition[] = [
     shortName: "ﾌｧｲｱ\nｽﾀｰﾀｰ",
     icon: fire3Icon,
     duration: null,
-    // 次のファイガ（fire-3）詠唱のみ Instant 化する。実機ではファイア・ファイジャ等は対象外
-    effects: [{ type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] }],
+    // 次のファイガ（fire-3）のみ詠唱時間と MP 消費を 0 にする。実機ではファイア・ファイジャ等は対象外
+    effects: [
+      { type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] },
+      { type: "resourceCostMultiplier", value: 0, resourceId: "mp", appliesToSkillIds: ["fire-3"] },
+    ],
     color: "#ff7043",
     acquiredLevel: 42,
   },
