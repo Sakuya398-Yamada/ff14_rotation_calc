@@ -114,7 +114,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 56,
     refreshesDots: ["venomous-bite", "caustic-bite", "windbite", "stormbite"],
-    buffApplications: ["hawks-eye"],
+    // ホークアイ付与は特性「バイトマスタリー II」（Lv76）から (#426)
+    traitPotencyOverrides: [{ traitLevel: 76, buffApplications: ["hawks-eye"] }],
   },
 
   // ============================================================
@@ -133,7 +134,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     replacesSkillId: "venomous-bite",
     dotPotency: 20,
     dotDuration: 45,
-    buffApplications: ["hawks-eye"],
+    // ホークアイ付与は特性「バイトマスタリー II」（Lv76）から (#426)
+    traitPotencyOverrides: [{ traitLevel: 76, buffApplications: ["hawks-eye"] }],
   },
   {
     id: "stormbite",
@@ -148,7 +150,8 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     replacesSkillId: "windbite",
     dotPotency: 25,
     dotDuration: 45,
-    buffApplications: ["hawks-eye"],
+    // ホークアイ付与は特性「バイトマスタリー II」（Lv76）から (#426)
+    traitPotencyOverrides: [{ traitLevel: 76, buffApplications: ["hawks-eye"] }],
   },
   {
     id: "refulgent-arrow",
