@@ -15,12 +15,13 @@
 | CI | GitHub Actions | `.github/workflows/ci.yml`（型チェック・テスト・ビルド検証） |
 | テスト配信 | Cloudflare Pages（Git連携） | Pages 自身が repo を監視しフロントエンドを自動ビルド＆配信（プロジェクト名: `ff14-rotation-calc`、トークン不要） |
 | 本番デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare（CDN/DNS層） |
-| UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッション (Claude Desktop) から `browser_navigate` 等でフロントエンド操作・スクリーンショット取得。Windows 標準の Microsoft Edge を使用（リポジトリ直下 `.mcp.json` に `--browser msedge` で登録） |
+| UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッション (Claude Desktop) から `browser_navigate` 等でフロントエンド操作・スクリーンショット取得。ローカルは Windows 標準の Microsoft Edge、クラウドセッションはイメージの Chromium を使用（リポジトリ直下 `.mcp.json` に `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` で登録） |
 | Issue/PR操作 | GitHub MCP (`github/github-mcp-server` Go バイナリ) または `gh` CLI | Issue / PR の取得・作成・コメント・ラベル付与・sub-issue 紐づけを Claude Code セッションから直接操作。リポジトリ直下 `.mcp.json` に stdio 登録。PAT は OS ユーザー環境変数 `GITHUB_PERSONAL_ACCESS_TOKEN` から `${...}` 展開（詳細は `.claude/rules/mcp-setup.md`） |
 
 ## 開発環境
 
 - **Windows 11 ローカル開発** を前提とする
+- **Claude Code のクラウドセッション**（Linux）でも開発できる。依存（`npm ci`・`prisma generate`）は SessionStart hook `.claude/hooks/session-start-cloud-deps.sh` が `CLAUDE_CODE_REMOTE=true` のときだけ入れる。クラウド環境の環境変数に `NODE_ENV=production` は入れない（devDependencies が入らなくなる）。MCP の違いは `mcp-setup.md`「クラウドセッションでの差分」
 - 必要ツール: Node.js (v22 以上推奨, CIは v22)、npm、git、bash（Git Bash）、Microsoft Edge（Playwright MCP 用、Windows 11 標準）
 - hooks が JSON パースに `jq` を使う（無ければ `node` か `python3` にフォールバック）
 - 任意ツール: `github-mcp-server` バイナリ（GitHub MCP 用、`.claude/rules/mcp-setup.md` にインストール手順）、`gh` CLI（MCP 未接続時のフォールバック）

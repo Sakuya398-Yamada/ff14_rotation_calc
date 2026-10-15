@@ -3,7 +3,7 @@
 `.claude/rules/` 配下のため起動時に自動で読み込まれる。
 **Claude が UI/フロントエンド変更時に自前で動作確認するためのランブック** であり、人間向けは `CONTRIBUTING.md` を参照。
 
-開発環境は **Windows 11 ローカル + Microsoft Edge** を前提とする（`.mcp.json` は `--browser msedge`）。
+ローカル（Windows 11）は **Microsoft Edge** を使う（`.mcp.json` の `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` は、環境変数が無ければ `msedge`）。クラウドセッションは後述「クラウドセッション」。
 
 ## いつ使うか
 
@@ -33,6 +33,13 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
 
    - **明示ポート指定で起動するのが確実**: `npx vite --port <空きポート> --strictPort`（`--strictPort` により競合時はフォールバックせず起動失敗するので、起動成功 = 指定ポートが確定する）
    - **listening 中のポートを確認**: `netstat -ano | findstr LISTENING | findstr 517`（PID 列と Vite プロセスを突き合わせれば worktree との対応も取れる）
+
+## クラウドセッション
+
+クラウドセッション（`CLAUDE_CODE_REMOTE=true`）には Edge が無いので、イメージに入っている Chromium を使う。クラウド環境の環境変数に `PLAYWRIGHT_MCP_BROWSER=chromium` と `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/opt/pw-browsers/chromium` を入れておく（設定はユーザー）。`@playwright/mcp@latest` が探す版の Chromium はイメージに無いため、実行ファイルの指定も要る。
+
+- 画面が無いので自動でヘッドレスになる。snapshot・screenshot は取れる
+- 未設定だと、ツールを呼んだときに `Chromium distribution 'msedge' is not found` で失敗する。ユーザーに設定を頼み、このセッションで使えなければ後述「フォールバック方針」に従って未検証と明記する（環境変数はセッションの開始時に読まれる）
 
 ## 典型フロー
 
@@ -156,11 +163,12 @@ async (page) => {
 
 | 症状 | 原因 | 対処 |
 |------|------|------|
-| `Failed to launch ... executable doesn't exist at /opt/...` | `.mcp.json` が古い Linux パス前提のまま | `.mcp.json` の playwright 引数が `--browser msedge` になっているか確認。違う場合は修正して Claude Desktop 再起動 |
-| `Browser "chrome-for-testing" is not installed` | `--browser` 引数が欠落し、`@playwright/mcp@latest` がデフォルトの chrome-for-testing にフォールバックしている | `.mcp.json` に `--browser msedge` が入っているか確認 → Claude Desktop 再起動 |
+| `Failed to launch ... executable doesn't exist at /opt/...` | ローカル: `.mcp.json` が古い Linux パス前提のまま／クラウド: `PLAYWRIGHT_MCP_EXECUTABLE_PATH` のパスがイメージに無い | ローカルは `.mcp.json` の playwright 引数が `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` か確認して Claude Desktop 再起動。クラウドは `ls -la /opt/pw-browsers` で実在するパスをユーザーに伝え、環境変数を直してもらう |
+| `Browser "chrome-for-testing" is not installed` | `--browser` 引数が欠落している、またはクラウドで `PLAYWRIGHT_MCP_EXECUTABLE_PATH` が未設定のまま `chromium` を指定している | ローカルは `.mcp.json` の `--browser` を確認 → Claude Desktop 再起動。クラウドは「クラウドセッション」の環境変数を 2 つとも設定してもらう |
+| `Chromium sandboxing failed!`（`Running as root without --no-sandbox is not supported`） | クラウドで `--browser` が `msedge` のまま、実行ファイルだけ Chromium を指している（`PLAYWRIGHT_MCP_BROWSER` が未設定、または `.mcp.json` が `--browser msedge` 固定の古いブランチ）。`msedge` 指定だと sandbox が有効になり、root のコンテナでは起動できない | `PLAYWRIGHT_MCP_BROWSER=chromium` を設定してもらう。古いブランチなら `main` を取り込んでからセッションを開き直す |
 | `InputValidationError` / ツールが呼べない | ToolSearch 未実行でスキーマが未ロード | `ToolSearch select:<tool_name>` で先にロード |
 | `browser_navigate` でタイムアウト／接続拒否 | Vite が起動していない・ポート違い | `npm run dev:client` のログで実 URL（5173 or 5174）を確認 |
-| `msedge` が見つからない／起動しない | システム Edge がアンインストールされている／プロファイル破損 | Edge を再インストール、または `--browser chrome` に切り替え（Chrome がインストールされている場合） |
+| `msedge` が見つからない／起動しない | システム Edge がアンインストールされている／プロファイル破損／クラウドで `PLAYWRIGHT_MCP_BROWSER` が未設定 | Edge を再インストール、または `--browser chrome` に切り替え（Chrome がインストールされている場合）。クラウドは「クラウドセッション」の環境変数を設定してもらう |
 | 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
 | `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | dnd-kit の MouseSensor activation（distance: 4）と `dragTo` の一括ジェスチャが競合し、drop 前にドラッグが確定しない | 上記「dnd-kit ベース DnD の検証方法」のステップ分割マウス操作を `browser_run_code_unsafe` で実行する |
 | `browser_evaluate` で `select.value = '...'` を代入して `change` を dispatch しても UI が変化しない（値が空に戻る） | React の制御コンポーネントは value 代入を内部状態と同期しないため、直接代入では onChange が発火しない | 上記「React 制御フォーム要素の操作ワークアラウンド」の native setter スニペットを使う |
@@ -202,6 +210,6 @@ Claude Desktop 環境では `/mcp` スラッシュコマンドが UI 上で確�
 
 ## 参考
 
-- MCP 登録: リポジトリ直下 `.mcp.json`（`--browser msedge` 指定。Windows 11 標準の Microsoft Edge を直接利用するため、追加の Chromium ダウンロードや `npx playwright install` は不要）
-- 前提環境: Windows 11 + Microsoft Edge（システム標準）
+- MCP 登録: リポジトリ直下 `.mcp.json`（`--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}`。ローカルは Windows 11 標準の Microsoft Edge、クラウドはイメージの Chromium を使うため、どちらも追加のブラウザのダウンロードや `npx playwright install` は不要）
+- 前提環境: Windows 11 + Microsoft Edge（システム標準）、またはクラウドセッション（「クラウドセッション」）
 - 人間向けセットアップ: `CONTRIBUTING.md` 「MCP サーバー（Playwright による UI 視覚検証）」

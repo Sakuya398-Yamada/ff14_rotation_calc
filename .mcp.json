@@ -2,7 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest", "--browser", "msedge"]
+      "args": ["-y", "@playwright/mcp@latest", "--browser", "${PLAYWRIGHT_MCP_BROWSER:-msedge}"]
     },
     "brave-search": {
       "command": "npx",
