@@ -55,6 +55,7 @@ const SAM_AOE_NO_FALLOFF_IDS = [
   "kaeshi-goken",
   "tendo-kaeshi-goken",
   "hissatsu-guren",
+  "hissatsu-kyuten",
 ] as const;
 
 const SAM_AOE_IDS = new Set<string>([

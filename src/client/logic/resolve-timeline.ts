@@ -1675,7 +1675,8 @@ export function resolveTimeline(
       untargetableError,
       recastError,
       wsComboError,
-      activeBuffs: [...currentActiveBuffs],
+      // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
+      activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),
       activeBuffsAtUse,
       buffMultiplier,
       critRateBonus,

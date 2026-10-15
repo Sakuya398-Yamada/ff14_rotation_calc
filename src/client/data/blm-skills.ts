@@ -617,8 +617,8 @@ const BLM_BASE_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 120,
     acquiredLevel: 86,
-    // 実機では AF/UB 中のみ使用可。本ツールでは OR 条件の requiredBuff 機構が無いため、
-    // 使用判定はユーザー側に委ね、ポリグロット +1 の効果のみを反映する
+    // AF または UB 中のみ使用可（段階不問）
+    requiredBuffAnyOf: [...ASTRAL_FIRE_ANY, ...UMBRAL_ICE_ANY],
     resourceChanges: [
       { resourceId: "polyglot", amount: 1 },
     ],
