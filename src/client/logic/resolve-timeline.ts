@@ -4,6 +4,7 @@ import type {
   ResolvedTimelineEntry,
   ResourceChange,
   ResourceDefinition,
+  ResourceBuffModifier,
   ResourceSnapshot,
   CharacterStats,
   BuffDefinition,
@@ -45,6 +46,8 @@ interface AutoGenTimer {
 /**
  * 指定時刻時点で、自動生成タイマーにより追加されるリソース量を計算し、
  * タイマー状態を更新する。
+ * onTick を渡すと、上限に達してもタイマーを止めずに付与を続け、付与ごとにその時刻で呼ぶ
+ * （上限で値は増えないが、付与をきっかけにした効果は発生させる）。
  */
 function processAutoGen(
   currentTime: number,
@@ -52,21 +55,23 @@ function processAutoGen(
   maxStacks: number,
   interval: number,
   timer: AutoGenTimer,
-  amount: number = 1
+  amount: number = 1,
+  onTick?: (tickTime: number) => void
 ): number {
   if (timer.startedAt === null) return currentValue;
 
   let value = currentValue;
   let timerTime = timer.startedAt;
 
-  while (value < maxStacks) {
+  while (onTick || value < maxStacks) {
     const nextTick = timerTime + interval;
     if (nextTick > currentTime) break;
     value = Math.min(value + amount, maxStacks);
     timerTime = nextTick;
+    onTick?.(nextTick);
   }
 
-  if (value >= maxStacks) {
+  if (value >= maxStacks && !onTick) {
     // 最大に達したらタイマー停止
     timer.startedAt = null;
   } else {
@@ -86,6 +91,51 @@ function processAutoGen(
  * - oGCDスキル: 前のアクションのアニメーションロック完了後（GCDリキャスト中に使用可能）
  * - リソース自動生成: スタックが最大未満になった時点から20秒後に1つ追加（最大まで繰り返し）
  */
+/** リソースの whileBuffModifiers のうち、対象バフが効果中のものを返す */
+function getActiveResourceModifiers(
+  def: ResourceDefinition,
+  activeBuffs: ActiveBuff[]
+): ResourceBuffModifier[] {
+  if (!def.whileBuffModifiers) return [];
+  return def.whileBuffModifiers.filter((m) => activeBuffs.some((ab) => ab.buffId === m.buffId));
+}
+
+/**
+ * リソース量に応じたヘイスト（gcdHastePerStack）の合成倍率を計算する。
+ * 例: 軍神のパイオン中は詩心 1 つにつき 4% → 詩心 4 で 0.84 倍
+ */
+function getResourceHasteMultiplier(
+  resources: ResourceDefinition[],
+  resourceState: ResourceSnapshot,
+  activeBuffs: ActiveBuff[]
+): number {
+  let multiplier = 1;
+  for (const res of resources) {
+    for (const m of getActiveResourceModifiers(res, activeBuffs)) {
+      if (m.gcdHastePerStack === undefined) continue;
+      multiplier *= 1 - m.gcdHastePerStack * (resourceState[res.id] ?? 0);
+    }
+  }
+  return multiplier;
+}
+
+/** time までに回復するチャージを回復させる */
+function recoverCharges(
+  state: { charges: number; nextChargeAt: number | null },
+  time: number,
+  cooldown: number,
+  maxCharges: number
+): void {
+  while (state.nextChargeAt !== null && state.charges < maxCharges && state.nextChargeAt <= time) {
+    state.charges++;
+    if (state.charges < maxCharges) {
+      state.nextChargeAt = Math.round((state.nextChargeAt + cooldown) * 1000) / 1000;
+    } else {
+      state.nextChargeAt = null;
+    }
+  }
+}
+
 /**
  * 指定時刻にアクティブなバフから速度バフの合成倍率を計算する。
  * targetSkillId が指定されている場合、appliesToSkillIds に
@@ -724,7 +774,7 @@ function applyResourceChanges(
   changes: ResourceChange[],
   resourceDefMap: Map<string, ResourceDefinition>,
   resources: ResourceDefinition[],
-  onApplied?: (def: ResourceDefinition) => void
+  onApplied?: (def: ResourceDefinition, amount: number) => void
 ): void {
   const skipFlagged = changes.some((c) => {
     if (c.skipIfInsufficient !== true) return false;
@@ -740,14 +790,14 @@ function applyResourceChanges(
     const def = resourceDefMap.get(change.resourceId);
     if (!def) continue;
     applyResourceChange(resourceState, def, change.amount, resources);
-    onApplied?.(def);
+    onApplied?.(def, change.amount);
   }
   for (const change of effective) {
     if (change.amount < 0) continue;
     const def = resourceDefMap.get(change.resourceId);
     if (!def) continue;
     applyResourceChange(resourceState, def, change.amount, resources);
-    onApplied?.(def);
+    onApplied?.(def, change.amount);
   }
 }
 
@@ -779,6 +829,22 @@ export function resolveTimeline(
   const dotStreams: Map<string, DoTStream> = new Map();
   // チャージ状態追跡: skillId → { charges: 残りチャージ数, nextChargeAt: 次のチャージ回復時刻 }
   const skillChargeState: Map<string, { charges: number; nextChargeAt: number | null }> = new Map();
+
+  /**
+   * chargeKey のリキャストを time 時点で seconds 秒短縮する（賢人のバラード中の詩心付与等）。
+   * 次のチャージ回復時刻を早め、超過分は以降の回復に繰り越す。未使用・チャージ満タンなら何もしない
+   */
+  const reduceChargeCooldown = (chargeKey: string, seconds: number, time: number) => {
+    const state = skillChargeState.get(chargeKey);
+    if (!state || state.nextChargeAt === null) return;
+    const groupSkill = [...skillMap.values()].find(
+      (s) => s.cooldown !== undefined && (s.cooldownGroup ?? s.id) === chargeKey
+    );
+    if (!groupSkill || groupSkill.cooldown === undefined) return;
+    recoverCharges(state, time, groupSkill.cooldown, groupSkill.maxCharges ?? 1);
+    if (state.nextChargeAt === null) return;
+    state.nextChargeAt = Math.round((state.nextChargeAt - seconds) * 1000) / 1000;
+  };
 
   // コンボ状態追跡
   let lastComboSkillId: string | null = null;
@@ -866,6 +932,55 @@ export function resolveTimeline(
       }
     }
 
+    // whileBuffModifiers の maxStacks を、このエントリ時点のバフで反映した定義に差し替える。
+    // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
+    for (const res of resources) {
+      if (!res.whileBuffModifiers) continue;
+      const maxOverride = getActiveResourceModifiers(res, currentActiveBuffs)
+        .find((m) => m.maxStacks !== undefined)?.maxStacks;
+      resourceDefMap.set(res.id, maxOverride !== undefined ? { ...res, maxStacks: maxOverride } : res);
+    }
+
+    // 自動生成リソースを時刻に応じて加算。
+    // リソース量に応じたヘイスト（軍神のパイオン中の詩心）をこのエントリの GCD に反映するため、リキャスト計算より前に行う
+    for (const res of resources) {
+      if (res.autoGenerateInterval) {
+        const def = resourceDefMap.get(res.id) ?? res;
+        const reductions = getActiveResourceModifiers(res, currentActiveBuffs)
+          .flatMap((m) => (m.cooldownReductionOnGain ? [m.cooldownReductionOnGain] : []));
+        // 付与をきっかけにリキャストを短縮する間は、上限でもタイマーを止めない
+        const onTick = reductions.length > 0
+          ? (tickTime: number) => {
+              for (const r of reductions) reduceChargeCooldown(r.chargeKey, r.seconds, tickTime);
+            }
+          : undefined;
+        // autoGenerateWhileBuff: 指定バフのいずれかがアクティブ時のみ自動生成
+        if (res.autoGenerateWhileBuff) {
+          const hasRequiredBuff = res.autoGenerateWhileBuff.some(
+            (buffId) => currentActiveBuffs.some((ab) => ab.buffId === buffId)
+          );
+          if (!hasRequiredBuff) {
+            // バフ非アクティブ → タイマー停止
+            autoGenTimers[res.id].startedAt = null;
+            continue;
+          }
+          // バフアクティブだがタイマー未開始 → タイマー開始
+          if (autoGenTimers[res.id].startedAt === null && (onTick || resourceState[res.id] < def.maxStacks)) {
+            autoGenTimers[res.id].startedAt = startTime;
+          }
+        }
+        resourceState[res.id] = processAutoGen(
+          startTime,
+          resourceState[res.id],
+          def.maxStacks,
+          res.autoGenerateInterval,
+          autoGenTimers[res.id],
+          res.autoGenerateAmount ?? 1,
+          onTick
+        );
+      }
+    }
+
     // GCD のリキャスト・詠唱時間は変化先スキルの値で計算する（例: レッドファイア → シアンブリザドで 2.5 秒 → 3.3 秒）
     if (originalSkill.type === "gcd") {
       // recastOverride バフ（レインボードリップ効果アップ等）があれば基礎リキャストを置き換えてから補正を掛ける
@@ -873,7 +988,8 @@ export function resolveTimeline(
       const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
       // 速度バフを適用してリキャスト・詠唱時間計算
       // 対象スキル限定の speed バフ（インスタレーション等）を正しくフィルタするため originalSkill.id を渡す
-      const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
+      const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id)
+        * getResourceHasteMultiplier(resources, resourceState, currentActiveBuffs);
       const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
       // instantCast バフがアクティブなら詠唱時間を 0 に上書きする（三連魔・ファイアスターター等）
       // 対象スキル限定バフ（appliesToSkillIds）を正しくフィルタするため originalSkill.id を渡す
@@ -888,35 +1004,6 @@ export function resolveTimeline(
       gcdAvailableAt = startTime + recastTime;
       // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
       actionAvailableAt = startTime + Math.max(resolvedCastTime, skill.animationLock);
-    }
-
-    // 自動生成リソースを時刻に応じて加算
-    for (const res of resources) {
-      if (res.autoGenerateInterval) {
-        // autoGenerateWhileBuff: 指定バフのいずれかがアクティブ時のみ自動生成
-        if (res.autoGenerateWhileBuff) {
-          const hasRequiredBuff = res.autoGenerateWhileBuff.some(
-            (buffId) => currentActiveBuffs.some((ab) => ab.buffId === buffId)
-          );
-          if (!hasRequiredBuff) {
-            // バフ非アクティブ → タイマー停止
-            autoGenTimers[res.id].startedAt = null;
-            continue;
-          }
-          // バフアクティブだがタイマー未開始 → タイマー開始
-          if (autoGenTimers[res.id].startedAt === null && resourceState[res.id] < res.maxStacks) {
-            autoGenTimers[res.id].startedAt = startTime;
-          }
-        }
-        resourceState[res.id] = processAutoGen(
-          startTime,
-          resourceState[res.id],
-          res.maxStacks,
-          res.autoGenerateInterval,
-          autoGenTimers[res.id],
-          res.autoGenerateAmount ?? 1
-        );
-      }
     }
 
     // スキル実行前のリソーススナップショット
@@ -1117,14 +1204,7 @@ export function resolveTimeline(
       const state = skillChargeState.get(chargeKey);
       if (state) {
         // チャージ回復: nextChargeAtからcooldown間隔で回復
-        while (state.nextChargeAt !== null && state.charges < maxCharges && state.nextChargeAt <= startTime) {
-          state.charges++;
-          if (state.charges < maxCharges) {
-            state.nextChargeAt = Math.round((state.nextChargeAt + skill.cooldown) * 1000) / 1000;
-          } else {
-            state.nextChargeAt = null;
-          }
-        }
+        recoverCharges(state, startTime, skill.cooldown, maxCharges);
         recastError = state.charges <= 0;
       }
       // state未登録 = 初回使用 → エラーなし
@@ -1212,7 +1292,7 @@ export function resolveTimeline(
     const activeBuffsAtUse: ActiveBuff[] = currentActiveBuffs.map((ab) => ({ ...ab }));
 
     if (!hasError) {
-      const onResourceApplied = (def: ResourceDefinition) => {
+      const onResourceApplied = (def: ResourceDefinition, amount: number) => {
         // リソースが最大未満になったら自動生成タイマーを開始
         if (
           def.autoGenerateInterval &&
@@ -1220,6 +1300,14 @@ export function resolveTimeline(
           autoGenTimers[def.id].startedAt === null
         ) {
           autoGenTimers[def.id].startedAt = startTime;
+        }
+        // スキルによる付与でもリキャスト短縮を発生させる（賢人のバラード中のエンピリアルアロー等）
+        if (amount > 0) {
+          for (const m of getActiveResourceModifiers(def, currentActiveBuffs)) {
+            if (m.cooldownReductionOnGain) {
+              reduceChargeCooldown(m.cooldownReductionOnGain.chargeKey, m.cooldownReductionOnGain.seconds, startTime);
+            }
+          }
         }
       };
 

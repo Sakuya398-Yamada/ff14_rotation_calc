@@ -1,0 +1,127 @@
+import { describe, it, expect } from "vitest";
+import { resolveTimeline } from "../resolve-timeline";
+import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
+import type { TimelineEntry } from "../../types/skill";
+import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
+import { BRD_BUFFS } from "../../data/brd-buffs";
+import { BRD_RESOURCES } from "../../data/brd-resources";
+
+const LEVEL = 100;
+const BASE_GCD = 2.5;
+
+function buildSkillMap() {
+  const buffIds = new Set(BRD_BUFFS.map((b) => b.id));
+  const resourceIds = new Set(BRD_RESOURCES.map((r) => r.id));
+  const skills = getSkillsForLevel(BRD_ATTACK_SKILLS, LEVEL, buffIds, resourceIds);
+  return getAllSkillMapForLevel(BRD_ATTACK_SKILLS, skills, LEVEL, buffIds, resourceIds);
+}
+
+const skillMap = buildSkillMap();
+
+function entry(skillId: string, manualStartTime?: number): TimelineEntry {
+  return { uid: `${skillId}-${Math.random()}`, skillId, manualStartTime };
+}
+
+function resolve(entries: TimelineEntry[]) {
+  return resolveTimeline(entries, skillMap, BRD_RESOURCES, undefined, BRD_BUFFS);
+}
+
+function burstShots(count: number): TimelineEntry[] {
+  return Array.from({ length: count }, () => entry("burst-shot"));
+}
+
+describe("BRD: 軍神のパイオン中の詩心最大 4 とヘイスト (#419)", () => {
+  it("軍神のパイオン中は詩心が 4 まで蓄積する", () => {
+    const result = resolve([entry("armys-paeon"), ...burstShots(10)]);
+    const stacks = result.entries.map((e) => e.resourceSnapshot["repertoire"]);
+    expect(Math.max(...stacks)).toBe(4);
+  });
+
+  it.each(["mages-ballad", "wanderers-minuet"])("%s 中は詩心の上限が 3 のまま", (song) => {
+    const result = resolve([entry(song), ...burstShots(10)]);
+    const stacks = result.entries.map((e) => e.resourceSnapshot["repertoire"]);
+    expect(Math.max(...stacks)).toBe(3);
+  });
+
+  it("軍神のパイオン中は詩心 1 つにつき GCD が 4% 短くなり、詩心 4 で 2.1 秒になる", () => {
+    const result = resolve([entry("armys-paeon"), ...burstShots(10)]);
+    const gcds = result.entries.slice(1);
+    const gaps = gcds.slice(0, -1).map((e, i) => ({
+      stacks: e.resourceSnapshot["repertoire"],
+      gap: Math.round((gcds[i + 1].startTime - e.startTime) * 1000) / 1000,
+    }));
+    for (const { stacks, gap } of gaps) {
+      expect(gap).toBe(Math.round(BASE_GCD * (1 - 0.04 * stacks) * 1000) / 1000);
+    }
+    expect(gaps.some((g) => g.stacks === 4 && g.gap === 2.1)).toBe(true);
+    expect(gaps.some((g) => g.stacks === 0 && g.gap === BASE_GCD)).toBe(true);
+  });
+
+  it("旅神のメヌエット中は詩心があっても GCD は短くならない", () => {
+    const result = resolve([entry("wanderers-minuet"), ...burstShots(10)]);
+    const gcds = result.entries.slice(1);
+    expect(gcds.some((e) => e.resourceSnapshot["repertoire"] === 3)).toBe(true);
+    for (let i = 0; i < gcds.length - 1; i++) {
+      expect(Math.round((gcds[i + 1].startTime - gcds[i].startTime) * 1000) / 1000).toBe(BASE_GCD);
+    }
+  });
+});
+
+describe("BRD: 賢人のバラード中の詩心付与でブラッドレッター系のリキャストが 7.5 秒短縮される (#419)", () => {
+  // 歌 → ハートブレイクショット 3 回でチャージを使い切り、最後のハートブレイクショットを指定時刻に置く。
+  // 詩心の自動生成タイマーは歌の次のエントリ（1 回目のハートブレイクショット）の時刻から始まる
+  function chargesUsedUp(song: string) {
+    return [entry(song), entry("heartbreak-shot"), entry("heartbreak-shot"), entry("heartbreak-shot")];
+  }
+  const firstUse = resolve(chargesUsedUp("mages-ballad")).entries[1].startTime;
+
+  it("詩心 1 回の付与で、次のチャージ回復が 15 秒後から 7.5 秒後に早まる", () => {
+    // firstUse + 3.75 に 1 回目の付与 → 回復は firstUse + 7.5（2 回目の付与 firstUse + 7.5 より前に置く）
+    const before = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", firstUse + 7.4)]);
+    expect(before.entries[4].recastError).toBe(true);
+
+    const after = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", firstUse + 7.5)]);
+    expect(after.entries[4].recastError).toBe(false);
+  });
+
+  it("旅神のメヌエット中は短縮されず、15 秒後まで回復しない", () => {
+    const before = resolve([...chargesUsedUp("wanderers-minuet"), entry("heartbreak-shot", firstUse + 14.9)]);
+    expect(before.entries[4].recastError).toBe(true);
+
+    const after = resolve([...chargesUsedUp("wanderers-minuet"), entry("heartbreak-shot", firstUse + 15)]);
+    expect(after.entries[4].recastError).toBe(false);
+  });
+
+  it("詩心が上限 3 に達した後も、付与のたびに短縮される", () => {
+    // 付与は firstUse + 3.75 × k。4 回目以降は詩心 3 のままでも短縮が続く
+    const t = firstUse + 3.75 * 6;
+    const used = [
+      entry("mages-ballad"),
+      entry("heartbreak-shot"),
+      entry("heartbreak-shot"),
+      entry("heartbreak-shot"),
+      entry("heartbreak-shot", t),
+      entry("heartbreak-shot"),
+      entry("heartbreak-shot"),
+      entry("heartbreak-shot"),
+    ];
+    const r = resolve(used);
+    expect(r.entries[4].resourceSnapshot["repertoire"]).toBe(3);
+    // t までに付与 6 回 = 45 秒短縮。15 秒 × 3 チャージ分を回復しきっている
+    expect(r.entries.slice(4, 7).every((e) => !e.recastError)).toBe(true);
+    // 4 回目はアニメーションロック後すぐで次の付与が無いため、チャージ切れ
+    expect(r.entries[7].recastError).toBe(true);
+  });
+
+  it("エンピリアルアローによる詩心付与でも短縮される", () => {
+    const withArrow = [...chargesUsedUp("mages-ballad"), entry("empyreal-arrow")];
+    const t = resolve(withArrow).entries[4].startTime;
+    // 自動生成の付与（firstUse + 3.75）とエンピリアルアローの付与で 15 秒短縮 → firstUse + 3.75 時点で回復済み
+    expect(t).toBeLessThan(firstUse + 3.75);
+    const result = resolve([...withArrow, entry("heartbreak-shot", firstUse + 3.8)]);
+    expect(result.entries[5].recastError).toBe(false);
+
+    const noArrow = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", firstUse + 3.8)]);
+    expect(noArrow.entries[4].recastError).toBe(true);
+  });
+});
