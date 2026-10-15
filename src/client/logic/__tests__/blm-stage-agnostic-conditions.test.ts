@@ -106,3 +106,31 @@ describe("BLM: AF/UB 段階不問の発動条件（#417）", () => {
     });
   });
 });
+
+describe("BLM: アンプリファイアの発動条件（#454）", () => {
+  // AF3: fire-3（無極性 → AF3）。UB3: blizzard-3（無極性 → UB3）
+  const POLARITY_STAGES = [
+    ...AF_STAGES,
+    { label: "AF3", setup: ["fire-3"], buffId: "astral-fire-3" },
+    ...UB_STAGES,
+    { label: "UB3", setup: ["blizzard-3"], buffId: "umbral-ice-3" },
+  ];
+
+  it.each(POLARITY_STAGES)("$label 中は使用でき、ポリグロットが +1 される", ({ setup, buffId }) => {
+    const result = resolve([...setup, "amplifier"]);
+    const before = result.entries[setup.length - 1];
+    expect(hasBuff(before, buffId)).toBe(true);
+
+    const amplifier = result.entries[setup.length];
+    expectNoErrors(amplifier);
+    expect(amplifier.resourceSnapshot["polyglot"]).toBe(before.resourceSnapshot["polyglot"] + 1);
+  });
+
+  it("無極性では発動条件エラーになり、ポリグロットが増えない", () => {
+    const result = resolve(["amplifier"]);
+
+    const amplifier = result.entries[0];
+    expect(amplifier.comboErrors.length).toBeGreaterThan(0);
+    expect(amplifier.resourceSnapshot["polyglot"]).toBe(0);
+  });
+});
