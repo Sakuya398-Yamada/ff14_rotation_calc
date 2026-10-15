@@ -66,8 +66,9 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
    - マージ済み PR があれば、ユーザーに通知して追加作業の要否を確認する。不要なら処理を終了する
    - Issue が `OPEN` でも PR がマージ済みのことがあるので、Issue の state だけで判断しない
    - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は後述「オープンな旧 PR／既存ブランチがある場合」
+   - **PR が無くても、コメントに「## 着手」の印があれば**、別のセッションがクラウドの `claude/*` ブランチで作業中かもしれない（`phases/02-branch-setup.md`「クラウドセッションの場合」）。印のセッション URL がこのセッション自身のものなら無視する。それ以外は、`git ls-remote --heads origin <ブランチ名>` の結果とセッション URL を添えて、続けて着手してよいかユーザーに確認する（ブランチが無くても、まだ push 前の作業中のことがあるので必ず確認する）
 3. 本文中のリンクや関連ラベルから、関連する過去の Issue を参照する。親 Issue がある場合（`parent`）はその本文も読む
-   - **兄弟 Issue との重なり（親 Issue がある場合）**: `issue_read`（method: `get_sub_issues`、`issue_number` に親の番号）で同じ親の sub-issue 一覧を取り、同じ型・関数・共通データ・共通ロジックに触れる兄弟 Issue が無いか本文を照合する。あれば `search_pull_requests`（query に兄弟 Issue の番号）と `git ls-remote --heads origin '*/#<兄弟の番号>-*'` で、その兄弟に作業ブランチやオープン PR が既にあるかを見る。重なりがあるときは、共通部分をどの Issue で実装し、他方はそのマージ後に取り込むのかを **着手前に** ユーザーへ確認する。並行セッションが同じ仕組みを二重に実装してコンフリクトするのを防ぐためで、Issue 本文に重なりが書かれていなくても確認する
+   - **兄弟 Issue との重なり（親 Issue がある場合）**: `issue_read`（method: `get_sub_issues`、`issue_number` に親の番号）で同じ親の sub-issue 一覧を取り、同じ型・関数・共通データ・共通ロジックに触れる兄弟 Issue が無いか本文を照合する。あれば `search_pull_requests`（query に兄弟 Issue の番号）と `git ls-remote --heads origin '*/#<兄弟の番号>-*'`、兄弟 Issue のコメントの「## 着手」の印（`claude/*` ブランチはブランチ名に番号が入らない）で、その兄弟に作業ブランチやオープン PR が既にあるかを見る。重なりがあるときは、共通部分をどの Issue で実装し、他方はそのマージ後に取り込むのかを **着手前に** ユーザーへ確認する。並行セッションが同じ仕組みを二重に実装してコンフリクトするのを防ぐためで、Issue 本文に重なりが書かれていなくても確認する
    - 外部リポジトリの **特定タグのファイル** が参照元に指定されている場合は、`get_file_contents`（`owner` / `repo` / `path` に加えて `ref` にタグを指定）で版固定で読む。`gh` なら `gh api "repos/<owner/repo>/contents/<path>?ref=<tag>" -H "Accept: application/vnd.github.raw"`（`?` を含むのでクォートする）
    - 2 つの版の間の差分や特定ファイルの patch が要るときは、compare API の JSON を jq で漉すより、`git clone --no-checkout` したクローンで `git diff --name-only vOLD vNEW` / `git show vNEW:<path>` を使う（`.claude/skills/template-update/SKILL.md`「3-way マージの定型手順」と同じ形）。`gh api --jq` で正規表現を書くときの注意は `.claude/skills/issue-start/pitfalls.md`「gojq が `\.` を拒否する」
 4. **【MCP: Brave Search】** IssueがFF14のスキルデータやゲーム仕様に関わる場合、`brave_web_search` で公式ジョブガイドや関連情報を検索し、実装に必要な数値・仕様を収集する
@@ -159,6 +160,7 @@ Issue #N には過去の PR #M（ブランチ `<type>/#N-xxx`、オープン）�
 - **作り直す（既定）**: 最新 `main` から別名ブランチ（元の名前に `-v2`, `-v3` … を付ける）を切って Phase 2 以降を進める。Phase 7 で新 PR を作ったあと、旧 PR に「#<新 PR> で置き換え」とコメントしてクローズする（`update_pull_request`（`state: closed`）と `add_issue_comment`）。旧ブランチの削除はユーザーに任せる
 - **再利用する**: 旧ブランチをチェックアウトし `git merge origin/main` で最新化してから Phase 3 以降を進める。旧 PR はそのまま更新される
 - **force-push での上書きは既定にしない**。旧ブランチの履歴を捨ててよいとユーザーが明示した場合だけ行う
+- **クラウドセッション（`phases/02-branch-setup.md`「クラウドセッションの場合」に当たるとき）で、旧 PR のブランチが割り当てられた `claude/*` 以外の場合**（命名は問わない）: 割り当てられたブランチ以外には push できないことが多いので、[R] は提示せず、作り直す旨を伝えて、割り当てられたブランチで進める（`-v2` は付けない）。旧 PR のクローズは同じ
 
 ## チェックリスト
 

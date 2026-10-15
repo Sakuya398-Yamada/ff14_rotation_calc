@@ -38,6 +38,25 @@ git checkout -b <type>/#<issue番号>-<kebab-case説明>
 - **同名ブランチが既にある**（ローカルまたは `origin`）場合は過去の試行の残り。黙って `-B` / force-push で上書きせず、Phase 1 手順 2「オープンな旧 PR／既存ブランチがある場合」の確認結果に従う（作り直すなら `-v2` 等を付けた別名で切る）
 - `claude --worktree` で起動したセッション（`.claude/worktrees/<name>/`、初期ブランチ `worktree-<name>`）でも Issue ブランチを切ってから作業する。`main` は他の worktree で checkout 済みのことが多く `git checkout main` が失敗するため、`git fetch origin main` → `git checkout -b <type>/#<issue番号>-<kebab-case説明> origin/main` で切る
 
+### クラウドセッションの場合（割り当て済みの `claude/*` ブランチ）
+
+Claude Code のクラウドセッションは、開始時に `claude/*` の作業ブランチが割り当てられ、セッションの指示で他のブランチへの push が制限されていることが多い。**`CLAUDE_CODE_REMOTE=true` かつ `git branch --show-current` が `claude/*` なら**（push 制限が明示されていなくても）、上の手順（`git checkout main` / `git pull` / `git checkout -b`）は行わず、**割り当てられたブランチでそのまま作業する**（ブランチ名の規約の対象外。`.claude/rules/git-conventions.md`「ブランチ命名」の例外）。それ以外（ローカル、またはクラウドでも `main` 等にいる場合）は上の通常手順に従う。
+
+1. `git log --oneline origin/main..HEAD` が空であることを確かめる。コミットが残っていれば別の作業の残りなので、続きとして使うかをユーザーに確認する（1 Issue = 1 PR）
+2. 下の「古い main 派生の検知」は同じように行う
+3. ブランチ名から Issue を辿れないので、次の 2 つで紐づける
+   - コミット件名に `#<issue番号>` を付ける（hook は `claude/*` での省略を許すが、付けておく）
+   - Issue に着手の印をコメントする（`add_issue_comment`）。並行セッションが Phase 1 でこの Issue や兄弟 Issue の作業中を検知するための印：
+
+     ```
+     ## 着手
+     - ブランチ: `claude/xxx`
+     - セッション: https://claude.ai/code/session_...
+     ```
+
+     セッション URL は環境変数 `CLAUDE_CODE_REMOTE_SESSION_ID`（`cse_` で始まる）の `cse_` を `session_` に置き換えて作る。変数が無ければ「セッション」の行は省く
+   - 印を付けたら `git push -u origin HEAD` でブランチを先に push する（中身が `main` と同じでもよい）。Phase 1 の検知で、印のブランチが実在するかを確かめられるようにするため
+
 ## 古い main 派生の検知
 
 `git pull origin main` を忘れた、worktree がローカル main を更新できなかった、別作業から復帰した直後などに、新ブランチが古い main から派生する事故が起きる（過去事例: #210）。テストが失敗するまで気付かないと `stash → fetch → merge → unstash` の手戻りになるので、**最初のコミット前に** 確認する：
