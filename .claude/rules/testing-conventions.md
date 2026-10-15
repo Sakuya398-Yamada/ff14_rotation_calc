@@ -1,36 +1,13 @@
 # テスト規約（既知の罠と回避パターン）
 
 `.claude/rules/` 配下のため起動時に自動で読み込まれる。
-`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389 / #433、発生元: #198 / #217 / #351 / #410 / #412）。
+`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389 / #433 / #429、発生元: #198 / #217 / #351 / #410 / #412）。
 
-## 罠1: `resolveTimeline` の `activeBuffs` は要素オブジェクトを参照共有する
+## 罠1: `activeBuffs` の `stacks` は #429 より前は後続処理で書き換わっていた（解消済み）
 
-### 何が起きるか
+`resolveTimeline` の各エントリの `activeBuffs` は、#429 から要素ごとに複製したスナップショットになった（`activeBuffsAtUse` と同じ）。過去エントリの `stacks` も、そのエントリ時点の値として比較してよい（例: `src/client/logic/__tests__/buff-stack-snapshot.test.ts`）。
 
-`resolve-timeline.ts` の各エントリ snapshot は `activeBuffs: [...currentActiveBuffs]` による **shallow copy** で作られる（`src/client/logic/resolve-timeline.ts` 内の snapshot 生成箇所を参照）。配列自体は複製されるが、`ActiveBuff` 要素オブジェクトはエントリ間で参照を共有する。
-
-後続エントリの処理で `ab.stacks = Math.max(0, ab.stacks - 1)` のように要素を mutate すると、**過去エントリの snapshot 内の `stacks` も最終値に書き換わる**。
-
-### テストでの回避パターン
-
-- **過去エントリの `stacks` 等の数値比較を書かない**。以下は期待値と乖離して失敗する：
-
-  ```ts
-  // NG: entries[0] の stacks は後続処理で書き換わっている可能性がある
-  expect(result.entries[0].activeBuffs.find((ab) => ab.buffId === "xxx")?.stacks).toBe(2);
-  ```
-
-- **段階消費は配列への含有／除外（`some(...)`）で検証する**。バフが完全消費されると `currentActiveBuffs` から要素が取り除かれるため、各エントリの snapshot に「入っているか／いないか」は信頼できる：
-
-  ```ts
-  // OK: エントリごとのバフの有無で段階消費を検証する
-  expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "xxx")).toBe(true);
-  expect(result.entries[2].activeBuffs.some((ab) => ab.buffId === "xxx")).toBe(false);
-  ```
-
-- 数値そのものを検証したい場合は、**最終エントリ時点の値**か、`resourceSnapshot` のようにエントリ毎に値がコピーされるフィールドを使う
-
-> コード側を deep copy 化するリファクタ（snapshot の純度を上げる案）は本規約のスコープ外。必要になったら別Issueとして起票する。
+既存テストに残る「段階消費を `some(...)` の有無だけで検証する」書き方は、この不具合を避けるためのもの。新しく書くテストで真似る必要はない。
 
 ## 罠2: リソース回復量テストの上限キャップ
 
