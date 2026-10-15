@@ -67,7 +67,8 @@ run_hook() {
   if [[ "$remote" != "unset" ]]; then
     env_args+=(CLAUDE_CODE_REMOTE="$remote")
   fi
-  out=$(cd "$proj" && env -u CLAUDE_CODE_REMOTE "${env_args[@]}" bash "$HOOK" 2>"$TMP_ROOT/stderr")
+  # Run from outside the project so the hook has to find it through CLAUDE_PROJECT_DIR
+  out=$(cd "$TMP_ROOT" && env -u CLAUDE_CODE_REMOTE "${env_args[@]}" bash "$HOOK" 2>"$TMP_ROOT/stderr")
   rc=$?
   err=$(cat "$TMP_ROOT/stderr")
 }
@@ -110,6 +111,7 @@ proj=$(make_proj fresh)
 run_hook "$proj" true
 check "fresh: exit 0" "$(is "$rc" 0)"
 check "fresh: npm ci run once" "$(is "$(calls '^npm ci')" 1)"
+check "fresh: installed into CLAUDE_PROJECT_DIR" "$([[ -f "$proj/node_modules/.package-lock.json" ]] && echo 1 || echo 0)"
 check "fresh: prisma generate run once" "$(is "$(calls '^npx prisma generate')" 1)"
 check "fresh: banner heading" "$(contains '## Cloud setup')"
 check "fresh: npm ci reported done" "$(contains '- npm ci: done in ')"
