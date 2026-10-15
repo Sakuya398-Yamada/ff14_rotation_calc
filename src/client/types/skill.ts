@@ -46,6 +46,8 @@ export interface TraitPotencyOverride {
   maxCharges?: number;
   /** 変更後の個別リキャストタイム（秒）（undefinedの場合は変更なし） */
   cooldown?: number;
+  /** 変更後の付与バフIDリスト（undefinedの場合は変更なし） */
+  buffApplications?: string[];
 }
 
 /** サポートするプレイヤーレベル */
