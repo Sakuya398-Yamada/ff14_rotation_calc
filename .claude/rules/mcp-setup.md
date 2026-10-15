@@ -126,6 +126,14 @@ MCP は**補助的な手段**。接続エラー・未設定時はフロー全体
 | `playwright` | UI 動作確認はユーザーに依頼。その旨を完了報告に明記 |
 | `github` | `gh.exe` のフルパス起動 (`/c/Program Files/GitHub CLI/gh.exe`) を Bash 経由で利用。Issue/PR 取得は `gh issue view` / `gh pr view`、コメント投稿は `gh issue comment --body-file <tmpfile>`、PR 作成は `gh pr create`。公開リポジトリの読み取りのみなら `WebFetch` でも代用可（コメント投稿は不可）|
 
+## クラウドセッションでの差分
+
+クラウドセッション（`CLAUDE_CODE_REMOTE=true`）でも `.mcp.json` はそのまま読み込まれる（ローカルと共用し、クラウド用に書き換えない）。サーバーごとの違い:
+
+- `github`: 同名のクラウド組み込み GitHub ツールが優先され、`.mcp.json` の `github-mcp-server` は起動しない。ツール名は同じ `mcp__github__*` で、バイナリも PAT も要らない
+- `brave-search`: `BRAVE_API_KEY` が無くても起動はするが、呼ぶと `422 SUBSCRIPTION_TOKEN_INVALID` になる。組み込みの `WebSearch` / `WebFetch` に切り替えて続ける
+- `playwright`: クラウド環境の環境変数でブラウザを Chromium に切り替える（`playwright-mcp.md`「クラウドセッション」）
+
 ## トラブルシューティング
 
 | 症状 | 原因 | 対処 |

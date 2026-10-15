@@ -179,6 +179,8 @@ npm run test:watch   # Vitest watch モード
 
 セッション開始時には SessionStart hook（`.claude/hooks/session-start-info.sh`）がリポジトリ状態のバナーを出します。バナーの `## Template version` は、`.claude/template-version` の版とテンプレート元（issue-driven-dev-starter）の最新リリースを比べた結果です（最新リリースは毎回取得し、取得に失敗したときだけ前回の結果を `cached` と付けて使う。前回の結果も無ければ `unknown`）。新しい版があれば `/issue-start` が更新用 Issue の起票を一度だけ提案します。取り込み手順は `.claude/skills/template-update/SKILL.md`（`/template-update`）を参照してください。
 
+Claude Code のクラウドセッション（claude.ai/code など）では、もう 1 つの SessionStart hook（`.claude/hooks/session-start-cloud-deps.sh`）が `npm ci` と `npx prisma generate` を実行します（`CLAUDE_CODE_REMOTE=true` のときだけ動き、ローカルでは何もしません）。
+
 詳細は `CLAUDE.md` を参照してください。
 
 ---
@@ -196,11 +198,11 @@ npm run test:watch   # Vitest watch モード
   "-y",
   "@playwright/mcp@latest",
   "--browser",
-  "msedge"
+  "${PLAYWRIGHT_MCP_BROWSER:-msedge}"
 ]
 ```
 
-Windows 11 標準の **Microsoft Edge** を使用します。`@playwright/mcp@latest` の `--browser` は `chrome | firefox | webkit | msedge` のみを受け付け、旧 `chromium` 指定は廃止されています。
+ローカルでは環境変数 `PLAYWRIGHT_MCP_BROWSER` を設定しないので、Windows 11 標準の **Microsoft Edge** を使用します。クラウドセッションでは、クラウド環境の環境変数に `PLAYWRIGHT_MCP_BROWSER=chromium` と `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/opt/pw-browsers/chromium` を設定し、イメージに入っている Chromium を使います（`.claude/rules/playwright-mcp.md`「クラウドセッション」）。
 
 ### 初回セットアップ
 
@@ -223,7 +225,7 @@ Windows 11 標準の **Microsoft Edge** を使用します。`@playwright/mcp@la
 
 Claude Desktop セッションで `ToolSearch` に `mcp__playwright__browser_navigate` を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は以下を確認してください：
 
-- `.mcp.json` の playwright エントリが `--browser msedge` を指しているか
+- `.mcp.json` の playwright エントリが `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` を指しているか
 - `@playwright/mcp` が `npx` で取得可能か（ネットワーク到達性、`npx clear-npx-cache` 後に再試行）
 - Claude Desktop を完全終了→再起動（タスクトレイから Quit）して `.mcp.json` を再読み込み
 
