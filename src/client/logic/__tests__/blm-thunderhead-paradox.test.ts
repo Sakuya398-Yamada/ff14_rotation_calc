@@ -128,3 +128,20 @@ describe("BLM: パラドックスは反対属性への反転で付与される�
     expect(entries[1].resourceSnapshot["paradox-gauge"]).toBeUndefined();
   });
 });
+
+describe("BLM: ファイアスターターは AF/UB の状態で切り替わるファイガにも効く", () => {
+  it("AF3 中にファイアスターターで撃つファイガ（fire-3-in-af）は詠唱 0・MP 消費 0", () => {
+    // マナフォントでパラドックスを得て、AF 中のパラドックスでファイアスターターを付与する
+    const entries = resolve100(["fire-3", "manafont", "paradox", "fire-3"]);
+    const paradox = entries[2];
+    const fire3 = entries[3];
+    expectNoError(paradox);
+    expect(paradox.resolvedSkillId).toBe("paradox-af");
+    expect(hasBuff(paradox, "firestarter")).toBe(true);
+    expectNoError(fire3);
+    expect(fire3.resolvedSkillId).toBe("fire-3-in-af");
+    expect(fire3.castTime).toBe(0);
+    expect(fire3.resourceSnapshot["mp"]).toBe(paradox.resourceSnapshot["mp"]);
+    expect(hasBuff(fire3, "firestarter")).toBe(false);
+  });
+});

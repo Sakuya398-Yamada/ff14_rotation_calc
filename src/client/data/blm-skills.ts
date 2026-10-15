@@ -56,7 +56,6 @@ function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEnt
 /**
  * 黒魔道士のスキル定義。
  * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5）の数値とも照合済み（#407）。
- * 未モデル化の既知の差分: MP 消費・詠唱半減 #415
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
@@ -277,6 +276,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 2.0,
     acquiredLevel: 1,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     // UB外/AF中→UB1 付与時は MP 回復なし（UB 段階遷移時の回復は隠しスキル側で表現）
     buffApplications: ["umbral-ice-1", "thunderhead"],
     // UB 中は段階を進めつつヒット時 MP を回復する（隠しスキルに委譲、サンダーヘッドは付与しない）。UB3 中は維持＋全回復
@@ -321,8 +321,9 @@ const BLM_BASE_SKILLS: Skill[] = [
     acquiredLevel: 58,
     // UB 中のみ使用可（段階不問）。UB を付与する追加効果は無いので段階は変えない
     requiredBuffAnyOf: UMBRAL_ICE_ANY,
-    // UB 中の使用が前提のため MP 消費は 0 として扱う（resourceChanges 省略）
+    // MP 800 は UB 中なら UB バフの効果で 0 になる
     resourceChanges: [
+      { resourceId: "mp", amount: -800 },
       { resourceId: "umbral-heart", amount: 3 },
     ],
   },
@@ -341,6 +342,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     castTime: 3.0,
     acquiredLevel: 12,
+    resourceChanges: [{ resourceId: "mp", amount: -800 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
     autoTransform: [
       ...transformWhileAny(UMBRAL_ICE_ANY, "blizzard-2-in-ub"),
@@ -361,6 +363,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     castTime: 3.0,
     acquiredLevel: 82,
     replacesSkillId: "blizzard-2",
+    resourceChanges: [{ resourceId: "mp", amount: -800 }],
     buffApplications: ["umbral-ice-3", "thunderhead"],
     autoTransform: [
       ...transformWhileAny(UMBRAL_ICE_ANY, "high-blizzard-2-in-ub"),
@@ -405,6 +408,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     acquiredLevel: 90,
     // パラドックスゲージを 1 消費
     resourceChanges: [
+      { resourceId: "mp", amount: -1600 },
       { resourceId: "paradox-gauge", amount: -1 },
     ],
     // AF 中はファイアスターターを付与する隠しスキルに切替（UB 中は付与しない）
@@ -714,6 +718,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     buffApplications: ["umbral-ice-2"],
   },
   {
@@ -728,6 +733,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     buffApplications: ["umbral-ice-3"],
   },
   {
@@ -742,6 +748,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     hidden: true,
+    resourceChanges: [{ resourceId: "mp", amount: -400 }],
     buffApplications: ["umbral-ice-3"],
   },
   {
@@ -756,6 +763,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     acquiredLevel: 90,
     hidden: true,
     resourceChanges: [
+      { resourceId: "mp", amount: -1600 },
       { resourceId: "paradox-gauge", amount: -1 },
     ],
     buffApplications: ["firestarter"],
@@ -853,6 +861,9 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
 // autoTransform 経由で実行されるため対象に含める。
 // 新スキルや段階進行用の隠しスキルを追加した際は、ここを更新するだけで
 // blm-buffs.ts の AF/UB 効果が自動追従する。
+
+/** ファイガと、AF/UB の状態で切り替わるその隠しスキル（ファイアスターターの対象） */
+export const BLM_FIRE_3_IDS = ["fire-3", "fire-3-in-af", "fire-3-from-ub3"];
 
 /** AF（アストラルファイア）効果の対象となるファイア系スキル ID 群 */
 export const BLM_FIRE_FAMILY_IDS = [
