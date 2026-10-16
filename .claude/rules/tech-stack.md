@@ -8,13 +8,13 @@
 |---------|------|------|
 | 言語 | TypeScript | フロント・バックエンド統一 |
 | フロントエンド | React + Vite | SPA構成 |
-| バックエンド | Hono (Node.js) | 軽量・Web標準準拠 |
+| バックエンド | Hono (Cloudflare Workers) | 軽量・Web標準準拠。フロントと同じ Worker で動かす（エントリ: `src/server/index.ts`、設定: `wrangler.jsonc`） |
 | DB | SQLite | Prismaで抽象化（クラウド移行時にPostgreSQL等に切替可） |
 | ORM | Prisma | 型安全なDB操作 |
 | テスト | Vitest | `npm test` で実行 |
-| CI | GitHub Actions | `.github/workflows/ci.yml`（型チェック・テスト・ビルド検証） |
-| テスト配信 | Cloudflare Pages（Git連携） | Pages 自身が repo を監視しフロントエンドを自動ビルド＆配信（プロジェクト名: `ff14-rotation-calc`、トークン不要） |
-| 本番デプロイ | pm2 or systemd + Nginx | オンプレUbuntu + Cloudflare（CDN/DNS層） |
+| CI | GitHub Actions | `.github/workflows/ci.yml`（型チェック・テスト・ビルド・`wrangler deploy --dry-run`） |
+| 配信 | Cloudflare Workers + Static Assets（Workers Builds の Git 連携） | `main` を本番に、PR をプレビュー URL にデプロイ（Worker 名: `ff14-rotation-calc`、トークン不要）。手順は `CONTRIBUTING.md`「CI / Cloudflare Workers 配信」 |
+| ローカル実行 | `@cloudflare/vite-plugin` | `npm run dev` で Vite のフロントと Worker（API）を同じオリジンで動かす |
 | UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッション (Claude Desktop) から `browser_navigate` 等でフロントエンド操作・スクリーンショット取得。ローカルは Windows 標準の Microsoft Edge、クラウドセッションはイメージの Chromium を使用（リポジトリ直下 `.mcp.json` に `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` で登録） |
 | Issue/PR操作 | GitHub MCP (`github/github-mcp-server` Go バイナリ) または `gh` CLI | Issue / PR の取得・作成・コメント・ラベル付与・sub-issue 紐づけを Claude Code セッションから直接操作。リポジトリ直下 `.mcp.json` に stdio 登録。PAT は OS ユーザー環境変数 `GITHUB_PERSONAL_ACCESS_TOKEN` から `${...}` 展開（詳細は `.claude/rules/mcp-setup.md`） |
 
@@ -31,24 +31,26 @@
 ## インフラ構成（本番）
 
 ```
-[Cloudflare] → [Nginx (リバースプロキシ)] → [Node.js (Hono API + Vite静的配信)]
-                                                    ↓
-                                              [SQLite ファイル]
+[ブラウザ] → [Cloudflare Worker: ff14-rotation-calc]
+               ├ /api/*  → Hono（src/server/index.ts）
+               └ それ以外 → Static Assets（dist/client。未知のパスは index.html）
 ```
 
-- ホスティング: オンプレミスUbuntuサーバー
-- 外部公開: Cloudflare経由
-- クラウド移行: Prismaの DB設定変更で対応可能
+- 配信 URL: `https://ff14-rotation-calc.<アカウントのサブドメイン>.workers.dev`（独自ドメインは使わない）
+- 旧配信の Cloudflare Pages（`ff14-rotation-calc.pages.dev`）は、Workers で本番・プレビューが動くのを確かめるまで並行稼働させ、その後ダッシュボードで停止する
+- `vite build` はフロントを `dist/client` に、Worker を `dist/ff14_rotation_calc` に出力し、デプロイ用の設定 `dist/ff14_rotation_calc/wrangler.json` を生成する。Vite の `root` が `src/client` なので、リポジトリ直下の `wrangler deploy` はこの生成設定を自動では見つけない。デプロイは `npm run deploy`（`--config` で生成設定を指定）を使う
 
 ## よく使うコマンド
 
 | コマンド | 説明 |
 |---------|------|
-| `npm run dev` | Honoバックエンドサーバー起動（port 3000） |
-| `npm run dev:client` | Viteフロントエンド開発サーバー起動（port 5173） |
+| `npm run dev` | フロントと API（Worker）を同じオリジンで起動（port 5173） |
+| `npm run build` | フロントと Worker をビルド（`dist/`） |
+| `npm run deploy` | ビルド済みの `dist/` を本番にデプロイ（Workers Builds が実行。`-- --dry-run` でアップロードせず検証） |
+| `npm run deploy:preview` | ビルド済みの `dist/` をプレビューにデプロイ（Workers Builds が PR のブランチで実行） |
 | `npm run db:migrate` | Prismaマイグレーション適用 |
 | `npm run db:generate` | Prismaクライアント生成 |
 | `npm test` | Vitest 一括実行 |
 | `npm run test:watch` | Vitest watchモード |
 
-> 開発時はバックエンド (`npm run dev`) とフロントエンド (`npm run dev:client`) を別ターミナルで同時起動する。Vite開発サーバーは `/api/*` への要求をバックエンド (port 3000) にプロキシする。
+> `npm run dev` 1 つでフロントと `/api/*` が同じオリジンから応答する（Vite の中で Worker を workerd 上で動かす）。

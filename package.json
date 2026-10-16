@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "deploy": "wrangler deploy --config dist/ff14_rotation_calc/wrangler.json",
-    "deploy:preview": "wrangler versions upload --config dist/ff14_rotation_calc/wrangler.json",
+    "deploy:preview": "wrangler preview --config dist/ff14_rotation_calc/wrangler.json",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
     "test": "vitest run",
