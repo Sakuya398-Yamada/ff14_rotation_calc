@@ -1,19 +1,15 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { cloudflare } from "@cloudflare/vite-plugin";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), cloudflare({ configPath: "../../wrangler.jsonc" })],
   root: "src/client",
   server: {
     port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-      },
-    },
   },
   build: {
-    outDir: "../../dist/client",
+    // プラグインが環境ごとに dist/client（フロント）と dist/ff14_rotation_calc（Worker）へ分けて出力する
+    outDir: "../../dist",
   },
 });
