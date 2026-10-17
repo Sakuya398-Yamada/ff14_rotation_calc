@@ -75,7 +75,7 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
    - 検索例: `"FF14 竜騎士 ジョブガイド スキル一覧"`, `"FFXIV dragoon job guide skill potency"`
    - **利用前の準備**: `ToolSearch query: "select:brave_web_search"` でスキーマをロード
    - **未接続・未設定時のフォールバック**:
-     1. `ToolSearch` で `No matching deferred tools found` が返る → `BRAVE_API_KEY` 未設定または stdio 起動失敗。詳細は `.claude/rules/mcp-setup.md` 参照
+     1. `ToolSearch` で `No matching deferred tools found` が返る → stdio 起動失敗。ツールは見つかるが呼ぶと `422 SUBSCRIPTION_TOKEN_INVALID` になる → `BRAVE_API_KEY` が未設定（`${BRAVE_API_KEY}` の文字列のまま渡る）か無効。どちらも `.claude/rules/mcp-setup.md`「利用不可時のフォールバック」で続け、ユーザーに `CONTRIBUTING.md`「MCP サーバーのトラブルシューティング」を案内する
      2. 組み込みの `WebSearch` ツールで代替検索を試みる（スキーマは `ToolSearch query: "select:WebSearch"` でロード）
      3. それでも必要な情報が得られない場合、実装に必要な数値・仕様をユーザーに直接確認する
    - フロー全体を止めず、情報源を明示した上で次フェーズに進む
