@@ -36,8 +36,7 @@
                └ それ以外 → Static Assets（dist/client。未知のパスは index.html）
 ```
 
-- 配信 URL: `https://ff14-rotation-calc.<アカウントのサブドメイン>.workers.dev`（独自ドメインは使わない）
-- 旧配信の Cloudflare Pages（`ff14-rotation-calc.pages.dev`）は、Workers で本番・プレビューが動くのを確かめるまで並行稼働させ、その後ダッシュボードで停止する
+- 配信 URL: `https://ff14-rotation-calc.forestry-for.workers.dev`（独自ドメインは使わない）
 - `vite build` はフロントを `dist/client` に、Worker を `dist/ff14_rotation_calc` に出力し、デプロイ用の設定 `dist/ff14_rotation_calc/wrangler.json` を生成する。Vite の `root` が `src/client` なので、リポジトリ直下の `wrangler deploy` はこの生成設定を自動では見つけない。デプロイは `npm run deploy`（`--config` で生成設定を指定）を使う
 
 ## よく使うコマンド
