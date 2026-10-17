@@ -125,7 +125,7 @@ npm run build        # フロントと Worker をビルド (dist/)
 
 品質チェック（CI）と配信（Cloudflare Workers）を分担しています：
 
-- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `npm run build` → `npm run deploy -- --dry-run` を実行
+- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量の予算検査（`.claude/scripts/check-context-budget.py`）→ 依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `npm run build` → `npm run deploy -- --dry-run` を実行
 - **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets や API トークンは不要）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
 - フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
 
