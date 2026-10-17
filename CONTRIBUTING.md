@@ -332,7 +332,7 @@ API キーを削除する場合：
 
 | 症状 | 原因 | 対処 |
 |------|------|------|
-| `brave_web_search` が `ToolSearch` で見つからない | stdio 起動失敗（`npx` での取得失敗等）。`BRAVE_API_KEY` が未設定でもツールは見つかる（次の行） | `/mcp` で状態を確認 → 次の行の `failed` の対処 |
+| `brave_web_search` が `ToolSearch` で見つからない | stdio 起動失敗（`npx` での取得失敗等）。`BRAVE_API_KEY` が未設定でもツールは見つかる（次の行） | `/mcp` で状態を確認 → `failed` なら「`/mcp` で `brave-search` が `failed`」の行の対処 |
 | `brave_web_search` を呼ぶと `422 SUBSCRIPTION_TOKEN_INVALID` | `BRAVE_API_KEY` が未設定で `${BRAVE_API_KEY}` の文字列のまま渡っている（`claude mcp list` / `/mcp` に警告が出る）、またはキーが無効 | 「MCP サーバー（Brave Search による外部情報検索）」の初回セットアップ → Claude Desktop 再起動 |
 | `/mcp` で `brave-search` が `failed` | npx キャッシュ破損 or ネットワーク | `npx clear-npx-cache` 後、セッション再起動 |
 | stdio サーバー（Playwright/Brave/GitHub）が途中で切断 | セッション長時間放置 | Claude Desktop を完全終了 → 再起動（`.claude/skills/playwright-mcp/SKILL.md`「切断時の再接続手順」） |
