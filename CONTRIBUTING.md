@@ -171,10 +171,12 @@ npm run build        # フロントと Worker をビルド (dist/)
 ```
 .claude/
 ├── agents/      # サブエージェント定義（code-explorer, code-architect, code-reviewer）
-├── rules/       # 詳細規約（Claude Code が起動時に自動で読み込む）
+├── rules/       # 詳細規約（Claude Code が起動時に自動で読み込む。frontmatter に paths: があるものは該当ファイルを触ったときだけ）
+├── routines/    # スケジュールタスク（定期ルーティン）のプロンプト
 ├── hooks/       # PreToolUse / SessionStart 用シェルスクリプト
+├── scripts/     # 手で呼ぶ補助スクリプト（知見ボードの読み出し、常駐量の予算検査）
 ├── settings.json # フック設定
-└── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /dev-plan）
+└── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /template-update, /playwright-mcp, /dev-plan 等）
 ```
 
 加えて、リポジトリ直下の `.mcp.json` に Claude Code が読み込む MCP サーバー（Playwright 等）を定義しています。
