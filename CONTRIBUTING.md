@@ -129,8 +129,6 @@ npm run build        # フロントと Worker をビルド (dist/)
 - **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets や API トークンは不要）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
 - フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
 
-> 旧配信の Cloudflare Pages プロジェクト `ff14-rotation-calc`（`https://ff14-rotation-calc.pages.dev`）は、Workers で本番・プレビューが動くのを確かめるまで並行稼働させます。確認できたら、ダッシュボードの **Workers & Pages** → Pages プロジェクト → **Settings** から削除してください。
-
 ### Workers Builds の設定（初回のみ）
 
 1. [Cloudflare ダッシュボード](https://dash.cloudflare.com/) にログイン
@@ -145,7 +143,7 @@ npm run build        # フロントと Worker をビルド (dist/)
 5. **Build variables and secrets** に `NODE_VERSION` = `22` を追加（Workers Builds の既定は Node.js 24。CI と揃える）
 6. **Deploy** で初回ビルドを開始
 
-これで以後、`main` への push は本番（`https://ff14-rotation-calc.<アカウントのサブドメイン>.workers.dev`）に、PR はプレビュー URL に自動デプロイされます。
+これで以後、`main` への push は本番（`https://ff14-rotation-calc.forestry-for.workers.dev`）に、PR はプレビュー URL に自動デプロイされます。
 
 > **デプロイコマンドを既定の `npx wrangler deploy` のままにしない**: Vite の `root` が `src/client` のため、`vite build` が作るデプロイ用の設定（`dist/ff14_rotation_calc/wrangler.json`）をリポジトリ直下の `wrangler` は自動で見つけられず、`assets` に `directory` が無いというエラーで失敗します。`npm run deploy` / `npm run deploy:preview` は `--config` でこの生成設定を指定しています。
 
