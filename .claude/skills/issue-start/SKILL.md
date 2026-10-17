@@ -51,14 +51,14 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 ## MCP ツール
 
-接続設定・API キー管理は `.claude/rules/mcp-setup.md` を参照。MCP は補助手段であり、未接続時は下表のフォールバックで進めてフロー全体を止めない。
+サーバー一覧とフォールバックは `.claude/rules/mcp-setup.md`、接続設定・API キーの設定手順は `CONTRIBUTING.md` のサーバーごとの節を参照。MCP は補助手段であり、未接続時は下表のフォールバックで進めてフロー全体を止めない。
 
 | 用途 | 使うもの | 未接続時のフォールバック |
 |------|---------|------------------------|
 | Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request` / `subscribe_pr_activity` | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...`（クラウドセッションでは `gh api` の REST。`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」） |
 | 外部仕様・技術情報（FF14 公式ジョブガイド・ゲーム仕様等） | Brave Search MCP: `brave_web_search` | 組み込みの `WebSearch` / `WebFetch`、またはユーザーに確認 |
 | ライブラリの最新ドキュメント | context7 MCP（`resolve-library-id` → `query-docs`）※本リポジトリでは未登録。必要時に `.mcp.json` へ追加 | 公式ドキュメントを `WebFetch` |
-| UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser msedge`。`.claude/rules/playwright-mcp.md`） | ユーザーに手動確認を依頼し、未検証と明記する |
+| UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}`。`.claude/skills/playwright-mcp/SKILL.md`） | ユーザーに手動確認を依頼し、未検証と明記する |
 
 ## スコープ外問題の起票提案（Phase横断）
 

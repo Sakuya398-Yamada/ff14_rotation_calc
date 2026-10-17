@@ -1,6 +1,10 @@
+---
+name: playwright-mcp
+description: Playwright MCP で UI（src/client/**）の変更をブラウザで確かめるときの手順。ツールの事前ロード・dev サーバーの起動・dnd-kit の DnD・React 制御フォームの操作・保存データの注入・失敗時の診断・切断時の再接続・クラウドセッションのブラウザ設定を含む。/issue-start Phase 6 の UI 動作確認や、画面上の見え方を確かめたいときに使う。
+---
+
 # Playwright MCP 利用ガイド（Claude 向け）
 
-`.claude/rules/` 配下のため起動時に自動で読み込まれる。
 **Claude が UI/フロントエンド変更時に自前で動作確認するためのランブック** であり、人間向けは `CONTRIBUTING.md` を参照。
 
 ローカル（Windows 11）は **Microsoft Edge** を使う（`.mcp.json` の `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` は、環境変数が無ければ `msedge`）。クラウドセッションは後述「クラウドセッション」。
