@@ -125,7 +125,7 @@ npm run build        # フロントと Worker をビルド (dist/)
 
 品質チェック（CI）と配信（Cloudflare Workers）を分担しています：
 
-- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `npm run build` → `npm run deploy -- --dry-run` を実行
+- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量の予算検査（`.claude/scripts/check-context-budget.py`）→ 依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `npm run build` → `npm run deploy -- --dry-run` を実行
 - **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets や API トークンは不要）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
 - フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
 
@@ -175,10 +175,12 @@ npm run build        # フロントと Worker をビルド (dist/)
 ```
 .claude/
 ├── agents/      # サブエージェント定義（code-explorer, code-architect, code-reviewer）
-├── rules/       # 詳細規約（Claude Code が起動時に自動で読み込む）
+├── rules/       # 詳細規約（Claude Code が起動時に自動で読み込む。frontmatter に paths: があるものは該当ファイルを触ったときだけ）
+├── routines/    # スケジュールタスク（定期ルーティン）のプロンプト
 ├── hooks/       # PreToolUse / SessionStart 用シェルスクリプト
+├── scripts/     # 手で呼ぶ補助スクリプト（知見ボードの読み出し、常駐量の予算検査）
 ├── settings.json # フック設定
-└── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /dev-plan）
+└── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /template-update, /playwright-mcp, /dev-plan 等）
 ```
 
 加えて、リポジトリ直下の `.mcp.json` に Claude Code が読み込む MCP サーバー（Playwright 等）を定義しています。
@@ -208,7 +210,7 @@ Claude Code のクラウドセッション（claude.ai/code など）では、�
 ]
 ```
 
-ローカルでは環境変数 `PLAYWRIGHT_MCP_BROWSER` を設定しないので、Windows 11 標準の **Microsoft Edge** を使用します。クラウドセッションでは、クラウド環境の環境変数に `PLAYWRIGHT_MCP_BROWSER=chromium` と `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/opt/pw-browsers/chromium` を設定し、イメージに入っている Chromium を使います（`.claude/rules/playwright-mcp.md`「クラウドセッション」）。
+ローカルでは環境変数 `PLAYWRIGHT_MCP_BROWSER` を設定しないので、Windows 11 標準の **Microsoft Edge** を使用します。クラウドセッションでは、クラウド環境の環境変数に `PLAYWRIGHT_MCP_BROWSER=chromium` と `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/opt/pw-browsers/chromium` を設定し、イメージに入っている Chromium を使います（`.claude/skills/playwright-mcp/SKILL.md`「クラウドセッション」）。
 
 ### 初回セットアップ
 
@@ -259,16 +261,84 @@ Claude Desktop セッションで `ToolSearch` に `mcp__playwright__browser_nav
 
 ### 初回セットアップ
 
-1. **バイナリのインストール**: [Releases](https://github.com/github/github-mcp-server/releases) から `github-mcp-server_Windows_x86_64.zip` をダウンロードし、任意の永続フォルダ（例: `C:\Tools\github-mcp-server\`）に解凍。解凍先を **ユーザー環境変数 `Path`** に追加
-2. **PAT の発行**: GitHub の Settings → Developer settings → Personal access tokens (classic) で発行。最小スコープは `repo` / `read:org`
+1. **バイナリのインストール**: [Releases](https://github.com/github/github-mcp-server/releases) から `github-mcp-server_Windows_x86_64.zip` をダウンロード（v1.0.3 以降を推奨）し、任意の永続フォルダ（例: `C:\Tools\github-mcp-server\`）に解凍。解凍先を **ユーザー環境変数 `Path`** に追加（PowerShell・管理者権限不要）：
+   ```powershell
+   $tool = "C:\Tools\github-mcp-server"
+   $current = [Environment]::GetEnvironmentVariable("Path", "User")
+   if ($current -notlike "*$tool*") {
+     [Environment]::SetEnvironmentVariable("Path", "$current;$tool", "User")
+   }
+   ```
+   **新しい PowerShell を開いて** `github-mcp-server --version` で動作確認します。PATH に追加せず `.mcp.json` でフルパス指定（`"command": "C:\\Tools\\github-mcp-server\\github-mcp-server.exe"`）にしてもよいですが、マシンごとに差が出るので推奨しません
+2. **PAT の発行**: GitHub の [Settings → Developer settings → Personal access tokens (classic)](https://github.com/settings/tokens) で発行。スコープは `repo`（プライベートリポジトリの Issue/PR 操作）/ `read:org`（組織情報の読み取り）、必要に応じて `gist`
 3. **環境変数の設定**: PowerShell（管理者権限不要）で：
    ```powershell
    [Environment]::SetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN", "ghp_your_actual_token_here", "User")
    ```
 4. **Claude Desktop を完全終了 → 再起動**（タスクトレイから Quit）
 
-詳細手順とトラブルシューティングは `.claude/rules/mcp-setup.md` を参照してください。
+PAT を削除する場合：
+
+```powershell
+[Environment]::SetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN", $null, "User")
+```
 
 ### 接続確認
 
-Claude Desktop セッションで `ToolSearch` に `mcp__github__add_issue_comment` 等を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は `mcp-setup.md` のトラブルシューティング表を参照してください。
+Claude Desktop セッションで `ToolSearch` に `mcp__github__add_issue_comment` 等を投げて該当ツールが返ってくれば接続成功です。返ってこない場合は「MCP サーバーのトラブルシューティング」を参照してください。
+
+---
+
+## MCP サーバー（Brave Search による外部情報検索）
+
+リポジトリルートの `.mcp.json` に Brave Search MCP（`@modelcontextprotocol/server-brave-search`）を登録しており、FF14 公式ジョブガイド等の外部情報を Claude Code セッションから検索できます。
+
+### 構成
+
+`.mcp.json` の brave-search エントリ：
+
+```json
+"brave-search": {
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+  "env": {
+    "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+  }
+}
+```
+
+`.mcp.json` は `${VAR}` 形式で OS 環境変数を展開します（[公式仕様](https://code.claude.com/docs/en/mcp)）。生の API キーを `.mcp.json` に書いて commit しないでください。`BRAVE_API_KEY` が未定義だと、展開されない `${BRAVE_API_KEY}` の文字列のままサーバーに渡ります。設定の読み込みもサーバーの起動も止まらず、`claude mcp list` と `/mcp` に警告が出るだけなので、サーバーは起動したうえで検索の呼び出しが認証エラー（`422 SUBSCRIPTION_TOKEN_INVALID`）になります。他の MCP サーバーやセッション全体には影響しません。
+
+### 初回セットアップ
+
+1. **API キーの取得**: [Brave Search API](https://brave.com/search/api/) でアカウント登録し、無料プラン（Free: 月2,000クエリ、1 req/sec）を選択して、ダッシュボードから API キーを発行
+2. **環境変数の設定**: PowerShell（一般ユーザー権限）でユーザー環境変数として永続的に設定：
+   ```powershell
+   [Environment]::SetEnvironmentVariable("BRAVE_API_KEY", "BSA_your_actual_key_here", "User")
+   ```
+   スコープの `"User"` はユーザーホーム配下に永続化（管理者権限不要）、`"Machine"` はシステム全体（管理者権限が必要）、`"Process"` は現在のシェルだけ（再起動で消える）です
+3. **新しい PowerShell を開いて** `[Environment]::GetEnvironmentVariable("BRAVE_API_KEY","User")` で設定値を確認
+4. **Claude Desktop を完全終了 → 再起動**（タスクトレイから Quit）。Claude Desktop は起動時に環境変数を読み込むため、再起動しないと既存プロセスは古い値のままです
+
+API キーを削除する場合：
+
+```powershell
+[Environment]::SetEnvironmentVariable("BRAVE_API_KEY", $null, "User")
+```
+
+### 接続確認
+
+再起動後の新しいセッションで `ToolSearch` に `select:mcp__brave-search__brave_web_search` を投げてツールが返り、実際に検索して結果が返れば成功です。ツールは返るのに検索が `422 SUBSCRIPTION_TOKEN_INVALID` になる場合は、`BRAVE_API_KEY` が Claude Desktop に渡っていません。
+
+---
+
+## MCP サーバーのトラブルシューティング
+
+| 症状 | 原因 | 対処 |
+|------|------|------|
+| `brave_web_search` が `ToolSearch` で見つからない | stdio 起動失敗（`npx` での取得失敗等）。`BRAVE_API_KEY` が未設定でもツールは見つかる（次の行） | `/mcp` で状態を確認 → `failed` なら「`/mcp` で `brave-search` が `failed`」の行の対処 |
+| `brave_web_search` を呼ぶと `422 SUBSCRIPTION_TOKEN_INVALID` | `BRAVE_API_KEY` が未設定で `${BRAVE_API_KEY}` の文字列のまま渡っている（`claude mcp list` / `/mcp` に警告が出る）、またはキーが無効 | 「MCP サーバー（Brave Search による外部情報検索）」の初回セットアップ → Claude Desktop 再起動 |
+| `/mcp` で `brave-search` が `failed` | npx キャッシュ破損 or ネットワーク | `npx clear-npx-cache` 後、セッション再起動 |
+| stdio サーバー（Playwright/Brave/GitHub）が途中で切断 | セッション長時間放置 | Claude Desktop を完全終了 → 再起動（`.claude/skills/playwright-mcp/SKILL.md`「切断時の再接続手順」） |
+| `mcp__github__*` ツールが `ToolSearch` で見つからない | `GITHUB_PERSONAL_ACCESS_TOKEN` 未設定、`github-mcp-server` バイナリが PATH に無い、PAT スコープ不足のいずれか | 「MCP サーバー（GitHub MCP による Issue/PR 操作）」の初回セットアップを実施 → Claude Desktop 再起動 |
+| `github-mcp-server` 実行時に `401 Unauthorized` | PAT が無効 or スコープ不足 | PAT を再発行し `repo` / `read:org` を付与 → 環境変数を再設定 → Claude Desktop 再起動 |
