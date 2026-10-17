@@ -46,7 +46,7 @@
 | `npm run dev` | フロントと API（Worker）を同じオリジンで起動（port 5173） |
 | `npm run build` | フロントと Worker をビルド（`dist/`） |
 | `npm run deploy` | ビルド済みの `dist/` を本番にデプロイ（Workers Builds が実行。`-- --dry-run` でアップロードせず検証） |
-| `npm run deploy:preview` | ビルド済みの `dist/` をプレビューにデプロイ（Workers Builds が PR のブランチで実行） |
+| `npm run deploy:preview` | ビルド済みの `dist/` をプレビューにデプロイ（ローカルから手で作るとき用。Workers Builds の Preview command は `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json` を直接書く。Worker Previews は Preview command が `npx wrangler preview` を呼ぶことを求めるため。#487） |
 | `npm run db:migrate` | Prismaマイグレーション適用 |
 | `npm run db:generate` | Prismaクライアント生成 |
 | `npm test` | Vitest 一括実行 |

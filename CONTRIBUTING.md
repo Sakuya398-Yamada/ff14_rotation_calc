@@ -138,14 +138,18 @@ npm run build        # フロントと Worker をビルド (dist/)
    - **Project name（Worker 名）**: `ff14-rotation-calc`（`wrangler.jsonc` の `name` と一致させる。違うとビルドが失敗する）
    - **Build command**: `npm run build`
    - **Deploy command**: `npm run deploy`
-   - **Preview command**（本番ブランチ以外。**Builds for non-production branches** / **Enable Preview Builds** を有効にする）: `npm run deploy:preview`
+   - **Preview command**（本番ブランチ以外。**Enable Preview Builds** を有効にする）: `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`
    - **Root directory**: 空欄（`/`）のまま
 5. **Build variables and secrets** に `NODE_VERSION` = `22` を追加（Workers Builds の既定は Node.js 24。CI と揃える）
 6. **Deploy** で初回ビルドを開始
 
 これで以後、`main` への push は本番（`https://ff14-rotation-calc.forestry-for.workers.dev`）に、PR はプレビュー URL に自動デプロイされます。
 
-> **デプロイコマンドを既定の `npx wrangler deploy` のままにしない**: Vite の `root` が `src/client` のため、`vite build` が作るデプロイ用の設定（`dist/ff14_rotation_calc/wrangler.json`）をリポジトリ直下の `wrangler` は自動で見つけられず、`assets` に `directory` が無いというエラーで失敗します。`npm run deploy` / `npm run deploy:preview` は `--config` でこの生成設定を指定しています。
+> **Preview command は `npx wrangler preview` で始める**: PR にプレビュー URL をコメントするのは Worker Previews の機能で、Workers Builds は独自の Preview command にも `npx wrangler preview` を呼ぶことを求めています。以前は Worker Previews に切り替えないまま Preview command を `npm run deploy:preview`（npm スクリプト）にしていて、プレビュー自体は作られたのにコメントにプレビュー URL が出なかった（#487）。`package.json` の `deploy:preview` は、ローカルから手でプレビューを作るとき用です。
+>
+> **Worker Previews 以前から Builds に繋いでいた Worker の場合**: **Settings** → **Builds** に **Set up Worker Previews** のバナーが出ていたら、**Set up** から一度だけ切り替える（元の方式には戻せない）。切り替えると Preview command が `npx wrangler preview` に置き換わるので、上の `--config` 付きのコマンドに直す（[Cloudflare のドキュメント](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/#existing-workers-connected-to-builds)）。
+
+> **デプロイコマンドを既定の `npx wrangler deploy` のままにしない**: Vite の `root` が `src/client` のため、`vite build` が作るデプロイ用の設定（`dist/ff14_rotation_calc/wrangler.json`）をリポジトリ直下の `wrangler` は自動で見つけられず、`assets` に `directory` が無いというエラーで失敗します。`npm run deploy` と上の Preview command は、`--config` でこの生成設定を指定しています。
 
 ### 動作確認手順
 
@@ -157,7 +161,9 @@ npm run build        # フロントと Worker をビルド (dist/)
 
 - **ビルド失敗（`npm ci`）**: Node のバージョンが合っていない可能性。ビルド用の環境変数 `NODE_VERSION=22` が設定されているか確認
 - **ビルド失敗（Worker 名の不一致）**: ダッシュボードの Worker 名と `wrangler.jsonc` の `name`（`ff14-rotation-calc`）が一致しているか確認
-- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npm run deploy:preview`）にする
+- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`）にする
+- **PR のコメントにプレビュー URL が出ない（「Deploying with Cloudflare Workers」の表に URL の列が無い）**: Worker Previews に切り替わっていないか、Preview command が `npx wrangler preview` で始まっていない。上記の注記のとおりに直す
+- **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews": {}` が消えていないか確認する（#485）
 - **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
 
 ---
