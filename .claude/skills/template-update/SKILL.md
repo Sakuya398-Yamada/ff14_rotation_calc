@@ -37,12 +37,12 @@ argument-hint: "[vNEW]"
 
 ## 3-way マージの定型手順
 
-作業ファイルはプロジェクトの外（scratchpad 等）に置く。テンプレート元の clone は `--no-checkout` で作業ツリーを作らない（以下の手順は `git show` / `git diff` しか使わないので作業ツリーは不要。Windows では scratchpad の深いパスとテンプレート元の深いパスが合わさって MAX_PATH を超え、チェックアウトが `Filename too long` で止まる）。
+作業ファイルはプロジェクトの外（scratchpad 等）に置く。テンプレート元の clone は `--no-checkout` で作業ツリーを作らず、`-c core.longpaths=true` を付ける。以下の手順は `git show` / `git diff` しか使わないので作業ツリーは不要。Windows では scratchpad の深いパスとテンプレート元の深いパスが合わさって MAX_PATH を超え、チェックアウトが `Filename too long` で止まるが、`--no-checkout` で避けられるのは作業ツリーだけで、clone が `.git/objects/pack/pack-*.keep` を書く時点でも同じ `Filename too long`（`cannot write keep file`）で失敗する。`git clone -c` の設定は fetch の前から効き、クローンの config にも残るので、以降の `git show` / `git diff` も長いパスを扱える（Windows 以外では無視される）。
 
 ```bash
 SRC=<scratchpad>/template-src   # テンプレート元のクローン（作業ツリー無し）
 W=<scratchpad>/template-merge   # 作業ディレクトリ
-git clone -q --no-checkout https://github.com/<repo>.git "$SRC"
+git clone -q --no-checkout -c core.longpaths=true https://github.com/<repo>.git "$SRC"
 
 git -C "$SRC" diff --name-only vOLD vNEW -- template/ | while read -r t; do
   p=${t#template/}  # プロジェクト側のパス

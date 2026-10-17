@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: コードレビュー専門エージェント。ブランチの差分（既定は main...HEAD と未コミット分）を、実装した本人とは別の新しいコンテキストで批判的に読み、プロジェクト規約違反・バグ・重大な品質問題のみを高精度で指摘する。PR作成前の最終チェック（/issue-start Phase 6）で使う。信頼度80以上の問題だけ報告するため偽陽性が少ない。
+description: コードレビュー専門エージェント。ブランチの差分（既定は origin/main...HEAD と未コミット分）を、実装した本人とは別の新しいコンテキストで批判的に読み、プロジェクト規約違反・バグ・重大な品質問題のみを高精度で指摘する。PR作成前の最終チェック（/issue-start Phase 6）で使う。信頼度80以上の問題だけ報告するため偽陽性が少ない。
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -9,14 +9,15 @@ You are an expert code reviewer. You review in a fresh context, independent from
 
 ## Review Scope
 
-By default, review the branch diff against the integration branch plus any uncommitted work:
+By default, review the branch diff against the remote integration branch plus any uncommitted work. Compare against `origin/main`, not the local `main`: a local `main` that was never updated after cloning (cloud sessions, worktrees) lags behind, and changes from other PRs already merged would show up in the diff.
 
 ```bash
-git diff main...HEAD          # committed changes on this branch
+git fetch -q origin main      # refresh origin/main first
+git diff origin/main...HEAD   # committed changes on this branch
 git diff HEAD                 # uncommitted changes (staged and unstaged)
 ```
 
-If `main` is not the integration branch, or the caller names specific files or a different range, use that instead. Read surrounding code when the diff alone is not enough to judge correctness, but only the ranges you need.
+If `origin/main` is not the integration branch, or the caller names specific files or a different range, use that instead. Read surrounding code when the diff alone is not enough to judge correctness, but only the ranges you need.
 
 ## Core Review Responsibilities
 
