@@ -32,7 +32,7 @@ ff14_rotation_calc/
 └── .claude/
     ├── agents/          # サブエージェント定義
     ├── rules/           # 自動読み込みされる規約集
-    ├── routines/        # スケジュールタスク（定期ルーティン）のプロンプト。登録先との同期は workflow-feedback.md
+    ├── routines/        # スケジュールタスク（定期ルーティン）のプロンプト。登録先との同期は rules/routines.md
     ├── hooks/           # PreToolUse / SessionStart で使うシェルスクリプト
     ├── scripts/         # 手で呼ぶ補助スクリプト（知見ボードの読み出し等）
     ├── settings.json    # 権限と hooks の登録
