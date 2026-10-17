@@ -180,7 +180,7 @@ npm run build        # フロントと Worker をビルド (dist/)
 ├── hooks/       # PreToolUse / SessionStart 用シェルスクリプト
 ├── scripts/     # 手で呼ぶ補助スクリプト（知見ボードの読み出し、常駐量の予算検査）
 ├── settings.json # フック設定
-└── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /template-update, /playwright-mcp, /dev-plan 等）
+└── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /issue-priority, /template-update, /playwright-mcp, /dev-plan 等）
 ```
 
 加えて、リポジトリ直下の `.mcp.json` に Claude Code が読み込む MCP サーバー（Playwright 等）を定義しています。
