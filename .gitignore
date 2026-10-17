@@ -60,3 +60,6 @@ coverage.xml
 # Claude Code local state (worktrees, personal settings)
 .claude/worktrees/
 .claude/settings.local.json
+
+# Cloudflare Workers (wrangler / Vite plugin のローカル状態・デプロイ用の生成設定)
+.wrangler/

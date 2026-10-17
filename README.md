@@ -30,7 +30,8 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 
 ## アクセス方法
 
-- URL: <https://ff14-rotation-calc.pages.dev>（テスト配信中）
+- URL: `https://ff14-rotation-calc.<サブドメイン>.workers.dev`（Cloudflare Workers で配信。Workers Builds の設定後に確定）
+  - 移行が終わるまでは、旧 URL <https://ff14-rotation-calc.pages.dev> でも同じものを配信しています
 - ログイン不要。ブラウザから開くだけで使えます
 - 推奨環境: PC ブラウザ（Chrome / Edge / Firefox の最新版）
 

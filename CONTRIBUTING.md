@@ -111,54 +111,56 @@ npm run db:migrate
 ### 日常開発コマンド
 
 ```powershell
-npm run dev          # Hono バックエンド (port 3000)
-npm run dev:client   # Vite フロントエンド (port 5173)
+npm run dev          # フロントと API（Worker）を同じオリジンで起動 (port 5173)
 npm test             # Vitest 一括実行
 npm run test:watch   # Vitest watch モード
+npm run build        # フロントと Worker をビルド (dist/)
 ```
 
-> **Note**: 開発時はバックエンド (`npm run dev`) とフロントエンド (`npm run dev:client`) を別 PowerShell タブで同時に起動してください。Vite 開発サーバーは `/api/*` への要求をバックエンド (port 3000) にプロキシします。
+> **Note**: `npm run dev` 1 つで、フロントと `/api/*`（Hono）が `http://localhost:5173` から応答します。`@cloudflare/vite-plugin` が Vite の中で Worker を workerd 上で動かすため、別プロセスのバックエンドやプロキシは不要です。疎通確認は `http://localhost:5173/api/health`（`{"status":"ok"}`）。
 
 ---
 
-## CI / Cloudflare Pages テスト配信
+## CI / Cloudflare Workers 配信
 
-品質チェック（CI）とテスト配信（Cloudflare Pages）を分担しています：
+品質チェック（CI）と配信（Cloudflare Workers）を分担しています：
 
-- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `vite build` を実行
-- **デプロイ (Cloudflare Pages Git連携)**: Cloudflare Pages 側のGit連携がリポジトリの push / PR を検知し、Cloudflare 上で自動的にビルド＆デプロイ（GitHub Secrets や API トークンは不要）
+- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `npm run build` → `npm run deploy -- --dry-run` を実行
+- **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets や API トークンは不要）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
+- フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
 
-> 現時点では Cloudflare Pages は **テスト配信用途**。本番の外部公開層としての利用はユーザー数拡大後に切り替える想定です（`.claude/rules/tech-stack.md` 参照）。
+> 旧配信の Cloudflare Pages プロジェクト `ff14-rotation-calc`（`https://ff14-rotation-calc.pages.dev`）は、Workers で本番・プレビューが動くのを確かめるまで並行稼働させます。確認できたら、ダッシュボードの **Workers & Pages** → Pages プロジェクト → **Settings** から削除してください。
 
-### Cloudflare Pages プロジェクトの作成（初回のみ）
+### Workers Builds の設定（初回のみ）
 
 1. [Cloudflare ダッシュボード](https://dash.cloudflare.com/) にログイン
-2. 左メニュー **Workers & Pages** → **Create application** → **Pages** タブ → **Connect to Git** を選択
-3. GitHubで認証し、`ff14_rotation_calc` リポジトリを選択して **Begin setup**
-4. 以下のビルド設定を入力：
-   - **Project name**: `ff14-rotation-calc`
-   - **Production branch**: `main`
-   - **Framework preset**: `None`
-   - **Build command**: `npm ci && npx vite build`
-   - **Build output directory**: `dist/client`
-   - **Root directory (advanced)**: 空欄のまま
-5. **Environment variables (advanced)** を展開し、Production と Preview の両方に次を追加：
-   - Variable name: `NODE_VERSION` / Value: `22`
-6. **Save and Deploy** で初回ビルドを開始
+2. 左メニュー **Workers & Pages** → **Create application** → **Import a repository** を選択
+3. GitHub で認証し、`ff14_rotation_calc` リポジトリを選択
+4. 以下の設定を入力：
+   - **Project name（Worker 名）**: `ff14-rotation-calc`（`wrangler.jsonc` の `name` と一致させる。違うとビルドが失敗する）
+   - **Build command**: `npm run build`
+   - **Deploy command**: `npm run deploy`
+   - **Preview command**（本番ブランチ以外。**Builds for non-production branches** / **Enable Preview Builds** を有効にする）: `npm run deploy:preview`
+   - **Root directory**: 空欄（`/`）のまま
+5. **Build variables and secrets** に `NODE_VERSION` = `22` を追加（Workers Builds の既定は Node.js 24。CI と揃える）
+6. **Deploy** で初回ビルドを開始
 
-これで以後、`main` への push は本番（`https://ff14-rotation-calc.pages.dev`）に、PR は preview URL に自動デプロイされます。
+これで以後、`main` への push は本番（`https://ff14-rotation-calc.<アカウントのサブドメイン>.workers.dev`）に、PR はプレビュー URL に自動デプロイされます。
+
+> **デプロイコマンドを既定の `npx wrangler deploy` のままにしない**: Vite の `root` が `src/client` のため、`vite build` が作るデプロイ用の設定（`dist/ff14_rotation_calc/wrangler.json`）をリポジトリ直下の `wrangler` は自動で見つけられず、`assets` に `directory` が無いというエラーで失敗します。`npm run deploy` / `npm run deploy:preview` は `--config` でこの生成設定を指定しています。
 
 ### 動作確認手順
 
-1. 初回ビルドが成功し、`https://ff14-rotation-calc.pages.dev` でフロントエンドが表示されることを確認
-2. 本PRまたは以降のPRで、Cloudflare Pagesから `Deploy Preview` コメントが付き、preview URLで確認できること
+1. 初回ビルドが成功し、本番 URL でフロントエンドが表示され、`/api/health` が `{"status":"ok"}` を返すことを確認
+2. PR を作ると、Workers Builds からプレビュー URL のコメントが付き、その URL で確認できること
 3. GitHub Actions 側（`Test & Build` ジョブ）も緑で通っていること
 
 ### トラブルシューティング
 
-- **ビルド失敗（`npm ci`）**: Cloudflare Pages が package-lock.json の Node バージョンと合わない可能性。環境変数 `NODE_VERSION=22` が設定されているか確認
-- **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`npx vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
-- **API (/api/*) が404**: 想定通り。Cloudflare Pages は静的ファイルのみを配信するため、Hono バックエンドは Pages では動作しない。API を含む動作確認はローカル or オンプレUbuntu本番側で行う
+- **ビルド失敗（`npm ci`）**: Node のバージョンが合っていない可能性。ビルド用の環境変数 `NODE_VERSION=22` が設定されているか確認
+- **ビルド失敗（Worker 名の不一致）**: ダッシュボードの Worker 名と `wrangler.jsonc` の `name`（`ff14-rotation-calc`）が一致しているか確認
+- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npm run deploy:preview`）にする
+- **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
 
 ---
 
@@ -212,9 +214,9 @@ Claude Code のクラウドセッション（claude.ai/code など）では、�
 
 ### 利用フロー
 
-1. 別 PowerShell タブでフロントエンドを起動：
+1. 別 PowerShell タブで開発サーバーを起動：
    ```powershell
-   npm run dev:client
+   npm run dev
    ```
 2. Claude Desktop セッションから MCP ツールを呼び出す（例）：
    - `browser_navigate` で `http://localhost:5173` を開く

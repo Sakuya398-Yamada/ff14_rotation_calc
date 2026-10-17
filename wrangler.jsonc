@@ -1,0 +1,11 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "ff14-rotation-calc",
+	"main": "./src/server/index.ts",
+	"compatibility_date": "2026-10-13",
+	"assets": {
+		"not_found_handling": "single-page-application",
+		// SPA モードではブラウザの遷移リクエストが index.html に回るため、API は Worker を先に通す
+		"run_worker_first": ["/api/*"]
+	}
+}
