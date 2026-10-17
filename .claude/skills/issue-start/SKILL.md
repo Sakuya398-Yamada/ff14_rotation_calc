@@ -47,13 +47,15 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 起動数は各 Phase の起動数表に従う（単純な変更は 1 個、観点が複数あるときだけ 2〜3 個を並列）。サブエージェントはチャット 1 往復の十数倍のトークンを使うので、Grep 1 回で済むことには使わない。プロンプトには目的・スコープ・返却フォーマットと上限・除外事項を含める。
 
+`subagent_type` が見つからない（`Agent type '...' not found`）ときは、エージェント定義がセッション開始時にしか読み込まれないのが原因（クラウドセッションの途中でリポジトリを付けた場合など）。クラウドでリポジトリを付けた直後なら、クローン後に登録ツール（`register_repo_root`）を呼べば次のターンから使える。それでも見つからなければ `general-purpose` に `.claude/agents/<name>.md` を読ませて代わりにする。その場合、定義の `tools` に無い操作（`code-reviewer` ならファイルの編集）はしないようプロンプトに書く。
+
 ## MCP ツール
 
 接続設定・API キー管理は `.claude/rules/mcp-setup.md` を参照。MCP は補助手段であり、未接続時は下表のフォールバックで進めてフロー全体を止めない。
 
 | 用途 | 使うもの | 未接続時のフォールバック |
 |------|---------|------------------------|
-| Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request` / `subscribe_pr_activity` | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...` |
+| Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request` / `subscribe_pr_activity` | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...`（クラウドセッションでは `gh api` の REST。`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」） |
 | 外部仕様・技術情報（FF14 公式ジョブガイド・ゲーム仕様等） | Brave Search MCP: `brave_web_search` | 組み込みの `WebSearch` / `WebFetch`、またはユーザーに確認 |
 | ライブラリの最新ドキュメント | context7 MCP（`resolve-library-id` → `query-docs`）※本リポジトリでは未登録。必要時に `.mcp.json` へ追加 | 公式ドキュメントを `WebFetch` |
 | UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser msedge`。`.claude/rules/playwright-mcp.md`） | ユーザーに手動確認を依頼し、未検証と明記する |
