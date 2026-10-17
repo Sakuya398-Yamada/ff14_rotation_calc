@@ -26,7 +26,7 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 
 1. GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "labels"]`）で Open Issue を一覧する
 2. `list_pull_requests`（`state: open`、`fields: ["number", "title", "body", "draft", "head", "mergeable_state"]`）で Open PR を一覧し、タイトル末尾の `#N` と本文の `closes #N` で Issue に紐づける
-3. `git ls-remote --heads origin` でリモートのブランチを取り、`*/#<番号>-*` に当たるものを Issue に紐づける
+3. リモートのブランチから `*/#<番号>-*` に当たるものを Issue に紐づける。ブランチは百本を超えるので、全件を出さずに対象の番号で絞る: `git ls-remote --heads origin | grep -E '/#(475|476|...)-'`
 
 GitHub MCP が使えなければ `gh issue list` / `gh pr list`（`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）で同じ情報を取る。
 
@@ -54,7 +54,7 @@ GitHub MCP が使えなければ `gh issue list` / `gh pr list`（`.claude/rules
 
 | 区分 | 条件 | 扱い |
 |------|------|------|
-| **進行中** | 紐づく Open PR、`*/#<番号>-*` のリモートブランチ、コメントの「## 着手」の印（このセッション自身のものは除く）のいずれかがある | ラベル案を出さない（変えない）。PR がマージできる状態なら「マージ」を次の行動として挙げる |
+| **進行中** | 紐づく Open PR、`*/#<番号>-*` のリモートブランチ、コメントの「## 着手」の印のいずれかがある（このセッション自身の印も含む） | ラベル案を出さない（変えない）。PR がマージできる状態なら「マージ」を次の行動として挙げる |
 | **ルーティン向け** | `.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」手順 1 の候補条件をすべて満たす（条件の正本はルーティン側。ここに書き写さない） | 日次ルーティンに任せられる |
 | **人がいるセッション向け** | 上のどちらでもない | 理由（要判断・依存待ち #N・親 Issue）を書く。依存待ちだけが理由なら「依存が閉じればルーティン向け」と注記する |
 
