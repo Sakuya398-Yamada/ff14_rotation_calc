@@ -24,7 +24,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 |---------|------|
 | `git-conventions.md` | ブランチ・コミット・PR・Issue・ラベル規約 |
 | `coding-standards.md` | 言語規約・命名・ディレクトリ構成・コメント方針 |
-| `testing-conventions.md` | テスト記述の既知の罠と回避パターン |
+| `testing-conventions.md` | テスト記述の既知の罠と回避パターン（`paths:` でテストを触ったときだけ読み込む） |
 | `tech-stack.md` | 技術スタック・開発環境・コマンド |
 | `context-efficiency.md` | コンテキスト効率・ファイル読解・サブエージェント委譲 |
 | `mcp-setup.md` | MCP サーバー設定・API キー管理 |
