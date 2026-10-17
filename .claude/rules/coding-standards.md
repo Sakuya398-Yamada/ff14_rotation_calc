@@ -36,7 +36,7 @@ ff14_rotation_calc/
     ├── hooks/           # PreToolUse / SessionStart で使うシェルスクリプト
     ├── scripts/         # 手で呼ぶ補助スクリプト（知見ボードの読み出し等）
     ├── settings.json    # 権限と hooks の登録
-    └── skills/          # /issue-start, /issue-plan, /template-update
+    └── skills/          # /issue-start, /issue-plan, /template-update, /playwright-mcp
 ```
 
 ## 命名規約

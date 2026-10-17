@@ -7,7 +7,7 @@
 
 | サーバー | 種別 | 必要シークレット | 用途 |
 |---------|------|----------------|------|
-| `playwright` | stdio | なし | UI 視覚検証（`.claude/rules/playwright-mcp.md` 参照） |
+| `playwright` | stdio | なし | UI 視覚検証（`.claude/skills/playwright-mcp/SKILL.md` 参照） |
 | `brave-search` | stdio | `BRAVE_API_KEY` | FF14 公式ジョブガイド等の外部情報検索 |
 | `github` | stdio | `GITHUB_PERSONAL_ACCESS_TOKEN` | Issue / PR の取得・作成・コメント・ラベル付与等の GitHub 操作 |
 
@@ -132,7 +132,7 @@ MCP は**補助的な手段**。接続エラー・未設定時はフロー全体
 
 - `github`: 同名のクラウド組み込み GitHub ツールが優先され、`.mcp.json` の `github-mcp-server` は起動しない。ツール名は同じ `mcp__github__*` で、バイナリも PAT も要らない
 - `brave-search`: `BRAVE_API_KEY` が無くても起動はするが、呼ぶと `422 SUBSCRIPTION_TOKEN_INVALID` になる。組み込みの `WebSearch` / `WebFetch` に切り替えて続ける
-- `playwright`: クラウド環境の環境変数でブラウザを Chromium に切り替える（`playwright-mcp.md`「クラウドセッション」）
+- `playwright`: クラウド環境の環境変数でブラウザを Chromium に切り替える（`.claude/skills/playwright-mcp/SKILL.md`「クラウドセッション」）
 
 ## トラブルシューティング
 
@@ -141,6 +141,6 @@ MCP は**補助的な手段**。接続エラー・未設定時はフロー全体
 | `brave_web_search` が `ToolSearch` で見つからない | `BRAVE_API_KEY` 未設定 or stdio 起動失敗 | 環境変数設定 → セッション再起動 |
 | `${BRAVE_API_KEY}` が展開されずそのまま渡っている | 古い Claude Code バージョン | Claude Code を更新 |
 | `/mcp` で `brave-search` が `failed` | npx キャッシュ破損 or ネットワーク | `npx clear-npx-cache` 後、セッション再起動 |
-| stdio サーバー（Playwright/Brave/GitHub）が途中で切断 | セッション長時間放置 | `.claude/rules/playwright-mcp.md` の「切断時の再接続手順」参照（共通） |
+| stdio サーバー（Playwright/Brave/GitHub）が途中で切断 | セッション長時間放置 | `.claude/skills/playwright-mcp/SKILL.md` の「切断時の再接続手順」参照（共通） |
 | `mcp__github__*` ツールが `ToolSearch` で見つからない | `GITHUB_PERSONAL_ACCESS_TOKEN` 未設定、`github-mcp-server` バイナリが PATH に無い、PAT スコープ不足のいずれか | 上記「GitHub MCP の取得と設定」を実施 → Claude Desktop 再起動 |
 | `github-mcp-server` 実行時に `401 Unauthorized` | PAT が無効 or スコープ不足 | PAT を再発行し `repo` / `read:org` を付与 → 環境変数を再設定 → Claude Desktop 再起動 |

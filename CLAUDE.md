@@ -28,7 +28,6 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 | `tech-stack.md` | 技術スタック・開発環境・コマンド |
 | `context-efficiency.md` | コンテキスト効率・ファイル読解・サブエージェント委譲 |
 | `mcp-setup.md` | MCP サーバー設定・API キー管理 |
-| `playwright-mcp.md` | Playwright MCP による UI 検証手順 |
 | `workflow-feedback.md` | 知見ボード運用、テンプレート元への還元・更新取り込みの判定（手順は phases と `/template-update`）、定期ルーティン |
 | `documentation-policy.md` | CLAUDE.md と rules の書き分け方針 |
 

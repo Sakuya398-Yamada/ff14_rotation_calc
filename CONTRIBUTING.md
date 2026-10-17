@@ -204,7 +204,7 @@ Claude Code のクラウドセッション（claude.ai/code など）では、�
 ]
 ```
 
-ローカルでは環境変数 `PLAYWRIGHT_MCP_BROWSER` を設定しないので、Windows 11 標準の **Microsoft Edge** を使用します。クラウドセッションでは、クラウド環境の環境変数に `PLAYWRIGHT_MCP_BROWSER=chromium` と `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/opt/pw-browsers/chromium` を設定し、イメージに入っている Chromium を使います（`.claude/rules/playwright-mcp.md`「クラウドセッション」）。
+ローカルでは環境変数 `PLAYWRIGHT_MCP_BROWSER` を設定しないので、Windows 11 標準の **Microsoft Edge** を使用します。クラウドセッションでは、クラウド環境の環境変数に `PLAYWRIGHT_MCP_BROWSER=chromium` と `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/opt/pw-browsers/chromium` を設定し、イメージに入っている Chromium を使います（`.claude/skills/playwright-mcp/SKILL.md`「クラウドセッション」）。
 
 ### 初回セットアップ
 
