@@ -19,12 +19,12 @@
 - **回避**: Write ツールでファイルに書き出してから実行する。一括置換のスクリプトは置換件数を出力し、0 件を検知できるようにする
 - **確認**: Git for Windows の Git Bash（版未記録）/ 2026-10 / issue-driven-dev-starter#33
 
-## gojq が `\.` を拒否する
+## `gh --jq` の正規表現にバックスラッシュが通らない
 
-- **条件**: `gh api --jq` で正規表現を書くとき（`gh` 内蔵の jq は gojq）
-- **症状**: `test("\.sh$")` のような `\.` が `invalid escape sequence` で拒否される
-- **回避**: `[.]` と書く。版の間の差分や特定ファイルの patch は、`gh api --jq` より `git clone --no-checkout` したクローンの `git diff` / `git show` を使う方が簡単（Phase 1 手順 3）
-- **確認**: gh CLI（版未記録）/ 2026-10 / issue-driven-dev-starter#28
+- **条件**: `gh api --jq` で正規表現を書くとき（`gh` 内蔵の jq は gojq）。Windows の Git Bash から `gh.exe` を呼ぶときは、引数の変換が 2 段目として重なる
+- **症状**: gojq は文字列リテラル中の `\.` / `\s` を受け付けず、`test("\.sh$")` が `invalid escape sequence "\." in string literal` で止まる。`\\s` と重ねると Linux では通るが、Git Bash から Windows の `.exe` に渡す引数では `\\` が 1 本に潰れて `\s` で届き、同じエラーになる
+- **回避**: `--jq` の正規表現ではバックスラッシュを使わず、`[.]` / `[[:space:]]` のような文字クラスで書く（`test("[.]sh$")`、`test("abc[[:space:]]+$")`）。一致する例が GitHub 上に無いときは、`"abc" + ([10]|implode)` のように入力を合成して確かめる。版の間の差分や特定ファイルの patch は、`gh api --jq` より `git clone --no-checkout` したクローンの `git diff` / `git show` を使う方が簡単（Phase 1 手順 3）
+- **確認**: gh 2.89 / 2026-10 / issue-driven-dev-starter#28・#529（`\\` が潰れるのは Git for Windows の Git Bash + gh（版未記録）/ 2026-10 / #445）
 
 ## `pkill -f` が Bash ツール自身のシェルに一致する
 
@@ -82,3 +82,10 @@
   ```
   `load_reason` が `path_glob_match` で、`trigger_file_path` が読ませたファイルの行があれば読み込まれている。対象外のファイルを読ませたときと、起動時（`session_start`）にはその rules の行が出ないことも合わせて見る（ログは追記なので、実行ごとに `rm -f` で消してから見る）
 - **確認**: Claude Code 2.1.302 / 2026-10 / issue-driven-dev-starter#92
+
+## npm 10.9.4 で vite / vitest の更新が `edgesOut` で落ちる
+
+- **条件**: npm 10.9.4（Node 22.22.0 同梱）で、vite / vitest を含む依存を更新するとき（`npm audit fix` / `npm update vite vitest` / `npm install -D vite@^8.3.4` 等）
+- **症状**: `npm error Cannot read properties of null (reading 'edgesOut')` で落ちる。arborist が vitest の optional peer を辿る `#loadPeerSet` で null を参照している（npm/cli#6193 のスタックトレースも同じ箇所を通る）。vite / vitest 以外のパッケージだけの更新では起きない
+- **回避**: vite / vitest 以外は `npm update <pkg...>` で個別に更新し、vite / vitest は `npm update vite vitest --legacy-peer-deps` で上げる。`--legacy-peer-deps` は lock の `dev` / `devOptional` フラグを一部ずらすので、最後に通常モードの `npm install --package-lock-only` で lock を正規化し、もう一度実行しても lock が変わらないことを確かめる。`npx npm@11` での lock の再生成は、lock が 5000 行以上書き換わって最小の変更にならないので使わない
+- **確認**: npm 10.9.4（Node 22.22.0）/ 2026-10 / #467・#529
