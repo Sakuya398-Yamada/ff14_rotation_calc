@@ -8,7 +8,8 @@
 - `strict: true` で型安全性を確保する
 - フロントエンドは **React + Vite** で構築する
 - バックエンドは **Hono** で API 構築する
-- DB操作は **Prisma** 経由で行い、直接SQLは書かない
+- DB操作は **Drizzle ORM** のクエリビルダー経由で行い、SQL 文字列を直接書かない（`sql` テンプレートは CHECK・DEFAULT・式インデックスなど、API で書けない箇所に限る）
+- マイグレーションは `npm run db:generate` で生成し、生成物を手で編集しない（`wrangler d1 migrations create` も使わない。drizzle-kit の `migrations/meta/` とずれる）
 
 ## ディレクトリ構成
 
@@ -18,14 +19,15 @@ ff14_rotation_calc/
 ├── CONTRIBUTING.md
 ├── .mcp.json            # プロジェクト共通の MCP サーバー（Playwright / Brave Search / GitHub）
 ├── package.json
-├── prisma/
-│   └── schema.prisma
+├── drizzle.config.ts    # drizzle-kit の設定
+├── migrations/          # drizzle-kit が生成する D1 のマイグレーション（meta/ も含めてコミット）
 ├── src/
 │   ├── client/          # React フロントエンド
 │   │   ├── components/
 │   │   ├── pages/
 │   │   └── main.tsx
-│   └── server/          # Hono バックエンド
+│   └── server/          # Hono バックエンド（Cloudflare Worker）
+│       ├── db/          # Drizzle のスキーマ（schema.ts）
 │       ├── routes/
 │       ├── services/
 │       └── index.ts

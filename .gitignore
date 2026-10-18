@@ -40,7 +40,7 @@ npm-debug.log*
 # Zenn articles
 articles/
 
-# Prisma
+# 撤去した Prisma の生成物と SQLite ファイル（既存のチェックアウトに残っていても誤ってコミットしないよう残す）
 generated/
 *.db
 *.db-journal

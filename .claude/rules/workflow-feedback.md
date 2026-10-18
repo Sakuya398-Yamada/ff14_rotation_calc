@@ -68,7 +68,7 @@ node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
 |---------------------------|----------------------------|
 | `/issue-start` の手順・Phase 構成・ユーザー確認の粒度 | `tech-stack.md` / `coding-standards.md` / `testing-conventions.md` / `playwright-mcp` skill の中身 |
 | `git-conventions.md` / `context-efficiency.md` / `workflow-feedback.md` / `documentation-policy.md` の規約そのもの | 本プロジェクト固有の MCP 構成・`settings.json` の権限 |
-| hooks / agents / skills の挙動・判定ロジック・出力上限 | FF14 仕様・React / Vite / Prisma 等に閉じたハマりどころ（「言語別の例が欲しい」のように一般化できる要望は汎用） |
+| hooks / agents / skills の挙動・判定ロジック・出力上限 | FF14 仕様・React / Vite / Drizzle 等に閉じたハマりどころ（「言語別の例が欲しい」のように一般化できる要望は汎用） |
 | Issueテンプレート・セットアップ手順・プレースホルダーの不備 | 定期ルーティン（`.claude/routines/`）等、本プロジェクトの運用都合による独自ルール |
 
 迷ったら「**テンプレートを新規に使う別プロジェクトでも同じ問題が起きるか**」で判定する。起きるなら汎用。
