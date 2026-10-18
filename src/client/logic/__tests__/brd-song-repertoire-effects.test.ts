@@ -215,29 +215,34 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
     expect(after[4].resourceSnapshot["repertoire"]).toBe(1);
   });
 
-  it.each(SONGS)("%s がエントリの間で時間切れになっても、終了時刻までの付与を数える", (song) => {
-    // 歌の効果 45 秒で 3.75 秒ごとに 12 回（終了時刻ちょうどの付与を含む）。ソウルボイスは歌が終わっても残る
-    const after = resolve([entry(song), entry("burst-shot", 50)]).entries[1];
-    expect(after.activeBuffs.some((ab) => ab.buffId === song)).toBe(false);
-    expect(after.resourceSnapshot["soul-voice"]).toBe(60);
-  });
+  // 0.13 秒開始は、3.75 を丸めずに足し続けると 12 回目が終了時刻 45.13 の手前に寄る
+  it.each(SONGS.flatMap((song) => [[song, 0], [song, 0.13]] as const))(
+    "%s を %s 秒に実行して、エントリの間で時間切れになっても、終了時刻の手前までの付与を数える",
+    (song, songTime) => {
+      // 歌の効果 45 秒で 3.75 秒ごとに 11 回（終了時刻ちょうどの 12 回目は数えない）。ソウルボイスは歌が終わっても残る
+      const after = resolve([entry(song, songTime), entry("burst-shot", 50)]).entries[1];
+      expect(after.activeBuffs.some((ab) => ab.buffId === song)).toBe(false);
+      expect(after.resourceSnapshot["soul-voice"]).toBe(55);
+    },
+  );
 
-  it("賢人のバラードの終了時刻ちょうどの付与でも、ブラッドレッター系のリキャストが短縮される", () => {
-    // 43 秒からチャージを使い切ると次の回復は 58 秒。その後の付与は終了時刻 45 秒の 1 回だけで、回復が 50.5 秒に早まる
+  it("賢人のバラードが切れる前の付与はリキャストを短縮し、終了時刻ちょうどの付与は短縮しない", () => {
+    // 39 秒からチャージを使い切ると次の回復は 54 秒。41.25 秒の付与で 46.5 秒に早まる。45 秒（終了時刻）の付与は数えない
     const withNext = (t: number) =>
       resolve([
         entry("mages-ballad"),
-        entry("heartbreak-shot", 43),
+        entry("heartbreak-shot", 39),
         entry("heartbreak-shot"),
         entry("heartbreak-shot"),
         entry("heartbreak-shot", t),
       ]).entries;
 
-    const before = withNext(50.4);
+    const before = withNext(46.4);
     expect(before.slice(1, 4).every((e) => !e.recastError)).toBe(true);
+    expect(before[3].startTime).toBeLessThan(41.25);
     expect(before[4].recastError).toBe(true);
 
-    const after = withNext(50.5);
+    const after = withNext(46.5);
     expect(after[4].activeBuffs.some((ab) => ab.buffId === "mages-ballad")).toBe(false);
     expect(after[4].recastError).toBe(false);
   });

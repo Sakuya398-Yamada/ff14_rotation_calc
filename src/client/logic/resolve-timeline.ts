@@ -50,6 +50,7 @@ interface AutoGenTimer {
  * タイマー状態を更新する。
  * onTick を渡すと、上限に達してもタイマーを止めずに付与を続け、付与ごとにその時刻で呼ぶ
  * （上限で値は増えないが、付与をきっかけにした効果は発生させる）。
+ * excludeCurrentTime を true にすると、currentTime ちょうどの付与は数えない。
  */
 function processAutoGen(
   currentTime: number,
@@ -58,7 +59,8 @@ function processAutoGen(
   interval: number,
   timer: AutoGenTimer,
   amount: number = 1,
-  onTick?: (tickTime: number) => void
+  onTick?: (tickTime: number) => void,
+  excludeCurrentTime: boolean = false
 ): number {
   if (timer.startedAt === null) return currentValue;
 
@@ -66,8 +68,9 @@ function processAutoGen(
   let timerTime = timer.startedAt;
 
   while (onTick || value < maxStacks) {
-    const nextTick = timerTime + interval;
-    if (nextTick > currentTime) break;
+    // バフの終了時刻（小数 3 桁に丸めてある）と比べるので、足し続けた誤差を残さない
+    const nextTick = Math.round((timerTime + interval) * 1000) / 1000;
+    if (excludeCurrentTime ? nextTick >= currentTime : nextTick > currentTime) break;
     value = Math.min(value + amount, maxStacks);
     timerTime = nextTick;
     onTick?.(nextTick);
@@ -889,7 +892,7 @@ export function resolveTimeline(
    * 自動生成リソースを time まで進める。上限（whileBuffModifiers の maxStacks）・付与ごとのリキャスト短縮・
    * 条件バフ（autoGenerateWhileBuff）は、呼び出し時点のアクティブバフで判定する
    */
-  const advanceAutoGen = (time: number) => {
+  const advanceAutoGen = (time: number, excludeTime: boolean = false) => {
     // whileBuffModifiers の maxStacks を、現在のバフで反映した定義に差し替える。
     // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
     for (const res of resources) {
@@ -940,14 +943,16 @@ export function resolveTimeline(
         res.autoGenerateInterval,
         timer,
         res.autoGenerateAmount ?? 1,
-        onTick
+        onTick,
+        excludeTime
       );
     }
   };
 
   /**
    * time までに期限が切れるバフを除去する（onExpireResourceTransfer があればリソース移し替えも実施）。
-   * 自動生成の条件バフ（歌など）がエントリの間で切れる場合は、切れる時刻までの付与を先に数える
+   * 自動生成の条件バフ（歌など）がエントリの間で切れる場合は、切れる時刻までの付与を先に数える。
+   * 切れる時刻ちょうど（効果時間の残り 0 秒）の付与は、実機でも入らないので数えない
    */
   const expireBuffsUntil = (time: number) => {
     const gateEnds = currentActiveBuffs
@@ -955,7 +960,7 @@ export function resolveTimeline(
       .map((ab) => ab.endTime)
       .sort((a, b) => a - b);
     for (const end of gateEnds) {
-      advanceAutoGen(end);
+      advanceAutoGen(end, true);
       expireBuffs(currentActiveBuffs, end, buffDefMap, resourceState, resourceDefMap, resources);
     }
     expireBuffs(currentActiveBuffs, time, buffDefMap, resourceState, resourceDefMap, resources);

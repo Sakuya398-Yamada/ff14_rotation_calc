@@ -12,8 +12,8 @@ import type { ResourceDefinition } from "../types/skill";
  * MP の自然回復は本ツールでは実装しない（ユーザー指定）。スキル使用時の消費・回復のみ管理する。
  *
  * 例外: ルーシッドドリーム（ロールアクション、#256）はバフが付いている間、3 秒ごとに 550 MP
- * 回復する（21 秒間で計 3850 回復）。`autoGenerateWhileBuff` で「lucid-dreaming」バフ条件に
- * 紐付けて表現する。MP 満タンの間はティックがスキップされる（既存仕様）。
+ * 回復する（付与から 3〜18 秒の 6 回で計 3300。効果が切れる 21 秒ちょうどの回復は数えない、#524）。
+ * `autoGenerateWhileBuff` で「lucid-dreaming」バフ条件に紐付けて表現する。MP 満タンの間はティックがスキップされる（既存仕様）。
  */
 export const BLM_RESOURCES: ResourceDefinition[] = [
   {
