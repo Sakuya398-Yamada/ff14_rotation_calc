@@ -17,7 +17,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 1. `<repo>` の `CLAUDE.md` と `.claude/rules/*.md` に従う。Issue の様式・ラベル・粒度は `.claude/rules/git-conventions.md`
 2. 最初に `git -C <repo> fetch origin` する。区分と優先度の判定基準は `origin/main` の `/issue-priority` skill を読んで使う（`git -C <repo> show origin/main:.claude/skills/issue-priority/SKILL.md`。`<repo>` の作業ツリーは `origin/main` より古いことがある）。skill が参照する `.claude/routines/weekday-issue-start.md`（区分「ルーティン向け」の条件）も同じく `git -C <repo> show origin/main:<path>` で読み、skill 手順 1-3 の `git ls-remote` はカレントディレクトリを `<repo>` にして実行する。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
 3. GitHub 操作は GitHub MCP を使い、使えなければ gh（`/c/Program Files/GitHub CLI/gh.exe`）にフォールバックする。ただし手順 6 のラベル付与は gh を先に使う（理由は手順 6-5）
-4. 書き込みは次の 4 つだけ。どれも `.claude/rules/workflow-feedback.md`「自動化しないこと」の例外として事前承認済み（#447 / #501 / #502）
+4. 書き込みは次の 4 つだけ。起票以外の 3 つは `.claude/rules/workflow-feedback.md`「自動化しないこと」の例外として事前承認済み（#447 / #501 / #502）
    - 手順 2・3 の起票
    - 手順 2・3 の #305 / #195 の既存コメントへの ✅ マーカー追記（編集の直前に最新の本文を取得し、末尾に 1 行追記する）
    - 手順 6 の `priority:*` の付与
