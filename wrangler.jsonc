@@ -14,8 +14,7 @@
 		{
 			"binding": "DB",
 			"database_name": "ff14-rotation-calc",
-			// TODO(#475): `npx wrangler d1 create ff14-rotation-calc` で作った本番 D1 の ID に差し替える（マージ前に必須）
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "145a8aa1-4f2f-4340-a3ed-10ff9378b088",
 			// drizzle-kit の出力先（drizzle.config.ts の out）。meta/ は wrangler が読まない
 			"migrations_dir": "migrations"
 		}
