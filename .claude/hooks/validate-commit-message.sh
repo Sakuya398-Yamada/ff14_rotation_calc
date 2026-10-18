@@ -15,8 +15,10 @@
 #   - GitHub Copilot cloud agent / CLI / VS Code (.github/hooks/*.json → preToolUse, matcher "bash"):
 #       {"toolName":"bash","toolArgs":{"command":"..."} or "<json string>","cwd":"..."}
 # Exit 2 denies the tool call on both hosts (Claude Code feeds stderr back to Claude; Copilot
-# also reads the JSON printed on stdout). Exit 0 allows it. Exit 1 is a warning (Claude Code
-# continues, Copilot fails closed). JSON is parsed with jq, node or python3, whichever exists.
+# also reads the JSON printed on stdout). Exit 0 allows it. JSON is parsed with jq, node or
+# python3, whichever exists; with none of them the call is denied rather than let through
+# unvalidated. If the hook itself crashes or times out, Claude Code blocks the call through
+# "onFailure": "block" in settings.json; Copilot blocks on a crash but lets a timeout through.
 #
 # Extraction is conservative on purpose: if no message can be found in the command
 # (e.g. `git commit -F file`, `--amend --no-edit`) the command is allowed through
@@ -82,8 +84,7 @@ deny() { # deny <message> — blocks the tool call and reports the reason on bot
 }
 
 if ! cmd=$(printf '%s' "$input" | extract command); then
-  echo "[hook:validate-commit-message] No JSON parser found (install jq, node or python3). Commit message was NOT validated." >&2
-  exit 1
+  deny "[hook:validate-commit-message] No JSON parser found (install jq, node or python3), so the commit message cannot be validated. The command is blocked instead of being let through unchecked."
 fi
 hook_cwd=$(printf '%s' "$input" | extract cwd) || hook_cwd=""
 

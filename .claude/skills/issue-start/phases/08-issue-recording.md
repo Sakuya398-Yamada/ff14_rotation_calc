@@ -40,6 +40,7 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 本Issueの作業中に発見したスコープ外の問題を、別Issueとして起票しました：
 
 - #<子Issue番号> <タイトル> (<ラベル>) — 発見Phase: <3/5/6>
+- #<既存Issue番号> <タイトル> — 新しく起票せず、コメントで追記した（起票フローの [A]）
 ```
 
 複数あれば 1 コメントにまとめる。起票が無ければ省略する。
@@ -69,13 +70,13 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 1. Phase 5/6/7 で控えたメモを棚卸しする
 2. 気づきが無ければこのステップ全体をスキップしてよい（「特になし」コメントは不要）
 3. 気づきがあれば、提示する前に過去の知見と重なっていないかを `node .claude/scripts/knowledge-board.cjs grep <キーワード>` で確かめる（#195 を `issue_read` で丸読みしない。理由は `.claude/rules/workflow-feedback.md`「知見ボードの読み方」）。重なる知見があれば、そのコメント ID と回収状況（未回収／回収済み）を候補に書き添える
-4. 以下のフォーマットで提示し、確認を得る
+4. 以下のフォーマットで提示し、確認を得る。還元先を「テンプレート汎用」にする前に、気づきに関わるファイル（hook・skill・rules など）を、テンプレート元の取り込み済みの版の、`template/` 配下の同じパスのファイルと見比べる（`get_file_contents` で `path` に `template/<パス>`、`ref` に `.claude/template-version` の `version` を指定して読む。`gh` なら `gh api "repos/<テンプレート元>/contents/template/<パス>?ref=<version>" -H "Accept: application/vnd.github.raw"`）。プロジェクトでカスタマイズした部分が原因なら、別のプロジェクトでは起きないので「プロジェクト固有」にする。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、テンプレート元がセッションに付いていないと、この読み取りも、節 6 の重複チェック・起票も、MCP・gh のどちらでも拒まれる。付いていないと分かっているか、呼び出しが拒まれたら、テンプレート元をこのセッションに足してよいかをユーザーに聞き、承認を得てから `add_repo` ツールで足す（節 6 で起票もするので `access: push`。auto mode では、明示の承認が無いと権限の付与として止められる）。聞くのは、候補が複数あってもこのセッションで 1 回。ツールが無い・足せない・断られた・足しても拒まれるときは、見比べずに提示し、「還元先」にテンプレート元と見比べられなかったことを添えて、汎用かどうかも、その提示の Y/E/N で一緒にユーザーに決めてもらう
 
    ```
    【ワークフロー改善余地 候補】
    発生Phase: Phase N
    気づき: <1〜3行>
-   現状の動作: <今のワークフローでどう進んだか>
+   現状の動作: <今のワークフローでどう進んだか。ツール・hook・ハーネスに拒否された・エラーで止められたなら、そのメッセージの原文（先頭 1〜2 行と、期待される形式や許可される値を示す行があればその行）を引用する>
    改善案: <どう変えるとよいか。SKILL.md / phases / rules / hooks / agents のどこを変える想定か>
    書き先: hook / 手順修正 / pitfalls / rules（判定は `.claude/rules/documentation-policy.md`「ハマりどころの書き先」）
    重要度: Low / Medium / High（判定基準は workflow-feedback.md）
@@ -96,7 +97,7 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 
    **気づき**: 何が非効率だった／躓いた／改善の余地があったか
 
-   **現状の動作**: 現在のワークフローではどう進んだか
+   **現状の動作**: 現在のワークフローではどう進んだか。ツール・hook・ハーネスに拒否された・エラーで止められたなら、そのメッセージの原文（先頭 1〜2 行と、期待される形式や許可される値を示す行があればその行）を引用する（要約だけだと、どの仕組みに止められたのかを取り違えやすい）
 
    **改善案**: どう変えると良いか（SKILL.md / phases / rules / hooks のどこを変える想定か）
 
@@ -121,15 +122,15 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 ### 手順
 
 1. **対象の抽出**: 手順 5 で承認・投稿されたコメントのうち `還元先: テンプレート汎用` のものだけ。無ければスキップ
-2. **抽象化**: プロジェクト固有情報（コード断片・ファイルパス・内部識別子・URL・FF14 のスキル名／ジョブ名等のドメイン固有語・顧客名・社内システム名・認証情報・`#N` 形式の Issue 番号）を除き、ワークフロー手順のレベルに書き直す。非公開プロジェクトならリポジトリ名も書かず「非公開プロジェクト」とする。改善案は **テンプレート側のどのファイルをどう変えるか**（例: `template/.claude/skills/issue-start/phases/05-implementation.md`）の形で書く
-3. **重複チェック**: `search_issues` を `owner` / `repo` に **テンプレート元** を指定して呼び、近い Issue があればリンクを提示してコメント追記を提案する。GitHub MCP が使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する
+2. **抽象化**: プロジェクト固有情報（コード断片・ファイルパス・内部識別子・URL・FF14 のスキル名／ジョブ名等のドメイン固有語・顧客名・社内システム名・認証情報・`#N` 形式の Issue 番号）を除き、ワークフロー手順のレベルに書き直す。非公開プロジェクトならリポジトリ名も書かず「非公開プロジェクト」とする（公開かどうかは `gh api repos/{owner}/{repo} --jq .visibility` で見る。`public` のときだけ公開として扱い、`private`・`internal` のときや確かめられないときは非公開として扱う）。改善案は **テンプレート側のどのファイルをどう変えるか**（例: `template/.claude/skills/issue-start/phases/05-implementation.md`）の形で書く。引用したツールのエラー・拒否のメッセージは要約に置き換えず、前の文の固有情報だけを `[伏せ字: パス]` のように原文の記号と区別できる形で伏せて、「## 気づき」に残す（どの仕組みに止められたかの手がかりになる）
+3. **重複チェック**: `search_issues` を `owner` / `repo` に **テンプレート元** を指定して呼び、近い Issue があればリンクを提示してコメント追記を提案する。GitHub MCP が使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、テンプレート元がセッションに付いていないと、MCP でも gh でも検索・起票が拒まれる。節 5 の手順 4 でテンプレート元を足せていれば、この手順と手順 5 をそのまま行う（MCP が使えなければ、検索は `.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」の重複検索の REST）。足せていなければ（足しても拒まれたときも）、もう一度は聞かず、提示の「既存Issue重複チェック」を「未確認」として進む
 4. **ユーザー確認**: 抽象化後の本文を以下のフォーマットで提示する（ローカル知見ボードへの承認とは **別に** 取る）。本文の構成はテンプレート元の Issue テンプレート `.github/ISSUE_TEMPLATE/template-feedback.md` と同じ
 
    ```
    【テンプレート元への還元 候補】
    起票先: <owner/repo>（.claude/template-version の repo）
    タイトル案: feedback: <要約>
-   既存Issue重複チェック: なし / 候補 <URL>
+   既存Issue重複チェック: なし / 候補 <URL> / 未確認
 
    ---（以下、Issue 本文）---
    ## 還元元
@@ -164,8 +165,10 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
    "/c/Program Files/GitHub CLI/gh.exe" issue create -R <owner/repo> --title "feedback: <要約>" --label feedback --body-file <tmp>
    ```
 
-6. **失敗した場合**（権限・ネットワーク等）: 整形済み本文を提示し、テンプレート元の Issue テンプレート「テンプレートへの知見還元」（`.github/ISSUE_TEMPLATE/template-feedback.md`）からの手動起票を案内する。フローは止めない
-7. **ローカル側への印**: 起票後、知見ボード #195 の元コメントの `**還元先**` 行を `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する（`update_issue_comment`。使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" api -X PATCH repos/Sakuya398-Yamada/ff14_rotation_calc/issues/comments/<comment_id> -F body=@<tmp>`、それも難しければユーザーに編集を依頼）
+   クラウドセッションでは、`gh issue create` は GraphQL なので 403 になる（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。節 5 の手順 4 でテンプレート元をセッションに足せていれば、MCP が使えないときは同じ節の Issue 作成の REST で起票する。足せていなければ、セッションに付いていないリポジトリへの操作は REST でも `sessions are bound to their configured repositories` で拒まれるので、MCP も gh も試さずに手順 6 に進む（クラウド以外なら上の `gh issue create -R` を使う）
+
+6. **失敗した場合**（権限・ネットワーク等）: 整形済み本文を提示し、テンプレート元の Issue テンプレート「テンプレートへの知見還元」（`.github/ISSUE_TEMPLATE/template-feedback.md`）からの手動起票を案内する。手順 3 の重複チェックが「未確認」なら、起票する前にテンプレート元の Issue 一覧で重複を確かめてもらうよう添える。フローは止めない
+7. **ローカル側への印**: 起票後（手順 6 の手動起票なら、ユーザーから Issue の URL をもらってから。もらえなければ「未還元」のまま残す）、知見ボード #195 の元コメントの `**還元先**` 行を `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する（`update_issue_comment`。使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" api -X PATCH repos/Sakuya398-Yamada/ff14_rotation_calc/issues/comments/<comment_id> -F body=@<tmp>`、それも難しければユーザーに編集を依頼）。[N] で起票しなかったものは印を変えず、「テンプレート汎用（未還元）」のまま残す（還元するかどうかは、知見ボードの棚卸しのときにユーザーが決める）
 8. 複数ある場合は候補ごとに確認し、1 気づき = 1 Issue で起票する
 
 テンプレート元への無人起票はしない。`.claude/template-version` が無い・読めない場合は「テンプレート版 不明」と書いて進め、ファイルの復旧をユーザーに促す。
