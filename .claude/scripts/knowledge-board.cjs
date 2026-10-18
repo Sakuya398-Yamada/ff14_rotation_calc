@@ -18,6 +18,7 @@ const os = require('os');
 const path = require('path');
 
 const BOARD_ISSUE = 195;
+const PER_PAGE = 100;
 const CACHE_FILE = path.join(os.tmpdir(), `knowledge-board-${BOARD_ISSUE}.json`);
 const GH_FALLBACK = 'C:\\Program Files\\GitHub CLI\\gh.exe';
 // Two marker forms: promoted to an issue here (`✅ Issue #433 で対応`) and
@@ -43,10 +44,19 @@ function loadComments(cached) {
     if (!fs.existsSync(CACHE_FILE)) fail(`no cached data at ${CACHE_FILE}; run without --cached first`);
     return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
   }
+  // Pages are requested one by one instead of with `gh api --paginate`: in Claude Code
+  // cloud sessions the proxy rejects the `repositories/{id}/...` next-page URL that
+  // --paginate follows, so the second page fails with HTTP 403.
   // `{owner}/{repo}` is filled in by gh from the current repository's remote.
-  const json = runGh(['api', '--paginate', `repos/{owner}/{repo}/issues/${BOARD_ISSUE}/comments?per_page=100`]);
-  const comments = JSON.parse(json);
-  fs.writeFileSync(CACHE_FILE, json);
+  const comments = [];
+  for (let page = 1; ; page++) {
+    const batch = JSON.parse(
+      runGh(['api', `repos/{owner}/{repo}/issues/${BOARD_ISSUE}/comments?per_page=${PER_PAGE}&page=${page}`]),
+    );
+    comments.push(...batch);
+    if (batch.length < PER_PAGE) break;
+  }
+  fs.writeFileSync(CACHE_FILE, JSON.stringify(comments));
   return comments;
 }
 
