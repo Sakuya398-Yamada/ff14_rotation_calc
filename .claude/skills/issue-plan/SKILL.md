@@ -122,8 +122,8 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 2. 子 Issue を **依存順に** 1 件ずつ起票する（`issue_write`、method: `create`）。親がある場合は `parent_issue_number` に親の番号を渡して **sub-issue として** 作る。本文は `git-conventions.md`「Issue のタイトルと本文」の構成に揃える
 3. 後続 Issue の `依存: #N` は、先行 Issue の実番号に置き換えてから起票する
 4. ラベルを付ける（権限が無ければ省略してよい。`/issue-start` Phase 2 で判定される）
-5. sub-issue を作れない環境（`gh issue create` が `--parent` を持たない版など）では、親本文のタスクリスト `- [ ] #N <タイトル>` と各子 Issue 末尾の `親Issue: #<親番号>` で代用する（`issue_write` method: `update` / `gh issue edit`）
-6. **起票に失敗した場合**（権限・ネットワーク等）: 整形済み本文を提示して手動起票を案内する。`gh issue create --title ... --label ... --body-file <tmp>` へのフォールバックも可
+5. sub-issue を作れない環境（`gh issue create` が `--parent` を持たない版など）では、親本文のタスクリスト `- [ ] #N <タイトル>` と各子 Issue 末尾の `親Issue: #<親番号>` で代用する（`issue_write` method: `update` / `gh issue edit`）。クラウドセッションでは `gh issue edit` が GraphQL を使うので 403 になる。本文は REST の `gh api -X PATCH repos/{owner}/{repo}/issues/N -F body=@<file>` で更新する（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）
+6. **起票に失敗した場合**（権限・ネットワーク等）: 整形済み本文を提示して手動起票を案内する。`gh issue create --title ... --label ... --body-file <tmp>` へのフォールバックも可。クラウドセッションでは `gh issue create` も 403 になるので、REST の `gh api repos/{owner}/{repo}/issues -f title=... -F body=@<tmp> -f "labels[]=..."` で起票する。親がある場合は、続けて手順 5 と同じ pitfalls.md の節にある `sub_issues` の REST で sub-issue に紐づける
 
 ### 6. 結果の提示
 
