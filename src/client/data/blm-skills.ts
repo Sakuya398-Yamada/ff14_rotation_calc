@@ -639,7 +639,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     buffApplications: ["swiftcast"],
   },
   // MP 回復は `lucid-dreaming` バフ + `BLM_RESOURCES` の `autoGenerateWhileBuff` 連携で駆動する。
-  // ここで即時 `resourceChanges` は付けない（21 秒間で計 3850 回復する挙動を維持するため）
+  // ここで即時 `resourceChanges` は付けない（回復はバフ中の 3 秒ごとのティックだけにするため）
   {
     id: "lucid-dreaming",
     name: "ルーシッドドリーム",
