@@ -13,21 +13,21 @@ description: routine-ok の付いた Open Issue を 1 件選び、/issue-start �
 - 実行環境: クラウドのスケジュールタスク。実行のたびにリポジトリを clone し、その直下から、`main` から切った `claude/*` の作業ブランチで起動する。以降の作業はすべてこのリポジトリ直下（以下 `<work>`）で行い、git は `-C` を付けずに打つ
 - **push 先**: 手順 1-3 では自分の PR の head ブランチに、手順 3 以降は手順 3-1 で作る Issue ブランチ（`<type>/#<番号>-<kebab-desc>`）に push する。起動時に割り当てられた `claude/*` の作業ブランチには push しない（Issue 番号がブランチ名に入らず、手順 1-4・2-1 で作業中と分からなくなるため）
 - 自分（このルーティン）が作った PR と Issue コメントは、末尾のフッター `_スケジュール実行（weekday-issue-start）による無人実装_` で識別する
-- GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）
+- GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。ただし手順 1-2 の Open PR の取得は `gh api` を先に使う（理由は手順 1-2）
 
 ## 1. 事前点検（安全弁）
 
 Issue を選ぶ前に、過去の実行が残した PR とブランチを点検する。Open PR が上限に達していても手順 1-2〜1-4 は行う（人がレビュー中の PR を古くしないため）。
 
 1. `<work>` で `git fetch origin` する。clone は履歴が浅いことがあるので、`git rev-parse --is-shallow-repository` が `true` なら続けて `git fetch --unshallow origin` で履歴を取り切る（浅いままだと、手順 1-3 で古い PR の head と `origin/main` の merge-base が見つからず、merge が `refusing to merge unrelated histories` で止まる）
-2. 自分の Open PR を取得する（draft も含める）。本文にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` が **単独の行として** ある PR だけを自分の PR とみなす（人の PR も変更点の説明にこの文字列を引用することがあるので、本文検索だけでは絞れない。前例: PR #449）。`gh api` なら、まず Open PR を全件（人の PR も含む）取る。手順 1-4 でも使うので、絞る前の結果を `<scratchpad>/open-prs.json` に残す
+2. 自分の Open PR を取得する（draft も含める）。本文にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` が **単独の行として** ある PR だけを自分の PR とみなす（人の PR も変更点の説明にこの文字列を引用することがあるので、本文検索だけでは絞れない。前例: PR #449）。まず Open PR を全件（人の PR も含む）取り、絞る前の結果を `<scratchpad>/open-prs.json` に残す（手順 1-4 で人の Open PR とも突き合わせるため）
 
    ```bash
    gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/pulls?state=open&per_page=100" > <scratchpad>/open-prs.json
    jq '[.[] | select(.body // "" | test("(?m)^_スケジュール実行（weekday-issue-start）による無人実装_[[:space:]]*$")) | {number, draft, head: .head.ref}]' <scratchpad>/open-prs.json
    ```
 
-   正規表現にバックスラッシュを使わない（jq は文字列中の `\s` を拒否する）。一覧には `mergeable` が無いので、自分の PR ごとに `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/pulls/<PR番号> --jq '{number, mergeable}'` で読む。GitHub MCP なら `search_pull_requests`（`owner` / `repo` を指定、query: `is:open in:body "スケジュール実行（weekday-issue-start）による無人実装"`）で候補を取り、`pull_request_read`（method: `get`）の `body` で同じ行の有無を確かめ、`mergeable` と head ブランチを読む
+   正規表現にバックスラッシュを使わない（jq は文字列中の `\s` を拒否する）。一覧には `mergeable` が無いので、自分の PR ごとに `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/pulls/<PR番号> --jq '{number, mergeable}'` で読む。`gh api` が使えなければ、GitHub MCP の `list_pull_requests`（`owner` / `repo` を指定、`state: open`、`perPage: 100`）で全件を取って手順 1-4 の突き合わせにも使い、`body` に同じ行がある PR を自分の PR とし、`pull_request_read`（method: `get`）で `mergeable` と head ブランチを読む
 
 3. **conflict の解消**: `mergeable` が `false` の PR ごとに、そのブランチへ `origin/main` を取り込み、conflict を解消して push する。GitHub の `mergeable: false` は手元の `git merge origin/main` と同じ 3-way マージの結果なので、マージは必ず conflict で止まる。止まったら自分で解消する（触るのは手順 1-2 で絞った自分の PR だけ）。force push はしない
 
@@ -48,7 +48,7 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
    git ls-remote --heads origin | sed 's#.*refs/heads/##' | grep -E '^[a-z]+/#[0-9]+-'
    ```
 
-   番号ごとに Issue の state（`gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号> --jq .state`）を見て、Open PR の有無は手順 1-2 で残した Open PR 全件の `head.ref`（`jq -r '.[].head.ref' <scratchpad>/open-prs.json`）と突き合わせる（自分の PR に絞ったあとの一覧と突き合わせるだけでは、人が作った Open PR を見落とす）
+   番号ごとに Issue の state（`gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号> --jq .state`）を見て、Open PR の有無は手順 1-2 で取った Open PR 全件の head ブランチ（`gh api` で取ったなら `jq -r '.[].head.ref' <scratchpad>/open-prs.json`）と突き合わせる（自分の PR に絞ったあとの一覧と突き合わせるだけでは、人が作った Open PR を見落とす）
 5. **Open PR 上限**: 手順 1-2 の件数（draft 含む）が **5 件以上** なら、Issue の選定に進まず、実行報告の「対象」に `対象なし（Open PR 上限 5 件に到達）` と書いて終了する。上限は人がさばける PR の本数で決めてある（#445）
 
 ## 2. 対象 Issue の選定
