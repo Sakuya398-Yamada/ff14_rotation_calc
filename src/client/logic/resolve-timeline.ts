@@ -850,6 +850,9 @@ export function resolveTimeline(
   let lastComboSkillId: string | null = null;
   let lastComboTime = -Infinity;
 
+  // 確率付きで付与したバフの付与元（バフIDごと。buffConsumptionAnyOf で消費するまで蓄積する）
+  const procSources = new Map<string, { endTime: number; rate: number }[]>();
+
   // リソース初期化
   for (const res of resources) {
     const initial = res.initialStacks ?? 0;
@@ -1114,7 +1117,6 @@ export function resolveTimeline(
 
     // buffConsumptionAnyOf: いずれか1つのバフを消費（見つからなければエラー）
     let anyOfPotencyOverride: number | undefined;
-    let anyOfProcRate: number | undefined;
     let anyOfFallbackPotency: number | undefined;
     let anyOfMatchedBuffId: string | undefined;
     if (skill.buffConsumptionAnyOf) {
@@ -1123,7 +1125,6 @@ export function resolveTimeline(
         if (activeBuff && (activeBuff.stacks ?? 0) >= option.stacks) {
           anyOfMatchedBuffId = option.buffId;
           anyOfPotencyOverride = option.potency;
-          anyOfProcRate = option.procRate;
           anyOfFallbackPotency = option.fallbackPotency;
           break;
         }
@@ -1165,10 +1166,14 @@ export function resolveTimeline(
     if (wsComboError && skill.nonComboPotency !== undefined) {
       resolvedPotency = skill.nonComboPotency;
     }
-    // proc確率を期待値として威力に適用: fallbackPotency + (potency - fallbackPotency) * procRate
-    if (anyOfProcRate !== undefined) {
-      const fallback = anyOfFallbackPotency ?? 0;
-      resolvedPotency = Math.floor(fallback + (resolvedPotency - fallback) * anyOfProcRate);
+    // proc確率を期待値として威力に適用: fallbackPotency + (potency - fallbackPotency) * P
+    // P は効果時間内の付与元が1回以上発動している確率 1 − Π(1 − p_i)
+    if (anyOfMatchedBuffId && anyOfFallbackPotency !== undefined) {
+      const liveSources = (procSources.get(anyOfMatchedBuffId) ?? []).filter((s) => s.endTime > startTime);
+      if (liveSources.length > 0) {
+        const procRate = 1 - liveSources.reduce((acc, s) => acc * (1 - s.rate), 1);
+        resolvedPotency = Math.floor(anyOfFallbackPotency + (resolvedPotency - anyOfFallbackPotency) * procRate);
+      }
     }
 
     // potencyScaling: リソース量に応じた威力スケーリング（線形補間）
@@ -1384,6 +1389,7 @@ export function resolveTimeline(
           const idx = currentActiveBuffs.indexOf(activeBuff);
           if (idx >= 0) currentActiveBuffs.splice(idx, 1);
         }
+        procSources.delete(anyOfMatchedBuffId);
       }
 
       // conditionalPotencyBuffs: マッチしたバフを消費
@@ -1475,6 +1481,13 @@ export function resolveTimeline(
             currentActiveBuffs[existingIdx] = newBuff;
           } else {
             currentActiveBuffs.push(newBuff);
+          }
+
+          const rate = skill.buffApplicationProcRates?.[buffId];
+          if (rate !== undefined) {
+            const sources = procSources.get(buffId) ?? [];
+            sources.push({ endTime: newBuff.endTime, rate });
+            procSources.set(buffId, sources);
           }
         }
       }

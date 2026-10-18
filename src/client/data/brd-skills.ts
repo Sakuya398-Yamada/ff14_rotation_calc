@@ -61,6 +61,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 1,
     buffApplications: ["hawks-eye"],
+    buffApplicationProcRates: { "hawks-eye": 0.2 },
   },
   {
     id: "straight-shot",
@@ -74,7 +75,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 2,
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 600 },
-      { buffId: "hawks-eye", stacks: 1, procRate: 0.35, fallbackPotency: 160 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 160 },
     ],
   },
   {
@@ -116,6 +117,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     refreshesDots: ["venomous-bite", "caustic-bite", "windbite", "stormbite"],
     // ホークアイ付与は特性「バイトマスタリー II」（Lv76）から (#426)
     traitPotencyOverrides: [{ traitLevel: 76, buffApplications: ["hawks-eye"] }],
+    buffApplicationProcRates: { "hawks-eye": 0.35 },
   },
 
   // ============================================================
@@ -136,6 +138,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     dotDuration: 45,
     // ホークアイ付与は特性「バイトマスタリー II」（Lv76）から (#426)
     traitPotencyOverrides: [{ traitLevel: 76, buffApplications: ["hawks-eye"] }],
+    buffApplicationProcRates: { "hawks-eye": 0.35 },
   },
   {
     id: "stormbite",
@@ -152,6 +155,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     dotDuration: 45,
     // ホークアイ付与は特性「バイトマスタリー II」（Lv76）から (#426)
     traitPotencyOverrides: [{ traitLevel: 76, buffApplications: ["hawks-eye"] }],
+    buffApplicationProcRates: { "hawks-eye": 0.35 },
   },
   {
     id: "refulgent-arrow",
@@ -166,7 +170,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     replacesSkillId: "straight-shot",
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 840 },
-      { buffId: "hawks-eye", stacks: 1, procRate: 0.35, fallbackPotency: 220 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 220 },
     ],
   },
   {
@@ -181,6 +185,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 76,
     replacesSkillId: "heavy-shot",
     buffApplications: ["hawks-eye"],
+    buffApplicationProcRates: { "hawks-eye": 0.35 },
   },
 
   // ============================================================
@@ -197,6 +202,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 18,
     buffApplications: ["hawks-eye"],
+    buffApplicationProcRates: { "hawks-eye": 0.2 },
     // 前方扇範囲。減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -212,7 +218,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 72,
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 300 },
-      { buffId: "hawks-eye", stacks: 1, procRate: 0.35, fallbackPotency: 140 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 140 },
     ],
     // 対象とその周囲にヒット。減衰なし（対象数上限なし）
     maxTargets: Infinity,
@@ -229,6 +235,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 82,
     replacesSkillId: "quick-nock",
     buffApplications: ["hawks-eye"],
+    buffApplicationProcRates: { "hawks-eye": 0.35 },
     // 前方扇範囲。減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
