@@ -15,7 +15,7 @@ description: priority:* の無い Open Issue に優先度を付け、着手順�
 ## 共通ルール
 
 1. `<repo>` の `CLAUDE.md` と `.claude/rules/*.md` に従う
-2. 最初に `git -C <repo> fetch origin` する。区分と優先度の判定基準は `origin/main` の `/issue-priority` skill を読んで使う（`git -C <repo> show origin/main:.claude/skills/issue-priority/SKILL.md`。`<repo>` の作業ツリーは `origin/main` より古いことがある）。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
+2. 最初に `git -C <repo> fetch origin` する。区分と優先度の判定基準は `origin/main` の `/issue-priority` skill を読んで使う（`git -C <repo> show origin/main:.claude/skills/issue-priority/SKILL.md`。`<repo>` の作業ツリーは `origin/main` より古いことがある）。skill が参照する `.claude/routines/weekday-issue-start.md`（区分「ルーティン向け」の条件）も同じく `git -C <repo> show origin/main:<path>` で読み、skill 手順 1-3 の `git ls-remote` はカレントディレクトリを `<repo>` にして実行する。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
 3. GitHub 操作は GitHub MCP を使い、使えなければ gh（`/c/Program Files/GitHub CLI/gh.exe`）にフォールバックする。ただし手順 3 のラベル付与は gh を先に使う（理由は手順 3-5）
 4. 書き込みは次の 2 つだけ。どちらも `.claude/rules/workflow-feedback.md`「自動化しないこと」の例外として事前承認済み（#501 / #447）
    - 手順 3 の `priority:*` の付与
@@ -59,7 +59,7 @@ description: priority:* の無い Open Issue に優先度を付け、着手順�
 | Issue | 付与 | 区分 | 理由 |
 |-------|------|------|------|
 | #N タイトル | priority:high | 人がいるセッション向け | 後続 #M を塞いでいる、依存は解消済み |
-- 付けなかった新着: #N（進行中: PR #M ／ ブランチ ／ 着手の印）… ／ なし
+- 付けなかった新着: #N（理由: 手順 3-4 で Closed／付与済み、判断できず: …）… ／ なし
 - 見送り（1 回 10 件の上限超過）: #N（案: medium）… ／ なし
 ### 着手順のおすすめ（上位 3 件）
 | 順 | Issue | priority | 区分 | 理由 |
