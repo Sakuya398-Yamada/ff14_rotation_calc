@@ -38,17 +38,36 @@
 - **条件**: Claude Code のクラウドセッション（`CLAUDE_CODE_REMOTE=true`）で GitHub MCP が使えず、`gh` CLI にフォールバックするとき
 - **症状**: `gh issue` / `gh pr` / `gh search` / `gh label` のサブコマンドの大半（`gh issue view` / `gh issue comment` / `gh pr create` / `gh pr list` / `gh pr checks` 等）が GraphQL を使うため `HTTP 403: GitHub GraphQL is not available from Claude Code sessions` で失敗する。リポジトリをまたぐ REST（`gh api search/issues` 等）も `sessions are bound to their configured repositories` で拒否される
 - **回避**: リポジトリを指定した REST（`gh api repos/{owner}/{repo}/...`）に書き換える。`{owner}` / `{repo}` / `{branch}` は `gh` が現在のリポジトリとブランチで置き換える（テンプレート元など別のリポジトリは明示する）。本文は `-F body=@<file>` でファイルから渡す
-  - Issue の取得: `gh api repos/{owner}/{repo}/issues/N`（コメントは `.../issues/N/comments`、sub-issue は `.../issues/N/sub_issues`）
+  - Issue の取得: `gh api repos/{owner}/{repo}/issues/N`（コメントは `.../issues/N/comments`、sub-issue は `.../issues/N/sub_issues`）。一覧は既定で 1 ページ 30 件で、`--paginate` は 2 ページ目で止まる（次節）
   - ラベル付与: `gh api repos/{owner}/{repo}/issues/N/labels -f "labels[]=bug"`
   - コメント投稿: `gh api repos/{owner}/{repo}/issues/N/comments -F body=@<file>`。編集は `gh api -X PATCH repos/{owner}/{repo}/issues/comments/<comment_id> -F body=@<file>`
   - Issue 作成: `gh api repos/{owner}/{repo}/issues -f title=... -F body=@<file> -f "labels[]=bug"`。sub-issue にするには続けて `gh api repos/{owner}/{repo}/issues/<親番号>/sub_issues -F sub_issue_id=<子の id>`（番号ではなく作成結果の `.id`）
   - Issue のクローズ: `gh api -X PATCH repos/{owner}/{repo}/issues/N -f state=closed -f state_reason=completed`
   - PR 作成: `gh api repos/{owner}/{repo}/pulls -f title=... -f head=<ブランチ> -f base=main -F body=@<file>`
   - ブランチの PR の有無（Phase 7 の再実行前の確認）: `gh api "repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=all"`
-  - Issue に関連する PR（検索 API の代わり）: `gh api "repos/{owner}/{repo}/pulls?state=all&per_page=50" --jq '.[] | select((.title + " " + (.body // "")) | test("#N([^0-9]|$)")) | "\(.number)\t\(.state)\t\(.title)"'`
+  - Issue に関連する PR（検索 API の代わり）: `gh api "repos/{owner}/{repo}/issues/N/timeline?per_page=100" --jq '.[] | select(.event == "cross-referenced" and .source.issue.pull_request) | [.source.issue.number, .source.issue.state, (.source.issue.pull_request.merged_at // "-"), .source.issue.title] | @tsv'`。タイトルや本文でこの Issue に触れた PR だけが、マージ日時（未マージは `-`）付きで返る。リポジトリの PR を新しい順に一定数だけ見る形と違い、古い PR も取りこぼさない。イベント（コメントを含む）が 100 件を超える Issue は次節のループで回す
   - CI の確認: `gh api repos/{owner}/{repo}/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
   - draft の ready 化・レビュースレッドの resolve・auto-merge のように GraphQL にしかない操作は、403 のメッセージに載る代替ルート（`repos/{owner}/{repo}/pulls/N/ccr/...`）を使う
 - **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#83（issue-driven-dev-starter#81 も同内容）
+
+## クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる
+
+- **条件**: Claude Code のクラウドセッション（`CLAUDE_CODE_REMOTE=true`）で `gh api --paginate` を使うとき
+- **症状**: 1 ページ目を出力したあと、2 ページ目の取得が `Numeric-ID repository paths (repositories/{id}/...) are not supported through this proxy. Use repos/{owner}/{repo}/... endpoints instead. (HTTP 403)` で失敗する。GitHub が `Link` ヘッダーで返す次ページの URL が `repositories/<数値 ID>/...` の形で、エージェントのプロキシがこの形を拒否するため。終了コードは 1 になるが、1 ページ目はもう出力されているので、ファイルやパイプに流していると途中で切れた結果を全件と取り違えやすい
+- **回避**: `--paginate` を使わず、`per_page=100&page=N` を明示して、空配列 `[]` が返るまでページを進める。取れた件数が想定（コメントなら Issue の `comments` の値）と合うかも見る
+  ```bash
+  out=<scratchpad>/comments.jsonl; : >"$out"; failed=
+  page=1
+  while :; do
+    body=$(gh api "repos/{owner}/{repo}/issues/N/comments?per_page=100&page=$page") || { echo "page $page で失敗" >&2; failed=1; break; }
+    [ "$body" = "[]" ] && break
+    printf '%s\n' "$body" >>"$out"
+    page=$((page + 1))
+  done
+  [ -z "$failed" ] && jq -s 'add | length' "$out"   # 件数。中身は jq -s 'add | .[] | ...' "$out" で漉す
+  ```
+  このループは配列をそのまま返す一覧用。`check-runs` や `actions/runs` のように `{"total_count": ..., "<名前>": [...]}` で包んで返す一覧は空のページでも `[]` にならないので、中の配列が空になるまで回し、件数は `total_count` と比べる。親 Issue 1 件あたり 100 件までの sub-issue のように、上限が 100 件以下と決まっている一覧は `?per_page=100` で 1 回で取れる
+- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#100
 
 ## `paths:` 付き rules の読み込みを確かめる
 
