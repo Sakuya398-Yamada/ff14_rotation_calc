@@ -4,7 +4,12 @@ import react from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
 export default defineConfig({
-  plugins: [react(), cloudflare({ configPath: "../../wrangler.jsonc" })],
+  plugins: [
+    react(),
+    // テストは Worker を使わないので workerd を起動しない。起動すると 1 回あたり数秒遅くなり、
+    // 同じチェックアウトでの並行実行が workerd の状態やインスペクタのポートを取り合って起動に失敗する（#574）
+    !process.env.VITEST && cloudflare({ configPath: "../../wrangler.jsonc" }),
+  ],
   root: "src/client",
   server: {
     port: 5173,
