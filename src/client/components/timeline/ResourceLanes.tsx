@@ -20,27 +20,27 @@ interface ResourceMarker {
 
 /**
  * エントリごとのマーカーに、自動生成の付与（showAutoGenerateTicks。黙想）の段差を足す。
- * 付与は 1 リソース分の値しか持たないので、1 リソースだけのレーンに限る
+ * 付与は 1 リソース分の値しか持たないので、1 リソースだけのレーンに限る。
+ * 付与の直後に置いた行動とはマーカーが重なり得るので、付与を先に並べてエントリのマーカーを上に描く
  */
 function getMarkers(group: ResourceGroup, entries: ResolvedTimelineEntry[], ticks: ResourceTick[]): ResourceMarker[] {
-  const markers: ResourceMarker[] = entries.map((entry) => ({
+  const entryMarkers: ResourceMarker[] = entries.map((entry) => ({
     key: entry.uid,
     time: entry.startTime,
     snapshot: entry.resourceSnapshot,
     hasError: group.resources.some((r) => entry.resourceErrors.includes(r.id)),
   }));
-  if (group.resources.length !== 1) return markers;
+  if (group.resources.length !== 1) return entryMarkers;
   const resourceId = group.resources[0].id;
-  for (const tick of ticks) {
-    if (tick.resourceId !== resourceId) continue;
-    markers.push({
+  const tickMarkers: ResourceMarker[] = ticks
+    .filter((tick) => tick.resourceId === resourceId)
+    .map((tick) => ({
       key: `tick-${resourceId}-${tick.time}`,
       time: tick.time,
       snapshot: { [resourceId]: tick.value },
       hasError: false,
-    });
-  }
-  return markers;
+    }));
+  return [...tickMarkers, ...entryMarkers];
 }
 
 interface ResourceLanesProps {

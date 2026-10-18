@@ -204,14 +204,15 @@ export function useTimelineDnd({
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = getDragData(event);
     if (!data) return;
-    setDragType(data.skillType);
+    // 挿入インジケーターの時刻計算にだけ使う。GCD リキャストも発生させる oGCD（黙想）は GCD と同じくリキャスト明けを待つ
+    setDragType(skillMap.get(data.skillId)?.triggersGcdRecast ? "gcd" : data.skillType);
     if (data.source === "timeline") {
       setDraggingEntryUid(data.uid);
     }
     pointerClientXRef.current = getEventClientX(event.activatorEvent);
     window.addEventListener("pointermove", trackPointerMove, { passive: true });
     window.addEventListener("touchmove", trackTouchMove, { passive: true });
-  }, [trackPointerMove, trackTouchMove]);
+  }, [trackPointerMove, trackTouchMove, skillMap]);
 
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
