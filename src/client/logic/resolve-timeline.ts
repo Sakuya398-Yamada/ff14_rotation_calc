@@ -638,7 +638,8 @@ function expireBuffs(
   buffDefMap: Map<string, BuffDefinition>,
   resourceState: ResourceSnapshot,
   resourceDefMap: Map<string, ResourceDefinition>,
-  resources: ResourceDefinition[]
+  resources: ResourceDefinition[],
+  autoGenTimers: Record<string, AutoGenTimer>
 ): void {
   // 付与に伴う排他解除の splice が逆順ループの添字を崩さないよう、付与はループの後でまとめて行う
   const buffsToApply: { buffDef: BuffDefinition; startTime: number }[] = [];
@@ -649,7 +650,16 @@ function expireBuffs(
       const def = buffDefMap.get(buffId);
       const onExpireApply = def?.onExpireApplyBuffByResource;
       if (onExpireApply) {
-        const amount = resourceState[onExpireApply.resourceId] ?? 0;
+        let amount = resourceState[onExpireApply.resourceId] ?? 0;
+        // 自動生成は各エントリの先頭でまとめて進めるため、前のエントリから消えた時刻までに付く分を足してから読む。
+        // 直後にリソースは 0 に戻るので、タイマーは複製して状態を変えない
+        const resDef = resourceDefMap.get(onExpireApply.resourceId);
+        const timer = autoGenTimers[onExpireApply.resourceId];
+        if (resDef?.autoGenerateInterval && timer) {
+          amount = processAutoGen(
+            endTime, amount, resDef.maxStacks, resDef.autoGenerateInterval, { ...timer }, resDef.autoGenerateAmount ?? 1
+          );
+        }
         const buffDef = amount > 0 ? buffDefMap.get(onExpireApply.buffIds[amount - 1]) : undefined;
         // 次のエントリまで間が空き、付与するバフも既に切れている場合は付与しない
         if (buffDef && computeBuffEndTime(endTime, buffDef.duration) > currentTime) {
@@ -940,7 +950,7 @@ export function resolveTimeline(
         : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
+      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources, autoGenTimers);
 
     } else {
       autoStartTime = actionAvailableAt;
@@ -950,7 +960,7 @@ export function resolveTimeline(
         : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
+      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources, autoGenTimers);
 
       actionAvailableAt = startTime + originalSkill.animationLock;
     }

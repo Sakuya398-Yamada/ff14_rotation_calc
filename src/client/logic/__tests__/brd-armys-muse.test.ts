@@ -141,6 +141,17 @@ describe("BRD: 軍神のパイオンの時間切れで付く軍神の契約 (#42
     expect(gap(a, b)).toBe(2.2);
   });
 
+  it.each([1, 5])(
+    "パイオン中のエントリがバーストショット %s 回だけでも、切れた時刻までに付く詩心で契約の段階が決まる",
+    (bursts) => {
+      const result = resolveAt([entry("armys-paeon"), ...repeat("burst-shot", bursts), entry("mages-ballad", 50)]);
+      expect(result.entries[result.entries.length - 2].resourceSnapshot["repertoire"]).toBeLessThan(4);
+      const song = result.entries[result.entries.length - 1];
+      expect(song.activeBuffsAtUse.some((ab) => ab.buffId === "armys-ethos-4")).toBe(true);
+      expect(findBuff(song, "armys-muse")?.buffId).toBe("armys-muse-4");
+    }
+  );
+
   it.each([
     [74, true],
     [80, false],
