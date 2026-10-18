@@ -55,7 +55,7 @@ function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEnt
 
 /**
  * 黒魔道士のスキル定義。
- * パッチノートの PvE ジョブ調整は 7.56 まで反映済み（#304 で照合）。公式ジョブガイド（Patch 7.5）の数値とも照合済み（#407）。
+ * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）との既知の差分は #519
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
