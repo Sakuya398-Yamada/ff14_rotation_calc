@@ -92,7 +92,7 @@ node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
 
 ## 定期ルーティン（`.claude/routines/`）
 
-週次 `weekly` と日次 `weekday-issue-start` の 2 つを Claude Desktop のスケジュールタスクに登録している。一覧・登録先との同期・実行ログの扱いは `.claude/rules/routines.md`（`paths:` で `.claude/routines/` 配下を触ったときだけ読み込む）。
+週次 `weekly`、日次 `daily-triage`（19:00）と `weekday-issue-start`（19:30）の 3 つを Claude Desktop のスケジュールタスクに登録している。一覧・登録先との同期・実行ログの扱いは `.claude/rules/routines.md`（`paths:` で `.claude/routines/` 配下を触ったときだけ読み込む）。
 
 ## 棚卸し運用（週次ルーティンが正）
 
@@ -119,7 +119,8 @@ node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
 
 - **無人コメント投稿はしない**: Phase 8 での知見ボードへの新規コメント投稿はユーザー確認（Y/E/N）を挟む
   - **例外**: 週次ルーティン（`weekly`）による既存コメントへの ✅ マーカー**追記編集**は事前承認済みで、無人実行してよい
-  - **例外**: 両ルーティン（`weekly` / `weekday-issue-start`）が実行報告を実行ログ Issue #448 に**新規コメントとして投稿する**のは事前承認済み（#447。1 実行 1 コメント）。実行ログ Issue 以外への無人の新規コメント投稿は引き続き禁止
+  - **例外**: 各ルーティン（`weekly` / `daily-triage` / `weekday-issue-start`）が実行報告を実行ログ Issue #448 に**新規コメントとして投稿する**のは事前承認済み（#447、`daily-triage` は #501。1 実行 1 コメント）。実行ログ Issue 以外への無人の新規コメント投稿は引き続き禁止
+- **priority ラベルを無人で付け替えない**: 例外として、日次 `daily-triage` が `priority:*` の無い Open Issue（進行中を除く）に付けるのは事前承認済み（#501）。付いている priority を変えるのは、週次 `weekly` 系統5 の案を読んだ人が `/issue-priority` で行う。手順の正本は `.claude/routines/daily-triage.md`
 - **テンプレート元への無人起票はしない**: ローカル知見ボードへの承認とは別に、還元用に抽象化した本文で改めて確認（Y/E/N）を取る。週次ルーティン（`weekly`）にも還元処理は組み込まない
 - **テンプレートの無人更新はしない**: 更新チェックは「通知して更新用 Issue の起票を提案する」までで、ファイルの書き換えは更新用 Issue の `/issue-start` で行う
 - **知見ボードIssueを自動クローズしない**: 常時Open運用（実行ログ Issue #448 も同様。ログコメントの自動整理もしない）。**過去セッションからの遡及集約も行わない**（未来のセッションから運用する）
