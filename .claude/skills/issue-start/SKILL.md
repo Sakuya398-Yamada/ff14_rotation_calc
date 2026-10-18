@@ -58,7 +58,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 | Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request` / `subscribe_pr_activity`（クラウドセッションでは claude-code-remote 側の `mcp__claude-code-remote__subscribe_pr_activity`。`phases/07-pr-creation.md` 手順 4） | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...`（クラウドセッションでは `gh api` の REST。`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」） |
 | 外部仕様・技術情報（FF14 公式ジョブガイド・ゲーム仕様等） | Brave Search MCP: `brave_web_search` | 組み込みの `WebSearch` / `WebFetch`、またはユーザーに確認 |
 | ライブラリの最新ドキュメント | context7 MCP（`resolve-library-id` → `query-docs`）※本リポジトリでは未登録。必要時に `.mcp.json` へ追加 | 公式ドキュメントを `WebFetch` |
-| UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}`。`.claude/skills/playwright-mcp/SKILL.md`） | ユーザーに手動確認を依頼し、未検証と明記する |
+| UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}`。`.claude/skills/playwright-mcp/SKILL.md`） | クラウドセッションでは Node から Playwright を直接使う（`playwright-mcp/SKILL.md`「MCP が使えないとき」）。それもできなければユーザーに手動確認を依頼し、未検証と明記する |
 
 ## スコープ外問題の起票提案（Phase横断）
 

@@ -1,6 +1,6 @@
 ---
 name: playwright-mcp
-description: Playwright MCP で UI（src/client/**）の変更をブラウザで確かめるときの手順。ツールの事前ロード・dev サーバーの起動・dnd-kit の DnD・React 制御フォームの操作・保存データの注入・失敗時の診断・切断時の再接続・クラウドセッションのブラウザ設定を含む。/issue-start Phase 6 の UI 動作確認や、画面上の見え方を確かめたいときに使う。
+description: Playwright MCP で UI（src/client/**）の変更をブラウザで確かめるときの手順。ツールの事前ロード・dev サーバーの起動・dnd-kit の DnD・React 制御フォームの操作・保存データの注入・失敗時の診断・切断時の再接続・クラウドセッションのブラウザ設定と MCP が使えないときの代替（Node から Playwright を直接使う）を含む。/issue-start Phase 6 の UI 動作確認や、画面上の見え方を確かめたいときに使う。
 ---
 
 # Playwright MCP 利用ガイド（Claude 向け）
@@ -28,6 +28,7 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
    必要なツールをカンマ区切りで指定。一度ロードされればセッション中は使い回せる。
 
 2. **Vite dev サーバーを別プロセスで起動**:
+   worktree（`.claude/worktrees/<name>/`）で作業しているときは、`node_modules` がメインリポと共有されないので、先に worktree の直下で `npm ci` する（#434）。
    ```powershell
    npm run dev   # run_in_background: true（フロントと /api を同じオリジンで起動）
    ```
@@ -43,7 +44,39 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
 クラウドセッション（`CLAUDE_CODE_REMOTE=true`）には Edge が無いので、イメージに入っている Chromium を使う。クラウド環境の環境変数に `PLAYWRIGHT_MCP_BROWSER=chromium` と `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/opt/pw-browsers/chromium` を入れておく（設定はユーザー）。`@playwright/mcp@latest` が探す版の Chromium はイメージに無いため、実行ファイルの指定も要る。
 
 - 画面が無いので自動でヘッドレスになる。snapshot・screenshot は取れる
-- 未設定だと、ツールを呼んだときに `Chromium distribution 'msedge' is not found` で失敗する。ユーザーに設定を頼み、このセッションで使えなければ後述「フォールバック方針」に従って未検証と明記する（環境変数はセッションの開始時に読まれる）
+- 未設定だと、ツールを呼んだときに `Chromium distribution 'msedge' is not found` で失敗する。ユーザーに設定を頼み、このセッションで使えなければ下の「MCP が使えないとき」の方法で確かめる（環境変数はセッションの開始時に読まれる）
+
+### MCP が使えないとき（Node から Playwright を直接使う）
+
+Playwright MCP に接続できない（`CONNECT_TIMEOUT`、環境変数が未設定など）ときも、イメージにグローバルで入っている `playwright`（`npm root -g`）と `/opt/pw-browsers/chromium` を Node のスクリプトから直接使えば UI を確かめられる（クラウドセッション + playwright 1.56.1 で動作検証済、2026-10-18、Issue #530）。
+
+1. Vite を固定ポートで起動する: `npx vite --port <空きポート> --strictPort`（run_in_background: true）
+2. 次のスクリプトを scratchpad に `.cjs` で置き、`NODE_PATH=$(npm root -g) node <スクリプト> http://localhost:<ポート>/` で実行する
+3. 撮ったスクリーンショットを Read ツールで開いて確かめる
+
+```js
+const { chromium } = require('playwright');
+
+(async () => {
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    page.on('console', (msg) => { if (msg.type() === 'error') console.error('[console]', msg.text()); });
+    await page.goto(process.argv[2]);
+    await page.locator('#root > *').first().waitFor();
+    // ここで検証する: 保存データの注入や DnD はこのファイルのスニペットを関数として貼り、await fn(page) で呼ぶ
+    await page.screenshot({ path: `${__dirname}/ui-check.png`, fullPage: true });
+  } finally {
+    await browser.close();
+  }
+})();
+```
+
+ポイント:
+
+1. **拡張子は `.cjs`、読み込みは `require`**: `NODE_PATH` を見るのは `require` だけで、ESM の `import` は `ERR_MODULE_NOT_FOUND` になる
+2. **このファイルの `browser_run_code_unsafe` 用スニペットはそのまま使える**: 「保存データを注入して検証する」「dnd-kit ベース DnD の検証方法」は `async (page) => { ... }` の形なので、`const seed = async (page) => { ... };` のように貼って `await seed(page)` で呼ぶ。注入スニペットは `page.goto` の後に呼ぶ（スニペットの「アプリのページを開いてから実行する」）
+3. **要素の状態は属性やテキストで読む**: snapshot の ref は無いので、`page.locator('[data-skill-entry-uid]').first().getAttribute('title')` のようにロケーターで読み、`console.log` で出す
 
 ## 典型フロー
 
@@ -204,7 +237,7 @@ Claude Desktop 環境では `/mcp` スラッシュコマンドが UI 上で確�
 
 ### フォールバック方針
 
-復旧に時間がかかる／ユーザーが手動再起動できない状況では、**UI 検証を飛ばさず「未検証」であることを完了報告に明記**する。`npm run build` / `tsc --noEmit` / `npm test` が通っているだけでは「機能の正しさ」は保証できない旨を添える。
+クラウドセッションでは、まず「MCP が使えないとき（Node から Playwright を直接使う）」の方法で確かめる。それもできない、またはローカルで復旧に時間がかかる／ユーザーが手動再起動できない状況では、**UI 検証を飛ばさず「未検証」であることを完了報告に明記**する。`npm run build` / `tsc --noEmit` / `npm test` が通っているだけでは「機能の正しさ」は保証できない旨を添える。
 
 ## ランタイム生成物
 
