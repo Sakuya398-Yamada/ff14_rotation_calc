@@ -20,7 +20,7 @@ description: routine-ok の付いた Open Issue を 1 件選び、/issue-start �
 
 Issue を選ぶ前に、過去の実行が残した PR とブランチを点検する。Open PR が上限に達していても手順 1-2〜1-4 は行う（人がレビュー中の PR を古くしないため）。
 
-1. 起動場所で `git fetch origin` する
+1. セッションの作業ディレクトリで `git fetch origin` する（`-C` は付けない）
 2. 自分の Open PR を取得する（draft も含める）。本文にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` が **単独の行として** ある PR だけを自分の PR とみなす（人の PR も変更点の説明にこの文字列を引用することがあるので、本文検索だけでは絞れない。前例: PR #449）。`gh` なら次の 1 コマンドで済む。GitHub MCP なら `search_pull_requests`（`owner` / `repo` を指定、query: `is:open in:body "スケジュール実行（weekday-issue-start）による無人実装"`）で候補を取り、`pull_request_read`（method: `get`）の `body` で同じ行の有無を確かめ、`mergeable` と head ブランチを読む
 
    ```bash
@@ -49,7 +49,7 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
    # メイン起動のときだけ: git -C <repo> worktree remove <repo>/.claude/worktrees/weekday-sync-<PR番号>
    ```
 
-   - 解消の判断がつかない、または `tsc` / `npm test` が通らないときは push せず（コミット前なら `git merge --abort`）、メイン起動なら作った worktree を削除して、実行報告の「conflict 解消」に `conflict 未解消: PR #N（理由）` と書く（解消は人が行う）
+   - 解消の判断がつかない、または `tsc` / `npm test` が通らないときは push せず（コミット前なら `git merge --abort`）、メイン起動なら作った worktree を削除して、実行報告の「conflict 解消」に `conflict 未解消: PR #N（理由）` と書く（解消は人が行う）。worktree 起動ではセッションの worktree をそのまま次の PR と手順 3 に使う（push しなかった merge commit は detached HEAD に残るだけで、次の checkout で外れる）
    - `mergeable` が `UNKNOWN`（GitHub が計算中）なら 30 秒ほど待って取り直す。それでも `UNKNOWN` なら触らず、`mergeable 未判定: PR #N` と書く
    - detached HEAD で作業するのは、過去の実行が使った worktree（前日以前のセッションの worktree や `weekday-<番号>`）が同じブランチを checkout したまま残っていても衝突しないようにするため
 4. **取り残しブランチの報告**: リモートの `<type>/#<番号>-*` ブランチのうち、**Issue が Open で、そのブランチを head にした Open PR が無い** ものを実行報告に列挙する（削除はしない。削除は人が判断する）。途中で落ちた実行の残りで、その Issue は手順 2 の条件により黙って選ばれなくなっている。クローズ済み Issue のブランチ（マージ済み PR の残り）は多数あるので列挙しない
