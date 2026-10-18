@@ -11,6 +11,8 @@ description: routine-ok の付いた Open Issue を 1 件選び、/issue-start �
 
 - GitHub: `Sakuya398-Yamada/ff14_rotation_calc`
 - ローカル: `D:\ドキュメント_D\for_claude\ff14-dev\RotationCalc`（以下 `<repo>`）
+- 起動場所: 最初に `git rev-parse --git-dir` と `git rev-parse --git-common-dir` を別々に実行し、出力が違えば **worktree 起動**（Claude Desktop のスケジュールタスクで worktree のトグルを ON にしていると、実行ごとに `<repo>/.claude/worktrees/<name>` が作られてそこで起動する）、同じなら **メイン起動**（`<repo>` で起動）とする
+- worktree 起動では、Claude Code の worktree 隔離が、セッションの worktree の外（別の worktree も `<repo>` も）への Edit / Write と、git を別の場所に向けるコマンド（`git -C <repo>` など。読み取りだけでも）を拒否する（#504）。git は `-C` を付けずにセッションの worktree で打つ。refs は共有なので、fetch や ls-remote の結果は `<repo>` で打つのと同じ
 - 自分（このルーティン）が作った PR と Issue コメントは、末尾のフッター `_スケジュール実行（weekday-issue-start）による無人実装_` で識別する
 - `gh` は `/c/Program Files/GitHub CLI/gh.exe` のフルパスで起動する（GitHub MCP が使えるときはそちらでもよい）
 
@@ -18,7 +20,7 @@ description: routine-ok の付いた Open Issue を 1 件選び、/issue-start �
 
 Issue を選ぶ前に、過去の実行が残した PR とブランチを点検する。Open PR が上限に達していても手順 1-2〜1-4 は行う（人がレビュー中の PR を古くしないため）。
 
-1. `git -C <repo> fetch origin` する
+1. 起動場所で `git fetch origin` する
 2. 自分の Open PR を取得する（draft も含める）。本文にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` が **単独の行として** ある PR だけを自分の PR とみなす（人の PR も変更点の説明にこの文字列を引用することがあるので、本文検索だけでは絞れない。前例: PR #449）。`gh` なら次の 1 コマンドで済む。GitHub MCP なら `search_pull_requests`（`owner` / `repo` を指定、query: `is:open in:body "スケジュール実行（weekday-issue-start）による無人実装"`）で候補を取り、`pull_request_read`（method: `get`）の `body` で同じ行の有無を確かめ、`mergeable` と head ブランチを読む
 
    ```bash
@@ -32,23 +34,28 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 
 3. **conflict の解消**: `mergeable` が `CONFLICTING` の PR ごとに、そのブランチへ `origin/main` を取り込み、conflict を解消して push する。GitHub の `CONFLICTING` は手元の `git merge origin/main` と同じ 3-way マージの結果なので、マージは必ず conflict で止まる。止まったら自分で解消する（触るのは手順 1-2 で絞った自分の PR だけ）。force push はしない
 
+   PR の head を detached HEAD で取り出す場所は起動場所で分ける。
+
+   | 起動場所 | 取り出し方 | 以降の git を打つ場所 |
+   |---------|-----------|---------------------|
+   | worktree 起動 | `git checkout --detach origin/<headRefName>` | セッションの worktree（`-C` なし） |
+   | メイン起動 | `git -C <repo> worktree add --detach <repo>/.claude/worktrees/weekday-sync-<PR番号> origin/<headRefName>` | 作った worktree（`git -C <その worktree>`） |
+
    ```bash
-   W=<repo>/.claude/worktrees/weekday-sync-<PR番号>
-   git -C <repo> worktree add --detach "$W" origin/<headRefName>
-   git -C "$W" merge origin/main            # conflict で止まる → 該当ファイルを解消して git -C "$W" add <file>
-   git -C "$W" commit --no-edit             # 件名は git が用意した Merge ... のまま
-   # "$W" の直下で npm ci → npx tsc --noEmit → npm test を通す
-   git -C "$W" push origin HEAD:<headRefName>
-   git -C <repo> worktree remove "$W"
+   git merge origin/main            # conflict で止まる → 該当ファイルを解消して git add <file>
+   git commit --no-edit             # 件名は git が用意した Merge ... のまま
+   # 同じ場所の直下で npm ci → npx tsc --noEmit → npm test を通す
+   git push origin HEAD:<headRefName>
+   # メイン起動のときだけ: git -C <repo> worktree remove <repo>/.claude/worktrees/weekday-sync-<PR番号>
    ```
 
-   - 解消の判断がつかない、または `tsc` / `npm test` が通らないときは push せず（コミット前なら `git -C "$W" merge --abort`）、worktree を削除して、実行報告の「conflict 解消」に `conflict 未解消: PR #N（理由）` と書く（解消は人が行う）
+   - 解消の判断がつかない、または `tsc` / `npm test` が通らないときは push せず（コミット前なら `git merge --abort`）、メイン起動なら作った worktree を削除して、実行報告の「conflict 解消」に `conflict 未解消: PR #N（理由）` と書く（解消は人が行う）
    - `mergeable` が `UNKNOWN`（GitHub が計算中）なら 30 秒ほど待って取り直す。それでも `UNKNOWN` なら触らず、`mergeable 未判定: PR #N` と書く
-   - detached HEAD で作業するのは、過去の実行の worktree（`weekday-<番号>`）が同じブランチを checkout したまま残っていても衝突しないようにするため
+   - detached HEAD で作業するのは、過去の実行が使った worktree（前日以前のセッションの worktree や `weekday-<番号>`）が同じブランチを checkout したまま残っていても衝突しないようにするため
 4. **取り残しブランチの報告**: リモートの `<type>/#<番号>-*` ブランチのうち、**Issue が Open で、そのブランチを head にした Open PR が無い** ものを実行報告に列挙する（削除はしない。削除は人が判断する）。途中で落ちた実行の残りで、その Issue は手順 2 の条件により黙って選ばれなくなっている。クローズ済み Issue のブランチ（マージ済み PR の残り）は多数あるので列挙しない
 
    ```bash
-   git -C <repo> ls-remote --heads origin | sed 's#.*refs/heads/##' | grep -E '^[a-z]+/#[0-9]+-'
+   git ls-remote --heads origin | sed 's#.*refs/heads/##' | grep -E '^[a-z]+/#[0-9]+-'
    ```
 
    番号ごとに Issue の state と Open PR の有無を見る（`gh issue view <番号> --json state` / `gh pr list --state open --head <ブランチ名>`。手順 1-2 で取った自分の PR の `headRefName` と突き合わせるだけでは、人が作った Open PR を見落とす）
@@ -71,22 +78,27 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 
 ## 3. 作業環境
 
-1. worktree を作る（ブランチ名は `.claude/rules/git-conventions.md` の規約。ラベル `bug` → `fix/`、`test` → `feature/`）
+1. Issue のブランチを `origin/main` から作る（ブランチ名は `.claude/rules/git-conventions.md` の規約。ラベル `bug` → `fix/`、`test` → `feature/`）。作業場所（以下 `<work>`）とブランチの作り方は起動場所で分ける
 
-   ```bash
-   git -C <repo> worktree add <repo>/.claude/worktrees/weekday-<番号> -b <type>/#<番号>-<kebab-desc> origin/main
-   ```
+   | 起動場所 | `<work>` | ブランチの作り方 |
+   |---------|----------|-----------------|
+   | worktree 起動 | セッションの worktree | `git checkout -b <type>/#<番号>-<kebab-desc> --no-track origin/main` |
+   | メイン起動 | `<repo>/.claude/worktrees/weekday-<番号>`（新しく作る） | `git -C <repo> worktree add <repo>/.claude/worktrees/weekday-<番号> -b <type>/#<番号>-<kebab-desc> --no-track origin/main` |
 
-2. worktree の直下で `npm ci` を実行する。`node_modules` が無いまま親リポジトリの依存を解決すると、`@dnd-kit/core` が二重に解決されてテストが落ちる（#349 の実行で発生）
-3. 以降の作業はすべてこの worktree で行う
+   - worktree 起動で別の worktree を作らないのは、作った worktree への Edit / Write が worktree 隔離に拒否されるため（#504。2026-10-13〜15 の 3 回とも発生）
+   - メイン起動で `<repo>` にブランチを作らないのは、人の作業中の変更が残っていることがあるため（worktree のトグルが OFF のスケジュールタスクは、未コミットの変更も含めて作業ディレクトリの状態のまま実行される）
+   - `--no-track` は、upstream が `origin/main` になって素の `git pull` が main を取り込むのを防ぐため（`/issue-start` Phase 2 と同じ）
+
+2. `<work>` の直下で `npm ci` を実行する。worktree には `node_modules` が無く、無いまま親リポジトリ（`<repo>`）の依存を解決すると、`@dnd-kit/core` が二重に解決されてテストが落ちる（#349 の実行で発生）。手順 1-3 で同じ worktree に `npm ci` 済みでも、`package-lock.json` が違うことがあるので、ブランチを作ったあとに実行し直す
+3. 以降の作業はすべて `<work>` で行う
 
 ## 4. 実装（`/issue-start` の手順を無人向けに読み替える）
 
-`<worktree>/.claude/skills/issue-start/SKILL.md` と `phases/*.md` に従う。ただし、ユーザー確認を前提にしている箇所は次のように読み替える。
+`<work>/.claude/skills/issue-start/SKILL.md` と `phases/*.md` に従う。ただし、ユーザー確認を前提にしている箇所は次のように読み替える。
 
 | 箇所 | 無人実行での扱い |
 |------|-----------------|
-| Phase 1 の不足確認 | 質問せず、Issue 本文と既存コードから判断する。要件の分岐をどうしても決められない場合は、Issue にその旨をコメントし、ラベル `needs-decision` を付け（`gh issue edit <番号> --add-label needs-decision`）、worktree を削除して終了する（PR は作らない）。ラベルが付いている間は手順 2 で選ばれないので、翌日以降に同じ Issue へ同じコメントを積まない |
+| Phase 1 の不足確認 | 質問せず、Issue 本文と既存コードから判断する。要件の分岐をどうしても決められない場合は、Issue にその旨をコメントし、ラベル `needs-decision` を付け（`gh issue edit <番号> --add-label needs-decision`）、メイン起動なら手順 3 で作った worktree を削除して終了する（PR は作らない。セッションの worktree は削除しない）。ラベルが付いている間は手順 2 で選ばれないので、翌日以降に同じ Issue へ同じコメントを積まない |
 | Phase 1 手順 0.5（テンプレート更新） | 起票しない。実行報告に「テンプレート更新あり（vOLD → vNEW）」と書くだけ |
 | Phase 4 の設計承認 | 自分で承認して進める。設計の要点と判断の根拠を、PR 本文の `## 実装判断（無人実行）` に書く |
 | Phase 3/5/6 のスコープ外問題 | 起票しない。PR 本文と実行報告に「起票候補」として列挙する |
