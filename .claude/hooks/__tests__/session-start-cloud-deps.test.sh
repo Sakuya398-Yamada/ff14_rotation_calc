@@ -4,11 +4,12 @@
 # Run: bash .claude/hooks/__tests__/session-start-cloud-deps.test.sh
 #
 # Each case runs the hook against a throwaway project directory (CLAUDE_PROJECT_DIR).
-# `npm` and `npx` are stubbed by scripts placed first on PATH. Every call is appended
-# to STUB_CALLS_LOG so the commands the hook ran can be asserted. The stubs print noise
-# so the test can check that it stays out of stdout (which Claude Code adds to Claude's
-# context). STUB_NPM_EXIT / STUB_NPX_EXIT set their exit codes; a successful `npm ci`
-# writes node_modules/.package-lock.json like the real one does.
+# `npm`, `npx` and `sleep` are stubbed by scripts placed first on PATH. Every call is
+# appended to STUB_CALLS_LOG so the commands the hook ran can be asserted. The stubs
+# print noise so the test can check that it stays out of stdout (which Claude Code adds
+# to Claude's context). STUB_NPM_EXIT / STUB_NPX_EXIT set their exit codes, and
+# STUB_NPM_FAIL_TIMES limits npm's failures to its first N calls; a successful `npm ci`
+# writes node_modules/.package-lock.json like the real one does. `sleep` returns at once.
 
 set -u
 
@@ -30,7 +31,9 @@ cat >"$STUB_BIN/npm" <<'EOF'
 #!/usr/bin/env bash
 printf 'npm %s\n' "$*" >>"$STUB_CALLS_LOG"
 for _ in $(seq 50); do echo "STUB-NOISE"; done
-if [[ "${STUB_NPM_EXIT:-0}" -ne 0 ]]; then
+if [[ "${STUB_NPM_EXIT:-0}" -ne 0 ]] &&
+   { [[ -z "${STUB_NPM_FAIL_TIMES:-}" ]] ||
+     (( $(grep -c '^npm ' "$STUB_CALLS_LOG") <= STUB_NPM_FAIL_TIMES )); }; then
   echo "STUB-ERR-LAST" >&2
   exit "$STUB_NPM_EXIT"
 fi
@@ -44,7 +47,11 @@ printf 'npx %s\n' "$*" >>"$STUB_CALLS_LOG"
 for _ in $(seq 50); do echo "STUB-NOISE"; done
 exit "${STUB_NPX_EXIT:-0}"
 EOF
-chmod +x "$STUB_BIN/npm" "$STUB_BIN/npx"
+cat >"$STUB_BIN/sleep" <<'EOF'
+#!/usr/bin/env bash
+printf 'sleep %s\n' "$*" >>"$STUB_CALLS_LOG"
+EOF
+chmod +x "$STUB_BIN/npm" "$STUB_BIN/npx" "$STUB_BIN/sleep"
 
 pass=0
 fail=0
@@ -57,13 +64,14 @@ make_proj() {
   printf '%s' "$dir"
 }
 
-# run_hook <proj> <CLAUDE_CODE_REMOTE value or "unset"> [npm exit] [npx exit]
+# run_hook <proj> <CLAUDE_CODE_REMOTE value or "unset"> [npm exit] [npx exit] [npm fail times]
 #   -> sets $out (stdout), $err (stderr), $rc
 run_hook() {
   local proj="$1" remote="$2"
   : >"$STUB_CALLS_LOG"
   local -a env_args=(CLAUDE_PROJECT_DIR="$proj" TMPDIR="$TMP_ROOT" PATH="$STUB_BIN:$PATH"
-    STUB_CALLS_LOG="$STUB_CALLS_LOG" STUB_NPM_EXIT="${3:-0}" STUB_NPX_EXIT="${4:-0}")
+    STUB_CALLS_LOG="$STUB_CALLS_LOG" STUB_NPM_EXIT="${3:-0}" STUB_NPX_EXIT="${4:-0}"
+    STUB_NPM_FAIL_TIMES="${5:-}")
   if [[ "$remote" != "unset" ]]; then
     env_args+=(CLAUDE_CODE_REMOTE="$remote")
   fi
@@ -111,10 +119,12 @@ proj=$(make_proj fresh)
 run_hook "$proj" true
 check "fresh: exit 0" "$(is "$rc" 0)"
 check "fresh: npm ci run once" "$(is "$(calls '^npm ci')" 1)"
+check "fresh: no wait for a retry" "$(is "$(calls '^sleep ')" 0)"
 check "fresh: installed into CLAUDE_PROJECT_DIR" "$([[ -f "$proj/node_modules/.package-lock.json" ]] && echo 1 || echo 0)"
 check "fresh: prisma generate run once" "$(is "$(calls '^npx prisma generate')" 1)"
 check "fresh: banner heading" "$(contains '## Cloud setup')"
 check "fresh: npm ci reported done" "$(contains '- npm ci: done in ')"
+check "fresh: no retried note" "$(lacks 'retried once')"
 check "fresh: prisma generate reported done" "$(contains '- prisma generate: done')"
 check "fresh: tool output kept out of stdout" "$(lacks 'STUB-NOISE')"
 check "fresh: tool output written to the log" "$(is "$(grep -c STUB-NOISE "$TMP_ROOT/session-start-cloud-deps.log")" 100)"
@@ -142,13 +152,30 @@ mkdir -p "$proj/node_modules"
 run_hook "$proj" true
 check "interrupted install: npm ci run" "$(is "$(calls '^npm ci')" 1)"
 
-# 6. npm ci fails: still exit 0 (the session goes on), the failure and log tail go to stdout
+# 6. npm ci fails twice: retried only once, still exit 0 (the session goes on), the
+#    failure and log tail go to stdout
 proj=$(make_proj npm-fails)
 run_hook "$proj" true 1 0
 check "npm fails: exit 0" "$(is "$rc" 0)"
+check "npm fails: npm ci run twice" "$(is "$(calls '^npm ci')" 2)"
+check "npm fails: waited 5s before the retry" "$(is "$(grep -- '^sleep ' "$STUB_CALLS_LOG")" 'sleep 5')"
 check "npm fails: failure reported" "$(contains 'npm ci failed** (exit 1')"
 check "npm fails: log tail included" "$(contains 'STUB-ERR-LAST')"
+check "npm fails: no retried note" "$(lacks 'retried once')"
 check "npm fails: prisma generate not run" "$(is "$(calls '^npx ')" 0)"
+
+# 6b. npm ci fails once (e.g. the proxy cut a download): the retry succeeds and is noted
+proj=$(make_proj npm-fails-once)
+run_hook "$proj" true 1 0 1
+check "npm fails once: exit 0" "$(is "$rc" 0)"
+check "npm fails once: npm ci run twice" "$(is "$(calls '^npm ci')" 2)"
+check "npm fails once: waited 5s before the retry" "$(is "$(grep -- '^sleep ' "$STUB_CALLS_LOG")" 'sleep 5')"
+check "npm fails once: reported done after a retry" "$(contains '- npm ci: done in ')"
+check "npm fails once: retried note" "$(contains 's (retried once)')"
+check "npm fails once: no failure reported" "$(lacks 'failed**')"
+check "npm fails once: retry marked in the log" "$(is "$(grep -c -- '--- npm ci failed (exit 1); retrying in 5s ---' "$TMP_ROOT/session-start-cloud-deps.log")" 1)"
+check "npm fails once: prisma generate run once" "$(is "$(calls '^npx prisma generate')" 1)"
+check "npm fails once: stdout is 3 lines" "$(is "$(printf '%s\n' "$out" | wc -l | tr -d '[:space:]')" 3)"
 
 # 7. prisma generate fails: exit 0, failure reported
 proj=$(make_proj npx-fails)
