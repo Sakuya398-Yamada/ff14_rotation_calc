@@ -12,6 +12,9 @@ import magesBalladIcon from "../assets/icons/brd/Mage's_Ballad.png";
 import armysPaeonIcon from "../assets/icons/brd/Army's_Paeon.png";
 import wanderersMinuetIcon from "../assets/icons/brd/The_Wanderer's_Minuet.png";
 
+// 軍神の契約中に使うと軍神の加護になる歌（ジョブガイドの原文どおり 3 曲。パイオンはリキャスト 120 秒のため契約中には使えない）
+const ARMYS_ETHOS_SONGS = ["mages-ballad", "armys-paeon", "wanderers-minuet"];
+
 /**
  * 詩人（BRD）バフ定義
  */
@@ -128,6 +131,11 @@ export const BRD_BUFFS: BuffDefinition[] = [
     color: "#ff9800",
     acquiredLevel: 40,
     exclusiveGroup: "song",
+    // 軍神のパイオン効果アップ（Lv78）: 詩心が残ったまま時間切れになると軍神の契約を付与する
+    onExpireApplyBuffByResource: {
+      resourceId: "repertoire",
+      buffIds: ["armys-ethos-1", "armys-ethos-2", "armys-ethos-3", "armys-ethos-4"],
+    },
   },
   {
     id: "wanderers-minuet",
@@ -144,6 +152,151 @@ export const BRD_BUFFS: BuffDefinition[] = [
     color: "#4caf50",
     acquiredLevel: 52,
     exclusiveGroup: "song",
+  },
+
+  // ============================================================
+  // 軍神のパイオン効果アップ（Lv78）
+  // 効果量は付与されたときの詩心の数で決まるため、詩心 1〜4 ごとに別のバフにする（光神のフィナーレと同じ方式）。
+  // 加護（パイオン中の歌の上書き → brd-skills.ts の buffApplicationByResourceWhileBuff）:
+  //   ウェポンスキルのキャスト・リキャストを詩心 1/2/3/4 で 1/2/4/12% 短縮（オートアタック間隔の短縮は未対応）
+  // 契約（パイオンの時間切れ → armys-paeon の onExpireApplyBuffByResource）:
+  //   3 曲のどれかを使うと同じ詩心数の加護になる。加護と同じ排他グループなので、加護が付くと契約は外れる
+  // ============================================================
+  {
+    id: "armys-muse-1",
+    name: "軍神の加護（詩心1）",
+    shortName: "軍神の\n加護1",
+    icon: armysPaeonIcon,
+    duration: 10,
+    effects: [
+      {
+        type: "speed",
+        value: 0.99,
+      },
+    ],
+    color: "#ffa726",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
+  },
+  {
+    id: "armys-muse-2",
+    name: "軍神の加護（詩心2）",
+    shortName: "軍神の\n加護2",
+    icon: armysPaeonIcon,
+    duration: 10,
+    effects: [
+      {
+        type: "speed",
+        value: 0.98,
+      },
+    ],
+    color: "#ffa726",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
+  },
+  {
+    id: "armys-muse-3",
+    name: "軍神の加護（詩心3）",
+    shortName: "軍神の\n加護3",
+    icon: armysPaeonIcon,
+    duration: 10,
+    effects: [
+      {
+        type: "speed",
+        value: 0.96,
+      },
+    ],
+    color: "#ffa726",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
+  },
+  {
+    id: "armys-muse-4",
+    name: "軍神の加護（詩心4）",
+    shortName: "軍神の\n加護4",
+    icon: armysPaeonIcon,
+    duration: 10,
+    effects: [
+      {
+        type: "speed",
+        value: 0.88,
+      },
+    ],
+    color: "#ffa726",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
+  },
+  {
+    id: "armys-ethos-1",
+    name: "軍神の契約（詩心1）",
+    shortName: "軍神の\n契約1",
+    icon: armysPaeonIcon,
+    duration: 30,
+    effects: [
+      {
+        type: "applyBuffOnSkill",
+        value: 1,
+        appliesToSkillIds: ARMYS_ETHOS_SONGS,
+        appliedBuffId: "armys-muse-1",
+      },
+    ],
+    color: "#ffcc80",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
+  },
+  {
+    id: "armys-ethos-2",
+    name: "軍神の契約（詩心2）",
+    shortName: "軍神の\n契約2",
+    icon: armysPaeonIcon,
+    duration: 30,
+    effects: [
+      {
+        type: "applyBuffOnSkill",
+        value: 1,
+        appliesToSkillIds: ARMYS_ETHOS_SONGS,
+        appliedBuffId: "armys-muse-2",
+      },
+    ],
+    color: "#ffcc80",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
+  },
+  {
+    id: "armys-ethos-3",
+    name: "軍神の契約（詩心3）",
+    shortName: "軍神の\n契約3",
+    icon: armysPaeonIcon,
+    duration: 30,
+    effects: [
+      {
+        type: "applyBuffOnSkill",
+        value: 1,
+        appliesToSkillIds: ARMYS_ETHOS_SONGS,
+        appliedBuffId: "armys-muse-3",
+      },
+    ],
+    color: "#ffcc80",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
+  },
+  {
+    id: "armys-ethos-4",
+    name: "軍神の契約（詩心4）",
+    shortName: "軍神の\n契約4",
+    icon: armysPaeonIcon,
+    duration: 30,
+    effects: [
+      {
+        type: "applyBuffOnSkill",
+        value: 1,
+        appliesToSkillIds: ARMYS_ETHOS_SONGS,
+        appliedBuffId: "armys-muse-4",
+      },
+    ],
+    color: "#ffcc80",
+    acquiredLevel: 78,
+    exclusiveGroup: "armys-muse",
   },
 
   // ============================================================

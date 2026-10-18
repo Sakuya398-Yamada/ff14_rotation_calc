@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
-import { getBuffsForLevel, getResourcesForLevel, getSkillsForLevel } from "../skill-level";
+import { getAllSkillMapForLevel, getBuffsForLevel, getResourcesForLevel, getSkillsForLevel } from "../skill-level";
 import type { PlayerLevel, TimelineEntry } from "../../types/skill";
 import { DRG_ATTACK_SKILLS } from "../../data/drg-skills";
 import { DRG_BUFFS } from "../../data/drg-buffs";
@@ -87,5 +87,40 @@ describe("DRG: 紅の竜血を発動条件とするスキル", () => {
     const starcross = result.entries[2];
     expect(starcross.activeBuffsAtUse.some((ab) => ab.buffId === "starcross-ready")).toBe(true);
     expect(starcross.comboErrors).toContain("life-of-the-dragon");
+  });
+});
+
+describe("DRG: 方向指定スキルの威力は方向指定成功前提で内包する（#544）", () => {
+  // ジョブガイドの「（コンボ時かつ）背面／側面攻撃時威力」
+  it.each([
+    ["chaos-thrust", 260, 140],
+    ["fang-and-claw", 340, 180],
+    ["wheeling-thrust", 340, 180],
+    ["chaotic-spring", 340, 180],
+  ])("%s の potency は %i、nonComboPotency は %i", (id, potency, nonComboPotency) => {
+    const skill = DRG_ATTACK_SKILLS.find((s) => s.id === id)!;
+    expect(skill.potency).toBe(potency);
+    expect(skill.nonComboPotency).toBe(nonComboPotency);
+  });
+
+  it("Lv100 のコンボ成立時はタイムライン上でも成功前提の威力で解決される", () => {
+    // resolveAtLevel は足したスキルにレベル調整がかからないため、アプリの allSkillMap と同じ組み方にする
+    const level = 100;
+    const buffs = getBuffsForLevel(DRG_BUFFS, level);
+    const resources = getResourcesForLevel(DRG_RESOURCES, level);
+    const buffIds = new Set(buffs.map((b) => b.id));
+    const resourceIds = new Set(resources.map((r) => r.id));
+    const skills = getSkillsForLevel(DRG_ATTACK_SKILLS, level, buffIds, resourceIds);
+    const skillMap = getAllSkillMapForLevel(DRG_ATTACK_SKILLS, skills, level, buffIds, resourceIds);
+    const resolve = (skillIds: string[]) =>
+      resolveTimeline(skillIds.map((id) => entry(id)), skillMap, resources, undefined, buffs).entries;
+
+    const [, , chaoticSpring, wheelingThrust] = resolve(["true-thrust", "spiral-blow", "chaotic-spring", "wheeling-thrust"]);
+    expect(chaoticSpring.resolvedPotency).toBe(340);
+    expect(wheelingThrust.resolvedPotency).toBe(340);
+
+    const [, , , fangAndClaw] = resolve(["true-thrust", "lance-barrage", "heavens-thrust", "fang-and-claw"]);
+    expect(fangAndClaw.resolvedSkillId).toBe("fang-and-claw");
+    expect(fangAndClaw.resolvedPotency).toBe(340);
   });
 });

@@ -10,13 +10,13 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 あなたは FF14 Rotation Calculator の日次 Issue トリアージルーティンです。**無人実行**なので、ユーザーへの質問はせず、判断できないものは起票もラベル付けもせずに実行報告へ回してください。
 
 - GitHub: `Sakuya398-Yamada/ff14_rotation_calc`
-- ローカル: `D:\ドキュメント_D\for_claude\ff14-dev\RotationCalc`（以下 `<repo>`）
+- 実行環境: クラウドのスケジュールタスク。実行のたびにリポジトリを clone し、その直下から、`main` から切った `claude/*` の作業ブランチで起動する
 
 ## 共通ルール
 
-1. `<repo>` の `CLAUDE.md` と `.claude/rules/*.md` に従う。Issue の様式・ラベル・粒度は `.claude/rules/git-conventions.md`
-2. 最初に `git -C <repo> fetch origin` する。区分と優先度の判定基準は `origin/main` の `/issue-priority` skill を読んで使う（`git -C <repo> show origin/main:.claude/skills/issue-priority/SKILL.md`。`<repo>` の作業ツリーは `origin/main` より古いことがある）。skill が参照する `.claude/routines/weekday-issue-start.md`（区分「ルーティン向け」と「無人向き」の条件）も同じく `git -C <repo> show origin/main:<path>` で読み、skill 手順 1-3 の `git ls-remote` はカレントディレクトリを `<repo>` にして実行する。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
-3. GitHub 操作は GitHub MCP を使い、使えなければ gh（`/c/Program Files/GitHub CLI/gh.exe`）にフォールバックする。ただし手順 6 のラベル付与は gh を先に使う（理由は手順 6-5）
+1. リポジトリの `CLAUDE.md` と `.claude/rules/*.md` に従う。Issue の様式・ラベル・粒度は `.claude/rules/git-conventions.md`
+2. 最初に `git fetch origin` する（git は起動したリポジトリ直下で、`-C` を付けずに打つ）。区分と優先度の判定基準は `origin/main` の `/issue-priority` skill を読んで使う（`git show origin/main:.claude/skills/issue-priority/SKILL.md`）。skill が参照する `.claude/routines/weekday-issue-start.md`（区分「ルーティン向け」と「無人向き」の条件）も同じく `git show origin/main:<path>` で読み、skill 手順 1-3 の `git ls-remote` もリポジトリ直下で実行する。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
+3. GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。ただし手順 6 のラベル付与は `gh api` を先に使う（理由は手順 6-5）
 4. 書き込みは次の 4 つだけ。起票以外の 3 つは `.claude/rules/workflow-feedback.md`「自動化しないこと」の例外として事前承認済み（#447 / #501 / #502）
    - 手順 2・3 の起票
    - 手順 2・3 の #305 / #195 の既存コメントへの ✅ マーカー追記（編集の直前に最新の本文を取得し、末尾に 1 行追記する）
@@ -36,8 +36,8 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
    ```
 
 6. #195 / #305 のコメントは MCP の `issue_read` で丸読みしない
-   - **#195** は `.claude/scripts/knowledge-board.cjs` で必要な分だけ読む（使い方は `.claude/rules/workflow-feedback.md`「知見ボードの読み方」）。`<repo>` の作業ツリーは `origin/main` より古いことがあるので、スクリプトは `git -C <repo> show origin/main:.claude/scripts/knowledge-board.cjs > <scratchpad>/knowledge-board.cjs` で取り出し、**カレントディレクトリを `<repo>` にして** `node <scratchpad>/knowledge-board.cjs open` のように実行する（リポジトリ名をカレントの git リモートから解決するため）。2 回目以降は `--cached` を付ける
-   - **#305** は `gh api --paginate "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/305/comments?per_page=100" > <scratchpad>/305.json` で保存し、node か jq で必要な部分（ID・マーカー有無・本文）だけを抜き出して読む
+   - **#195** は `.claude/scripts/knowledge-board.cjs` で必要な分だけ読む（使い方は `.claude/rules/workflow-feedback.md`「知見ボードの読み方」）。スクリプトは `git show origin/main:.claude/scripts/knowledge-board.cjs > <scratchpad>/knowledge-board.cjs` で取り出し、**カレントディレクトリをリポジトリ直下にしたまま** `node <scratchpad>/knowledge-board.cjs open` のように実行する（リポジトリ名をカレントの git リモートから解決するため）。2 回目以降は `--cached` を付ける
+   - **#305** は `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/305/comments?per_page=100&page=<N>"` を `page=1` から空配列 `[]` が返るまで進め、ページごとに `<scratchpad>/305-<N>.json` に保存し、node か jq で必要な部分（ID・マーカー有無・本文）だけを抜き出して読む。`--paginate` は 2 ページ目で 403 になり、1 ページ目だけを全件と取り違えるので使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」）
 
 ## 1. バックログを数える
 
@@ -81,10 +81,10 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
    - `priority:*` が付いていない
    - `meta` / `question` ラベルの Issue と #2 のテンプレート Issue ではない
    - 手順 5 の区分が「進行中」ではない
-2. **`priority:*` が付いている Issue と、進行中（Open PR・作業ブランチ・「## 着手」の印がある）の Issue のラベルは変えない**
+2. **`priority:*` が付いている Issue と、手順 5 の区分が「進行中」の Issue のラベルは変えない**
 3. 1 回の実行で付けるのは **10 件まで**。案が high → medium → low の順、同じ優先度なら番号の小さい順に付け、超えた分は実行報告の「見送り」に案を添えて書く（次の実行で付ける）
-4. 付ける直前に `gh issue view <N> -R Sakuya398-Yamada/ff14_rotation_calc --json state,labels` で取り直し、Closed になっていたり `priority:*` が付いていたりしたら触らない
-5. `gh issue edit <N> -R Sakuya398-Yamada/ff14_rotation_calc --add-label priority:<high|medium|low>` で付ける（追加だけなので他のラベルを落とさない）。GitHub MCP の `issue_write`（method: `update`）を使うときは、`labels` がラベル全体を置き換えるので、手順 6-4 で取り直したラベルに新しい `priority:*` を 1 つ足した配列を渡す
+4. 付ける直前に `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<N> --jq '{state, labels: [.labels[].name]}'` で取り直し、Closed になっていたり `priority:*` が付いていたりしたら触らない
+5. `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<N>/labels -f "labels[]=priority:<high|medium|low>"` で付ける（追加だけなので他のラベルを落とさない）。GitHub MCP の `issue_write`（method: `update`）を使うときは、`labels` がラベル全体を置き換えるので、手順 6-4 で取り直したラベルに新しい `priority:*` を 1 つ足した配列を渡す
 
 ## 7. 着手順のおすすめを選ぶ
 

@@ -269,6 +269,7 @@ SAM の以下が雛形として参考になる：
 - [ ] `src/client/assets/icons/<job>/` 配下に全スキル分のアイコンがある
 - [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（セレクタ表示順は `JOB_DATA` のキー順）
 - [ ] `skill-palette.test.tsx` のジョブセレクタ期待値（固定配列）に新ジョブの表示名が追記されている
+- [ ] `README.md` の「対応ジョブ」表と FAQ「使いたいジョブが未対応」のジョブ一覧・ジョブ数に新ジョブが追記されている（並び順は `JOB_DATA` のキー順）
 - [ ] `npm run build` / `npm test` が GREEN
 - [ ] パレットから新ジョブを選択でき、スキルをタイムラインに配置して期待威力が計算できる
 
