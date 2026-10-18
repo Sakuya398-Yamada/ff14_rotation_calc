@@ -67,7 +67,7 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 | 内容 | ファイル |
 |------|---------|
 | ブランチ命名・コミットメッセージ・PR・Issue規約 | `.claude/rules/git-conventions.md` |
-| TypeScript / React / Hono / Prisma のコーディング規約 | `.claude/rules/coding-standards.md` |
+| TypeScript / React / Hono / Drizzle のコーディング規約 | `.claude/rules/coding-standards.md` |
 | 技術スタック・npmスクリプト・インフラ構成 | `.claude/rules/tech-stack.md` |
 | Claude Code のコード読解方針（Stream idle timeout 対策） | `.claude/rules/context-efficiency.md` |
 | Issue駆動開発の Phase別手順 | `.claude/skills/issue-start/SKILL.md` |
@@ -87,7 +87,7 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 | npm | Node 同梱 | `npm --version` |
 | git | 任意の新しめ | コミット規約は hook で検証 |
 | Microsoft Edge | Windows 11 標準 | Playwright MCP の UI 検証用 |
-| Visual Studio Build Tools | 通常不要 | better-sqlite3 等のネイティブモジュールが prebuilt 失敗時のみ |
+| Visual Studio Build Tools | 通常不要 | better-sqlite3（テストで使う）等のネイティブモジュールが prebuilt 失敗時のみ |
 | GitHub CLI (`gh`) | 推奨 | Issue/PR 操作。`winget install GitHub.cli` |
 
 ### 初回セットアップ
@@ -96,17 +96,9 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 # 依存インストール
 npm install
 
-# .env を作成（DATABASE_URL を Prisma に渡すため）
-"DATABASE_URL=`"file:./dev.db`"" | Out-File -FilePath .env -Encoding utf8
-
-# Prisma クライアント生成
-npm run db:generate
-
-# DB マイグレーション適用（dev.db が無ければ作成される）
+# ローカルの D1（リポジトリ直下の .wrangler/state）にマイグレーションを適用
 npm run db:migrate
 ```
-
-> **Note (Prisma drift)**: `prisma/schema.prisma` にモデル未定義のため `npm run db:migrate` の最後で「新マイグレーション名」を聞かれることがあります。Ctrl+C で抜けて構いません（既存マイグレーションは適用済み）。再適用だけしたい時は `npx prisma migrate deploy` が安全。
 
 ### 日常開発コマンド
 
@@ -119,14 +111,28 @@ npm run build        # フロントと Worker をビルド (dist/)
 
 > **Note**: `npm run dev` 1 つで、フロントと `/api/*`（Hono）が `http://localhost:5173` から応答します。`@cloudflare/vite-plugin` が Vite の中で Worker を workerd 上で動かすため、別プロセスのバックエンドやプロキシは不要です。疎通確認は `http://localhost:5173/api/health`（`{"status":"ok"}`）。
 
+### DB（Cloudflare D1 + Drizzle ORM）
+
+テーブルは `src/server/db/schema.ts` に Drizzle で定義し、マイグレーションの SQL は drizzle-kit で生成して `migrations/` にコミットします。
+
+```powershell
+npm run db:generate -- --name <変更内容>   # schema.ts の変更からマイグレーションを生成（migrations/ に SQL と meta/ が増える）
+npm run db:migrate                        # ローカルの D1 に適用
+```
+
+- 生成した SQL は手で編集しない。`wrangler d1 migrations create` も使わない（drizzle-kit の `migrations/meta/_journal.json` とずれ、テストが新しいマイグレーションを当てなくなる）
+- ローカルの D1 は `npm run dev`（`vite.config.ts` の `persistState`）と wrangler CLI（`npx wrangler d1 execute DB --local --command "..."` 等）が同じ `.wrangler/state` を使う
+- テストは D1 ではなく better-sqlite3 のメモリ上の DB に同じマイグレーションを当てる（例: `src/server/db/__tests__/timelines.test.ts`）
+- 本番の D1 には、`main` のデプロイ（`npm run deploy`）がデプロイの前に適用する（後述「本番 D1 とビルド用トークン」）
+
 ---
 
 ## CI / Cloudflare Workers 配信
 
 品質チェック（CI）と配信（Cloudflare Workers）を分担しています：
 
-- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量の予算検査（`.claude/scripts/check-context-budget.py`）→ 依存インストール → Prismaクライアント生成 → `tsc --noEmit` → `npm test` → `npm run build` → `npm run deploy -- --dry-run` を実行
-- **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets や API トークンは不要）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
+- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量の予算検査（`.claude/scripts/check-context-budget.py`）→ 依存インストール → `tsc --noEmit` → `npm test` → `npm run build` → `npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run` を実行（`npm run deploy` は本番 D1 へのマイグレーション適用を含むので、CI はデプロイの部分だけを dry-run する）
+- **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets は不要。本番 D1 にマイグレーションを当てるため、Cloudflare 側のビルド用 API トークンに D1 の編集権限が要る。後述「本番 D1 とビルド用トークン」）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
 - フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
 
 ### Workers Builds の設定（初回のみ）
@@ -137,7 +143,7 @@ npm run build        # フロントと Worker をビルド (dist/)
 4. 以下の設定を入力：
    - **Project name（Worker 名）**: `ff14-rotation-calc`（`wrangler.jsonc` の `name` と一致させる。違うとビルドが失敗する）
    - **Build command**: `npm run build`
-   - **Deploy command**: `npm run deploy`
+   - **Deploy command**: `npm run deploy`（本番 D1 へのマイグレーション適用 → デプロイ）
    - **Preview command**（本番ブランチ以外。**Enable Preview Builds** を有効にする）: `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`
    - **Root directory**: 空欄（`/`）のまま
 5. **Build variables and secrets** に `NODE_VERSION` = `22` を追加（Workers Builds の既定は Node.js 24。CI と揃える）
@@ -150,6 +156,24 @@ npm run build        # フロントと Worker をビルド (dist/)
 > **Worker Previews 以前から Builds に繋いでいた Worker の場合**: **Settings** → **Builds** に **Set up Worker Previews** のバナーが出ていたら、**Set up** から一度だけ切り替える（元の方式には戻せない）。確認ダイアログで Previews 用の変数・シークレット・バインディングを聞かれるが、今の Worker は何も使っていないので空のまま進めてよい（使い始めたら `wrangler.jsonc` の `previews` に書く）。切り替えると Preview command が `npx wrangler preview` に置き換わるので、上の `--config` 付きのコマンドに直す（[Cloudflare のドキュメント](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/#existing-workers-connected-to-builds)）。
 
 > **デプロイコマンドを既定の `npx wrangler deploy` のままにしない**: Vite の `root` が `src/client` のため、`vite build` が作るデプロイ用の設定（`dist/ff14_rotation_calc/wrangler.json`）をリポジトリ直下の `wrangler` は自動で見つけられず、`assets` に `directory` が無いというエラーで失敗します。`npm run deploy` と上の Preview command は、`--config` でこの生成設定を指定しています。
+
+### 本番 D1 とビルド用トークン（初回のみ）
+
+`npm run deploy` は `npm run db:migrate:remote`（`wrangler d1 migrations apply DB --remote`）でマイグレーションを当ててからデプロイします。マイグレーションが失敗するとデプロイは行われず、旧版が配信され続けます（D1 の Time Travel で直前の状態にも戻せる）。
+
+1. 手元で `npx wrangler login` してから、本番の D1 を作る:
+
+   ```powershell
+   npx wrangler d1 create ff14-rotation-calc
+   ```
+
+2. 出力された `database_id` を `wrangler.jsonc` の `d1_databases` に書いてコミットする（ID は秘密情報ではない）
+3. ビルド用 API トークンに D1 の編集権限を足す。Workers Builds が自動で作るトークン（Worker の **Settings** → **Build** の API token）の権限は Account Settings (read)・Workers Scripts (edit)・Workers KV Storage (edit)・Workers R2 Storage (edit)・Workers Routes (edit)・User Details (read)・Memberships (read) で、D1 が含まれない（[Workers Builds: Configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)）。**My Profile** → **API Tokens** でこのトークンを編集し、既存の権限は残したまま **Account** → **D1** → **Edit** を足す（ビルド用トークンはユーザートークンだけが使える）
+4. `main` にマージしたら、Workers Builds のデプロイのログでマイグレーションの適用（`✅`）を確かめ、手元から適用済みであることを見る:
+
+   ```powershell
+   npx wrangler d1 migrations list DB --remote   # 「No migrations to apply」なら適用済み
+   ```
 
 ### 動作確認手順
 
@@ -164,6 +188,8 @@ npm run build        # フロントと Worker をビルド (dist/)
 - **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`）にする
 - **PR のコメントにプレビュー URL が出ない（「Deploying with Cloudflare Workers」の表に URL の列が無い）**: Worker Previews に切り替わっていないか、Preview command が `wrangler preview` を直接呼んでいない（npm スクリプトで包んでいる等）。上記の注記のとおりに直す
 - **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews": {}` が消えていないか確認する（#485）
+- **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
+- **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が仮の値（`00000000-...`）のまま、または別アカウントの ID。手順 1・2 のとおり本番 D1 の ID を書く
 - **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
 
 ---
@@ -187,7 +213,7 @@ npm run build        # フロントと Worker をビルド (dist/)
 
 セッション開始時には SessionStart hook（`.claude/hooks/session-start-info.sh`）がリポジトリ状態のバナーを出します。バナーの `## Template version` は、`.claude/template-version` の版とテンプレート元（issue-driven-dev-starter）の最新リリースを比べた結果です（最新リリースは毎回取得し、取得に失敗したときだけ前回の結果を `cached` と付けて使う。前回の結果も無ければ `unknown`）。新しい版があれば `/issue-start` が更新用 Issue の起票を一度だけ提案します。取り込み手順は `.claude/skills/template-update/SKILL.md`（`/template-update`）を参照してください。
 
-Claude Code のクラウドセッション（claude.ai/code など）では、もう 1 つの SessionStart hook（`.claude/hooks/session-start-cloud-deps.sh`）が `npm ci` と `npx prisma generate` を実行します（`CLAUDE_CODE_REMOTE=true` のときだけ動き、ローカルでは何もしません）。
+Claude Code のクラウドセッション（claude.ai/code など）では、もう 1 つの SessionStart hook（`.claude/hooks/session-start-cloud-deps.sh`）が `npm ci` と、ローカルの D1 へのマイグレーション適用（`npx wrangler d1 migrations apply DB --local`）を実行します（`CLAUDE_CODE_REMOTE=true` のときだけ動き、ローカルでは何もしません）。
 
 詳細は `CLAUDE.md` を参照してください。
 
