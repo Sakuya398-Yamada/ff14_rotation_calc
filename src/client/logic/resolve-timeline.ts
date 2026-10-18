@@ -41,6 +41,8 @@ function computeBuffEndTime(startTime: number, duration: number | null): number 
 interface AutoGenTimer {
   /** タイマー開始時刻（null = タイマー停止中） */
   startedAt: number | null;
+  /** 前回の判定で autoGenerateWhileBuff の条件を満たしていたバフ（null = 条件外） */
+  gateBuff: Pick<ActiveBuff, "buffId" | "startTime"> | null;
 }
 
 /**
@@ -879,8 +881,85 @@ export function resolveTimeline(
     autoGenTimers[res.id] = {
       // 初期値が最大未満ならタイマー開始（t=0から）。バフ条件付きの場合はバフ取得まで待つ
       startedAt: res.autoGenerateInterval && !res.autoGenerateWhileBuff && initial < res.maxStacks ? 0 : null,
+      gateBuff: null,
     };
   }
+
+  /**
+   * 自動生成リソースを time まで進める。上限（whileBuffModifiers の maxStacks）・付与ごとのリキャスト短縮・
+   * 条件バフ（autoGenerateWhileBuff）は、呼び出し時点のアクティブバフで判定する
+   */
+  const advanceAutoGen = (time: number) => {
+    // whileBuffModifiers の maxStacks を、現在のバフで反映した定義に差し替える。
+    // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
+    for (const res of resources) {
+      if (!res.whileBuffModifiers) continue;
+      const maxOverride = getActiveResourceModifiers(res, currentActiveBuffs)
+        .find((m) => m.maxStacks !== undefined)?.maxStacks;
+      resourceDefMap.set(res.id, maxOverride !== undefined ? { ...res, maxStacks: maxOverride } : res);
+    }
+
+    for (const res of resources) {
+      if (!res.autoGenerateInterval) continue;
+      const def = resourceDefMap.get(res.id) ?? res;
+      const timer = autoGenTimers[res.id];
+      const reductions = getActiveResourceModifiers(res, currentActiveBuffs)
+        .flatMap((m) => (m.cooldownReductionOnGain ? [m.cooldownReductionOnGain] : []));
+      // 付与をきっかけにリキャストを短縮する間は、上限でもタイマーを止めない
+      const onTick = reductions.length > 0
+        ? (tickTime: number) => {
+            for (const r of reductions) reduceChargeCooldown(r.chargeKey, r.seconds, tickTime);
+          }
+        : undefined;
+      // autoGenerateWhileBuff: 指定バフのいずれかがアクティブ時のみ自動生成
+      if (res.autoGenerateWhileBuff) {
+        const gate = currentActiveBuffs.find((ab) => res.autoGenerateWhileBuff!.includes(ab.buffId));
+        if (!gate) {
+          // バフ非アクティブ → タイマー停止
+          timer.startedAt = null;
+          timer.gateBuff = null;
+          continue;
+        }
+        const gateChanged = timer.gateBuff === null || (
+          res.autoGenerateRestartOnBuffChange === true &&
+          (timer.gateBuff.buffId !== gate.buffId || timer.gateBuff.startTime !== gate.startTime)
+        );
+        if (gateChanged) {
+          // 条件バフが付いた時刻から数える（バフを付与したエントリでは、自動生成がバフの付与より先に走るため）
+          timer.startedAt = gate.startTime;
+          timer.gateBuff = { buffId: gate.buffId, startTime: gate.startTime };
+        } else if (timer.startedAt === null && (onTick || resourceState[res.id] < def.maxStacks)) {
+          // バフアクティブだがタイマー未開始 → タイマー開始
+          timer.startedAt = time;
+        }
+      }
+      resourceState[res.id] = processAutoGen(
+        time,
+        resourceState[res.id],
+        def.maxStacks,
+        res.autoGenerateInterval,
+        timer,
+        res.autoGenerateAmount ?? 1,
+        onTick
+      );
+    }
+  };
+
+  /**
+   * time までに期限が切れるバフを除去する（onExpireResourceTransfer があればリソース移し替えも実施）。
+   * 自動生成の条件バフ（歌など）がエントリの間で切れる場合は、切れる時刻までの付与を先に数える
+   */
+  const expireBuffsUntil = (time: number) => {
+    const gateEnds = currentActiveBuffs
+      .filter((ab) => ab.endTime <= time && resources.some((r) => r.autoGenerateWhileBuff?.includes(ab.buffId)))
+      .map((ab) => ab.endTime)
+      .sort((a, b) => a - b);
+    for (const end of gateEnds) {
+      advanceAutoGen(end);
+      expireBuffs(currentActiveBuffs, end, buffDefMap, resourceState, resourceDefMap, resources);
+    }
+    expireBuffs(currentActiveBuffs, time, buffDefMap, resourceState, resourceDefMap, resources);
+  };
 
   for (const entry of entries) {
     const originalSkill = skillMap.get(entry.skillId);
@@ -901,7 +980,7 @@ export function resolveTimeline(
         : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
+      expireBuffsUntil(startTime);
 
     } else {
       autoStartTime = actionAvailableAt;
@@ -911,7 +990,7 @@ export function resolveTimeline(
         : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
+      expireBuffsUntil(startTime);
 
       actionAvailableAt = startTime + originalSkill.animationLock;
     }
@@ -954,54 +1033,9 @@ export function resolveTimeline(
       }
     }
 
-    // whileBuffModifiers の maxStacks を、このエントリ時点のバフで反映した定義に差し替える。
-    // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
-    for (const res of resources) {
-      if (!res.whileBuffModifiers) continue;
-      const maxOverride = getActiveResourceModifiers(res, currentActiveBuffs)
-        .find((m) => m.maxStacks !== undefined)?.maxStacks;
-      resourceDefMap.set(res.id, maxOverride !== undefined ? { ...res, maxStacks: maxOverride } : res);
-    }
-
     // 自動生成リソースを時刻に応じて加算。
     // リソース量に応じたヘイスト（軍神のパイオン中の詩心）をこのエントリの GCD に反映するため、リキャスト計算より前に行う
-    for (const res of resources) {
-      if (res.autoGenerateInterval) {
-        const def = resourceDefMap.get(res.id) ?? res;
-        const reductions = getActiveResourceModifiers(res, currentActiveBuffs)
-          .flatMap((m) => (m.cooldownReductionOnGain ? [m.cooldownReductionOnGain] : []));
-        // 付与をきっかけにリキャストを短縮する間は、上限でもタイマーを止めない
-        const onTick = reductions.length > 0
-          ? (tickTime: number) => {
-              for (const r of reductions) reduceChargeCooldown(r.chargeKey, r.seconds, tickTime);
-            }
-          : undefined;
-        // autoGenerateWhileBuff: 指定バフのいずれかがアクティブ時のみ自動生成
-        if (res.autoGenerateWhileBuff) {
-          const hasRequiredBuff = res.autoGenerateWhileBuff.some(
-            (buffId) => currentActiveBuffs.some((ab) => ab.buffId === buffId)
-          );
-          if (!hasRequiredBuff) {
-            // バフ非アクティブ → タイマー停止
-            autoGenTimers[res.id].startedAt = null;
-            continue;
-          }
-          // バフアクティブだがタイマー未開始 → タイマー開始
-          if (autoGenTimers[res.id].startedAt === null && (onTick || resourceState[res.id] < def.maxStacks)) {
-            autoGenTimers[res.id].startedAt = startTime;
-          }
-        }
-        resourceState[res.id] = processAutoGen(
-          startTime,
-          resourceState[res.id],
-          def.maxStacks,
-          res.autoGenerateInterval,
-          autoGenTimers[res.id],
-          res.autoGenerateAmount ?? 1,
-          onTick
-        );
-      }
-    }
+    advanceAutoGen(startTime);
 
     // GCD のリキャスト・詠唱時間は変化先スキルの値で計算する（例: レッドファイア → シアンブリザドで 2.5 秒 → 3.3 秒）
     if (originalSkill.type === "gcd") {

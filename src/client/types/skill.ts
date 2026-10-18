@@ -265,6 +265,11 @@ export interface ResourceDefinition {
   autoGenerateAmount?: number;
   /** 自動生成条件: 指定バフのいずれかがアクティブ時のみ自動生成する */
   autoGenerateWhileBuff?: string[];
+  /**
+   * autoGenerateWhileBuff の条件バフが付き直したとき（歌の上書きなど）、自動生成をそのバフの付与時刻から数え直す。
+   * 未設定なら、条件バフのいずれかが付いている間は刻みを引き継ぐ（AF と UB の切り替えでポリグロットの 30 秒を引き継ぐなど）
+   */
+  autoGenerateRestartOnBuffChange?: boolean;
   /** 指定バフの効果中だけ変わる性質（例: 軍神のパイオン中の詩心最大 4・ヘイスト） */
   whileBuffModifiers?: ResourceBuffModifier[];
   /** 指定バフのいずれかが時間切れ・排他グループの上書きで消えたときに 0 に戻す（例: 歌が終わると詩心が消える） */
