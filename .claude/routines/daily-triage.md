@@ -81,7 +81,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
    - `priority:*` が付いていない
    - `meta` / `question` ラベルの Issue と #2 のテンプレート Issue ではない
    - 手順 5 の区分が「進行中」ではない
-2. **`priority:*` が付いている Issue と、進行中（Open PR・作業ブランチ・「## 着手」の印がある）の Issue のラベルは変えない**
+2. **`priority:*` が付いている Issue と、手順 5 の区分が「進行中」の Issue のラベルは変えない**
 3. 1 回の実行で付けるのは **10 件まで**。案が high → medium → low の順、同じ優先度なら番号の小さい順に付け、超えた分は実行報告の「見送り」に案を添えて書く（次の実行で付ける）
 4. 付ける直前に `gh issue view <N> -R Sakuya398-Yamada/ff14_rotation_calc --json state,labels` で取り直し、Closed になっていたり `priority:*` が付いていたりしたら触らない
 5. `gh issue edit <N> -R Sakuya398-Yamada/ff14_rotation_calc --add-label priority:<high|medium|low>` で付ける（追加だけなので他のラベルを落とさない）。GitHub MCP の `issue_write`（method: `update`）を使うときは、`labels` がラベル全体を置き換えるので、手順 6-4 で取り直したラベルに新しい `priority:*` を 1 つ足した配列を渡す

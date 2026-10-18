@@ -45,10 +45,12 @@
    - 作成がタイムアウトや 5xx で失敗扱いになっても、PR 自体は作成されていることがある。**再実行する前に** `search_pull_requests`（query に `head:<ブランチ名>`、`owner` / `repo` を指定）か `gh pr list --head <ブランチ名> --state all` で作成有無を確認し、作成済みならその URL で手順 3 に進む（同一ブランチから重複 PR を作らない）
 
 3. 作成された PR の URL をユーザーに返す
-4. PR購読の可否は **ツールの存在確認をしてから** 提案する（環境によっては `subscribe_pr_activity` が GitHub MCP に存在しない。`github/github-mcp-server` v1.x には無い）：
-   1. まず `ToolSearch query: "select:mcp__github__subscribe_pr_activity"` でスキーマロードを試みる
-   2. **見つかった場合のみ**「このPRを購読して、CIエラーやレビューコメントを自動対応しますか？」と尋ね、Y なら `subscribe_pr_activity` を呼ぶ
-   3. **見つからない場合**（`No matching deferred tools found`）は購読の提案自体を省略し、Phase 7 の完了報告に「CI/レビュー結果は手動で確認してください」と明記する
+4. PR を購読する。クラウドセッションかどうかで手順が分かれる：
+   - **クラウドセッション（`CLAUDE_CODE_REMOTE=true`）**: 「購読しますか？」とは聞かずに `mcp__claude-code-remote__subscribe_pr_activity`（`owner` / `repo` / `pullNumber`）で購読し、購読したことを報告する。ハーネスが「PR を作ったら確認せずに購読する」よう指示しているため。ツール一覧に無ければ `ToolSearch query: "select:mcp__claude-code-remote__subscribe_pr_activity"` でロードしてから呼ぶ。それでも見つからなければ下のローカルセッションの手順に従う
+   - **ローカルセッション**: 購読の可否は **ツールの存在確認をしてから** 提案する（環境によっては `subscribe_pr_activity` が GitHub MCP に存在しない。`github/github-mcp-server` v1.x には無い）：
+     1. まず `ToolSearch query: "select:mcp__github__subscribe_pr_activity"` でスキーマロードを試みる
+     2. **見つかった場合のみ**「このPRを購読して、CIエラーやレビューコメントを自動対応しますか？」と尋ね、Y なら `subscribe_pr_activity` を呼ぶ
+     3. **見つからない場合**（`No matching deferred tools found`）は購読の提案自体を省略し、Phase 7 の完了報告に「CI/レビュー結果は手動で確認してください」と明記する
 
 ## ワークフロー改善余地のメモ（Phase 8 向け）
 
