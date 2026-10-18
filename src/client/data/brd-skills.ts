@@ -41,9 +41,16 @@ const GCD_RECAST = 2.5;
 /** デフォルトのアニメーションロック（秒） */
 const DEFAULT_ANIMATION_LOCK = 0.65;
 
+/** 軍神のパイオン効果アップ（Lv78）: パイオン中に詩心があればバラード／メヌエットで軍神の加護を付与する */
+const ARMYS_MUSE_ON_PAEON_OVERWRITE = {
+  buffId: "armys-paeon",
+  resourceId: "repertoire",
+  buffIds: ["armys-muse-1", "armys-muse-2", "armys-muse-3", "armys-muse-4"],
+};
+
 /**
  * 詩人（BRD）攻撃スキル一覧
- * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）との既知の差分は #420
+ * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）との既知の差分は、軍神の加護のオートアタック間隔短縮のみ（計算エンジンにオートアタックが無いため。#420）
  * 威力は公式ジョブガイド準拠
  */
 export const BRD_ATTACK_SKILLS: Skill[] = [
@@ -496,6 +503,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     cooldown: 120,
     acquiredLevel: 30,
     buffApplications: ["mages-ballad"],
+    buffApplicationByResourceWhileBuff: ARMYS_MUSE_ON_PAEON_OVERWRITE,
     resourceChanges: [
       { resourceId: "coda-mages", amount: 1 },
     ],
@@ -528,6 +536,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     cooldown: 120,
     acquiredLevel: 52,
     buffApplications: ["wanderers-minuet"],
+    buffApplicationByResourceWhileBuff: ARMYS_MUSE_ON_PAEON_OVERWRITE,
     resourceChanges: [
       { resourceId: "coda-wanderers", amount: 1 },
     ],
