@@ -95,6 +95,7 @@
 | `meta` | ワークフロー改善の知見ボード等、メタ情報用 | `#6B5B95` |
 | `question` | 要確認・議論 | `#D876E3` |
 | `needs-decision` | 無人実行（日次の `weekday-issue-start`）が判断できず人の決定待ち。人が決めてラベルを外すと再び選定対象になる | `#D4C5F9` |
+| `routine-ok` | 人が無人実装を許可した印。日次の `weekday-issue-start` はこれが付いた Issue だけを選ぶ。付けるのは人だけ（ルーティンは付けない） | `#C5DEF5` |
 | `priority:high` | 優先度高 | `#B60205` |
 | `priority:medium` | 優先度中 | `#FBCA04` |
 | `priority:low` | 優先度低 | `#C2E0C6` |
