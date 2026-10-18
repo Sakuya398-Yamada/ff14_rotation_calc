@@ -35,6 +35,7 @@ import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
 
 /**
  * モンク（MNK）の攻撃スキル定義（パッチ7.5系の公式ジョブガイド準拠、Lv100想定）。
+ * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で 7.5〜7.57 を照合）。公式ジョブガイド（Patch 7.5、7.55 表記）との既知の差分は #521
  *
  * ## 型（フォーム）のモデル化
  * 壱→弐→参の型は WS コンボ（comboFrom）で表現する。
