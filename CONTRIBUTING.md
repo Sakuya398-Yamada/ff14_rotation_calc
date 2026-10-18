@@ -153,7 +153,7 @@ npm run db:migrate                        # ローカルの D1 に適用
 
 > **Preview command では `wrangler preview` を直接呼ぶ**: PR にプレビュー URL をコメントするのは Worker Previews の機能で、Workers Builds は独自の Preview command にも `npx wrangler preview` を呼ぶことを求めています。以前は Worker Previews に切り替えないまま Preview command を `npm run deploy:preview`（npm スクリプト）にしていて、プレビュー自体は作られたのにコメントにプレビュー URL が出なかった（#487）。`package.json` の `deploy:preview` は、ローカルから手でプレビューを作るとき用です。
 >
-> **Worker Previews 以前から Builds に繋いでいた Worker の場合**: **Settings** → **Builds** に **Set up Worker Previews** のバナーが出ていたら、**Set up** から一度だけ切り替える（元の方式には戻せない）。確認ダイアログで Previews 用の変数・シークレット・バインディングを聞かれるが、今の Worker は何も使っていないので空のまま進めてよい（使い始めたら `wrangler.jsonc` の `previews` に書く）。切り替えると Preview command が `npx wrangler preview` に置き換わるので、上の `--config` 付きのコマンドに直す（[Cloudflare のドキュメント](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/#existing-workers-connected-to-builds)）。
+> **Worker Previews 以前から Builds に繋いでいた Worker の場合**: **Settings** → **Builds** に **Set up Worker Previews** のバナーが出ていたら、**Set up** から一度だけ切り替える（元の方式には戻せない）。確認ダイアログで Previews 用の変数・シークレット・バインディングを聞かれるが、空のまま進めてよい（Previews は本番の設定を引き継がず、`wrangler.jsonc` の `previews` に書いたものだけが付く）。D1 の `DB` は今は本番だけで、プレビューには付かない。プレビューのビルドログに出る「These bindings are configured for your production Worker but not for Previews: DB」は想定どおり（プレビュー用の D1 は #581 で決める）。切り替えると Preview command が `npx wrangler preview` に置き換わるので、上の `--config` 付きのコマンドに直す（[Cloudflare のドキュメント](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/#existing-workers-connected-to-builds)）。
 
 > **デプロイコマンドを既定の `npx wrangler deploy` のままにしない**: Vite の `root` が `src/client` のため、`vite build` が作るデプロイ用の設定（`dist/ff14_rotation_calc/wrangler.json`）をリポジトリ直下の `wrangler` は自動で見つけられず、`assets` に `directory` が無いというエラーで失敗します。`npm run deploy` と上の Preview command は、`--config` でこの生成設定を指定しています。
 
@@ -167,7 +167,8 @@ npm run db:migrate                        # ローカルの D1 に適用
    npx wrangler d1 create ff14-rotation-calc
    ```
 
-2. 出力された `database_id` を `wrangler.jsonc` の `d1_databases` に書いてコミットする（ID は秘密情報ではない）
+   「設定ファイルに追加するか」を聞かれたら `n` で断る。既定の Yes で進めると、binding 名 `ff14_rotation_calc` の 2 つ目のエントリが足されるだけで、`DB` は仮の ID のまま残る
+2. 出力された `database_id` を `wrangler.jsonc` の `d1_databases`（binding `DB`）に書いてコミットする（ID は秘密情報ではない）
 3. ビルド用 API トークンに D1 の編集権限を足す。Workers Builds が自動で作るトークン（Worker の **Settings** → **Build** の API token）の権限は Account Settings (read)・Workers Scripts (edit)・Workers KV Storage (edit)・Workers R2 Storage (edit)・Workers Routes (edit)・User Details (read)・Memberships (read) で、D1 が含まれない（[Workers Builds: Configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)）。**My Profile** → **API Tokens** でこのトークンを編集し、既存の権限は残したまま **Account** → **D1** → **Edit** を足す（ビルド用トークンはユーザートークンだけが使える）
 4. `main` にマージしたら、Workers Builds のデプロイのログでマイグレーションの適用（`✅`）を確かめ、手元から適用済みであることを見る:
 
