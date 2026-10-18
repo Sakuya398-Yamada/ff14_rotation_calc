@@ -28,6 +28,7 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
    必要なツールをカンマ区切りで指定。一度ロードされればセッション中は使い回せる。
 
 2. **Vite dev サーバーを別プロセスで起動**:
+   worktree（`.claude/worktrees/<name>/`）で作業しているときは、`node_modules` がメインリポと共有されないので、先に worktree の直下で `npm ci` する（#434）。
    ```powershell
    npm run dev   # run_in_background: true（フロントと /api を同じオリジンで起動）
    ```
