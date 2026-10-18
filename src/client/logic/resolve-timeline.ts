@@ -470,6 +470,7 @@ function resetResourcesOnBuffEnd(
 
 /**
  * 排他グループのバフを解除する。新しいバフの適用前に呼び出す。
+ * 解除したバフを resetOnBuffEnd に持つリソースは 0 に戻す（歌の上書きで詩心が消えるなど）。
  */
 function removeExclusiveGroupBuffs(
   activeBuffs: ActiveBuff[],
