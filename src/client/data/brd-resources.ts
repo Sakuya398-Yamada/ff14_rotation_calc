@@ -21,6 +21,8 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     autoGenerateInterval: 3.75,
     autoGenerateAmount: 5,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
+    // 詩心と同じく、歌を実行した時刻から数える
+    autoGenerateRestartOnBuffChange: true,
   },
   {
     id: "coda-mages",
@@ -58,6 +60,8 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     acquiredLevel: 52,
     autoGenerateInterval: 3.75,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
+    // 付与は歌ごとの効果なので、歌を上書きしたら新しい歌を実行した時刻から数え直す
+    autoGenerateRestartOnBuffChange: true,
     whileBuffModifiers: [
       // 軍神のパイオン: 詩心は最大 4、詩心 1 つにつき 4% のヘイスト
       { buffId: "armys-paeon", maxStacks: 4, gcdHastePerStack: 0.04 },

@@ -99,4 +99,24 @@ describe("BLM: ルーシッドドリーム", () => {
       false,
     );
   });
+
+  it.each([21, 30])(
+    "ルーシッドの %s 秒後には付与時刻から 3 秒ごとの 6 回分（3300）回復している（効果が切れる 21 秒ちょうどの回復は数えない）",
+    (offset) => {
+      const base = [entry("fire-3"), entry("fire-4"), entry("fire-4"), entry("fire-4"), entry("lucid-dreaming")];
+      const lucidTime = resolveTimeline(base, skillMap, BLM_RESOURCES, undefined, BLM_BUFFS).entries[4].startTime;
+      // MP を消費しない oGCD を、ルーシッドが切れる時刻以降に 1 つだけ置く
+      const result = resolveTimeline(
+        [...base, { ...entry("swiftcast"), manualStartTime: lucidTime + offset }],
+        skillMap,
+        BLM_RESOURCES,
+        undefined,
+        BLM_BUFFS,
+      );
+      const before = result.entries[4].resourceSnapshot["mp"];
+      const after = result.entries[5].resourceSnapshot["mp"];
+      expect(before).toBeLessThan(10000 - 3850);
+      expect(after - before).toBe(3300);
+    },
+  );
 });
