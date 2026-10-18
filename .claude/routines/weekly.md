@@ -5,7 +5,7 @@ schedule: "0 22 * * 0"
 description: パッチ情報・コードスキャンから Issue を起票し、優先度の付け直し案を出す週次ルーティン
 ---
 
-# weekly-issue-intake
+# weekly
 
 あなたは FF14 Rotation Calculator の週次 Issue 起票ルーティンです。**無人実行**なので、ユーザーへの質問はせず、判断できないものは起票せずに実行報告へ回してください。
 
@@ -84,7 +84,7 @@ description: パッチ情報・コードスキャンから Issue を起票し、
 最後に、次の形式で報告する。報告本文は実行ログ Issue #448（`meta: ルーティン実行ログ`）にもコメントとして投稿する（**1 実行 1 コメント**。起票が 0 件の実行も投稿する。この投稿は `.claude/rules/workflow-feedback.md`「自動化しないこと」の例外として事前承認済み）。投稿できなければ（GitHub MCP も gh も使えない等）、従来どおりセッションに報告を出すだけにする。
 
 ```
-## weekly-issue-intake 実行報告（YYYY-MM-DD）
+## weekly 実行報告（YYYY-MM-DD）
 ### 系統3 パッチ情報監視
 - 追従版: X.Y ／ 最新パッチノート: X.Y ／ 起票: …
 ### 系統4 コードスキャン
