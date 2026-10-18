@@ -1,4 +1,4 @@
-import type { ResolvedTimelineEntry, ResourceDefinition } from "../../types/skill";
+import type { ResolvedTimelineEntry, ResourceDefinition, ResourceSnapshot, ResourceTick } from "../../types/skill";
 import type { ResourceGroup } from "./types";
 import { styles } from "./styles";
 import { PX_PER_SEC, RESOURCE_DOT_SIZE, RESOURCE_DOT_GAP } from "./constants";
@@ -11,14 +11,47 @@ function getMaxStacksUpperBound(res: ResourceDefinition): number {
   return Math.max(res.maxStacks, ...(res.whileBuffModifiers ?? []).map((m) => m.maxStacks ?? 0));
 }
 
+interface ResourceMarker {
+  key: string;
+  time: number;
+  snapshot: ResourceSnapshot;
+  hasError: boolean;
+}
+
+/**
+ * エントリごとのマーカーに、自動生成の付与（showAutoGenerateTicks。黙想）の段差を足す。
+ * 付与は 1 リソース分の値しか持たないので、1 リソースだけのレーンに限る
+ */
+function getMarkers(group: ResourceGroup, entries: ResolvedTimelineEntry[], ticks: ResourceTick[]): ResourceMarker[] {
+  const markers: ResourceMarker[] = entries.map((entry) => ({
+    key: entry.uid,
+    time: entry.startTime,
+    snapshot: entry.resourceSnapshot,
+    hasError: group.resources.some((r) => entry.resourceErrors.includes(r.id)),
+  }));
+  if (group.resources.length !== 1) return markers;
+  const resourceId = group.resources[0].id;
+  for (const tick of ticks) {
+    if (tick.resourceId !== resourceId) continue;
+    markers.push({
+      key: `tick-${resourceId}-${tick.time}`,
+      time: tick.time,
+      snapshot: { [resourceId]: tick.value },
+      hasError: false,
+    });
+  }
+  return markers;
+}
+
 interface ResourceLanesProps {
   resourceGroups: ResourceGroup[];
   resolvedEntries: ResolvedTimelineEntry[];
+  resourceTicks: ResourceTick[];
   labelBg: string;
 }
 
 /** リソースゲージ行（displayGroup 単位で1行ずつ描画） */
-export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: ResourceLanesProps) {
+export function ResourceLanes({ resourceGroups, resolvedEntries, resourceTicks, labelBg }: ResourceLanesProps) {
   return (
     <>
       {resourceGroups.map((group) => (
@@ -27,21 +60,21 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
             {group.label}
           </div>
           <div style={styles.resourceLaneContent}>
-            {resolvedEntries.map((entry) => {
-              const hasError = group.resources.some((r) => entry.resourceErrors.includes(r.id));
+            {getMarkers(group, resolvedEntries, resourceTicks).map((m) => {
+              const hasError = m.hasError;
               return (
                 <div
-                  key={entry.uid}
+                  key={m.key}
                   style={{
                     ...styles.resourceMarker,
-                    left: entry.startTime * PX_PER_SEC,
+                    left: m.time * PX_PER_SEC,
                   }}
                   title={
                     group.groupMaxStacks !== undefined
-                      ? group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}`).join(" / ") +
-                        ` (合計 ${group.resources.reduce((s, r) => s + (entry.resourceSnapshot[r.id] ?? 0), 0)}/${group.groupMaxStacks})` +
+                      ? group.resources.map((r) => `${r.name}: ${m.snapshot[r.id] ?? 0}`).join(" / ") +
+                        ` (合計 ${group.resources.reduce((s, r) => s + (m.snapshot[r.id] ?? 0), 0)}/${group.groupMaxStacks})` +
                         (hasError ? " (不足)" : "")
-                      : group.resources.map((r) => `${r.name}: ${entry.resourceSnapshot[r.id] ?? 0}/${getMaxStacksUpperBound(r)}`).join(", ") +
+                      : group.resources.map((r) => `${r.name}: ${m.snapshot[r.id] ?? 0}/${getMaxStacksUpperBound(r)}`).join(", ") +
                         (hasError ? " (不足)" : "")
                   }
                 >
@@ -51,7 +84,7 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                       const groupMax = group.groupMaxStacks;
                       const slotColors: string[] = [];
                       for (const res of group.sortedResources) {
-                        const count = entry.resourceSnapshot[res.id] ?? 0;
+                        const count = m.snapshot[res.id] ?? 0;
                         for (let i = 0; i < count && slotColors.length < groupMax; i++) {
                           slotColors.push(res.color);
                         }
@@ -72,7 +105,7 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, labelBg }: Reso
                         </div>
                       );
                     })() : group.resources.map((res) => {
-                      const count = entry.resourceSnapshot[res.id] ?? 0;
+                      const count = m.snapshot[res.id] ?? 0;
                       if (res.maxStacks > 10) {
                         return (
                           <div key={res.id} style={styles.resourceGauge}>
