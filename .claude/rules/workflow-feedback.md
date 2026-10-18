@@ -21,7 +21,7 @@ node .claude/scripts/knowledge-board.cjs grep <pattern>  # 本文を検索（大
 node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
 ```
 
-- 毎回 `gh api --paginate` で取り直し、生 JSON を OS の一時ディレクトリ（`knowledge-board-195.json`）に保存する。続けて何度も読むときは `--cached` を付けると取り直さずに保存済みの JSON を使う
+- 毎回 `gh api` で 1 ページ 100 件ずつ取り直し、連結した JSON を OS の一時ディレクトリ（`knowledge-board-195.json`）に保存する。続けて何度も読むときは `--cached` を付けると取り直さずに保存済みの JSON を使う
 - 未回収の判定は後述「回収済み判定の正」の 2 形式のマーカーで行う
 - コメントの編集（✅ マーカー追記・還元先の更新）に要るコメント ID は `open` / `grep` の先頭列から取る
 
