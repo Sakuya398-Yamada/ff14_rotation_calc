@@ -19,6 +19,8 @@ export default defineConfig({
     outDir: "../../dist",
   },
   test: {
+    // 既定では Vite の root（src/client）の下しか探さないので、src/server のテストも拾えるよう広げる（このパスはカレントディレクトリ基準）
+    dir: "src",
     // jsdom の UI テストは getByRole の多用で通常でも 0.1〜0.5 秒かかり、CPU が混むと 10 倍以上に伸びて既定の 5 秒を超える（#565）。
     // 同期のテストはタイムアウトで中断されず、遅すぎたら失敗扱いになるだけ。延ばして失うのは、終わらない非同期テストの検出が遅れることくらい
     testTimeout: 20_000,
