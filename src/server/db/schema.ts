@@ -26,8 +26,10 @@ export const timelines = sqliteTable(
       .default(sql`(unixepoch())`),
   },
   (t) => [
-    // 「自分のタイムライン」一覧用。インデックスは 1 本ごとに保存 1 件あたりの D1 の書き込み行数が 1 増えるので、今使うものだけ張る
-    index("idx_timelines_owner").on(t.ownerHash, sql`${t.createdAt} DESC`),
+    // 「自分のタイムライン」一覧用。インデックスは 1 本ごとに保存 1 件あたりの D1 の書き込み行数が 1 増えるので、今使うものだけ張る。
+    // 新しい順（ORDER BY created_at DESC）でも SQLite は昇順のインデックスを逆にたどるので DESC は付けない。
+    // sql`... DESC` の式で書くと、テーブルを作り直すマイグレーションで drizzle-kit 0.31 が式を列名として quote し、壊れた CREATE INDEX を生成する
+    index("idx_timelines_owner").on(t.ownerHash, t.createdAt),
     check("timelines_data_json_valid", sql`json_valid(${t.data})`),
   ],
 );

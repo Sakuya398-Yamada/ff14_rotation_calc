@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6a8dc996-6704-49d8-9a85-c19b31aa3918",
+  "id": "89e31e86-9478-4d53-ab42-d18c56c02d58",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "timelines": {
@@ -84,7 +84,7 @@
           "name": "idx_timelines_owner",
           "columns": [
             "owner_hash",
-            "\"created_at\" DESC"
+            "created_at"
           ],
           "isUnique": false
         }
@@ -122,14 +122,6 @@
     "columns": {}
   },
   "internal": {
-    "indexes": {
-      "idx_timelines_owner": {
-        "columns": {
-          "\"created_at\" DESC": {
-            "isExpression": true
-          }
-        }
-      }
-    }
+    "indexes": {}
   }
 }

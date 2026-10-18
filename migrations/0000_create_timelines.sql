@@ -13,4 +13,4 @@ CREATE TABLE `timelines` (
 	CONSTRAINT "timelines_data_json_valid" CHECK(json_valid("timelines"."data"))
 );
 --> statement-breakpoint
-CREATE INDEX `idx_timelines_owner` ON `timelines` (`owner_hash`,"created_at" DESC);
+CREATE INDEX `idx_timelines_owner` ON `timelines` (`owner_hash`,`created_at`);
