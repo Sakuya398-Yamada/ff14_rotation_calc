@@ -64,5 +64,7 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
       // 賢人のバラード: 詩心が付与されるとブラッドレッター系のリキャストが 7.5 秒短縮
       { buffId: "mages-ballad", cooldownReductionOnGain: { chargeKey: "brd-bloodletter", seconds: 7.5 } },
     ],
+    // 詩心は歌ごとのゲージで、歌が別の歌で上書きされるか時間切れになると消える
+    resetOnBuffEnd: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
   },
 ];

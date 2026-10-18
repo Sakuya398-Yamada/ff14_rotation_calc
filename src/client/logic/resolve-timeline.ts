@@ -457,19 +457,33 @@ interface DoTStream {
   }>;
 }
 
+/** バフが消えたとき、そのバフを resetOnBuffEnd に持つリソースを 0 に戻す */
+function resetResourcesOnBuffEnd(
+  buffId: string,
+  resourceState: ResourceSnapshot,
+  resources: ResourceDefinition[]
+): void {
+  for (const res of resources) {
+    if (res.resetOnBuffEnd?.includes(buffId)) resourceState[res.id] = 0;
+  }
+}
+
 /**
  * 排他グループのバフを解除する。新しいバフの適用前に呼び出す。
  */
 function removeExclusiveGroupBuffs(
   activeBuffs: ActiveBuff[],
   buffDef: BuffDefinition,
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  resourceState: ResourceSnapshot,
+  resources: ResourceDefinition[]
 ): void {
   if (!buffDef.exclusiveGroup) return;
   for (let i = activeBuffs.length - 1; i >= 0; i--) {
     const existingDef = buffDefMap.get(activeBuffs[i].buffId);
     if (existingDef?.exclusiveGroup === buffDef.exclusiveGroup && activeBuffs[i].buffId !== buffDef.id) {
-      activeBuffs.splice(i, 1);
+      const [removed] = activeBuffs.splice(i, 1);
+      resetResourcesOnBuffEnd(removed.buffId, resourceState, resources);
     }
   }
 }
@@ -483,7 +497,9 @@ function applyBuffsOnDeplete(
   activeBuffs: ActiveBuff[],
   depletedBuffId: string,
   startTime: number,
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  resourceState: ResourceSnapshot,
+  resources: ResourceDefinition[]
 ): void {
   const depletedDef = buffDefMap.get(depletedBuffId);
   if (!depletedDef) return;
@@ -491,7 +507,7 @@ function applyBuffsOnDeplete(
     if (effect.type !== "applyBuffOnDeplete" || !effect.appliedBuffId) continue;
     const buffDef = buffDefMap.get(effect.appliedBuffId);
     if (!buffDef) continue;
-    removeExclusiveGroupBuffs(activeBuffs, buffDef, buffDefMap);
+    removeExclusiveGroupBuffs(activeBuffs, buffDef, buffDefMap, resourceState, resources);
     const newBuff: ActiveBuff = {
       buffId: buffDef.id,
       startTime,
@@ -588,6 +604,7 @@ function applyResourceChange(
  * アクティブバフから期限切れのものを除去する。
  * 消失対象バフに onExpireResourceTransfer が設定されていれば、
  * from→to へリソースを移し替える（色調反転消失時に BP→WP 戻しなど）。
+ * 消失したバフを resetOnBuffEnd に持つリソースは 0 に戻す（歌の終了で詩心が消えるなど）。
  */
 function expireBuffs(
   activeBuffs: ActiveBuff[],
@@ -601,6 +618,7 @@ function expireBuffs(
     if (activeBuffs[i].endTime <= currentTime) {
       const buffId = activeBuffs[i].buffId;
       activeBuffs.splice(i, 1);
+      resetResourcesOnBuffEnd(buffId, resourceState, resources);
       const def = buffDefMap.get(buffId);
       if (!def?.onExpireResourceTransfer) continue;
       const { fromResourceId, toResourceId } = def.onExpireResourceTransfer;
@@ -1420,7 +1438,7 @@ export function resolveTimeline(
           for (const buffId of buffIds) {
             const buffDef = buffDefMap.get(buffId);
             if (!buffDef) continue;
-            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
+            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
             const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
             const newBuff: ActiveBuff = {
               buffId,
@@ -1444,7 +1462,7 @@ export function resolveTimeline(
           for (const buffId of buffIds) {
             const buffDef = buffDefMap.get(buffId);
             if (!buffDef) continue;
-            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
+            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
             const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
             const newBuff: ActiveBuff = {
               buffId,
@@ -1468,7 +1486,7 @@ export function resolveTimeline(
           if (!buffDef) continue;
 
           // 排他グループのバフを解除
-          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
+          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
           // 同じバフが既にアクティブなら上書き（リフレッシュ）
           const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
           const newBuff: ActiveBuff = {
@@ -1498,7 +1516,7 @@ export function resolveTimeline(
           const buffDef = buffDefMap.get(buffId);
           if (!buffDef) continue;
 
-          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
+          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
           const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
           const newBuff: ActiveBuff = {
             buffId,
@@ -1531,7 +1549,7 @@ export function resolveTimeline(
       for (const buffId of buffsToApplyOnSkill) {
         const buffDef = buffDefMap.get(buffId);
         if (!buffDef) continue;
-        removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap);
+        removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
         const existingIdx = currentActiveBuffs.findIndex((b) => b.buffId === buffId);
         const newBuff: ActiveBuff = {
           buffId,
@@ -1654,7 +1672,7 @@ export function resolveTimeline(
               currentActiveBuffs.splice(idx, 1);
               // applyBuffOnDeplete: スタックを消費し切った時点で別バフを付与する
               // （例: インスタレーション 5 スタック枯渇 → レインボードリップ効果アップ）
-              applyBuffsOnDeplete(currentActiveBuffs, buffId, startTime, buffDefMap);
+              applyBuffsOnDeplete(currentActiveBuffs, buffId, startTime, buffDefMap, resourceState, resources);
             }
           } else {
             currentActiveBuffs.splice(idx, 1);
