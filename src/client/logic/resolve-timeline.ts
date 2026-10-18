@@ -524,6 +524,30 @@ function applyBuffsOnDeplete(
   }
 }
 
+/** startTime からバフを付与する（排他グループ解除・既存ならリフレッシュ） */
+function applyBuffAt(
+  activeBuffs: ActiveBuff[],
+  buffDef: BuffDefinition,
+  startTime: number,
+  buffDefMap: Map<string, BuffDefinition>,
+  resourceState: ResourceSnapshot,
+  resources: ResourceDefinition[]
+): void {
+  removeExclusiveGroupBuffs(activeBuffs, buffDef, buffDefMap, resourceState, resources);
+  const newBuff: ActiveBuff = {
+    buffId: buffDef.id,
+    startTime,
+    endTime: computeBuffEndTime(startTime, buffDef.duration),
+    stacks: buffDef.maxStacks,
+  };
+  const existingIdx = activeBuffs.findIndex((ab) => ab.buffId === buffDef.id);
+  if (existingIdx >= 0) {
+    activeBuffs[existingIdx] = newBuff;
+  } else {
+    activeBuffs.push(newBuff);
+  }
+}
+
 /**
  * 指定時刻がボス離脱ウィンドウ内にあるかどうかを判定する。
  */
@@ -606,6 +630,7 @@ function applyResourceChange(
  * 消失対象バフに onExpireResourceTransfer が設定されていれば、
  * from→to へリソースを移し替える（色調反転消失時に BP→WP 戻しなど）。
  * 消失したバフを resetOnBuffEnd に持つリソースは 0 に戻す（歌の終了で詩心が消えるなど）。
+ * onExpireApplyBuffByResource があれば、リセット前のリソース量に応じたバフを消失時刻から付与する（軍神の契約など）。
  */
 function expireBuffs(
   activeBuffs: ActiveBuff[],
@@ -613,14 +638,35 @@ function expireBuffs(
   buffDefMap: Map<string, BuffDefinition>,
   resourceState: ResourceSnapshot,
   resourceDefMap: Map<string, ResourceDefinition>,
-  resources: ResourceDefinition[]
+  resources: ResourceDefinition[],
+  autoGenTimers: Record<string, AutoGenTimer>
 ): void {
+  // 付与に伴う排他解除の splice が逆順ループの添字を崩さないよう、付与はループの後でまとめて行う
+  const buffsToApply: { buffDef: BuffDefinition; startTime: number }[] = [];
   for (let i = activeBuffs.length - 1; i >= 0; i--) {
     if (activeBuffs[i].endTime <= currentTime) {
-      const buffId = activeBuffs[i].buffId;
+      const { buffId, endTime } = activeBuffs[i];
       activeBuffs.splice(i, 1);
-      resetResourcesOnBuffEnd(buffId, resourceState, resources);
       const def = buffDefMap.get(buffId);
+      const onExpireApply = def?.onExpireApplyBuffByResource;
+      if (onExpireApply) {
+        let amount = resourceState[onExpireApply.resourceId] ?? 0;
+        // 自動生成は各エントリの先頭でまとめて進めるため、前のエントリから消えた時刻までに付く分を足してから読む。
+        // 直後にリソースは 0 に戻るので、タイマーは複製して状態を変えない
+        const resDef = resourceDefMap.get(onExpireApply.resourceId);
+        const timer = autoGenTimers[onExpireApply.resourceId];
+        if (resDef?.autoGenerateInterval && timer) {
+          amount = processAutoGen(
+            endTime, amount, resDef.maxStacks, resDef.autoGenerateInterval, { ...timer }, resDef.autoGenerateAmount ?? 1
+          );
+        }
+        const buffDef = amount > 0 ? buffDefMap.get(onExpireApply.buffIds[amount - 1]) : undefined;
+        // 次のエントリまで間が空き、付与するバフも既に切れている場合は付与しない
+        if (buffDef && computeBuffEndTime(endTime, buffDef.duration) > currentTime) {
+          buffsToApply.push({ buffDef, startTime: endTime });
+        }
+      }
+      resetResourcesOnBuffEnd(buffId, resourceState, resources);
       if (!def?.onExpireResourceTransfer) continue;
       const { fromResourceId, toResourceId } = def.onExpireResourceTransfer;
       if (!resourceDefMap.has(fromResourceId)) continue;
@@ -631,6 +677,9 @@ function expireBuffs(
       resourceState[fromResourceId] = 0;
       applyResourceChange(resourceState, toDef, amount, resources);
     }
+  }
+  for (const { buffDef, startTime } of buffsToApply) {
+    applyBuffAt(activeBuffs, buffDef, startTime, buffDefMap, resourceState, resources);
   }
 }
 
@@ -901,7 +950,7 @@ export function resolveTimeline(
         : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
+      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources, autoGenTimers);
 
     } else {
       autoStartTime = actionAvailableAt;
@@ -911,7 +960,7 @@ export function resolveTimeline(
         : autoStartTime;
 
       // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources);
+      expireBuffs(currentActiveBuffs, startTime, buffDefMap, resourceState, resourceDefMap, resources, autoGenTimers);
 
       actionAvailableAt = startTime + originalSkill.animationLock;
     }
@@ -1477,6 +1526,17 @@ export function resolveTimeline(
               currentActiveBuffs.push(newBuff);
             }
           }
+        }
+      }
+
+      // buffApplicationByResourceWhileBuff: 指定バフ中のリソース量に応じたバフ適用。
+      // 軍神のパイオンは直後の buffApplications で上書きされ詩心も 0 に戻るため、使用前の activeBuffsAtUse / snapshot で判定する
+      if (skill.buffApplicationByResourceWhileBuff) {
+        const { buffId, resourceId, buffIds } = skill.buffApplicationByResourceWhileBuff;
+        const amount = snapshot[resourceId] ?? 0;
+        const buffDef = amount > 0 ? buffDefMap.get(buffIds[amount - 1]) : undefined;
+        if (buffDef && activeBuffsAtUse.some((ab) => ab.buffId === buffId)) {
+          applyBuffAt(currentActiveBuffs, buffDef, startTime, buffDefMap, resourceState, resources);
         }
       }
 

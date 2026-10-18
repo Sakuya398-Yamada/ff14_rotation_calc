@@ -137,6 +137,11 @@ export interface Skill {
   consumeAllOfResource?: string;
   /** リソース量が閾値以上の場合のみ付与するバフ */
   buffApplicationIfResource?: { resourceId: string; minAmount: number; buffIds: string[] };
+  /**
+   * buffId の効果中に使うと、使用前の resourceId の量 n に応じて buffIds[n - 1] を付与する（n = 0 なら付与しない）。
+   * 例: 軍神のパイオン中の賢人のバラード／旅神のメヌエット — 詩心 1〜4 で軍神の加護（詩心1〜4）。
+   */
+  buffApplicationByResourceWhileBuff?: { buffId: string; resourceId: string; buffIds: string[] };
   /** リソース消費量に応じた威力スケーリング（線形補間） */
   potencyScaling?: {
     resourceId: string;
@@ -381,6 +386,14 @@ export interface BuffDefinition {
   onExpireResourceTransfer?: {
     fromResourceId: string;
     toResourceId: string;
+  };
+  /**
+   * 時間切れで消えたとき、その時点の resourceId の量 n に応じて buffIds[n - 1] を消えた時刻から付与する（n = 0 なら付与しない）。
+   * 例: 軍神のパイオンの時間切れ — 詩心 1〜4 で軍神の契約（詩心1〜4）。
+   */
+  onExpireApplyBuffByResource?: {
+    resourceId: string;
+    buffIds: string[];
   };
   /**
    * バフ付与中のリソース獲得（正の ResourceChange）を別リソースへ振り替える。
