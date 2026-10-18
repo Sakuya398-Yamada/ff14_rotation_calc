@@ -18,7 +18,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 
 ## 詳細規約（`.claude/rules/`）
 
-具体的な規約は `.claude/rules/*.md` に分割してある。Claude Code は `.claude/rules/` 配下の Markdown を起動時に自動で読み込む（この CLAUDE.md と同じ優先度。`@import` は不要）。**この CLAUDE.md は索引・コア原則のみに保ち、詳細規約は rules 側に書く**（運用方針は `.claude/rules/documentation-policy.md`）。
+具体的な規約は `.claude/rules/*.md` に分割してある。Claude Code は `.claude/rules/` 配下の Markdown を起動時に自動で読み込む（この CLAUDE.md と同じ優先度。`@import` は不要。frontmatter に `paths:` があるものは、該当ファイルを Read / Edit / Write したときだけ読み込む）。**この CLAUDE.md は索引・コア原則のみに保ち、詳細規約は rules 側に書く**（運用方針は `.claude/rules/documentation-policy.md`）。
 
 | ファイル | 内容 |
 |---------|------|
