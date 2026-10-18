@@ -48,8 +48,8 @@ interface AutoGenTimer {
 /**
  * 指定時刻時点で、自動生成タイマーにより追加されるリソース量を計算し、
  * タイマー状態を更新する。
- * onTick を渡すと、上限に達してもタイマーを止めずに付与を続け、付与ごとにその時刻で呼ぶ
- * （上限で値は増えないが、付与をきっかけにした効果は発生させる）。
+ * keepTicking を true にすると、上限に達してもタイマーを止めずに刻みを進める（上限で値は増えない）。
+ * onTick は付与ごとにその時刻で呼ぶ（keepTicking と併せて、上限で値が増えない付与でも効果を発生させる）。
  * excludeCurrentTime を true にすると、currentTime ちょうどの付与は数えない。
  */
 function processAutoGen(
@@ -59,6 +59,7 @@ function processAutoGen(
   interval: number,
   timer: AutoGenTimer,
   amount: number = 1,
+  keepTicking: boolean = false,
   onTick?: (tickTime: number) => void,
   excludeCurrentTime: boolean = false
 ): number {
@@ -67,7 +68,7 @@ function processAutoGen(
   let value = currentValue;
   let timerTime = timer.startedAt;
 
-  while (onTick || value < maxStacks) {
+  while (keepTicking || value < maxStacks) {
     // バフの終了時刻（小数 3 桁に丸めてある）と比べるので、足し続けた誤差を残さない
     const nextTick = Math.round((timerTime + interval) * 1000) / 1000;
     if (excludeCurrentTime ? nextTick >= currentTime : nextTick > currentTime) break;
@@ -76,7 +77,7 @@ function processAutoGen(
     onTick?.(nextTick);
   }
 
-  if (value >= maxStacks && !onTick) {
+  if (value >= maxStacks && !keepTicking) {
     // 最大に達したらタイマー停止
     timer.startedAt = null;
   } else {
@@ -948,12 +949,15 @@ export function resolveTimeline(
       const timer = autoGenTimers[res.id];
       const reductions = getActiveResourceModifiers(res, currentActiveBuffs)
         .flatMap((m) => (m.cooldownReductionOnGain ? [m.cooldownReductionOnGain] : []));
-      // 付与をきっかけにリキャストを短縮する間は、上限でもタイマーを止めない
       const onTick = reductions.length > 0
         ? (tickTime: number) => {
             for (const r of reductions) reduceChargeCooldown(r.chargeKey, r.seconds, tickTime);
           }
         : undefined;
+      // 付与をきっかけにリキャストを短縮する間は、上限でもタイマーを止めない。
+      // 歌ごとの付与（autoGenerateRestartOnBuffChange）も、上限で止めると消費した時刻から数え直しになり、
+      // 刻みが歌の実行時刻からずれるので止めない（#557）
+      const keepTicking = onTick !== undefined || res.autoGenerateRestartOnBuffChange === true;
       // autoGenerateWhileBuff: 指定バフのいずれかがアクティブ時のみ自動生成
       if (res.autoGenerateWhileBuff) {
         const gate = currentActiveBuffs.find((ab) => res.autoGenerateWhileBuff!.includes(ab.buffId));
@@ -971,7 +975,7 @@ export function resolveTimeline(
           // 条件バフが付いた時刻から数える（バフを付与したエントリでは、自動生成がバフの付与より先に走るため）
           timer.startedAt = gate.startTime;
           timer.gateBuff = { buffId: gate.buffId, startTime: gate.startTime };
-        } else if (timer.startedAt === null && (onTick || resourceState[res.id] < def.maxStacks)) {
+        } else if (timer.startedAt === null && (keepTicking || resourceState[res.id] < def.maxStacks)) {
           // バフアクティブだがタイマー未開始 → タイマー開始
           timer.startedAt = time;
         }
@@ -983,6 +987,7 @@ export function resolveTimeline(
         res.autoGenerateInterval,
         timer,
         res.autoGenerateAmount ?? 1,
+        keepTicking,
         onTick,
         excludeTime
       );

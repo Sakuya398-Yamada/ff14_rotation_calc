@@ -272,6 +272,7 @@ export interface ResourceDefinition {
   autoGenerateWhileBuff?: string[];
   /**
    * autoGenerateWhileBuff の条件バフが付き直したとき（歌の上書きなど）、自動生成をそのバフの付与時刻から数え直す。
+   * 条件バフが付いている間は上限でも刻みを進め、消費で上限を割っても付与時刻からの刻みのまま続ける。
    * 未設定なら、条件バフのいずれかが付いている間は刻みを引き継ぐ（AF と UB の切り替えでポリグロットの 30 秒を引き継ぐなど）
    */
   autoGenerateRestartOnBuffChange?: boolean;
