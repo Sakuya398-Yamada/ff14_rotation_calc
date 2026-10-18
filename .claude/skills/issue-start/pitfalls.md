@@ -49,3 +49,17 @@
   - CI の確認: `gh api repos/{owner}/{repo}/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
   - draft の ready 化・レビュースレッドの resolve・auto-merge のように GraphQL にしかない操作は、403 のメッセージに載る代替ルート（`repos/{owner}/{repo}/pulls/N/ccr/...`）を使う
 - **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#83（issue-driven-dev-starter#81 も同内容）
+
+## `paths:` 付き rules の読み込みを確かめる
+
+- **条件**: `paths:` を付けた rules が、該当ファイルを扱ったときに読み込まれるかを確かめるとき
+- **症状**: `/context` は起動時に読み込まれたファイルしか見せないので、`paths:` の一致で後から読み込まれる rules は確かめられない。headless の `claude -p` で確かめようとして `--allowedTools "Read" "<プロンプト>"` と書くと、値を複数取るオプションがプロンプトまで値として取り込み、`Error: Input must be provided either through stdin or as a prompt argument when using --print` で止まる
+- **回避**: 標準入力の JSON を追記するだけの InstructionsLoaded hook を `--settings` で付け、headless で該当ファイルを読ませる。プロンプトはオプションより前に置き、`--allowedTools=Read` と `=` で 1 つの値として渡し、`< /dev/null` で標準入力を閉じる
+  ```bash
+  echo '{"hooks":{"InstructionsLoaded":[{"hooks":[{"type":"command","command":"cat >> /tmp/il.jsonl; echo >> /tmp/il.jsonl"}]}]}}' > /tmp/il-settings.json
+  rm -f /tmp/il.jsonl
+  claude -p "<該当ファイル> を Read ツールで読み、1 行で要約して" --settings /tmp/il-settings.json --allowedTools=Read < /dev/null
+  jq -c '{load_reason, file_path, trigger_file_path}' /tmp/il.jsonl
+  ```
+  `load_reason` が `path_glob_match` で、`trigger_file_path` が読ませたファイルの行があれば読み込まれている。対象外のファイルを読ませたときと、起動時（`session_start`）にはその rules の行が出ないことも合わせて見る（ログは追記なので、実行ごとに `rm -f` で消してから見る）
+- **確認**: Claude Code 2.1.302 / 2026-10 / issue-driven-dev-starter#92

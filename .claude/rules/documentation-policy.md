@@ -29,4 +29,4 @@
 1. スコープが既存 rules（CLAUDE.md「詳細規約」の表）と重複しないか確認する（重複するなら既存ファイルへの追記を選ぶ）。手順なら rules ではなく skill にする
 2. `.claude/rules/<name>.md` に置く。特定のファイル群にだけ効かせたいなら frontmatter に `paths:`（例: `paths: ["src/api/**/*.ts"]`）を書く
 3. CLAUDE.md の「## 詳細規約」テーブルに 1 行追加する（`@import` は書かない。二重に読み込まれる）
-4. 大きく変えたら `/context` で読み込まれているファイルと消費量を確認し、`/doctor prompt-audit` で冗長・矛盾した指示が無いか点検する
+4. 大きく変えたら `/context` で読み込まれているファイルと消費量を確認し、`/doctor prompt-audit` で冗長・矛盾した指示が無いか点検する。`/context` は起動時の分しか見せないので、`paths:` を付けたものは InstructionsLoaded hook で、該当ファイルの Read 時に `path_glob_match` で読み込まれることを確かめる（手順は `.claude/skills/issue-start/pitfalls.md`「`paths:` 付き rules の読み込みを確かめる」）
