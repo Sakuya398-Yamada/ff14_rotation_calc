@@ -247,3 +247,52 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
     expect(after[4].recastError).toBe(false);
   });
 });
+
+describe("BRD: 詩心・ソウルボイスが上限に達したあと消費しても、付与は歌の実行時刻からの刻みで続く (#557)", () => {
+  it("メヌエット中に詩心 3 でピッチパーフェクトを撃っても、次の付与は歌の実行時刻からの 15 秒", () => {
+    // 付与は 3.75 × k。11.25 秒で詩心 3（上限）になり、12.2 秒のピッチパーフェクトで 0 に戻る
+    const withNext = (t: number) =>
+      resolve([
+        entry("wanderers-minuet", 0),
+        entry("burst-shot", 11.5),
+        entry("pitch-perfect", 12.2),
+        entry("burst-shot", t),
+      ]).entries;
+
+    const before = withNext(14.9);
+    expect(before[1].resourceSnapshot["repertoire"]).toBe(3);
+    expect(before[2].resourceErrors).toEqual([]);
+    expect(before[2].recastError).toBe(false);
+    expect(before[2].resolvedPotency).toBe(360);
+    expect(before[2].resourceSnapshot["repertoire"]).toBe(0);
+    expect(before[3].recastError).toBe(false);
+    expect(before[3].resourceSnapshot["repertoire"]).toBe(0);
+
+    const after = withNext(15.2);
+    expect(after[3].recastError).toBe(false);
+    expect(after[3].resourceSnapshot["repertoire"]).toBe(1);
+  });
+
+  it("ソウルボイス 100 でエイペックスアローを撃っても、次の付与は歌の実行時刻からの刻み", () => {
+    // バラードの 10 回で 50、40 秒の軍神のパイオンから 3.75 秒ごとに 10 回で 77.5 秒に 100（上限）。
+    // 78 秒のエイペックスアローで 0 に戻り、次の付与はパイオンの実行時刻から 11 回目の 81.25 秒
+    const withNext = (t: number) =>
+      resolve([
+        entry("mages-ballad", 0),
+        entry("armys-paeon", 40),
+        entry("apex-arrow", 78),
+        entry("burst-shot", t),
+      ]).entries;
+
+    const before = withNext(81.2);
+    expect(before[2].resourceErrors).toEqual([]);
+    expect(before[2].resolvedPotency).toBe(700);
+    expect(before[2].resourceSnapshot["soul-voice"]).toBe(0);
+    expect(before[3].recastError).toBe(false);
+    expect(before[3].resourceSnapshot["soul-voice"]).toBe(0);
+
+    const after = withNext(81.25);
+    expect(after[3].recastError).toBe(false);
+    expect(after[3].resourceSnapshot["soul-voice"]).toBe(5);
+  });
+});
