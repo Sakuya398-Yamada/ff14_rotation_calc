@@ -43,7 +43,9 @@ fi
 # worktree list. If the launch cwd lives under `.claude/worktrees/<name>/` but
 # is NOT a registered worktree, warn the model: edits made via that path
 # will silently land in a gitignored area.
-launch_pwd="$PWD"
+# Physical path: `git worktree list` and `--show-toplevel` print paths with symlinks
+# resolved, so a logical $PWD reached through a symlink (macOS /tmp) never matches (issue-driven-dev-starter#142).
+launch_pwd=$(pwd -P)
 toplevel=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
 worktree_paths=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree / {print $2}')
 

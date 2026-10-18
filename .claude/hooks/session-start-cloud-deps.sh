@@ -5,8 +5,10 @@
 # is never reinstalled.
 #
 # Output goes to stdout as a short banner (Claude Code adds it to Claude's context);
-# npm / npx output goes to a log file instead. Failures are reported on stdout and the
-# hook still exits 0, because a non-zero exit would only show stderr to the user.
+# npm / npx output goes to a log file instead. A failed npm ci is retried once, since
+# the proxy sometimes cuts a download mid-transfer (ECONNRESET). Failures are reported
+# on stdout and the hook still exits 0, because a non-zero exit would only show stderr
+# to the user.
 # Needs: npm, network access to the npm registry.
 
 set -uo pipefail
@@ -35,11 +37,21 @@ else
   SECONDS=0
   npm ci --no-audit --no-fund >>"$log" 2>&1
   rc=$?
+  retried=
+  # Two installs plus the wait must fit in the hook's timeout in settings.json (600s),
+  # or Claude Code discards the whole banner.
+  if (( rc != 0 )); then
+    printf -- '--- npm ci failed (exit %s); retrying in 5s ---\n' "$rc" >>"$log"
+    sleep 5
+    npm ci --no-audit --no-fund >>"$log" 2>&1
+    rc=$?
+    retried=' (retried once)'
+  fi
   if (( rc != 0 )); then
     report_failure "npm ci" "$rc" 'Run it again before `npm test`'
     exit 0
   fi
-  printf -- '- npm ci: done in %ss\n' "$SECONDS"
+  printf -- '- npm ci: done in %ss%s\n' "$SECONDS" "$retried"
 fi
 
 # Same command as `npm run db:migrate`. The local database lives in .wrangler/state, which

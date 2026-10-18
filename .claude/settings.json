@@ -105,12 +105,14 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/validate-branch-name.sh",
-            "timeout": 10
+            "timeout": 10,
+            "onFailure": "block"
           },
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/validate-commit-message.sh",
-            "timeout": 10
+            "timeout": 10,
+            "onFailure": "block"
           }
         ]
       }
@@ -131,7 +133,7 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/session-start-cloud-deps.sh",
-            "timeout": 300
+            "timeout": 600
           }
         ]
       }

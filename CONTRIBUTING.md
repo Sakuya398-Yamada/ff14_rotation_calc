@@ -52,7 +52,7 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 
 ### 4. PR作成（Claude Code）
 
-実装完了後、Issueに紐づいたPRを作成します。PRの本文に `closes #<issue番号>` が含まれます。
+実装完了後、Issueに紐づいたPRを作成します。PRの本文に `closes #<issue番号>` が含まれます（マージ後に行う完了条件が残る Issue では `refs #<issue番号>` にし、残りを終えてから手でクローズします）。
 
 ### 5. 最終確認 & マージ（ユーザー）
 

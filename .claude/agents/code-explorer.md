@@ -55,6 +55,14 @@ Report in the caller's language (Japanese unless told otherwise). Include:
 
 Always include specific file paths and line numbers. Lead with the answer; skip preambles.
 
+## 書き込みの制約
+
+`Bash` は調べるための実行に使う。呼び出し側のプロンプトに書かれていなくても、次を守る：
+
+- リポジトリのファイルと、呼び出し元が作った一時ファイル（scratchpad などリポジトリの外にあるものも含む）は、書き換えも削除もしない。呼び出し元はそれを検証に使っていることがあり、書き換えると、呼び出し元は本当の不一致と区別できない
+- 動作確認で試しのファイルが要るときは、新しい専用のディレクトリを作ってその中にだけ置き、作った場所を報告に書く
+- コミット・push と、GitHub への書き込み（コメント・Issue・ラベル）はしない
+
 ## Output Budget (DEFAULT)
 
 呼び出し側のプロンプトで上限が指定されていない場合、以下を既定値とする。目的は呼び出し側のコンテキストを汚さないこと：

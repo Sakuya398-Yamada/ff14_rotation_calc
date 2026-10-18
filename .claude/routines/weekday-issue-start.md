@@ -61,7 +61,7 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
    - コメントに「## 着手」の印が無い（クラウドセッションの作業ブランチ `claude/*` 等は名前に Issue 番号が入らず、上の条件では作業中と分からないため。印の書式は `.claude/skills/issue-start/phases/02-branch-setup.md`「クラウドセッションの場合」手順 4）。「## 着手（取り下げ）」に書き換わった印は数えない。印が古くても除外し続け、作業していないと分かった印は人が「## 着手（取り下げ）」に書き換えて外す（#493）
    - 本文の `依存: #M` がすべてクローズ済み
    - sub-issue を持つ親 Issue ではない
-   - `## 未確定事項` に「要ユーザー確認」「ユーザー判断」のように、ユーザーの決定待ちと明記された項目が無い
+   - `## 未確定事項` に `[要確認]` の項目や、「ユーザー判断」のようにユーザーの決定待ちと明記された項目が無い（「`/issue-start` の探索で調べる」と書かれた項目は決定待ちではないので数えない）
 
    確かめるときは、最初に `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues?state=open&labels=routine-ok&per_page=100" --jq '[.[] | select(.pull_request | not) | {number, title, labels: [.labels[].name]}]'` で `routine-ok` の付いた Issue に絞る（この API は PR も返すので `pull_request` の有無で除く）。0 件なら残りの条件は確かめずに手順 2-3 へ進む
 
