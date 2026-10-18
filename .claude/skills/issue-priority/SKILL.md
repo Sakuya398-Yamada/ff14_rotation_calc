@@ -28,7 +28,11 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 2. `list_pull_requests`（`state: open`、`fields: ["number", "title", "body", "draft", "head", "mergeable_state"]`）で Open PR を一覧し、タイトル末尾の `#N` と本文の `closes #N` で Issue に紐づける
 3. リモートのブランチから `*/#<番号>-*` に当たるものを Issue に紐づける。ブランチは百本を超えるので、全件を出さずに対象の番号で絞る: `git ls-remote --heads origin | grep -E '/#(475|476|...)-'`
 
-GitHub MCP が使えなければ `gh issue list` / `gh pr list`（`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）で同じ情報を取る。
+GitHub MCP が使えなければ、REST の `gh api` で同じ情報を取る。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので、クラウドセッションでは 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
+
+- Open Issue: `gh api "repos/{owner}/{repo}/issues?state=open&per_page=100" --jq '.[] | select(.pull_request | not) | [.number, .title, ([.labels[].name] | join(","))] | @tsv'`。issues API は PR も返すので、`pull_request` のあるものを除く
+- Open PR: `gh api "repos/{owner}/{repo}/pulls?state=open&per_page=100" --jq '.[] | {number, title, body, draft, head: .head.ref}'`。一覧には `mergeable` が無いので、紐づいた PR ごとに `gh api repos/{owner}/{repo}/pulls/<PR番号> --jq '{number, mergeable, mergeable_state}'` で読む
+- どちらも 1 回で取れるのは 100 件まで。超えたら `--paginate` を使わずに `page=N` を進める（pitfalls.md「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」）
 
 ### 2. 要約する
 
@@ -37,6 +41,7 @@ GitHub MCP が使えなければ `gh issue list` / `gh pr list`（`.claude/rules
 ```
 目的: Open Issue の消化優先度の判定材料を集める。読み取りのみ（コメント・ラベル・本文の書き込みはしない）。
 対象: #A, #B, ...（ToolSearch で select:mcp__github__issue_read をロードし、method=get。コメントがあれば get_comments、親子関係があれば get_parent / get_sub_issues）
+GitHub MCP が使えなければ REST の gh api repos/{owner}/{repo}/issues/N（コメントは .../issues/N/comments、子は .../issues/N/sub_issues）で読む。gh issue / gh pr などの GraphQL 系サブコマンドはクラウドセッションで 403 になるので使わない。
 各 Issue について 7 行以内で返す:
 - 目的（1 行）
 - 依存: 本文の「依存: #N」、親 Issue / sub-issue、他 Issue の成果物を前提にしているか（明示と暗黙を区別）
@@ -115,7 +120,7 @@ priority ラベルを案のとおり付け替えますか？
 承認された Issue のうち、現在のラベルと案が違うものだけを更新する。
 
 - `issue_write`（method: `update`）の `labels` は **ラベル全体を置き換える**。現在のラベルから `priority:*` を除き、新しい `priority:*` を 1 つ足した配列を渡す（種別ラベルや `needs-decision` / `routine-ok` を落とさない）
-- `gh` なら `gh issue edit <N> --remove-label <旧> --add-label <新>`
+- `gh` なら REST でラベルを 1 つずつ足し引きする（他のラベルには触れない）。`gh api repos/{owner}/{repo}/issues/<N>/labels -f "labels[]=priority:<新>"` で足し、旧い `priority:*` があれば `gh api -X DELETE repos/{owner}/{repo}/issues/<N>/labels/priority:<旧>` で外す。`gh issue edit` は GraphQL を使うので、クラウドセッションでは 403 になる
 - 付け替えた Issue の一覧（番号・旧 → 新）を最後に示す
 
 ## 自動化しないこと
