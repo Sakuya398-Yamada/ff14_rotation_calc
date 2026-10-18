@@ -92,7 +92,7 @@ node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
 
 ## 定期ルーティン（`.claude/routines/`）
 
-週次 `weekly`、日次 `daily-triage`（19:00）と `weekday-issue-start`（19:30）の 3 つをクラウドのスケジュールタスクに登録している。一覧・登録先との同期・実行ログの扱いは `.claude/rules/routines.md`（`paths:` で `.claude/routines/` 配下を触ったときだけ読み込む）。
+週次 `weekly`、日次 `daily-triage`（19:00）と `weekday-issue-start`（19:30）の 3 つをクラウドのスケジュールタスクに登録している。一覧・登録側の呼び出し文・実行ログの扱いは `.claude/rules/routines.md`（`paths:` で `.claude/routines/` 配下を触ったときだけ読み込む）。
 
 ## 棚卸し運用（日次ルーティンが正）
 
