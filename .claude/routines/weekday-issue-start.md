@@ -57,13 +57,15 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 ## 2. 対象 Issue の選定
 
 1. Open Issue のうち、次をすべて満たすものを候補にする
-   - ラベル `routine-ok` が付いている（人が無人実装を許可した印。このルーティンは付けも外しもしない。#503）。最初に `gh issue list -R Sakuya398-Yamada/ff14_rotation_calc --state open --label routine-ok --json number,title,labels` で絞り、0 件なら残りの条件は確かめずに手順 2-3 へ進む
+   - ラベル `routine-ok` が付いている（人が無人実装を許可した印。このルーティンは付けも外しもしない。#503）
    - ラベルに `feature` / `bug` / `refactor` / `docs` / `test` のいずれかがある（`meta` / `question` は除く。#2 のテンプレート Issue も除く）
    - ラベル `needs-decision` が付いていない（過去の実行が判断できずに人の決定を待っている Issue。人が決めてラベルを外すと再び候補になる）
    - その Issue に紐づく Open PR が無く、リモートに `*/#<番号>-*` のブランチも無い（別のセッションが着手済みの可能性があるため）
    - 本文の `依存: #M` がすべてクローズ済み
    - sub-issue を持つ親 Issue ではない
    - `## 未確定事項` に「要ユーザー確認」「ユーザー判断」のように、ユーザーの決定待ちと明記された項目が無い
+
+   確かめるときは、最初に `gh issue list -R Sakuya398-Yamada/ff14_rotation_calc --state open --label routine-ok --json number,title,labels` で `routine-ok` の付いた Issue に絞る。0 件なら残りの条件は確かめずに手順 2-3 へ進む
 2. 優先順位は `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無しの順。同じ順位なら番号の小さい順
 3. 候補が無ければ（`routine-ok` の付いた Issue が無い日も含む）何もせず、実行報告に「対象なし」と書いて終了する
 
