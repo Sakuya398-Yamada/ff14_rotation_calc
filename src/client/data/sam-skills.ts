@@ -42,6 +42,7 @@ import meikyoShisuiIcon from "../assets/icons/sam/Meikyo_Shisui.png";
 import zanshinIcon from "../assets/icons/sam/Zanshin.png";
 import thirdEyeIcon from "../assets/icons/sam/Third_Eye.png";
 import tengentsuIcon from "../assets/icons/sam/Tengentsu.png";
+import meditateIcon from "../assets/icons/sam/Meditate.png";
 
 // === ロールアクション アイコン ===
 import trueNorthIcon from "../assets/icons/sam/role_actions/True_North.png";
@@ -59,7 +60,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
  * 4. 燕返し系（autoTransform で Ready バフに応じて変化、5種）
  * 5. 奥義波切系（Lv90、確定クリ）
  * 6. 必殺剣系（剣気消費 oGCD/GCD）
- * 7. その他（意気衝天・葉隠・明鏡止水・残心・燕飛・照破・心眼/天眼通）
+ * 7. その他（意気衝天・葉隠・明鏡止水・残心・燕飛・照破・心眼/天眼通・黙想）
  */
 export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
@@ -759,6 +760,21 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     replacesSkillId: "third-eye",
     cooldown: 15,
     resourceChanges: [{ resourceId: "kenki", amount: 10 }],
+  },
+  // 剣気・剣圧はバフ中の自動生成（SAM_RESOURCES）で付き、次のアクションでバフが外れる
+  {
+    id: "meditate",
+    name: "黙想",
+    potency: 0,
+    type: "ogcd",
+    target: "self",
+    icon: meditateIcon,
+    recastTime: DEFAULT_ANIMATION_LOCK,
+    animationLock: 0.65,
+    acquiredLevel: 60,
+    cooldown: 60,
+    triggersGcdRecast: true,
+    buffApplications: ["meditate"],
   },
 
   // ============================================================
