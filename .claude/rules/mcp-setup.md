@@ -35,7 +35,7 @@ MCP は**補助的な手段**。接続エラー・未設定時はフロー全体
 | サーバー | フォールバック先 |
 |---------|----------------|
 | `brave-search` | `WebSearch` 組み込みツール、またはユーザーに手動検索を依頼 |
-| `playwright` | UI 動作確認はユーザーに依頼。その旨を完了報告に明記 |
+| `playwright` | クラウドセッションでは Node から Playwright を直接使う（`.claude/skills/playwright-mcp/SKILL.md`「MCP が使えないとき」）。それもできなければ UI 動作確認はユーザーに依頼し、その旨を完了報告に明記 |
 | `github` | `gh.exe` のフルパス起動 (`/c/Program Files/GitHub CLI/gh.exe`) を Bash 経由で利用。Issue/PR 取得は `gh issue view` / `gh pr view`、コメント投稿は `gh issue comment --body-file <tmpfile>`、PR 作成は `gh pr create`。公開リポジトリの読み取りのみなら `WebFetch` でも代用可（コメント投稿は不可）|
 
 フォールバックで続けたうえで、ユーザーには `CONTRIBUTING.md`「MCP サーバーのトラブルシューティング」の該当行を案内する。使えていたツールが途中で見つからなくなったときは stdio サーバーの切断なので、`.claude/skills/playwright-mcp/SKILL.md` の「切断時の再接続手順」（共通）に従う。
