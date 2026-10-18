@@ -17,12 +17,13 @@ Claude Desktop のスケジュールタスクとして、次の 3 つのルー�
 
 - **リポジトリ側（`.claude/routines/<taskId>.md`）が正**。登録先のプロンプト（`C:\Users\Sakuya\.claude\scheduled-tasks\<taskId>\SKILL.md`）はリポジトリの外にあり、OS の再インストール等で失われる（#442）
 - **プロンプトやスケジュールを変えたら両方を更新する**: リポジトリ側を PR で直し、登録側は `update_scheduled_task`（`prompt` / `cronExpression` / `description`）で同じ内容にする
-  - 同期したら、本文が一致したかをリポジトリ直下の Git Bash で確かめる。frontmatter は両側で形式が違う（リポジトリ側は `taskId` / `title` / `schedule` / `description`、登録側は `name` / `description`）ので、frontmatter・CRLF・先頭の空行を除いた本文同士を比べる。差分が無ければ `<taskId>: 一致` と出る。`description` とスケジュールは比べないので、別に目で確かめる
+  - 同期したら、本文が一致したかをリポジトリ直下の Git Bash で確かめる。frontmatter は両側で形式が違う（リポジトリ側は `taskId` / `title` / `schedule` / `description`、登録側は `name` / `description`）ので、frontmatter・CRLF・先頭の空行を除いた本文同士を比べる。差分が無ければ `<taskId>: 一致` と出る（どちらかのファイルが無ければ `ls` のエラーで止まる）。`description` とスケジュールは比べないので、別に目で確かめる
 
     ```bash
     t=<taskId>
     body() { sed 's/\r$//' "$1" | awk 'fm < 2 { if ($0 == "---") fm++; next } !s && $0 == "" { next } { s = 1; print }'; }
-    diff <(body ".claude/routines/$t.md") <(body "$HOME/.claude/scheduled-tasks/$t/SKILL.md") && echo "$t: 一致"
+    ls ".claude/routines/$t.md" "$HOME/.claude/scheduled-tasks/$t/SKILL.md" >/dev/null &&
+      diff <(body ".claude/routines/$t.md") <(body "$HOME/.claude/scheduled-tasks/$t/SKILL.md") && echo "$t: 一致"
     ```
 
   - PR のマージ前に同期した場合、レビューで本文が変わったら登録側を同期し直し、上のコマンドでもう一度確かめる
