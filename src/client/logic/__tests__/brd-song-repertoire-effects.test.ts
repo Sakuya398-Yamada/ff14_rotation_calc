@@ -125,3 +125,55 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
     expect(noArrow.entries[4].recastError).toBe(true);
   });
 });
+
+describe("BRD: 歌が上書き・時間切れで終わると詩心が 0 になる (#511)", () => {
+  it("軍神のパイオンで詩心 4 にしてから旅神のメヌエットを実行すると、詩心は 0 から溜め直しになる", () => {
+    const result = resolve([
+      entry("armys-paeon"),
+      ...burstShots(10),
+      entry("wanderers-minuet"),
+      entry("pitch-perfect"),
+    ]);
+    const entries = result.entries;
+    const minuet = entries[11];
+    const pitch = entries[12];
+
+    expect(entries[10].resourceSnapshot["repertoire"]).toBe(4);
+    expect(minuet.resourceSnapshot["repertoire"]).toBe(0);
+    // パイオンの詩心 4 は引き継がれず、メヌエット直後のピッチパーフェクトは詩心不足
+    expect(pitch.comboErrors).toEqual([]);
+    expect(pitch.resourceErrors).toContain("repertoire");
+  });
+
+  it("上書き後のメヌエットで溜め直した詩心は上限 3 で、ピッチパーフェクトは 3 を消費する", () => {
+    const result = resolve([
+      entry("armys-paeon"),
+      ...burstShots(10),
+      entry("wanderers-minuet"),
+      ...burstShots(8),
+      entry("pitch-perfect"),
+    ]);
+    const entries = result.entries;
+    const pitch = entries[entries.length - 1];
+    const afterMinuet = entries.slice(11, -1).map((e) => e.resourceSnapshot["repertoire"]);
+
+    expect(afterMinuet[0]).toBe(0);
+    expect(Math.max(...afterMinuet)).toBe(3);
+    expect(pitch.resourceErrors).toEqual([]);
+    expect(pitch.resolvedPotency).toBe(360);
+  });
+
+  it.each(["mages-ballad", "armys-paeon", "wanderers-minuet"])(
+    "%s が時間切れで終わると詩心が 0 になる",
+    (song) => {
+      const result = resolve([entry(song), ...burstShots(25)]);
+      const songEnd = result.entries[0].startTime + 45;
+      const during = result.entries.filter((e) => e.startTime < songEnd);
+      const after = result.entries.filter((e) => e.startTime >= songEnd);
+
+      expect(during[during.length - 1].resourceSnapshot["repertoire"]).toBeGreaterThan(0);
+      expect(after.length).toBeGreaterThan(0);
+      for (const e of after) expect(e.resourceSnapshot["repertoire"]).toBe(0);
+    },
+  );
+});

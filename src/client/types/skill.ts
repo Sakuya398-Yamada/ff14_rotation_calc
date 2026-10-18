@@ -267,6 +267,8 @@ export interface ResourceDefinition {
   autoGenerateWhileBuff?: string[];
   /** 指定バフの効果中だけ変わる性質（例: 軍神のパイオン中の詩心最大 4・ヘイスト） */
   whileBuffModifiers?: ResourceBuffModifier[];
+  /** 指定バフのいずれかが時間切れ・排他グループの上書きで消えたときに 0 に戻す（例: 歌が終わると詩心が消える） */
+  resetOnBuffEnd?: string[];
   /** 表示色 */
   color: string;
   /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
