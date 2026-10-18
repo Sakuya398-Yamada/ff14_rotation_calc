@@ -68,11 +68,14 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
    - ラベルに `feature` / `bug` / `refactor` / `docs` / `test` のいずれかがある（`meta` / `question` は除く。#2 のテンプレート Issue も除く）
    - ラベル `needs-decision` が付いていない（過去の実行が判断できずに人の決定を待っている Issue。人が決めてラベルを外すと再び候補になる）
    - その Issue に紐づく Open PR が無く、リモートに `*/#<番号>-*` のブランチも無い（別のセッションが着手済みの可能性があるため）
+   - コメントに「## 着手」の印が無い（クラウドセッションの作業ブランチ `claude/*` 等は名前に Issue 番号が入らず、上の条件では作業中と分からないため。印の書式は `.claude/skills/issue-start/phases/02-branch-setup.md`「クラウドセッションの場合」手順 4）。「## 着手（取り下げ）」に書き換わった印は数えない。印が古くても除外し続け、作業していないと分かった印は人が「## 着手（取り下げ）」に書き換えて外す（#493）
    - 本文の `依存: #M` がすべてクローズ済み
    - sub-issue を持つ親 Issue ではない
    - `## 未確定事項` に「要ユーザー確認」「ユーザー判断」のように、ユーザーの決定待ちと明記された項目が無い
 
    確かめるときは、最初に `gh issue list -R Sakuya398-Yamada/ff14_rotation_calc --state open --label routine-ok --json number,title,labels` で `routine-ok` の付いた Issue に絞る。0 件なら残りの条件は確かめずに手順 2-3 へ進む
+
+   着手の印は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments?per_page=100" --jq '[.[] | select(.body | startswith("## 着手\n"))] | length'` が `0` であることで確かめる（GitHub MCP なら `issue_read` の `get_comments`）。見出しの直後の改行まで含めて比べるので、「## 着手（取り下げ）」の印には当たらない
 2. 優先順位は `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無しの順。同じ順位なら番号の小さい順
 3. 候補が無ければ（`routine-ok` の付いた Issue が無い日も含む）何もせず、実行報告に「対象なし」と書いて終了する
 
