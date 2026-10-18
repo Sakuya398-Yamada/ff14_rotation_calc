@@ -7,7 +7,7 @@ paths:
 
 frontmatter の `paths:` により、`.claude/routines/` 配下を Read / Edit / Write したときだけ読み込まれる。
 
-クラウドのスケジュールタスク（claude.ai/code/routines）として、次の 3 つのルーティンを登録している。読み書きは Web UI か、クラウドセッションなら claude-code-remote の `get_trigger` / `update_trigger` で行う。
+クラウドのスケジュールタスク（claude.ai/code/routines）として、次の 3 つのルーティンを登録している。書き換えは Web UI で人が行う。読み出しは、クラウドセッションなら claude-code-remote の `get_trigger` でもできる。
 
 | taskId | スケジュールタスク ID | タイトル | 実行 | 定義 | 実行ログ |
 |--------|---------------------|---------|------|------|---------|
@@ -17,7 +17,8 @@ frontmatter の `paths:` により、`.claude/routines/` 配下を Read / Edit /
 
 - **リポジトリ側（`.claude/routines/<taskId>.md`）が正**。登録先のプロンプトはリポジトリの外にあり、版管理されない（#442）
 - 登録先との対応: スケジュールタスクの名前は frontmatter の `title`、プロンプトは frontmatter を除いた本文、cron は `schedule` の前に `CRON_TZ=Asia/Tokyo ` を付けた形（`schedule` は日本時間の値で、TZ を書かない）。`description` はクラウド側に欄が無いので、リポジトリ内の説明として持つだけ
-- **プロンプトやスケジュールを変えたら両方を更新する**: リポジトリ側を PR で直し、登録側は、クラウドセッションなら `update_trigger`（`trigger_id` に表の ID、`prompt` に本文、スケジュールを変えたら `cron_expression`）、それ以外なら Web UI のスケジュールタスクの Edit で同じ内容にする
+- **プロンプトやスケジュールを変えたら両方を更新する**: リポジトリ側を PR で直し、登録側は Web UI のスケジュールタスクの Edit（`https://claude.ai/code/routines/<表の ID>`）で人が同じ内容に貼り替える（スケジュールを変えたら時刻も）。クラウドセッションの `update_trigger` は、エージェントが `create_trigger` で作ったスケジュールタスクにしか使えない。表の 3 件は Web UI で作ったもの（作り直したものも同じ）なので、`this routine was created via "http_api"` で拒否される
+  - 貼り替え用の本文は、下の手順 2 の `body()` を定義してから `body .claude/routines/<taskId>.md > "<scratchpad>/paste-<taskId>.md"` で frontmatter を除いて書き出し、人に渡す
   - 同期したら、本文が一致したかを確かめる。クラウド側のプロンプトをファイルに書き出す手段は無い（CLI にも公開 API にも無い）ので、書き写してから diff する
     1. `get_trigger`（`trigger_id` に表の ID）で読んだら、**リポジトリ側のファイルを開く前に**、`derived_state.prompt` の文字列を scratchpad の `cloud-<taskId>.md` に Write でそのまま書き写す（JSON のエスケープは戻す）。書き写しの誤りは次の diff に出るが、リポジトリ側を先に読むとその文面に寄った写し方になり、違いを見逃しうる。同じセッションでルーティンを直した直後は、リポジトリ側の文面がもう会話にあるのでこの防ぎ方は効きにくい。気になるなら新しいセッションで確かめ直す。ローカルのセッションでは、Web UI の Edit 画面のプロンプトを人がコピーしてこのファイルに貼る
     2. リポジトリ直下で次を実行する。frontmatter・CRLF・先頭の空行を除いた本文同士を比べ、差分が無ければ `<taskId>: 一致` と出る（どちらかのファイルが無ければ `ls` のエラーで止まる）。frontmatter を外すのはリポジトリ側だけ。クラウド側には frontmatter が無く、`body()` に通すと 2 つ目の `---` の行を待って全行を捨て、空になる
