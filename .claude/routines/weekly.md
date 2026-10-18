@@ -10,15 +10,15 @@ description: パッチ情報・コードスキャンから Issue を起票し、
 あなたは FF14 Rotation Calculator の週次 Issue 起票ルーティンです。**無人実行**なので、ユーザーへの質問はせず、判断できないものは起票せずに実行報告へ回してください。
 
 - GitHub: `Sakuya398-Yamada/ff14_rotation_calc`
-- ローカル: `D:\ドキュメント_D\for_claude\ff14-dev\RotationCalc`（以下 `<repo>`）
+- 実行環境: クラウドのスケジュールタスク。実行のたびにリポジトリを clone し、その直下から、`main` から切った `claude/*` の作業ブランチで起動する
 
 系統1（メモ inbox #305）と系統2（知見ボード #195 の棚卸し）は、日次 `daily-triage`（`.claude/routines/daily-triage.md`）へ移した（#502）。系統の番号は参照を保つため 3〜5 のまま使う。
 
 ## 共通ルール
 
-1. `<repo>` の `CLAUDE.md` と `.claude/rules/*.md` に従う。Issue の様式・ラベル・粒度は `.claude/rules/git-conventions.md`
-2. 最初に `git -C <repo> fetch origin` する。コードやデータは `origin/main` の内容を読む（`git -C <repo> show origin/main:<path>` / `git -C <repo> grep <pattern> origin/main -- <path>`）。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
-3. GitHub 操作は GitHub MCP を使い、使えなければ gh（`/c/Program Files/GitHub CLI/gh.exe`）にフォールバックする
+1. リポジトリの `CLAUDE.md` と `.claude/rules/*.md` に従う。Issue の様式・ラベル・粒度は `.claude/rules/git-conventions.md`
+2. 最初に `git fetch origin` する（git は起動したリポジトリ直下で、`-C` を付けずに打つ）。コードやデータは `origin/main` の内容を読む（`git show origin/main:<path>` / `git grep <pattern> origin/main -- <path>`）。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
+3. GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）
 4. **起票前に必ず重複チェック**する（Open / Closed の両方を検索）。同じ目的の Issue があれば起票しない
 5. 起票する Issue の本文は `## 背景・目的` / `## 要件`（やること・やらないこと）/ `## 完了条件（DoD）` / `## 未確定事項`（あれば）/ `## 関連Issue` で構成し、末尾に次のフッターを付ける。ラベルは種別 1 つ＋ `priority:*` 1 つ
 
@@ -35,7 +35,7 @@ description: パッチ情報・コードスキャンから Issue を起票し、
 
 系統3 に入る前に 1 回だけ数える。数は実行報告の「その他」に書く。
 
-1. **バックログ（Open の作業 Issue）** を、`origin/main` の `.claude/routines/daily-triage.md`「1. バックログを数える」の数え方で数える（数え方と上限の正本はそちら。`git -C <repo> show origin/main:.claude/routines/daily-triage.md`）
+1. **バックログ（Open の作業 Issue）** を、`origin/main` の `.claude/routines/daily-triage.md`「1. バックログを数える」の数え方で数える（数え方と上限の正本はそちら。`git show origin/main:.claude/routines/daily-triage.md`）
 2. **上限以上なら系統4（コードスキャン）を見送る**（手順全体を飛ばす）。実行報告の「見送り」に「バックログ上限に到達（N 件）」と書く。系統3（パッチ情報監視）は外部が起点なので見送らない
 3. **無人実装の Open PR** も数える: Open PR のうち、本文末尾に `_スケジュール実行（weekday-issue-start）による無人実装_` のフッターがあるもの。数は実行報告に書くだけで、見送りの判定には使わない
 
@@ -75,7 +75,7 @@ description: パッチ情報・コードスキャンから Issue を起票し、
 
 起票はしない。系統3・4 で起票した Issue も対象に含めるため最後に行う。起票しないので、バックログ上限による見送りの対象にもしない。
 
-1. `origin/main` の `/issue-priority` skill（`git -C <repo> show origin/main:.claude/skills/issue-priority/SKILL.md`）の手順 1〜4 を、引数なし（Open Issue 全件）として行う。本文とコメントは手順 2 のとおり `general-purpose` エージェントに任せ、要約だけ受け取る
+1. `origin/main` の `/issue-priority` skill（`git show origin/main:.claude/skills/issue-priority/SKILL.md`）の手順 1〜4 を、引数なし（Open Issue 全件）として行う。本文とコメントは手順 2 のとおり `general-purpose` エージェントに任せ、要約だけ受け取る
 2. 進行中ではなく、`priority:*` が付いていて案と違う Issue を「現在 → 案」と理由で並べる。`priority:*` が無い Issue は件数だけ数える（日次 `daily-triage` が付ける）
 3. **ラベルは変えない**（付与も付け替えもしない）。付け直すかは、人が実行報告を読んで `/issue-priority` で決める
 
