@@ -2,7 +2,7 @@
 taskId: daily-triage
 title: 【毎日】Issue トリアージルーティン
 schedule: "0 19 * * *"
-description: メモ inbox・知見ボードから Issue を起票し、priority:* の無い Open Issue に優先度を付けて着手順のおすすめを実行ログに出す（実装はしない）
+description: メモ inbox・知見ボードから Issue を起票し、priority:* の無い Open Issue に優先度を付けて、着手順のおすすめと routine-ok を付ける候補を実行ログに出す（実装と routine-ok の付与はしない）
 ---
 
 # daily-triage
@@ -15,7 +15,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 ## 共通ルール
 
 1. `<repo>` の `CLAUDE.md` と `.claude/rules/*.md` に従う。Issue の様式・ラベル・粒度は `.claude/rules/git-conventions.md`
-2. 最初に `git -C <repo> fetch origin` する。区分と優先度の判定基準は `origin/main` の `/issue-priority` skill を読んで使う（`git -C <repo> show origin/main:.claude/skills/issue-priority/SKILL.md`。`<repo>` の作業ツリーは `origin/main` より古いことがある）。skill が参照する `.claude/routines/weekday-issue-start.md`（区分「ルーティン向け」の条件）も同じく `git -C <repo> show origin/main:<path>` で読み、skill 手順 1-3 の `git ls-remote` はカレントディレクトリを `<repo>` にして実行する。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
+2. 最初に `git -C <repo> fetch origin` する。区分と優先度の判定基準は `origin/main` の `/issue-priority` skill を読んで使う（`git -C <repo> show origin/main:.claude/skills/issue-priority/SKILL.md`。`<repo>` の作業ツリーは `origin/main` より古いことがある）。skill が参照する `.claude/routines/weekday-issue-start.md`（区分「ルーティン向け」と「無人向き」の条件）も同じく `git -C <repo> show origin/main:<path>` で読み、skill 手順 1-3 の `git ls-remote` はカレントディレクトリを `<repo>` にして実行する。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
 3. GitHub 操作は GitHub MCP を使い、使えなければ gh（`/c/Program Files/GitHub CLI/gh.exe`）にフォールバックする。ただし手順 6 のラベル付与は gh を先に使う（理由は手順 6-5）
 4. 書き込みは次の 4 つだけ。起票以外の 3 つは `.claude/rules/workflow-feedback.md`「自動化しないこと」の例外として事前承認済み（#447 / #501 / #502）
    - 手順 2・3 の起票
@@ -23,7 +23,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
    - 手順 6 の `priority:*` の付与
    - 手順 8 の実行ログ Issue #448 への実行報告
 
-   これ以外の新規コメント、Issue 本文の編集、`priority:*` 以外のラベルの追加・削除はしない。テンプレート元（`Sakuya398-Yamada/issue-driven-dev-starter`）への起票・コメントもしない
+   これ以外の新規コメント、Issue 本文の編集、`priority:*` 以外のラベル（`routine-ok` を含む）の追加・削除はしない。テンプレート元（`Sakuya398-Yamada/issue-driven-dev-starter`）への起票・コメントもしない
 5. 起票のきまり（手順 2・3）
    - **起票前に必ず重複チェック**する（Open / Closed の両方を検索）。同じ目的の Issue があれば起票しない
    - 本文は `## 背景・目的` / `## 要件`（やること・やらないこと）/ `## 完了条件（DoD）` / `## 未確定事項`（あれば）/ `## 関連Issue` で構成し、末尾に次のフッターを付ける
@@ -73,6 +73,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 
 - 全件に `/issue-priority` の skill 手順 3 の区分（進行中／ルーティン向け／人がいるセッション向け）を付ける
 - `priority:*` が無い Issue だけ、skill 手順 4 で優先度の案を出す。付いている Issue は今のラベルをそのまま使う（付け直しの案は週次 `weekly` の系統5 が出す）
+- 人がいるセッション向けの Issue について、skill 手順 3 の「無人向き」に当たるかを判定する（手順 7-4 で使う）
 
 ## 6. priority を付ける（新着のみ）
 
@@ -87,9 +88,10 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 
 ## 7. 着手順のおすすめを選ぶ
 
-1. 手順 6 で付けたあとのラベルで、進行中を除く Issue を `priority:high` → `priority:medium` → `priority:low` → ラベル無し（見送り分）の順に並べる。同じ優先度の中は、塞いでいる後続の Open Issue が多い順、次に番号の小さい順
+1. 手順 6 で付けたあとのラベルで、進行中を除く Issue を `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無し（見送り分）の順に並べる。同じ優先度の中は、塞いでいる後続の Open Issue が多い順、次に番号の小さい順
 2. 依存先が Open の Issue（依存待ち）は今は着手できないので除き、上から **3 件** をおすすめにする。区分（ルーティン向け／人がいるセッション向け）は問わず、表の列に書く
 3. 理由は `/issue-priority` の skill 手順 4・5 の言い回しで書く（後続 N 件の起点、依存は解消済み、要判断: …、など）
+4. **routine-ok を付ける候補**: 手順 5 で無人向きと判定した Issue を、手順 7-1 の並びで上から **3 件まで** 挙げる。理由は手順 7-3 と同じ言い回しで書く。ラベルは付けない（付けるかは人が実行報告を読んで決める）
 
 ## 8. 実行報告
 
@@ -111,8 +113,13 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 | 順 | Issue | priority | 区分 | 理由 |
 |----|-------|----------|------|------|
 | 1 | #N タイトル | high | 人がいるセッション向け | 後続 N 件の起点／要判断: … |
+### routine-ok を付ける候補（無人向き、上位 3 件。ラベルは付けていない）
+| 順 | Issue | priority | 理由 |
+|----|-------|----------|------|
+| 1 | #N タイトル | medium | 公式の値に合わせるデータ修正、依存は解消済み |
+- （該当が無ければ「なし」）
 ### 注記
-- weekday-issue-start が動いていれば次に選ぶ見込み: #N タイトル（ルーティン向けの 1 番目）／ 候補なし
+- weekday-issue-start が動いていれば次に選ぶ見込み: #N タイトル（ルーティン向けの 1 番目）／ 候補なし（`routine-ok` の付いた候補なし）
 - 進行中: #N（PR #M、マージ可能）… ／ なし
 - ファイルが重なる組み合わせ・依存とリスクの食い違い: … ／ なし
 ### その他
