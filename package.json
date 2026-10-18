@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "wrangler deploy --config dist/ff14_rotation_calc/wrangler.json",
+    "deploy": "npm run db:migrate:remote && wrangler deploy --config dist/ff14_rotation_calc/wrangler.json",
     "deploy:preview": "wrangler preview --config dist/ff14_rotation_calc/wrangler.json",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "test": "vitest run",
     "test:watch": "vitest"
   },

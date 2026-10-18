@@ -43,5 +43,6 @@ jobs:
       - name: Build
         run: npm run build
 
+      # npm run deploy は本番 D1 へのマイグレーション適用を含むので、デプロイの部分だけを直接呼ぶ
       - name: Deploy dry run
-        run: npm run deploy -- --dry-run
+        run: npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run

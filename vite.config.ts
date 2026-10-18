@@ -8,7 +8,13 @@ export default defineConfig({
     react(),
     // テストは Worker を使わないので workerd を起動しない。起動すると 1 回あたり数秒遅くなり、
     // 同じチェックアウトでの並行実行が workerd の状態やインスペクタのポートを取り合って起動に失敗する（#574）
-    !process.env.VITEST && cloudflare({ configPath: "../../wrangler.jsonc" }),
+    !process.env.VITEST &&
+      cloudflare({
+        configPath: "../../wrangler.jsonc",
+        // ローカルの D1 等の保存先。既定は Vite の root（src/client）の下だが、`wrangler d1 migrations apply --local` は
+        // wrangler.jsonc の場所（リポジトリ直下）の .wrangler/state を使うので、そちらに揃えて同じ DB を見る（#475）
+        persistState: { path: "../../.wrangler/state" },
+      }),
   ],
   root: "src/client",
   server: {

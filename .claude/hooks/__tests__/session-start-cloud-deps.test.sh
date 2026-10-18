@@ -106,16 +106,16 @@ run_hook "$proj" false
 check "remote=false: no output" "$(is "$out$err" "")"
 check "remote=false: npm not run" "$(is "$(calls '^npm ')" 0)"
 
-# 2. Fresh cloud session: installs and generates, keeps the tool output out of stdout
+# 2. Fresh cloud session: installs and applies the local D1 migrations, keeps the tool output out of stdout
 proj=$(make_proj fresh)
 run_hook "$proj" true
 check "fresh: exit 0" "$(is "$rc" 0)"
 check "fresh: npm ci run once" "$(is "$(calls '^npm ci')" 1)"
 check "fresh: installed into CLAUDE_PROJECT_DIR" "$([[ -f "$proj/node_modules/.package-lock.json" ]] && echo 1 || echo 0)"
-check "fresh: prisma generate run once" "$(is "$(calls '^npx prisma generate')" 1)"
+check "fresh: local D1 migrations run once" "$(is "$(calls '^npx wrangler d1 migrations apply DB --local$')" 1)"
 check "fresh: banner heading" "$(contains '## Cloud setup')"
 check "fresh: npm ci reported done" "$(contains '- npm ci: done in ')"
-check "fresh: prisma generate reported done" "$(contains '- prisma generate: done')"
+check "fresh: local D1 migrations reported done" "$(contains '- local D1 migrations: done')"
 check "fresh: tool output kept out of stdout" "$(lacks 'STUB-NOISE')"
 check "fresh: tool output written to the log" "$(is "$(grep -c STUB-NOISE "$TMP_ROOT/session-start-cloud-deps.log")" 100)"
 check "fresh: stdout is 3 lines" "$(is "$(printf '%s\n' "$out" | wc -l | tr -d '[:space:]')" 3)"
@@ -128,7 +128,7 @@ mkdir -p "$proj/node_modules" && touch "$proj/node_modules/.package-lock.json"
 run_hook "$proj" true
 check "resumed: npm ci skipped" "$(is "$(calls '^npm ci')" 0)"
 check "resumed: reported skipped" "$(contains '- npm ci: skipped')"
-check "resumed: prisma generate still run" "$(is "$(calls '^npx prisma generate')" 1)"
+check "resumed: local D1 migrations still run" "$(is "$(calls '^npx wrangler d1 migrations apply DB --local$')" 1)"
 
 # 4. package-lock.json changed after the last install: npm ci runs again
 proj=$(make_proj lock-changed)
@@ -148,14 +148,15 @@ run_hook "$proj" true 1 0
 check "npm fails: exit 0" "$(is "$rc" 0)"
 check "npm fails: failure reported" "$(contains 'npm ci failed** (exit 1')"
 check "npm fails: log tail included" "$(contains 'STUB-ERR-LAST')"
-check "npm fails: prisma generate not run" "$(is "$(calls '^npx ')" 0)"
+check "npm fails: local D1 migrations not run" "$(is "$(calls '^npx ')" 0)"
 
-# 7. prisma generate fails: exit 0, failure reported
+# 7. Local D1 migrations fail: exit 0, failure reported
 proj=$(make_proj npx-fails)
 run_hook "$proj" true 0 1
-check "prisma fails: exit 0" "$(is "$rc" 0)"
-check "prisma fails: npm ci reported done" "$(contains '- npm ci: done in ')"
-check "prisma fails: failure reported" "$(contains 'prisma generate failed** (exit 1')"
+check "migrations fail: exit 0" "$(is "$rc" 0)"
+check "migrations fail: npm ci reported done" "$(contains '- npm ci: done in ')"
+check "migrations fail: failure reported" "$(contains 'local D1 migrations failed** (exit 1')"
+check "migrations fail: says how to retry" "$(contains 'Run `npm run db:migrate` before `npm run dev`')"
 
 echo
 printf 'Result: %d passed, %d failed\n' "$pass" "$fail"
