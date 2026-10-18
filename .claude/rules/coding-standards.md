@@ -53,7 +53,7 @@ ff14_rotation_calc/
 
 - `.claude/hooks/` / `.claude/scripts/` に単独の Node.js スクリプトを追加する場合は **`.cjs` 拡張子を使う**
 - 理由: ルート `package.json` に `"type": "module"` があるため、`.js` は ESM として読み込まれ `require('fs')` 等が `ReferenceError: require is not defined in ES module scope` で失敗する
-- 前例: `.claude/hooks/validate-edit-path.cjs`、`.claude/scripts/knowledge-board.cjs`
+- 前例: `.claude/scripts/knowledge-board.cjs`
 - bash スクリプト内の `node -e "..."` インライン実行はこの制約の影響を受けない（ファイル拡張子による判定が働かないため）
 
 ## hooks 開発・検証時の注意

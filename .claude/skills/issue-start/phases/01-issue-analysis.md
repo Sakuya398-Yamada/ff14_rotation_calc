@@ -15,7 +15,7 @@ git worktree list
 | pwd の状態 | 扱い |
 |---|---|
 | `git rev-parse --show-toplevel` と一致 | **メインリポ作業**: 通常どおり |
-| `git worktree list` に登録された worktree と一致 | **worktree 作業**（`claude --worktree` で起動した場合など）: Edit / Write の `file_path` はこの worktree のパスを使う。メインリポ側のパスを指定すると bash の pwd と乖離し「編集したはずなのに反映されない」無音失敗が起きる（PR #241 で実例）。PreToolUse hook `.claude/hooks/validate-edit-path.sh` が同条件を検知して警告（exit 1、ブロックなし）を出す。意図的にメインリポ側を触りたい場合は `CLAUDE_ALLOW_MAIN_REPO_EDIT=1` で抑制 |
+| `git worktree list` に登録された worktree と一致 | **worktree 作業**: Edit / Write の `file_path` はこの worktree のパスを使う。`claude --worktree`・`EnterWorktree`・Claude Desktop の worktree セッションでは、Claude Code の worktree 隔離がメインリポ側のパスへの Edit / Write を拒否する。手動の `git worktree add` で作った worktree の中で `claude` を起動した場合は隔離が掛からず、メインリポ側のパスを指定すると編集はメインリポに入り、bash の pwd と乖離して「編集したはずなのに反映されない」無音失敗が起きる（PR #241 で実例。起動形態ごとの挙動は #550） |
 | `.claude/worktrees/<name>/` 配下なのに **登録 worktree でない** | **亡霊 worktree モード**: 以降の Edit / Write / bash の相対パスをメインリポ絶対パス基準に切り替える |
 | 上のどれでもない（リポジトリの外で `git rev-parse` が失敗する、またはリポジトリのサブディレクトリ） | **settings.json 未読み込み**: プロジェクトの `.claude/settings.json` は起動ディレクトリのものしか読まれないので、hooks（ブランチ名・コミット件名の検証、SessionStart）と permissions の deny が黙って無効になっている。CLAUDE.md と rules はリポジトリ内のファイルに触れた時点で読み込まれるので、挙動からは気付きにくい。`.claude/rules/git-conventions.md` の規約と deny にある操作（force push・`git reset --hard` 等）の回避は手で守り、ユーザーに起動ディレクトリ（クラウドセッションなら環境の作業ディレクトリ）をリポジトリ直下に直すよう伝える |
 
