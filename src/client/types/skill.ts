@@ -98,6 +98,8 @@ export interface Skill {
   resourceChanges?: ResourceChange[];
   /** 使用時に付与するバフのIDリスト */
   buffApplications?: string[];
+  /** buffApplications で付与するバフの付与確率（0〜1。キーの無いバフは確定付与） */
+  buffApplicationProcRates?: Record<string, number>;
   /** 使用時に消費するバフスタック */
   buffConsumptions?: BuffConsumption[];
   /** 詠唱時間（秒）。詠唱中はoGCDスキルを使用できない。未設定の場合はインスタント（詠唱なし） */
@@ -165,8 +167,12 @@ export interface Skill {
     /** 1個消費あたりの獲得量 */
     gainPerConsumed: number;
   };
-  /** バフ消費のOR条件（いずれか1つを消費。potency指定時は威力を上書き、procRate+fallbackPotency指定時は期待値を計算） */
-  buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number; procRate?: number; fallbackPotency?: number }[];
+  /**
+   * バフ消費のOR条件（いずれか1つを消費。potency指定時は威力を上書き）。
+   * fallbackPotency指定時は、前回の消費以降に撃った付与元の付与確率 p_i（buffApplicationProcRates）から
+   * 発動確率 P = 1 − Π(1 − p_i) を求めて期待値を計算する。確率付きの付与元が無ければ確定付与として補正しない
+   */
+  buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number; fallbackPotency?: number }[];
   /** 指定バフがアクティブな場合、resourceChangesの特定リソース消費をスキップしバフを1スタック消費する（バフ優先消費） */
   buffSkippableResource?: { buffId: string; resourceId: string };
   /** 指定バフがアクティブなら威力を上書きしバフを消費する。バフ未付与時は通常威力で実行（エラーにならない） */

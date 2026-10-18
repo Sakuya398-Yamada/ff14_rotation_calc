@@ -43,4 +43,14 @@ describe("BRD: バイトマスタリー II の修得レベルによるホーク�
 
     expect(entry.activeBuffs.some((ab) => ab.buffId === "hawks-eye")).toBe(true);
   });
+
+  // 特性で付与が加わっても付与確率 35% が効く (#427)
+  it.each(BITE_MASTERY_SKILLS)("Lv80 の %s → リフルジェントアローは期待値威力 241 になる", (skillId) => {
+    const refulgent = resolveAtLevel([skillId, "refulgent-arrow"], 80).entries[1];
+
+    expect(refulgent.recastError).toBeFalsy();
+    expect(refulgent.comboErrors).toEqual([]);
+    // floor(220 + (280 - 220) * 0.35)
+    expect(refulgent.resolvedPotency).toBe(241);
+  });
 });
