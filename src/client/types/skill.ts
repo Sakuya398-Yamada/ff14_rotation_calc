@@ -307,7 +307,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "stat" | "resource" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride" | "castTimeMultiplier";
+export type BuffEffectType = "speed" | "potency" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride" | "castTimeMultiplier";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -323,8 +323,6 @@ export interface BuffEffect {
    * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
    * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費）
-   * - stat: ステータス加算値
-   * - resource: リソース変動量
    * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
    * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
    * - bypassCombo: バフアクティブ中、対象GCD WSのコンボ条件判定を強制成立扱いにする（値は未使用、appliesToSkillIds で対象限定）
@@ -334,9 +332,7 @@ export interface BuffEffect {
    * - castTimeMultiplier: 対象 GCD の詠唱時間に乗じる倍率。リキャストには作用しない（0.5 = 詠唱半減、appliesToSkillIds で対象限定、AF3 中の氷属性魔法等）
    */
   value: number;
-  /** statバフの対象ステータスキー */
-  statKey?: keyof CharacterStats;
-  /** resource / resourceCostMultiplier バフの対象リソースID */
+  /** resourceCostMultiplier / resourceGainOnSkill バフの対象リソースID */
   resourceId?: string;
   /**
    * このエフェクトを適用するスキルIDのホワイトリスト（potency 等の対象スキル限定バフ用）。

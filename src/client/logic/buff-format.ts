@@ -1,11 +1,4 @@
-import type { ActiveBuff, BuffDefinition, BuffEffect, CharacterStats } from "../types/skill";
-
-const STAT_LABELS: Record<keyof CharacterStats, string> = {
-  critical: "CRT",
-  directHit: "DH",
-  determination: "DET",
-  speed: "SS",
-};
+import type { ActiveBuff, BuffDefinition, BuffEffect } from "../types/skill";
 
 function formatRate(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
@@ -27,8 +20,6 @@ function describeEffectBody(effect: BuffEffect): string | null {
       return "確定DH";
     case "instantCast":
       return "即時詠唱";
-    case "stat":
-      return effect.statKey ? `${STAT_LABELS[effect.statKey]}+${effect.value}` : null;
     default:
       // コンボ判定・リソース操作など計算の内部挙動を表す種別は、利用者向けの要約に出さない
       return null;
