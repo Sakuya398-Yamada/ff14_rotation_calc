@@ -45,11 +45,28 @@ Claude Code のクラウドセッションは、開始時に作業ブランチ�
 1. `git branch --show-current` が指示のブランチと違えば、`git switch <ブランチ名>` で切り替える（ローカルか `origin` にあれば、作成扱いにならずブランチ名 hook に当たらない）。どちらにも無ければ、`claude/*` なら `git switch -c <ブランチ名>` で作る。それ以外の名前は hook が作成を止める（hook は名前でしか判定できない）ので、ユーザーに確認する
 2. `git fetch origin main` のあと、`git log --oneline origin/main..HEAD` が空であることを確かめる。コミットが残っていれば、どちらの残りかを見分ける
    - **マージ済みの前の Issue の残り**（同じセッションで 2 件目に移ったときなど）: `git diff --quiet HEAD origin/main` が成功する（squash merge 後でツリーが同じ）か、このブランチの PR（`list_pull_requests` の `head` に `<owner>:<ブランチ名>`、`state: closed`）がマージ済みで、その head の SHA が `git rev-parse HEAD` と一致する。この場合は `git reset --keep origin/main` で付け直す（未コミットの変更を消すときは止まる。`git reset --hard` は `settings.json` で deny、`git checkout -B` は `claude/*` 以外の名前だとブランチ名 hook に止められる）
+     - `git reset --keep` が auto mode などで拒否されたら、リモートにこのブランチが残っているかを `git ls-remote --heads origin <ブランチ名>` で見て分ける。ローカルの追跡ブランチ（`git branch -vv` の `[origin/<ブランチ名>]`）は、prune しない限りリモートでの削除を反映しないので、判断に使わない。どちらの道も `settings.json` の allow にある `git branch` / `git switch` / `git merge` で済む（allow にあるコマンドは auto mode でも分類器より先に許可される）
+       - **空（マージ後に削除済み）**: 名前が `claude/*` なら、`git branch -m <ブランチ名>-merged-<HEAD の短縮 SHA>` で旧ブランチを退避し、`git switch -c <ブランチ名> origin/main` で作り直す。旧コミットは退避したブランチに残り、PR には乗らない（退避名に SHA を付けるのは、同じセッションで次に移ったときに名前がぶつからないため）。`claude/*` 以外の名前は作り直しがブランチ名 hook に止められるので、退避せずに次と同じく取り込む
+       - **残っている**: `git merge origin/main` で取り込む。force push が要らず、squash merge する運用なら最終履歴と PR の差分（Files changed）には影響しない。PR のコミット一覧には前の Issue のコミットが残るので、Phase 7 の PR 本文に、それがマージ済みの前の Issue の分であることを一言書く
    - **それ以外**: 別の作業の残りなので、続きとして使うかをユーザーに確認する（1 Issue = 1 PR）
 3. 下の「古い main 派生の検知」は同じように行う
 4. ブランチ名から Issue を辿れないので、次の 2 つで紐づける
    - コミット件名に `#<issue番号>` を付ける（hook が省略を許すのは `claude/*` だけで、それ以外の名前では必須になる）
-   - Issue に着手の印をコメントする（`add_issue_comment`）。並行セッションが Phase 1 でこの Issue や兄弟 Issue の作業中を検知するための印：
+   - Issue に着手の印をコメントする（`add_issue_comment`）。並行セッションが Phase 1 でこの Issue や兄弟 Issue の作業中を検知するための印。付ける前に、このブランチの印が別の Issue に残っていないかを見る。同じセッションで前の Issue をマージせずに中断し、`/clear` して移ってきた場合、前の Issue に印が残っていて、並行セッションにはそのブランチで作業中と読まれる。`/clear` より前の会話は残っていないので、リポジトリの新しいコメントから探す（同じセッションの印は新しい方にあるので、最新 100 件に無ければそれ以上は遡らない）：
+
+     ```bash
+     gh api "repos/{owner}/{repo}/issues/comments?sort=created&direction=desc&per_page=100" --jq '.[] | select(.body | startswith("## 着手\n") and contains("`<割り当てブランチ名>`")) | [.id, .issue_url] | @tsv'
+     ```
+
+     今回の Issue 以外のものが見つかり、その Issue が Open で、クローズする PR が紐づいていなければ（`issue_read` の `state` と `closed_by_pull_requests`。PR があるならマージ待ちかマージ済みで、中断ではない）、印のコメントを取り下げに書き換える（`update_issue_comment` に出力の `.id`。`gh` なら `.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」のコメント編集）。取り下げを新しいコメントで足すと印が残り、次の検索でまた見つかるので、印そのものを書き換える：
+
+     ```
+     ## 着手（取り下げ）
+     - ブランチ `<割り当てブランチ名>` は #<今回の Issue 番号> に移した
+     - この Issue のコミット: なし（あれば、どこに残したか）
+     ```
+
+     そのうえで、今回の Issue に印を付ける：
 
      ```
      ## 着手
@@ -58,7 +75,7 @@ Claude Code のクラウドセッションは、開始時に作業ブランチ�
      ```
 
      セッション URL は環境変数 `CLAUDE_CODE_REMOTE_SESSION_ID`（`cse_` で始まる）の `cse_` を `session_` に置き換えて作る。変数が無ければ「セッション」の行は省く
-   - 印を付けたら `git push -u origin HEAD` でブランチを先に push する（中身が `main` と同じでもよい）。Phase 1 の検知で、印のブランチが実在するかを確かめられるようにするため。手順 2 で付け直した場合、マージ後にリモートのブランチが削除されていれば（`git ls-remote --heads origin <ブランチ名>` が空）この通常の push で作り直せる（`--force-with-lease` は、ローカルに残った追跡ブランチと食い違って `stale info` で拒否されるので使わない）。リモートに旧コミットのまま残っていれば force push が要るが、`settings.json` で deny しているので、ユーザーに `git push --force-with-lease origin <ブランチ名>` を打ってもらうか、GitHub 上でブランチを削除してもらう
+   - 印を付けたら `git push -u origin HEAD` でブランチを先に push する（中身が `main` と同じでもよい）。Phase 1 の検知で、印のブランチが実在するかを確かめられるようにするため。手順 2 で付け直した場合、マージ後にリモートのブランチが削除されていれば（`git ls-remote --heads origin <ブランチ名>` が空）この通常の push で作り直せる（`--force-with-lease` は、ローカルに残った追跡ブランチと食い違って `stale info` で拒否されるので使わない）。リモートに旧コミットのまま残っていれば force push が要るが、`settings.json` で deny しているので、ユーザーに `git push --force-with-lease origin <ブランチ名>` を打ってもらうか、GitHub 上でブランチを削除してもらう。手順 2 で `git merge origin/main` で取り込んだ場合は、リモートの有無にかかわらず通常の push で足りる
 
 ## 古い main 派生の検知
 
