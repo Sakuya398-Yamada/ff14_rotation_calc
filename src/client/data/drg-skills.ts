@@ -49,7 +49,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 /**
  * 竜騎士（DRG）攻撃スキル一覧
  * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）とも照合済みで、既知の差分なし
- * 威力はジョブガイド準拠（コンボ時威力を基本potencyに採用、方向指定ボーナスなし）
+ * 威力はジョブガイド準拠（コンボ時威力を基本potencyに採用、方向指定ボーナスは成功前提で内包。MNK・SAM と同じ、#522）
  * comboFrom: コンボ元スキルIDリスト
  * nonComboPotency: コンボ不成立時の威力
  */
@@ -102,10 +102,11 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 26,
   },
   {
+    // 竜牙竜爪: コンボ成立時威力 300 + 側面ボーナス 40 = 340、コンボ不成立時 140 + 40 = 180（方向指定成功前提）
     id: "fang-and-claw",
     name: "竜牙竜爪",
-    potency: 300,
-    nonComboPotency: 140,
+    potency: 340,
+    nonComboPotency: 180,
     comboFrom: ["full-thrust", "heavens-thrust"],
     comboBuffApplications: ["drakesbane-ready"],
     type: "gcd",
@@ -138,10 +139,11 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
+    // 桜華狂咲: コンボ成立時威力 220 + 背面ボーナス 40 = 260、コンボ不成立時 100 + 40 = 140（方向指定成功前提。継続ダメージは方向指定の影響を受けない）
     id: "chaos-thrust",
     name: "桜華狂咲",
-    potency: 220,
-    nonComboPotency: 100,
+    potency: 260,
+    nonComboPotency: 140,
     comboFrom: ["disembowel"],
     type: "gcd",
     target: "enemy",
@@ -153,10 +155,11 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     dotDuration: 24,
   },
   {
+    // 竜尾大車輪: コンボ成立時威力 300 + 背面ボーナス 40 = 340、コンボ不成立時 140 + 40 = 180（方向指定成功前提）
     id: "wheeling-thrust",
     name: "竜尾大車輪",
-    potency: 300,
-    nonComboPotency: 140,
+    potency: 340,
+    nonComboPotency: 180,
     comboFrom: ["chaos-thrust", "chaotic-spring"],
     comboBuffApplications: ["drakesbane-ready"],
     type: "gcd",
@@ -314,10 +317,11 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
+    // 桜華繚乱: コンボ成立時威力 300 + 背面ボーナス 40 = 340、コンボ不成立時 140 + 40 = 180（方向指定成功前提。継続ダメージは方向指定の影響を受けない）
     id: "chaotic-spring",
     name: "桜華繚乱",
-    potency: 300,
-    nonComboPotency: 140,
+    potency: 340,
+    nonComboPotency: 180,
     comboFrom: ["disembowel", "spiral-blow"],
     type: "gcd",
     target: "enemy",
