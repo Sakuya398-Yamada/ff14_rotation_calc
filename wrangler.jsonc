@@ -9,5 +9,14 @@
 		"run_worker_first": ["/api/*"]
 	},
 	// PR のブランチで Workers Builds が実行する `wrangler preview` は、このブロックが無いと失敗する
-	"previews": {}
+	"previews": {},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "ff14-rotation-calc",
+			"database_id": "145a8aa1-4f2f-4340-a3ed-10ff9378b088",
+			// drizzle-kit の出力先（drizzle.config.ts の out）。meta/ は wrangler が読まない
+			"migrations_dir": "migrations"
+		}
+	]
 }
