@@ -6,7 +6,9 @@ import type { ResourceDefinition } from "../types/skill";
  * - 剣気（Kenki）: WSコンボ完走・必殺剣使用で増減（最大100）
  * - 閃（Sen）: 雪・月・花の3種。WSコンボ完走で1つ付与、居合術で消費（合計最大3）
  *   雪/月/花は1つの「閃」レーンに統合表示する
- * - 剣圧（Meditation）: 居合術・奥義波切で+1（最大3、Lv80以降）。黙想でも付与されるが未実装
+ * - 剣圧（Meditation）: 居合術・奥義波切で+1（最大3、Lv80以降）
+ * - 黙想: 効果中は 3 秒ごとに剣気 +10・剣圧 +1。実行の 3 秒後から数え、15 秒目も含めて完走で 5 回
+ *   （実機の 1 回目はサーバーティック依存。#471 の近似）。付与の段差をリソースレーンに描く
  */
 export const SAM_RESOURCES: ResourceDefinition[] = [
   // ============================================================
@@ -19,6 +21,11 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
     maxStacks: 100,
     color: "#d32f2f",
     acquiredLevel: 52,
+    autoGenerateInterval: 3,
+    autoGenerateAmount: 10,
+    autoGenerateWhileBuff: ["meditate"],
+    autoGenerateIncludeBuffEnd: true,
+    showAutoGenerateTicks: true,
   },
 
   // ============================================================
@@ -68,5 +75,10 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
     maxStacks: 3,
     color: "#ff6f00",
     acquiredLevel: 80,
+    autoGenerateInterval: 3,
+    autoGenerateAmount: 1,
+    autoGenerateWhileBuff: ["meditate"],
+    autoGenerateIncludeBuffEnd: true,
+    showAutoGenerateTicks: true,
   },
 ];

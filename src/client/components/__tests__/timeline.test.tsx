@@ -99,6 +99,7 @@ function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {})
     buffs: [],
     stats: defaultStats,
     dotTicks: [],
+    resourceTicks: [],
     activeDoTs: [],
     untargetableWindows: [],
     onUntargetableWindowsChange: vi.fn(),

@@ -336,6 +336,7 @@ export function App() {
               buffs={levelBuffs}
               stats={stats}
               dotTicks={timelineResult.dotTicks}
+              resourceTicks={timelineResult.resourceTicks}
               activeDoTs={timelineResult.activeDoTs}
               untargetableWindows={untargetableWindows}
               onUntargetableWindowsChange={setUntargetableWindows}

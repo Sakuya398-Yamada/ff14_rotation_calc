@@ -10,6 +10,7 @@ import type {
   BuffDefinition,
   ActiveBuff,
   DoTTick,
+  ResourceTick,
   ActiveDoT,
   TimelineResult,
   BossUntargetableWindow,
@@ -23,6 +24,9 @@ const DOT_TICK_INTERVAL = 3;
 
 /** コンボタイマー（秒）。この時間以上経過するとコンボがリセットされる */
 const COMBO_TIMER = 15;
+
+/** triggersGcdRecast の oGCD（黙想）が発生させる GCD の基礎リキャスト（秒） */
+const BASE_GCD_RECAST = 2.5;
 
 /**
  * バフの終了時刻を算出する。
@@ -60,7 +64,7 @@ function processAutoGen(
   timer: AutoGenTimer,
   amount: number = 1,
   keepTicking: boolean = false,
-  onTick?: (tickTime: number) => void,
+  onTick?: (tickTime: number, value: number) => void,
   excludeCurrentTime: boolean = false
 ): number {
   if (timer.startedAt === null) return currentValue;
@@ -74,7 +78,7 @@ function processAutoGen(
     if (excludeCurrentTime ? nextTick >= currentTime : nextTick > currentTime) break;
     value = Math.min(value + amount, maxStacks);
     timerTime = nextTick;
-    onTick?.(nextTick);
+    onTick?.(nextTick, value);
   }
 
   if (value >= maxStacks && !keepTicking) {
@@ -888,6 +892,8 @@ export function resolveTimeline(
   const resourceState: ResourceSnapshot = {};
   // 自動生成タイマー状態
   const autoGenTimers: Record<string, AutoGenTimer> = {};
+  // 段差として描く自動生成の付与（showAutoGenerateTicks のリソースのみ）
+  const resourceTicks: ResourceTick[] = [];
   // アクティブなバフのリスト
   const currentActiveBuffs: ActiveBuff[] = [];
   // DoTストリームのマップ（skillId → DoTStream）
@@ -949,15 +955,17 @@ export function resolveTimeline(
       const timer = autoGenTimers[res.id];
       const reductions = getActiveResourceModifiers(res, currentActiveBuffs)
         .flatMap((m) => (m.cooldownReductionOnGain ? [m.cooldownReductionOnGain] : []));
-      const onTick = reductions.length > 0
-        ? (tickTime: number) => {
+      const recordTick = res.showAutoGenerateTicks === true;
+      const onTick = reductions.length > 0 || recordTick
+        ? (tickTime: number, value: number) => {
             for (const r of reductions) reduceChargeCooldown(r.chargeKey, r.seconds, tickTime);
+            if (recordTick) resourceTicks.push({ time: tickTime, resourceId: res.id, value });
           }
         : undefined;
       // 付与をきっかけにリキャストを短縮する間は、上限でもタイマーを止めない。
       // 歌ごとの付与（autoGenerateRestartOnBuffChange）も、上限で止めると消費した時刻から数え直しになり、
       // 刻みが歌の実行時刻からずれるので止めない（#557）
-      const keepTicking = onTick !== undefined || res.autoGenerateRestartOnBuffChange === true;
+      const keepTicking = reductions.length > 0 || res.autoGenerateRestartOnBuffChange === true;
       // autoGenerateWhileBuff: 指定バフのいずれかがアクティブ時のみ自動生成
       if (res.autoGenerateWhileBuff) {
         const gate = currentActiveBuffs.find((ab) => res.autoGenerateWhileBuff!.includes(ab.buffId));
@@ -989,7 +997,7 @@ export function resolveTimeline(
         res.autoGenerateAmount ?? 1,
         keepTicking,
         onTick,
-        excludeTime
+        excludeTime && !res.autoGenerateIncludeBuffEnd
       );
     }
   };
@@ -997,7 +1005,8 @@ export function resolveTimeline(
   /**
    * time までに期限が切れるバフを除去する（onExpireResourceTransfer があればリソース移し替えも実施）。
    * 自動生成の条件バフ（歌など）がエントリの間で切れる場合は、切れる時刻までの付与を先に数える。
-   * 切れる時刻ちょうど（効果時間の残り 0 秒）の付与は、実機でも入らないので数えない
+   * 切れる時刻ちょうど（効果時間の残り 0 秒）の付与は、実機でも入らないので数えない。
+   * ただし autoGenerateIncludeBuffEnd のリソースは数える（黙想。実行の 3 秒後から数える近似で、15 秒目を 5 回目にするため）
    */
   const expireBuffsUntil = (time: number) => {
     const gateEnds = currentActiveBuffs
@@ -1033,7 +1042,10 @@ export function resolveTimeline(
       expireBuffsUntil(startTime);
 
     } else {
-      autoStartTime = actionAvailableAt;
+      // GCD リキャストも発生させる oGCD（黙想）は、GCD と同じくリキャスト明けを待つ
+      autoStartTime = originalSkill.triggersGcdRecast
+        ? Math.max(gcdAvailableAt, actionAvailableAt)
+        : actionAvailableAt;
       autoStartTime = Math.round(autoStartTime * 1000) / 1000;
       startTime = entry.manualStartTime !== undefined
         ? Math.round(entry.manualStartTime * 1000) / 1000
@@ -1087,10 +1099,12 @@ export function resolveTimeline(
     // リソース量に応じたヘイスト（軍神のパイオン中の詩心）をこのエントリの GCD に反映するため、リキャスト計算より前に行う
     advanceAutoGen(startTime);
 
-    // GCD のリキャスト・詠唱時間は変化先スキルの値で計算する（例: レッドファイア → シアンブリザドで 2.5 秒 → 3.3 秒）
-    if (originalSkill.type === "gcd") {
+    // GCD のリキャスト・詠唱時間は変化先スキルの値で計算する（例: レッドファイア → シアンブリザドで 2.5 秒 → 3.3 秒）。
+    // triggersGcdRecast の oGCD は recastTime がアニメーションロックなので、ウェポンスキルと同じ基礎リキャストから計算する
+    if (originalSkill.type === "gcd" || originalSkill.triggersGcdRecast) {
       // recastOverride バフ（レインボードリップ効果アップ等）があれば基礎リキャストを置き換えてから補正を掛ける
-      const overriddenRecast = getBaseRecastTime(originalSkill.id, skill.recastTime, currentActiveBuffs, buffDefMap);
+      const baseRecastTime = originalSkill.type === "gcd" ? skill.recastTime : BASE_GCD_RECAST;
+      const overriddenRecast = getBaseRecastTime(originalSkill.id, baseRecastTime, currentActiveBuffs, buffDefMap);
       const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
       // 速度バフを適用してリキャスト・詠唱時間計算
       // 対象スキル限定の speed バフ（インスタレーション等）を正しくフィルタするため originalSkill.id を渡す
@@ -1370,6 +1384,12 @@ export function resolveTimeline(
         !instantCastCandidates.some((id) => consumeBuffTargets.has(id))
       ) {
         consumeBuffTargets.add(pickInstantCastBuffId(instantCastCandidates, buffDefMap));
+      }
+    }
+    // consumeOnAction（黙想）は GCD/oGCD を問わず、付与した後の次のアクションで消える
+    for (const ab of currentActiveBuffs) {
+      if (buffDefMap.get(ab.buffId)?.effects.some((e) => e.type === "consumeOnAction")) {
+        consumeBuffTargets.add(ab.buffId);
       }
     }
 
@@ -1755,6 +1775,7 @@ export function resolveTimeline(
     // GCDスキル実行後、スキル実行前にアクティブだった消費対象バフを 1 ループで消費する。
     // - consumeOnGcd: 竜眼等（全 GCD で消費）
     // - instantCast: 三連魔・ファイアスターター等（詠唱 GCD でのみ消費）
+    // - consumeOnAction: 黙想（oGCD でも消費）
     // 同一バフが両エフェクトを併せ持っても収集側で Set 化済みのため二重消費は起きない。
     // スキル実行中に新規付与されたバフは消費しない（収集を実行前に済ませているため）。
     if (!hasError && consumeBuffTargets.size > 0) {
@@ -1814,6 +1835,19 @@ export function resolveTimeline(
       targetCount,
     });
   }
+
+  // 段差を描く自動生成（黙想）は、最後のエントリの後も条件バフが切れるまで数える。
+  // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない
+  const tickGateEnds = currentActiveBuffs
+    .filter((ab) => Number.isFinite(ab.endTime)
+      && resources.some((r) => r.showAutoGenerateTicks && r.autoGenerateWhileBuff?.includes(ab.buffId)))
+    .map((ab) => ab.endTime);
+  if (tickGateEnds.length > 0) expireBuffsUntil(Math.max(...tickGateEnds));
+  // エントリと同時刻の付与は、そのエントリの resourceSnapshot に含まれるので除く（時刻はどちらも小数 3 桁に丸め済み）
+  const entryTimes = new Set(resolved.map((e) => e.startTime));
+  const visibleResourceTicks = resourceTicks
+    .filter((t) => !entryTimes.has(t.time))
+    .sort((a, b) => a.time - b.time);
 
   // DoTティックを計算 & activeDoTsを生成
   const dotTicks: DoTTick[] = [];
@@ -1890,6 +1924,7 @@ export function resolveTimeline(
     dotTicks,
     dotTotalPotency,
     activeDoTs: allDoTs,
+    resourceTicks: visibleResourceTicks,
     lastGcdEndTime,
     timelineEndTime,
   };
