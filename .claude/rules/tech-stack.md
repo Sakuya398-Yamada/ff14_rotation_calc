@@ -8,7 +8,8 @@
 |---------|------|------|
 | 言語 | TypeScript | フロント・バックエンド統一 |
 | フロントエンド | React + Vite | SPA構成 |
-| バックエンド | Hono (Cloudflare Workers) | 軽量・Web標準準拠。フロントと同じ Worker で動かす（エントリ: `src/server/index.ts`、設定: `wrangler.jsonc`） |
+| バックエンド | Hono (Cloudflare Workers) | 軽量・Web標準準拠。フロントと同じ Worker で動かす（エントリ: `src/server/index.ts`、設定: `wrangler.jsonc`）。レート制限は Rate Limiting バインディング `TIMELINE_RATE_LIMITER`（`wrangler.jsonc` の `ratelimits`） |
+| API 入力検証 | zod 4 + `@hono/zod-validator` | スキーマは `src/server/routes/*-schema.ts`。Worker の型は `@cloudflare/workers-types` を入れず `src/server/env.ts` に使う分だけ書く（client と共用の tsconfig の DOM 型とぶつかるため） |
 | DB | Cloudflare D1（SQLite） | Worker のバインディング `DB`（`wrangler.jsonc` の `d1_databases`）。ローカルは `.wrangler/state` の D1 |
 | ORM | Drizzle ORM 0.45（drizzle-kit 0.31） | スキーマ `src/server/db/schema.ts`、マイグレーション `migrations/`（drizzle-kit が生成し、wrangler が適用） |
 | テスト | Vitest | `npm test` で実行。DB のテストは better-sqlite3 のメモリ上の DB に同じマイグレーションを当てる（workerd を起動しない。#475） |
