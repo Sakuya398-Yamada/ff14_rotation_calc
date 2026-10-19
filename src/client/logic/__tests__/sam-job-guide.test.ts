@@ -126,6 +126,7 @@ describe("侍: 習得レベル", () => {
     ["hissatsu-senei", 72],
     ["shoha", 80],
     ["enpi", 15],
+    ["meditate", 60],
   ])("%s は Lv%i で習得する", (skillId, level) => {
     expect(skillMap.get(skillId)?.acquiredLevel).toBe(level);
   });
@@ -134,6 +135,7 @@ describe("侍: 習得レベル", () => {
     ["tsubame-kaeshi-goken-ready", 74],
     ["tsubame-kaeshi-setsugekka-ready", 74],
     ["enhanced-enpi", 56],
+    ["meditate", 60],
   ])("バフ %s は Lv%i で有効になる", (buffId, level) => {
     expect(buffMap.get(buffId)?.acquiredLevel).toBe(level);
   });

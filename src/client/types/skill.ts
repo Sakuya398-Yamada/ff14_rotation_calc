@@ -219,6 +219,11 @@ export interface Skill {
    * 例: 3 を指定すると 1〜2 体目はフル威力、3 体目以降が減衰対象。
    */
   falloffStartTarget?: number;
+  /**
+   * oGCD のまま、ウェポンスキルと同じ GCD リキャストも発生させる（黙想）。
+   * GCD のリキャスト明けまで実行できない。コンボ・確定クリ/DH・consumeOnGcd の対象にはならない
+   */
+  triggersGcdRecast?: boolean;
 }
 
 /** タイムラインに配置されたスキル */
@@ -276,6 +281,10 @@ export interface ResourceDefinition {
    * 未設定なら、条件バフのいずれかが付いている間は刻みを引き継ぐ（AF と UB の切り替えでポリグロットの 30 秒を引き継ぐなど）
    */
   autoGenerateRestartOnBuffChange?: boolean;
+  /** autoGenerateWhileBuff の条件バフが時間切れになる時刻ちょうどの付与も数える（黙想の 15 秒目）。未設定なら数えない（#524） */
+  autoGenerateIncludeBuffEnd?: boolean;
+  /** 自動生成の付与 1 回ごとの時刻と値を TimelineResult.resourceTicks に記録し、リソースレーンに段差として描く */
+  showAutoGenerateTicks?: boolean;
   /** 指定バフの効果中だけ変わる性質（例: 軍神のパイオン中の詩心最大 4・ヘイスト） */
   whileBuffModifiers?: ResourceBuffModifier[];
   /** 指定バフのいずれかが時間切れ・排他グループの上書きで消えたときに 0 に戻す（例: 歌が終わると詩心が消える） */
@@ -320,7 +329,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride" | "castTimeMultiplier";
+export type BuffEffectType = "speed" | "potency" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "consumeOnAction" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride" | "castTimeMultiplier";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -335,6 +344,7 @@ export interface BuffEffect {
    * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
    * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
+   * - consumeOnAction: 付与した後の次のアクション（GCD/oGCD を問わない）の実行で消える（値は未使用、黙想等）
    * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費）
    * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
    * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
@@ -424,6 +434,16 @@ export interface ActiveBuff {
   stacks?: number;
 }
 
+/** 自動生成リソースの付与 1 回（リソースレーンの段差表示用） */
+export interface ResourceTick {
+  /** 付与時刻（秒） */
+  time: number;
+  /** リソースID */
+  resourceId: string;
+  /** 付与後の値 */
+  value: number;
+}
+
 /** DoTの1ティック情報 */
 export interface DoTTick {
   /** ティック発生時刻（秒） */
@@ -496,6 +516,8 @@ export interface TimelineResult {
   dotTotalPotency: number;
   /** アクティブDoT期間一覧（タイムライン表示用） */
   activeDoTs: ActiveDoT[];
+  /** 段差として描く自動生成の付与（showAutoGenerateTicks のリソースのみ。エントリと同時刻の付与は除く）。時刻順 */
+  resourceTicks: ResourceTick[];
   /** 最後のGCDスキルのリキャスト完了時刻 */
   lastGcdEndTime: number;
   /** タイムライン全体の終了時刻（GCD完了 or DoT最終ティックの遅い方） */

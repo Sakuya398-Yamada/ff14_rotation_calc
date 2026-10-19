@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, CharacterStats, DoTTick, ActiveDoT, BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../types/skill";
+import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, CharacterStats, DoTTick, ResourceTick, ActiveDoT, BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../types/skill";
 import { TIMELINE_DROPZONE_ID } from "./timeline/dnd-types";
 import { calcGcd } from "../logic/stat-calc";
 import { computeBuffTimespans } from "../logic/buff-timespans";
@@ -32,6 +32,7 @@ interface TimelineProps {
   buffs: BuffDefinition[];
   stats: CharacterStats;
   dotTicks: DoTTick[];
+  resourceTicks: ResourceTick[];
   activeDoTs: ActiveDoT[];
   untargetableWindows: BossUntargetableWindow[];
   onUntargetableWindowsChange: (windows: BossUntargetableWindow[]) => void;
@@ -56,6 +57,7 @@ export function Timeline({
   buffs,
   stats,
   dotTicks,
+  resourceTicks,
   activeDoTs,
   untargetableWindows,
   onUntargetableWindowsChange,
@@ -409,6 +411,7 @@ export function Timeline({
                 <ResourceLanes
                   resourceGroups={resourceGroups}
                   resolvedEntries={resolvedEntries}
+                  resourceTicks={resourceTicks}
                   labelBg={labelBg}
                 />
               )}

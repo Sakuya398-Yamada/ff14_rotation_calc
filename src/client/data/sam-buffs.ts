@@ -13,6 +13,7 @@ import tendoKaeshiSetsugekkaIcon from "../assets/icons/sam/Tendo_Kaeshi_Setsugek
 import kaeshiNamikiriIcon from "../assets/icons/sam/Kaeshi_Namikiri.png";
 import tendoSetsugekkaIcon from "../assets/icons/sam/Tendo_Setsugekka.png";
 import enpiIcon from "../assets/icons/sam/Enpi.png";
+import meditateIcon from "../assets/icons/sam/Meditate.png";
 
 // === ロールアクション アイコン ===
 import trueNorthIcon from "../assets/icons/sam/role_actions/True_North.png";
@@ -246,6 +247,21 @@ export const SAM_BUFFS: BuffDefinition[] = [
     maxStacks: 1,
     acquiredLevel: 90,
     exclusiveGroup: "tsubame-ready",
+  },
+
+  // ============================================================
+  // 黙想（効果中は 3 秒ごとに剣気・剣圧。付与は SAM_RESOURCES の autoGenerateWhileBuff で行う）
+  // 次のアクションの実行で外れる（移動・ターンでの解除は扱わない）
+  // ============================================================
+  {
+    id: "meditate",
+    name: "黙想",
+    shortName: "黙想",
+    icon: meditateIcon,
+    duration: 15,
+    effects: [{ type: "consumeOnAction", value: 1 }],
+    color: "#8d6e63",
+    acquiredLevel: 60,
   },
   // ロールアクション: トゥルーノース（方向指定無視）
   // effects は空（方向指定ボーナス計算が本ツール未実装のため）
