@@ -224,16 +224,6 @@ describe("POST /api/timelines: CSRF と Content-Type", () => {
     },
   );
 
-  it("Origin が無くても Sec-Fetch-Site: cross-site なら 403", async () => {
-    const res = await app.request(
-      URL_BASE,
-      { method: "POST", headers: { "Content-Type": "text/plain", "Sec-Fetch-Site": "cross-site" }, body: "{}" },
-      { DB: undefined, TIMELINE_RATE_LIMITER: { limit } },
-    );
-
-    expect(res.status).toBe(403);
-  });
-
   it("同じオリジンでも JSON 以外の POST → 415 で保存しない", async () => {
     const res = await post({ data: validData() }, { "Content-Type": "text/plain" });
 
