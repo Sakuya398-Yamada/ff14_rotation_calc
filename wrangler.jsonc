@@ -18,5 +18,13 @@
 			// drizzle-kit の出力先（drizzle.config.ts の out）。meta/ は wrangler が読まない
 			"migrations_dir": "migrations"
 		}
+	],
+	// 保存 API のレート制限（キーは owner_hash）。namespace_id はアカウント内で一意になるよう自分で決める正の整数で、事前の作成は要らない
+	"ratelimits": [
+		{
+			"name": "TIMELINE_RATE_LIMITER",
+			"namespace_id": "476",
+			"simple": { "limit": 10, "period": 60 }
+		}
 	]
 }
