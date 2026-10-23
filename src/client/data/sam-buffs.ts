@@ -186,7 +186,7 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
 
   // ============================================================
-  // 燕返し系 Ready バフ（5種、exclusiveGroup="tsubame-ready" で排他）
+  // 燕返し系 Ready バフ（4種、exclusiveGroup="tsubame-ready" で排他）。返し波切準備は奥義波切側の変化条件なので排他にしない
   // ============================================================
   {
     id: "tsubame-kaeshi-goken-ready",
@@ -246,7 +246,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
     color: "#26a69a",
     maxStacks: 1,
     acquiredLevel: 90,
-    exclusiveGroup: "tsubame-ready",
   },
 
   // ============================================================
