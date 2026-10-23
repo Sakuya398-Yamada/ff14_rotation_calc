@@ -268,6 +268,94 @@ describe("POST /api/timelines: レート制限", () => {
   });
 });
 
+describe("GET /api/timelines/:id: 読み込み", () => {
+  const SAVED_ID = "V1StGXR8_Z5jdHi6B-myT";
+  const OWNER_HASH = sha256Hex("owner-token");
+
+  function get(id: string) {
+    return app.request(`${URL_BASE}/${id}`, {}, { DB: undefined, TIMELINE_RATE_LIMITER: { limit } });
+  }
+
+  async function insertRow(overrides: Partial<typeof timelines.$inferInsert> = {}) {
+    await db.insert(timelines).values({
+      id: SAVED_ID,
+      schemaVer: 1,
+      data: JSON.stringify(validData()),
+      job: "blm",
+      level: 100,
+      ownerHash: OWNER_HASH,
+      createdAt: 1700000000,
+      ...overrides,
+    });
+  }
+
+  it("保存した行を、data はオブジェクト・createdAt は ISO 文字列にして返し、owner_hash は返さない", async () => {
+    await insertRow({ title: "零式4層 2分", contentId: "m4s" });
+    const res = await get(SAVED_ID);
+
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    // toEqual は余分なキー（ownerHash・job・level）があると失敗する
+    expect(JSON.parse(text)).toEqual({
+      id: SAVED_ID,
+      parentId: null,
+      schemaVer: 1,
+      data: validData(),
+      title: "零式4層 2分",
+      contentId: "m4s",
+      createdAt: "2023-11-14T22:13:20.000Z",
+    });
+    expect(text).not.toContain(OWNER_HASH);
+  });
+
+  it("POST で複製として保存した行を、parentId 付きで読み込める", async () => {
+    await insertRow();
+    const data = validData({ level: 90, entries: [{ uid: "entry-1", skillId: "fire" }] });
+    const { id } = (await (await post({ data, parentId: SAVED_ID })).json()) as { id: string };
+    const res = await get(id);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ id, parentId: SAVED_ID, schemaVer: 1, data, title: null, contentId: null });
+  });
+
+  it("存在しない id → 404", async () => {
+    const res = await get(SAVED_ID);
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
+  });
+
+  it.each([
+    ["20 文字", "A".repeat(20)],
+    ["22 文字", "A".repeat(22)],
+    ["記号入り", `${"A".repeat(20)}!`],
+  ])("形式が不正な id（%s）→ DB に問い合わせずに 404", async (_label, id) => {
+    const select = vi.spyOn(db, "select");
+    const res = await get(id);
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
+    expect(select).not.toHaveBeenCalled();
+  });
+
+  it("schema_ver が今の版と違う行もそのまま返す（読み込めるかはクライアントが判定する）", async () => {
+    await insertRow({ schemaVer: 2, data: JSON.stringify({ version: 2 }) });
+    const res = await get(SAVED_ID);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ schemaVer: 2, data: { version: 2 } });
+  });
+
+  it("匿名トークンの Cookie を付けず、レート制限も数えない", async () => {
+    await insertRow();
+    const res = await get(SAVED_ID);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Set-Cookie")).toBeNull();
+    expect(limit).not.toHaveBeenCalled();
+  });
+});
+
 describe("persistedAppStateSchema", () => {
   it("PersistedAppState と同じ形を表す（version は型が number、スキーマが 1 なので除く）", () => {
     expectTypeOf<Omit<z.infer<typeof persistedAppStateSchema>, "version">>().toEqualTypeOf<
