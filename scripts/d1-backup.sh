@@ -38,5 +38,5 @@ gzip -c "$sql" >"$out.part"
 mv "$out.part" "$out"
 
 # Prune only after a good export, so a run of failed days never eats the old generations
-printf '%s\n' "$backup_dir/$PREFIX"-*.sql.gz | sort | head -n -"$KEEP" | xargs -r rm -f --
+printf '%s\0' "$backup_dir/$PREFIX"-*.sql.gz | sort -z | head -z -n -"$KEEP" | xargs -0 -r rm -f --
 echo "d1-backup: saved $out"
