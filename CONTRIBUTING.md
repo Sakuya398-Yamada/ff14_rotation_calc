@@ -72,6 +72,7 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 | Claude Code のコード読解方針（Stream idle timeout 対策） | `.claude/rules/context-efficiency.md` |
 | Issue駆動開発の Phase別手順 | `.claude/skills/issue-start/SKILL.md` |
 | 新規ジョブの追加手順（スキル/バフ/リソース定義・登録・アイコン配置） | `docs/job-addition-guide.md` |
+| 本番 D1 のバックアップ（自宅サーバーの cron）と復元（Time Travel / バックアップから） | `docs/d1-backup.md` |
 
 ---
 

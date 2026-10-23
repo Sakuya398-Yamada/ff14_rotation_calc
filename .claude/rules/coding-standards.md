@@ -21,6 +21,7 @@ ff14_rotation_calc/
 ├── package.json
 ├── drizzle.config.ts    # drizzle-kit の設定
 ├── migrations/          # drizzle-kit が生成する D1 のマイグレーション（meta/ も含めてコミット）
+├── scripts/             # 本番の運用で手や cron から呼ぶスクリプト（D1 のバックアップ。docs/d1-backup.md）
 ├── src/
 │   ├── client/          # React フロントエンド
 │   │   ├── components/
