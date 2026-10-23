@@ -104,12 +104,12 @@ rm -r "$work"
 
 ```
 PATH=/usr/local/bin:/usr/bin:/bin
-30 4 * * * . "$HOME/.config/ff14-d1-backup.env" && "$HOME/ff14_rotation_calc/scripts/d1-backup.sh" >>"$HOME/backups/ff14-rotation-calc-d1/backup.log" 2>&1
+30 4 * * * { . "$HOME/.config/ff14-d1-backup.env" && "$HOME/ff14_rotation_calc/scripts/d1-backup.sh"; } >>"$HOME/backups/ff14-rotation-calc-d1/backup.log" 2>&1
 ```
 
 - **`PATH`**: cron の既定の `PATH` に node が無いと wrangler が動かない。`dirname "$(command -v node)"` の出力が上の 3 つに無ければ（nvm などで入れた場合）、先頭に足す
 - **時刻**: cron はサーバーのタイムゾーンで動く。`timedatectl`（無ければ `date`）で `Asia/Tokyo`（JST）か確かめ、UTC なら `30 19 * * *`（UTC の 19:30 = JST の 04:30）にする
-- **ログ**: 保存先のディレクトリに追記する（手順 4 で作ったディレクトリなので、先に手順 4 を済ませておく）。wrangler はエクスポートのダウンロード URL（1 時間有効）もログに出すが、ディレクトリが 700 なので他のユーザーからは読めない
+- **ログ**: 保存先のディレクトリに追記する（手順 4 で作ったディレクトリなので、先に手順 4 を済ませておく）。`{ …; }` で囲んでいるのは、env ファイルを読めなかったときのエラーもログに入れるため。wrangler はエクスポートのダウンロード URL（1 時間有効）もログに出すが、ディレクトリが 700 なので他のユーザーからは読めない
 - 保存先を `D1_BACKUP_DIR` で変えたときは、ログのパスも合わせて変える
 
 ## 動いているか確かめる
@@ -124,7 +124,8 @@ tail -n 20 ~/backups/ff14-rotation-calc-d1/backup.log
 
 | ログに出るもの | 原因 | 直し方 |
 |---------------|------|--------|
-| `CLOUDFLARE_API_TOKEN: is not set` / `CLOUDFLARE_ACCOUNT_ID: is not set` | env ファイルを読めていない | crontab の `.` のパスと、env ファイルの `export` を確かめる |
+| `.: cannot open <パス>` | env ファイルが無い・パスが違う | crontab の `.` のパスと、手順 3 のファイルを確かめる |
+| `CLOUDFLARE_API_TOKEN: is not set` / `CLOUDFLARE_ACCOUNT_ID: is not set` | env ファイルに書いていない、または `export` が無い | 手順 3 のとおり `export` 付きで書く |
 | `./node_modules/.bin/wrangler: No such file or directory` | リポジトリで `npm ci` していない | `cd ~/ff14_rotation_calc && npm ci` |
 | `/usr/bin/env: 'node': No such file or directory` | cron の `PATH` に node が無い | crontab の `PATH` に node のディレクトリを足す |
 | `Authentication error` | トークンの権限・期限切れ・IP 制限 | 手順 1 の設定を確かめる（作り直したら env ファイルも書き換える） |
