@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { JOB_DATA, type JobId } from "../../client/data/job-registry";
+import { MAX_TITLE_LENGTH } from "../../client/logic/shared-timeline";
 import { SCHEMA_VERSION } from "../../client/logic/timeline-storage";
 
 const MAX_ENTRIES = 2000;
-const MAX_TITLE_LENGTH = 100;
 
 const JOB_IDS = Object.keys(JOB_DATA) as [JobId, ...JobId[]];
 const SKILL_IDS_BY_JOB = Object.fromEntries(

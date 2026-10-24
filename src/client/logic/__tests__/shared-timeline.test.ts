@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getSharedTimelineId, loadSharedTimeline, type TimelineResponse } from "../shared-timeline";
-import { SCHEMA_VERSION, type PersistedAppState } from "../timeline-storage";
+import {
+  buildShareUrl,
+  getSharedTimelineId,
+  loadSharedTimeline,
+  saveTimeline,
+  type TimelineResponse,
+} from "../shared-timeline";
+import { SCHEMA_VERSION, type AppStateSnapshot, type PersistedAppState } from "../timeline-storage";
 
 const ID = "V1StGXR8_Z5jdHi6B-myT";
 
@@ -171,5 +177,90 @@ describe("loadSharedTimeline", () => {
 
     expect(await pending).toEqual({ kind: "cancelled" });
     expect(d.confirmOverwrite).not.toHaveBeenCalled();
+  });
+});
+
+describe("buildShareUrl", () => {
+  it("<origin>/t/<id> を作り、getSharedTimelineId で同じ id に戻る", () => {
+    const url = buildShareUrl("https://example.com", ID);
+
+    expect(url).toBe(`https://example.com/t/${ID}`);
+    expect(getSharedTimelineId(new URL(url).pathname)).toBe(ID);
+  });
+});
+
+describe("saveTimeline", () => {
+  function snapshot(): AppStateSnapshot {
+    const { version: _version, ...rest } = savedState();
+    return rest;
+  }
+
+  function sentBody(): Record<string, unknown> {
+    const init = fetchMock.mock.calls[0][1];
+    return JSON.parse(init?.body as string) as Record<string, unknown>;
+  }
+
+  beforeEach(() => {
+    fetchMock.mockImplementation(async () => jsonResponse({ id: ID }, 201));
+  });
+
+  it("POST /api/timelines に JSON で送り、201 の id を返す。data には version を付ける", async () => {
+    const outcome = await saveTimeline({ state: snapshot(), title: "零式 4 層", parentId: null });
+
+    expect(outcome).toEqual({ kind: "saved", id: ID });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/timelines");
+    expect(init?.method).toBe("POST");
+    expect(new Headers(init?.headers).get("Content-Type")).toBe("application/json");
+    expect(sentBody()).toEqual({ data: savedState(), title: "零式 4 層" });
+  });
+
+  it("タイトルは前後の空白を除いて送り、空なら title を送らない", async () => {
+    await saveTimeline({ state: snapshot(), title: "  零式  ", parentId: null });
+    expect(sentBody().title).toBe("零式");
+
+    fetchMock.mockClear();
+    await saveTimeline({ state: snapshot(), title: "   ", parentId: null });
+    expect(sentBody()).not.toHaveProperty("title");
+  });
+
+  it("parentId があれば送り、null なら送らない", async () => {
+    const parentId = "abcdefghijklmnopqrstu";
+    await saveTimeline({ state: snapshot(), title: "", parentId });
+    expect(sentBody().parentId).toBe(parentId);
+
+    fetchMock.mockClear();
+    await saveTimeline({ state: snapshot(), title: "", parentId: null });
+    expect(sentBody()).not.toHaveProperty("parentId");
+  });
+
+  it.each([
+    ["400（invalid_request）", "invalid", () => Promise.resolve(jsonResponse({ error: "invalid_request" }, 400))],
+    ["400（parent_not_found）", "invalid", () => Promise.resolve(jsonResponse({ error: "parent_not_found" }, 400))],
+    ["413", "too_large", () => Promise.resolve(new Response("Payload Too Large", { status: 413 }))],
+    ["429", "rate_limited", () => Promise.resolve(jsonResponse({ error: "rate_limited" }, 429))],
+    ["415", "network", () => Promise.resolve(jsonResponse({ error: "unsupported_media_type" }, 415))],
+    ["500", "network", () => Promise.resolve(jsonResponse({ error: "internal" }, 500))],
+    ["通信断（fetch が reject する）", "network", () => Promise.reject(new TypeError("Failed to fetch"))],
+    ["201 だが本文が JSON でない", "network", () => Promise.resolve(new Response("<!DOCTYPE html>", { status: 201 }))],
+    ["201 だが id が無い", "network", () => Promise.resolve(jsonResponse({}, 201))],
+  ] as const)("%s → エラー（%s）", async (_label, error, respond) => {
+    fetchMock.mockImplementation(respond);
+
+    expect(await saveTimeline({ state: snapshot(), title: "", parentId: null })).toEqual({ kind: "error", error });
+  });
+
+  it("送信中に中断されたら、通信エラーにしない", async () => {
+    fetchMock.mockImplementation(
+      (_url, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+        }),
+    );
+    const controller = new AbortController();
+    const pending = saveTimeline({ state: snapshot(), title: "", parentId: null }, { signal: controller.signal });
+    controller.abort();
+
+    expect(await pending).toEqual({ kind: "cancelled" });
   });
 });
