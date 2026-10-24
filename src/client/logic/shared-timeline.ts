@@ -1,4 +1,7 @@
-import { SCHEMA_VERSION, deserializeAppState, type PersistedAppState } from "./timeline-storage";
+import { SCHEMA_VERSION, deserializeAppState, type AppStateSnapshot, type PersistedAppState } from "./timeline-storage";
+
+/** 保存できるタイトルの最大長（サーバーの検証も同じ値を使う） */
+export const MAX_TITLE_LENGTH = 100;
 
 /** GET /api/timelines/:id の応答（サーバーも satisfies でこの形に合わせる） */
 export interface TimelineResponse {
@@ -75,4 +78,57 @@ export async function loadSharedTimeline(
 
   if (deps.hasWorkingEntries() && !deps.confirmOverwrite()) return CANCELLED;
   return { kind: "apply", id, state };
+}
+
+/** 共有 URL（/t/<id>）を作る。getSharedTimelineId の逆 */
+export function buildShareUrl(origin: string, id: string): string {
+  return `${origin}/t/${id}`;
+}
+
+export type SaveError = "invalid" | "too_large" | "rate_limited" | "network";
+
+export type SaveOutcome = { kind: "saved"; id: string } | { kind: "cancelled" } | { kind: "error"; error: SaveError };
+
+export const SAVE_ERROR_MESSAGES: Record<SaveError, string> = {
+  invalid: "タイムラインに保存できない内容が含まれているため、保存できませんでした。",
+  too_large: "タイムラインが大きすぎて保存できません。エントリを減らしてから保存してください。",
+  rate_limited: "短時間に続けて保存したため、保存できませんでした。1 分ほど待ってから、もう一度保存してください。",
+  network: "保存できませんでした。通信状況を確かめて、もう一度保存してください。",
+};
+
+function saveFailed(error: SaveError): SaveOutcome {
+  return { kind: "error", error };
+}
+
+/** タイムラインをサーバーに保存する（POST /api/timelines）。保存した行は書き換えられない */
+export async function saveTimeline(
+  request: { state: AppStateSnapshot; title: string; parentId: string | null },
+  deps: { signal?: AbortSignal } = {},
+): Promise<SaveOutcome> {
+  const data: PersistedAppState = { version: SCHEMA_VERSION, ...request.state };
+  const title = request.title.trim();
+  const body = {
+    data,
+    ...(title !== "" && { title }),
+    ...(request.parentId !== null && { parentId: request.parentId }),
+  };
+
+  let id: unknown;
+  try {
+    const res = await fetch("/api/timelines", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: deps.signal,
+    });
+    // 400 は invalid_request と parent_not_found のどちらも、利用者にはタイムラインの内容の問題として伝える
+    if (res.status === 400) return saveFailed("invalid");
+    if (res.status === 413) return saveFailed("too_large");
+    if (res.status === 429) return saveFailed("rate_limited");
+    if (res.status !== 201) return saveFailed("network");
+    id = ((await res.json()) as { id?: unknown }).id;
+  } catch {
+    return deps.signal?.aborted ? { kind: "cancelled" } : saveFailed("network");
+  }
+  return typeof id === "string" ? { kind: "saved", id } : saveFailed("network");
 }

@@ -1,0 +1,5 @@
+/* インライン style では書けない疑似要素だけをここに置く */
+
+.save-timeline-dialog::backdrop {
+  background: rgba(10, 11, 13, 0.45);
+}
