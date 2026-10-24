@@ -5,6 +5,7 @@ import heavyShotIcon from "../assets/icons/brd/Heavy_Shot.png";
 import straightShotIcon from "../assets/icons/brd/Straight_Shot.png";
 import venomousBiteIcon from "../assets/icons/brd/Venomous_Bite.png";
 import quickNockIcon from "../assets/icons/brd/Quick_Nock.png";
+import wideVolleyIcon from "../assets/icons/brd/Wide_Volley.png";
 import windbiteIcon from "../assets/icons/brd/Windbite.png";
 import ironJawsIcon from "../assets/icons/brd/Iron_Jaws.png";
 import causticBiteIcon from "../assets/icons/brd/Caustic_Bite.png";
@@ -214,6 +215,24 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     maxTargets: Infinity,
   },
   {
+    id: "wide-volley",
+    name: "ワイドボレー",
+    potency: 140,
+    type: "gcd",
+    target: "enemy",
+    icon: wideVolleyIcon,
+    recastTime: GCD_RECAST,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 25,
+    // fallback は Lv70 で proc しなかったときに撃つクイックノックの威力 (#513)
+    buffConsumptionAnyOf: [
+      { buffId: "barrage", stacks: 1, potency: 220 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 110 },
+    ],
+    // 対象とその周囲にヒット。減衰なし（対象数上限なし）
+    maxTargets: Infinity,
+  },
+  {
     id: "shadowbite",
     name: "シャドウバイト",
     potency: 200,
@@ -223,6 +242,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 72,
+    replacesSkillId: "wide-volley",
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 300 },
       { buffId: "hawks-eye", stacks: 1, fallbackPotency: 140 },
