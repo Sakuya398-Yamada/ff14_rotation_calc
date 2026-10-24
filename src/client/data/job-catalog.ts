@@ -49,5 +49,5 @@ export const JOB_CATALOG: CatalogJob[] = [
 ];
 
 export function isImplementedJob(id: string): id is JobId {
-  return id in JOB_DATA;
+  return Object.hasOwn(JOB_DATA, id);
 }
