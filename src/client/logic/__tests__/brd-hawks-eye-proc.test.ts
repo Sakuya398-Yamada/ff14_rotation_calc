@@ -58,6 +58,7 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     expect(Object.fromEntries(consumers)).toEqual({
       "straight-shot": 160,
       "refulgent-arrow": 220,
+      "wide-volley": 110,
       shadowbite: 140,
     });
   });

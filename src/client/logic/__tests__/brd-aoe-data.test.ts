@@ -40,6 +40,7 @@ const BRD_AOE_SKILLS = [
   // 減衰なし・対象数無制限
   { id: "quick-nock", falloffRate: undefined },
   { id: "ladonsbite", falloffRate: undefined },
+  { id: "wide-volley", falloffRate: undefined },
   { id: "shadowbite", falloffRate: undefined },
   { id: "rain-of-death", falloffRate: undefined },
   { id: "apex-arrow", falloffRate: undefined },
