@@ -1,18 +1,17 @@
 ---
 paths:
   - ".claude/agents/*.md"
-  - ".claude/skills/issue-plan/SKILL.md"
 ---
 
 # モデルと effort の割り当て
 
-frontmatter の `paths:` により、`.claude/agents/*.md` と `.claude/skills/issue-plan/SKILL.md` を Read / Edit / Write したときだけ読み込まれる。モデルや effort を変えるとき・新しいモデルに移るときの判断材料。割り当ての理由と出典の正本は #495 の[割り当て表のコメント](https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues/495#issuecomment-6381308423)。
+frontmatter の `paths:` により、`.claude/agents/*.md` を Read / Edit / Write したときだけ読み込まれる。モデルや effort を変えるとき・新しいモデルに移るときの判断材料。割り当ての理由と出典の正本は #495 の[割り当て表のコメント](https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues/495#issuecomment-6381308423)。
 
 ## 今の割り当て（#495、2026-10）
 
 | 対象 | model | effort | 置き場所 |
 |------|-------|--------|---------|
-| `/issue-plan` | セッション開始時にユーザーが選ぶ（推奨: Fable 5.1） | `high` | effort だけ SKILL.md の frontmatter |
+| `/issue-plan` | 推奨: Fable 5.1 | 推奨: `high` | セッション開始時にユーザーが選ぶ。frontmatter には書かない |
 | `/issue-start` のメインセッション | Opus 5.5 | `high` | セッション側（`/model`・`/effort`）。frontmatter には書かない |
 | `code-explorer` / `code-reviewer` | `claude-opus-5-5` | `high` | agents の frontmatter |
 | `code-architect` | `claude-opus-5-5` | `xhigh` | agents の frontmatter |
@@ -21,9 +20,8 @@ frontmatter の `paths:` により、`.claude/agents/*.md` と `.claude/skills/i
 
 - model はエイリアス（`opus` 等）ではなく完全なモデル ID で書く。effort の目盛りはモデルごとに較正されているので、エイリアスの指す先が黙って変わると model と effort の組み合わせがずれる。新しいモデルに移るときは、この表と frontmatter を同じ PR で書き換える
 - effort も明示する。書かないとセッションの effort を引き継ぐ（#495 のクラウドセッションでは xhigh で動いていた）
-- skill には `model` を書かない。skill はユーザーがセッション開始画面でモデルを選んで始めるもので、frontmatter の `model` はその選択を、skill を呼んだターンの残りだけ黙って上書きし、次のメッセージで戻す。モデルを切り替えたターンは会話全体をキャッシュ無しで読み直すうえ、クラウドセッションで Claude が Skill ツールから呼んだ経路では効かなかった（#495）
-- skill の `effort` も効くのはそのターンだけ（effort の変更は 5.5 世代と Fable 5.1 ならキャッシュを保つ）。何ターンも続く skill（`/issue-start` はユーザーの返信や PR のイベントで続く）には書かず、AskUserQuestion で 1 ターンに収まる skill（`/issue-plan`）にだけ書く
-- 無人ルーティン（`.claude/routines/`）は SKILL.md をファイルとして読み、Skill ツールで呼ばないので、skill の frontmatter はルーティンに効かない。agents の frontmatter は効く
+- skill には `model` も `effort` も書かない。skill はユーザーがセッション開始画面でモデルと effort を選んで始めるもので、frontmatter の値はその選択を、skill を呼んだターンの残りだけ黙って上書きし、次のメッセージで戻す。モデルを切り替えたターンは会話全体をキャッシュ無しで読み直すうえ、クラウドセッションで Claude が Skill ツールから呼んだ経路では `model` が効かなかった（#495）
+- 無人ルーティン（`.claude/routines/`）から起動するサブエージェントにも agents の frontmatter が効く
 - Fable は Max プランでは週の利用枠の 50% までの別上限があり、ほかのモデルより早く枠を減らす。無人で回る経路（ルーティンから起動するサブエージェントなど）には割り当てない
 
 ## 変えたときの検証

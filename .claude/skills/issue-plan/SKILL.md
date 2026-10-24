@@ -2,7 +2,6 @@
 name: issue-plan
 description: ユーザーの要望・機能案・バグ報告を、粒度規約（1 Issue = 1 PR）に沿った GitHub Issue に分割・整形して起票するスキル。「Issueを建てたい」「〜を実装したいのでIssueにして」「この機能をIssueに分割して」「/issue-plan <要望>」のように、実装ではなく Issue の作成・分割を依頼されたときに使う。既存Issueが大きすぎるときの分割（/issue-plan #N）にも使う。実装は行わない（実装は /issue-start）。
 argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
-effort: high
 ---
 
 # Issue計画スキル（/issue-plan）
