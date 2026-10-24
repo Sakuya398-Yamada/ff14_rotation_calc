@@ -106,7 +106,7 @@ describe("侍: 明鏡止水の消費対象", () => {
   );
 
   it("奥義波切と返し波切では明鏡止水のスタックが減らない", () => {
-    const result = resolve(["ikishoten", "meikyo-shisui-skill", "ogi-namikiri", "tsubame-gaeshi"]);
+    const result = resolve(["ikishoten", "meikyo-shisui-skill", "ogi-namikiri", "ogi-namikiri"]);
     expect(result.entries[3].resolvedSkillId).toBe("kaeshi-namikiri");
     const meikyo = result.entries[3].activeBuffs.find((b) => b.buffId === "meikyo-shisui");
     expect(meikyo?.stacks).toBe(3);
