@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import {
   MAX_TITLE_LENGTH,
@@ -57,8 +57,9 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
     }
   }, [open, returnFocusRef]);
 
-  useEffect(() => {
-    // 保存ボタンが消えてフォーカスを失うので、次に押すコピーボタンへ移す
+  // 保存ボタンが消えてフォーカスを失うので、次に押すコピーボタンへ移す。
+  // useEffect だと DOM の更新より後のタスクで走り、その間フォーカスが body に外れる
+  useLayoutEffect(() => {
     if (shareUrl !== null) copyButtonRef.current?.focus();
   }, [shareUrl]);
 
