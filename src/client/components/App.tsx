@@ -16,6 +16,9 @@ import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../logic/skill-level";
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
+import type { PersistedAppState } from "../logic/timeline-storage";
+import { getSharedTimelineId, loadSharedTimeline, SHARED_LOAD_ERROR_MESSAGES } from "../logic/shared-timeline";
+import type { SharedLoadError } from "../logic/shared-timeline";
 import type { JobId } from "../data/job-registry";
 import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
 
@@ -60,6 +63,14 @@ export function App() {
   const [multiTargetWindows, setMultiTargetWindows] = useState<MultiTargetWindow[]>(restored?.multiTargetWindows ?? []);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
   const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
+  // 共有 URL から読み込んだタイムラインの ID。保存 UI（#478）が複製元（parentId）として使う。リロードでは引き継がない
+  const [sourceTimelineId, setSourceTimelineId] = useState<string | null>(null);
+  const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
+  // 共有タイムラインの取得が終わった時点のエントリで上書きの確認を判定するため、最新の値を持っておく
+  const entriesRef = useRef(entries);
+  useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
 
   // 状態変更を debounce しつつ LocalStorage へ保存。
   // debounce 待ち中（直前 500ms 以内）のリロード・タブクローズでも取りこぼさないよう、
@@ -85,6 +96,45 @@ export function App() {
     setPpsRange(null);
     setSelectedEntryUid(null);
   }, []);
+
+  const applyAppState = useCallback((state: PersistedAppState) => {
+    nextUid = Math.max(nextUid, computeNextUid(state.entries));
+    setSelectedJob(state.selectedJob);
+    setLevel(state.level);
+    setEntries(state.entries);
+    setStats(state.stats);
+    setUntargetableWindows(state.untargetableWindows);
+    setMultiTargetWindows(state.multiTargetWindows);
+    setPpsRange(null);
+    setSelectedEntryUid(null);
+  }, []);
+
+  // 共有 URL（/t/<id>）で開かれたら、保存済みのタイムラインを読み込んで置き換える
+  useEffect(() => {
+    const id = getSharedTimelineId(window.location.pathname);
+    if (id === null) return;
+    const controller = new AbortController();
+    void loadSharedTimeline(id, {
+      signal: controller.signal,
+      hasWorkingEntries: () => entriesRef.current.length > 0,
+      confirmOverwrite: () =>
+        window.confirm("共有タイムラインを開くと、作業中のタイムラインは置き換えられます。開きますか？"),
+    }).then((outcome) => {
+      if (controller.signal.aborted) return;
+      if (outcome.kind === "error") {
+        // 通信エラーならリロードでやり直せるよう、URL は残す
+        setSharedLoadError(outcome.error);
+        return;
+      }
+      // 残すと、リロードのたびに読み込み直して、編集した内容を置き換えようとする
+      window.history.replaceState(null, "", "/");
+      if (outcome.kind === "apply") {
+        applyAppState(outcome.state);
+        setSourceTimelineId(outcome.id);
+      }
+    });
+    return () => controller.abort();
+  }, [applyAppState]);
 
   // レベルに応じたバフ・リソースをフィルタ
   const levelBuffs = useMemo(
@@ -302,6 +352,19 @@ export function App() {
         onClose={() => setSettingsOpen(false)}
         returnFocusRef={settingsButtonRef}
       />
+      {sharedLoadError !== null && (
+        <div style={styles.sharedLoadError}>
+          <span role="alert">{SHARED_LOAD_ERROR_MESSAGES[sharedLoadError]}</span>
+          <button
+            type="button"
+            aria-label="閉じる"
+            onClick={() => setSharedLoadError(null)}
+            style={styles.sharedLoadErrorClose}
+          >
+            ×
+          </button>
+        </div>
+      )}
       <SummaryBar
         totalExpectedPotency={totalExpectedPotency}
         dotExpectedPotency={dotExpectedPotency}
@@ -439,6 +502,27 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     border: "1px solid var(--color-field)",
     borderRadius: "var(--radius-lg)",
+    background: "var(--color-raised)",
+    color: "var(--color-text)",
+    cursor: "pointer",
+  },
+  sharedLoadError: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "var(--space-3)",
+    padding: "var(--space-2) var(--space-4)",
+    borderBottom: "1px solid var(--color-error)",
+    backgroundColor: "var(--color-surface)",
+    color: "var(--color-error)",
+    fontSize: "13px",
+  },
+  sharedLoadErrorClose: {
+    flexShrink: 0,
+    width: "28px",
+    height: "28px",
+    border: "1px solid var(--color-field)",
+    borderRadius: "var(--radius-md)",
     background: "var(--color-raised)",
     color: "var(--color-text)",
     cursor: "pointer",
