@@ -11,7 +11,7 @@ function entry(skillId: string): TimelineEntry {
   return { uid: `${skillId}-${Math.random()}`, skillId };
 }
 
-describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
+describe("侍: 燕返し 4 種と返し波切（autoTransform + exclusiveGroup）", () => {
   it("天下五剣後の燕返し → 返し五剣（威力300、剣圧+1）", () => {
     const result = resolveTimeline(
       [
@@ -96,13 +96,13 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
     expect(last.critRateBonus).toBe(1);
   });
 
-  it("奥義波切後 → 返し波切（威力1000、確定クリ）", () => {
+  it("奥義波切後の奥義波切 → 返し波切（威力1000、確定クリ）", () => {
     const result = resolveTimeline(
       [
         entry("ikishoten"),         // 奥義波切Ready付与
         entry("hakaze"),
         entry("ogi-namikiri"),
-        entry("tsubame-gaeshi"),    // → 返し波切
+        entry("ogi-namikiri"),      // → 返し波切
       ],
       skillMap,
       SAM_RESOURCES,
@@ -112,9 +112,28 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
 
     const last = result.entries[result.entries.length - 1];
     expect(last.resolvedSkillId).toBe("kaeshi-namikiri");
+    expect(last.comboErrors).toEqual([]);
     expect(last.resolvedPotency).toBe(1000);
     expect(last.critRateBonus).toBe(1);
     expect(last.dhRateBonus).toBe(0);
+  });
+
+  it("奥義波切後の燕返しは返し波切に変化しない", () => {
+    const result = resolveTimeline(
+      [
+        entry("ikishoten"),
+        entry("hakaze"),
+        entry("ogi-namikiri"),
+        entry("tsubame-gaeshi"),
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    const last = result.entries[result.entries.length - 1];
+    expect(last.resolvedSkillId).toBe("tsubame-gaeshi");
   });
 
   it("Ready バフが排他グループ tsubame-ready で重複付与されない", () => {
@@ -141,18 +160,17 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
     expect(last.resolvedSkillId).toBe("kaeshi-setsugekka");
   });
 
-  it("奥義波切後に居合術 → 波切Ready が居合のReadyに置換される（exclusiveGroup の波切系も対象）", () => {
-    // 奥義波切で kaeshi-namikiri-ready 付与 → その後 iaijutsu で kaeshi-goken-ready 付与
-    // exclusiveGroup="tsubame-ready" により波切Ready が除去 → tsubame-gaeshi は五剣になるべき
+  it("燕返しの準備中に奥義波切 → 返し波切を撃っても燕返しの準備が残る", () => {
+    // 返し波切準備は燕返し系の排他グループ tsubame-ready に入らない（#520）
     const result = resolveTimeline(
       [
         entry("ikishoten"),
-        entry("hakaze"),
-        entry("ogi-namikiri"),                  // tsubame-kaeshi-namikiri-ready 付与
         entry("hakaze"), entry("yukikaze"),
         entry("hakaze"), entry("jinpu"), entry("gekko"),
-        entry("iaijutsu"),                       // 天下五剣 → tsubame-kaeshi-goken-ready 付与（波切Ready 除去）
-        entry("tsubame-gaeshi"),
+        entry("iaijutsu"),                       // 天下五剣 → tsubame-kaeshi-goken-ready 付与
+        entry("ogi-namikiri"),                   // tsubame-kaeshi-namikiri-ready 付与
+        entry("ogi-namikiri"),                   // → 返し波切
+        entry("tsubame-gaeshi"),                 // → 返し五剣
       ],
       skillMap,
       SAM_RESOURCES,
@@ -160,8 +178,34 @@ describe("侍: 燕返し 5 種（autoTransform + exclusiveGroup）", () => {
       SAM_BUFFS
     );
 
-    const last = result.entries[result.entries.length - 1];
-    expect(last.resolvedSkillId).toBe("kaeshi-goken");
+    const n = result.entries.length;
+    expect(result.entries[n - 2].resolvedSkillId).toBe("kaeshi-namikiri");
+    expect(result.entries[n - 1].resolvedSkillId).toBe("kaeshi-goken");
+    expect(result.entries[n - 1].comboErrors).toEqual([]);
+  });
+
+  it("奥義波切後に居合術 → 燕返しは返し五剣、波切Ready は残って奥義波切が返し波切になる", () => {
+    const result = resolveTimeline(
+      [
+        entry("ikishoten"),
+        entry("hakaze"),
+        entry("ogi-namikiri"),                  // tsubame-kaeshi-namikiri-ready 付与
+        entry("hakaze"), entry("yukikaze"),
+        entry("hakaze"), entry("jinpu"), entry("gekko"),
+        entry("iaijutsu"),                       // 天下五剣 → tsubame-kaeshi-goken-ready 付与（波切Ready は残る）
+        entry("tsubame-gaeshi"),
+        entry("ogi-namikiri"),
+      ],
+      skillMap,
+      SAM_RESOURCES,
+      undefined,
+      SAM_BUFFS
+    );
+
+    const n = result.entries.length;
+    expect(result.entries[n - 2].resolvedSkillId).toBe("kaeshi-goken");
+    expect(result.entries[n - 1].resolvedSkillId).toBe("kaeshi-namikiri");
+    expect(result.entries[n - 1].comboErrors).toEqual([]);
   });
 
   it("燕返し系は剣圧を付与しない（実機: 剣圧は居合術・奥義波切のみで蓄積）", () => {

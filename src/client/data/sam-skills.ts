@@ -57,7 +57,7 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
  * 1. 単体WSコンボ（月/花/雪の3系統、起点共通の刃風）
  * 2. 範囲WSコンボ（風雅 → 満月/桜花）
  * 3. 居合術系（autoTransform で閃数＋天道バフに応じて変化）
- * 4. 燕返し系（autoTransform で Ready バフに応じて変化、5種）
+ * 4. 燕返し系（autoTransform で Ready バフに応じて変化、4種。返し波切は奥義波切から変化）
  * 5. 奥義波切系（Lv90、確定クリ）
  * 6. 必殺剣系（剣気消費 oGCD/GCD）
  * 7. その他（意気衝天・葉隠・明鏡止水・残心・燕飛・照破・心眼/天眼通・黙想）
@@ -427,7 +427,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
 
   // ============================================================
-  // 4. 燕返し系（パレット用 + 隠しスキル 5 種）
+  // 4. 燕返し系（パレット用 + 隠しスキル 4 種）＋ 奥義波切から変化する返し波切
   // ============================================================
   {
     id: "tsubame-gaeshi",
@@ -444,7 +444,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
       { buffId: "tsubame-tendo-kaeshi-goken-ready", skillId: "tendo-kaeshi-goken" },
       { buffId: "tsubame-kaeshi-setsugekka-ready", skillId: "kaeshi-setsugekka" },
       { buffId: "tsubame-kaeshi-goken-ready", skillId: "kaeshi-goken" },
-      { buffId: "tsubame-kaeshi-namikiri-ready", skillId: "kaeshi-namikiri" },
     ],
   },
   // 燕返し系は剣圧を付与しない（実機: 剣圧は居合術系と奥義波切のみで付与）
@@ -544,6 +543,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     requiredBuff: "ogi-namikiri-ready",
     buffConsumptions: [{ buffId: "ogi-namikiri-ready", stacks: 1 }],
     buffApplications: ["tsubame-kaeshi-namikiri-ready"],
+    // 返し波切は燕返しではなく奥義波切から変化する（黄金のレガシー以降の仕様。#520）
+    autoTransform: { buffId: "tsubame-kaeshi-namikiri-ready", skillId: "kaeshi-namikiri" },
     resourceChanges: [{ resourceId: "meditation", amount: 1 }],
     maxTargets: Infinity,
     falloffRate: 0.4,

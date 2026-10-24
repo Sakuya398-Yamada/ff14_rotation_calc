@@ -39,11 +39,13 @@ export const persistedAppStateSchema = z
     });
   });
 
+// nanoid の既定の 21 文字（base64url）
+const timelineIdSchema = z.string().regex(/^[A-Za-z0-9_-]{21}$/);
+
 export const saveTimelineRequestSchema = z.object({
   data: persistedAppStateSchema,
   title: z.string().max(MAX_TITLE_LENGTH).optional(),
-  parentId: z
-    .string()
-    .regex(/^[A-Za-z0-9_-]{21}$/)
-    .optional(),
+  parentId: timelineIdSchema.optional(),
 });
+
+export const timelineIdParamSchema = z.object({ id: timelineIdSchema });

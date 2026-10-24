@@ -6,10 +6,11 @@ import { getCookie, setCookie } from "hono/cookie";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
 import { nanoid } from "nanoid";
+import type { TimelineResponse } from "../../client/logic/shared-timeline";
 import { timelines } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
 import { generateOwnerToken, hashOwnerToken, isOwnerToken } from "../services/owner-token";
-import { saveTimelineRequestSchema } from "./timelines-schema";
+import { saveTimelineRequestSchema, timelineIdParamSchema } from "./timelines-schema";
 
 type RouteEnv = { Bindings: Bindings; Variables: { ownerHash: string } };
 
@@ -78,6 +79,37 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
         ownerHash: c.get("ownerHash"),
       });
       return c.json({ id }, 201);
+    },
+  )
+  // 共有 URL で誰でも開くので、匿名トークンもレート制限も使わない。id は推測できず、1 回の読み込みは主キーで 1 行だけ読む
+  .get(
+    "/:id",
+    // この形の id は保存され得ないので、DB に問い合わせずに「無い」と答える
+    zValidator("param", timelineIdParamSchema, (result, c) => {
+      if (!result.success) return c.json({ error: "not_found" }, 404);
+    }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const [row] = await getDb(c.env)
+        .select({
+          id: timelines.id,
+          parentId: timelines.parentId,
+          schemaVer: timelines.schemaVer,
+          data: timelines.data,
+          title: timelines.title,
+          contentId: timelines.contentId,
+          createdAt: timelines.createdAt,
+        })
+        .from(timelines)
+        .where(eq(timelines.id, id))
+        .limit(1);
+      if (!row) return c.json({ error: "not_found" }, 404);
+      return c.json({
+        ...row,
+        data: JSON.parse(row.data) as unknown,
+        // DB は unixepoch() の秒
+        createdAt: new Date(row.createdAt * 1000).toISOString(),
+      } satisfies TimelineResponse);
     },
   );
 }

@@ -38,6 +38,7 @@
 ```
 
 - 配信 URL: `https://ff14-rotation-calc.forestry-for.workers.dev`（独自ドメインは使わない）
+- D1 のバックアップ: 自宅サーバーの cron が毎日 `scripts/d1-backup.sh`（`wrangler d1 export --remote`）で取る。手順と復元は `docs/d1-backup.md`。エクスポートは仮想テーブル（FTS5 等）を含む DB では使えないので、仮想テーブルを足す Issue ではこの手順も見直す
 - `vite build` はフロントを `dist/client` に、Worker を `dist/ff14_rotation_calc` に出力し、デプロイ用の設定 `dist/ff14_rotation_calc/wrangler.json` を生成する。Vite の `root` が `src/client` なので、リポジトリ直下の `wrangler deploy` はこの生成設定を自動では見つけない。デプロイは `npm run deploy`（`--config` で生成設定を指定）を使う
 
 ## よく使うコマンド
