@@ -30,7 +30,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 | `mcp-setup.md` | MCP サーバー一覧・利用不可時のフォールバック・クラウドとの差分（セットアップ手順は `CONTRIBUTING.md`） |
 | `workflow-feedback.md` | 知見ボード運用、テンプレート元への還元・更新取り込みの判定（手順は phases と `/template-update`）、棚卸しの正本の場所 |
 | `routines.md` | 定期ルーティンの一覧・登録側の呼び出し文・実行ログ（`paths:` で `.claude/routines/` を触ったときだけ読み込む） |
-| `model-assignment.md` | agents・skills のモデルと effort の割り当て・書き方・検証のしかた（`paths:` で agents を触ったときだけ読み込む） |
+| `model-assignment.md` | agents・skills・セッション既定（`settings.json` の `modelSettings`）のモデルと effort の割り当て・書き方・検証のしかた（`paths:` で agents か `settings.json` を触ったときだけ読み込む） |
 | `documentation-policy.md` | CLAUDE.md と rules の書き分け方針 |
 
 ## 開発フロー
