@@ -101,6 +101,19 @@ describe("MyTimelinesDialog", () => {
     expect(screen.queryByRole("button", { name: "もっと見る" })).not.toBeInTheDocument();
   });
 
+  it("「もっと見る」で最後のページを読み込むと、ボタンは消え、足した先頭の行にフォーカスを移す", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(3)], nextCursor: "cursor-1" }))
+      .mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }));
+    renderDialog();
+    const button = await screen.findByRole("button", { name: "もっと見る" });
+    button.focus();
+    fireEvent.click(button);
+
+    await vi.waitFor(() => expect(screen.getAllByRole("link")).toHaveLength(3));
+    expect(screen.getAllByRole("link")[1]).toHaveFocus();
+  });
+
   it("「もっと見る」に失敗しても、読み込んだ一覧は残し、もう一度押せる", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ items: [item(2)], nextCursor: "cursor-1" }))

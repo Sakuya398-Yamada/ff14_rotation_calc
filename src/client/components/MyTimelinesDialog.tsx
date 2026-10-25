@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { JOB_CATALOG } from "../data/job-catalog";
 import { MY_TIMELINES_ERROR_MESSAGE, fetchMyTimelines, type MyTimelineItem } from "../logic/my-timelines";
@@ -20,6 +20,9 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
   const dialogRef = useRef<HTMLDialogElement>(null);
   // 取得中の一覧。閉じたときに中断する
   const loadControllerRef = useRef<AbortController | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  // 「もっと見る」で足した先頭の行の id。最後のページでは押したボタンが消えてフォーカスが外れるので、足した行へ移す
+  const focusIdRef = useRef<string | null>(null);
   // 1 ページ目を読み込むまでは null
   const [items, setItems] = useState<MyTimelineItem[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -37,6 +40,7 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     loadControllerRef.current = null;
     setLoading(false);
     if (outcome.kind === "loaded") {
+      if (cursor !== null) focusIdRef.current = outcome.items[0]?.id ?? null;
       setItems((prev) => (cursor === null || prev === null ? outcome.items : [...prev, ...outcome.items]));
       setNextCursor(outcome.nextCursor);
     } else if (outcome.kind === "error") {
@@ -63,6 +67,14 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
       returnFocusRef.current?.focus();
     }
   }, [open, returnFocusRef, load]);
+
+  // useEffect だと DOM の更新より後のタスクで走り、その間フォーカスが body に外れる
+  useLayoutEffect(() => {
+    const id = focusIdRef.current;
+    if (id === null) return;
+    focusIdRef.current = null;
+    listRef.current?.querySelector<HTMLElement>(`a[data-timeline-id="${id}"]`)?.focus();
+  }, [items]);
 
   return (
     <dialog
@@ -99,11 +111,11 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
         ) : items.length === 0 ? (
           <p style={styles.text}>このブラウザで保存したタイムラインはありません。</p>
         ) : (
-          <ul style={styles.list}>
+          <ul ref={listRef} style={styles.list}>
             {items.map((item) => (
               <li key={item.id}>
                 {/* ページを移動して共有 URL の読み込み（作業中の置き換えの確認を含む）に任せる。リンクなので新しいタブでも開ける */}
-                <a href={buildShareUrl(window.location.origin, item.id)} style={styles.link}>
+                <a href={buildShareUrl(window.location.origin, item.id)} data-timeline-id={item.id} style={styles.link}>
                   <span style={styles.itemTitle}>{item.title ?? "（無題）"}</span>
                   <span style={styles.itemMeta}>
                     {jobName(item.job)} Lv{item.level}・
