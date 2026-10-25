@@ -14,6 +14,7 @@ import "./layout.css";
 import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { JOB_DATA } from "../data/job-registry";
+import { contentName } from "../data/content-catalog";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../logic/skill-level";
@@ -73,6 +74,8 @@ export function App() {
   // （続けて保存すると、前の保存が複製元になる）。ジョブを変えると外す。リロードでは引き継がない
   const [sourceTimelineId, setSourceTimelineId] = useState<string | null>(null);
   const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
+  // 共有 URL から開いたタイムラインのタイトルとコンテンツ。ジョブを変えるか保存すると、別のタイムラインになるので外す
+  const [sharedInfo, setSharedInfo] = useState<{ title: string | null; contentId: string | null } | null>(null);
   // 共有タイムラインの取得が終わった時点のエントリで上書きの確認を判定するため、最新の値を持っておく
   const entriesRef = useRef(entries);
   useEffect(() => {
@@ -109,6 +112,12 @@ export function App() {
     setSelectedEntryUid(null);
     // 中身が別のタイムラインになるので、複製元も外す
     setSourceTimelineId(null);
+    setSharedInfo(null);
+  }, []);
+
+  const handleSaved = useCallback((id: string) => {
+    setSourceTimelineId(id);
+    setSharedInfo(null);
   }, []);
 
   const applyAppState = useCallback((state: PersistedAppState) => {
@@ -145,6 +154,8 @@ export function App() {
       if (outcome.kind === "apply") {
         applyAppState(outcome.state);
         setSourceTimelineId(outcome.id);
+        const { title, contentId } = outcome;
+        setSharedInfo(title !== null || contentId !== null ? { title, contentId } : null);
       }
     });
     return () => controller.abort();
@@ -388,7 +399,7 @@ export function App() {
         open={saveOpen}
         snapshot={saveSnapshot}
         parentId={sourceTimelineId}
-        onSaved={setSourceTimelineId}
+        onSaved={handleSaved}
         onClose={() => setSaveOpen(false)}
         returnFocusRef={saveButtonRef}
       />
@@ -409,6 +420,22 @@ export function App() {
             ×
           </button>
         </div>
+      )}
+      {sharedInfo !== null && (
+        <section aria-label="開いた共有タイムライン" style={styles.sharedInfo}>
+          <div style={styles.sharedInfoText}>
+            {sharedInfo.contentId !== null && <span>{contentName(sharedInfo.contentId)}</span>}
+            {sharedInfo.title !== null && <span style={styles.sharedInfoTitle}>{sharedInfo.title}</span>}
+          </div>
+          <button
+            type="button"
+            aria-label="共有タイムラインの情報を閉じる"
+            onClick={() => setSharedInfo(null)}
+            style={styles.sharedLoadErrorClose}
+          >
+            ×
+          </button>
+        </section>
       )}
       <SummaryBar
         totalExpectedPotency={totalExpectedPotency}
@@ -582,6 +609,29 @@ const styles: Record<string, React.CSSProperties> = {
     background: "var(--color-raised)",
     color: "var(--color-text)",
     cursor: "pointer",
+  },
+  sharedInfo: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "var(--space-3)",
+    padding: "var(--space-2) var(--space-4)",
+    borderBottom: "1px solid var(--color-line)",
+    backgroundColor: "var(--color-surface)",
+    color: "var(--color-text)",
+    fontSize: "13px",
+  },
+  sharedInfoText: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "baseline",
+    columnGap: "var(--space-3)",
+    minWidth: 0,
+  },
+  sharedInfoTitle: {
+    fontSize: "11px",
+    color: "var(--color-muted)",
+    overflowWrap: "anywhere",
   },
   main: {
     display: "flex",
