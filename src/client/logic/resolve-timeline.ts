@@ -25,7 +25,7 @@ const DOT_TICK_INTERVAL = 3;
 /** コンボタイマー（秒）。この時間以上経過するとコンボがリセットされる */
 const COMBO_TIMER = 15;
 
-/** triggersGcdRecast の oGCD（黙想）が発生させる GCD の基礎リキャスト（秒） */
+/** triggersGcdRecast の oGCD が gcdRecastTime を持たないときに発生させる GCD の基礎リキャスト（秒。黙想） */
 const BASE_GCD_RECAST = 2.5;
 
 /**
@@ -1042,7 +1042,7 @@ export function resolveTimeline(
       expireBuffsUntil(startTime);
 
     } else {
-      // GCD リキャストも発生させる oGCD（黙想）は、GCD と同じくリキャスト明けを待つ
+      // GCD リキャストも発生させる oGCD（黙想・鉄山闘気等）は、GCD と同じくリキャスト明けを待つ
       autoStartTime = originalSkill.triggersGcdRecast
         ? Math.max(gcdAvailableAt, actionAvailableAt)
         : actionAvailableAt;
@@ -1100,10 +1100,12 @@ export function resolveTimeline(
     advanceAutoGen(startTime);
 
     // GCD のリキャスト・詠唱時間は変化先スキルの値で計算する（例: レッドファイア → シアンブリザドで 2.5 秒 → 3.3 秒）。
-    // triggersGcdRecast の oGCD は recastTime がアニメーションロックなので、ウェポンスキルと同じ基礎リキャストから計算する
+    // triggersGcdRecast の oGCD は recastTime がアニメーションロックなので、gcdRecastTime（ジョブのウェポンスキルと同じ基礎リキャスト）から計算する
     if (originalSkill.type === "gcd" || originalSkill.triggersGcdRecast) {
       // recastOverride バフ（レインボードリップ効果アップ等）があれば基礎リキャストを置き換えてから補正を掛ける
-      const baseRecastTime = originalSkill.type === "gcd" ? skill.recastTime : BASE_GCD_RECAST;
+      const baseRecastTime = originalSkill.type === "gcd"
+        ? skill.recastTime
+        : originalSkill.gcdRecastTime ?? BASE_GCD_RECAST;
       const overriddenRecast = getBaseRecastTime(originalSkill.id, baseRecastTime, currentActiveBuffs, buffDefMap);
       const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
       // 速度バフを適用してリキャスト・詠唱時間計算
@@ -1197,6 +1199,15 @@ export function resolveTimeline(
       if (consumeAllCount === 0) {
         // 全て0 → エラー（先頭リソースIDをエラーとして報告）
         resourceErrors.push(skill.consumeAllResources[0]);
+      }
+    }
+
+    // resourceMaxConditions: 実行前のリソース量が上限を超えていたらエラー（超えたリソースをすべて報告）
+    if (skill.resourceMaxConditions) {
+      for (const condition of skill.resourceMaxConditions) {
+        if ((resourceState[condition.resourceId] ?? 0) > condition.maxAmount) {
+          resourceErrors.push(condition.resourceId);
+        }
       }
     }
 
@@ -1905,7 +1916,7 @@ export function resolveTimeline(
   // ティックを時刻順にソート
   dotTicks.sort((a, b) => a.time - b.time);
 
-  // 最後のGCDのリキャスト完了時刻を算出（GCD リキャストを発生させる oGCD の黙想も含める）
+  // 最後のGCDのリキャスト完了時刻を算出（GCD リキャストを発生させる oGCD（黙想・鉄山闘気等）も含める）
   let lastGcdEndTime = 0;
   for (const entry of resolved) {
     const skill = skillMap.get(entry.resolvedSkillId);
