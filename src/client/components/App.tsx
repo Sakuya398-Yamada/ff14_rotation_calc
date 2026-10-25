@@ -6,6 +6,7 @@ import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsDialog } from "./SettingsDialog";
+import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
@@ -16,7 +17,7 @@ import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../logic/skill-level";
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
-import type { PersistedAppState } from "../logic/timeline-storage";
+import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
 import { getSharedTimelineId, loadSharedTimeline, SHARED_LOAD_ERROR_MESSAGES } from "../logic/shared-timeline";
 import type { SharedLoadError } from "../logic/shared-timeline";
 import type { JobId } from "../data/job-registry";
@@ -34,6 +35,8 @@ export function App() {
   const [settings, setSettings] = useState(loadSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     saveSettings(settings);
@@ -63,7 +66,8 @@ export function App() {
   const [multiTargetWindows, setMultiTargetWindows] = useState<MultiTargetWindow[]>(restored?.multiTargetWindows ?? []);
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
   const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
-  // 共有 URL から読み込んだタイムラインの ID。保存 UI（#478）が複製元（parentId）として使う。リロードでは引き継がない
+  // 保存するときに複製元（parentId）として付ける ID。共有 URL から開いたタイムラインの ID で、保存したら保存した ID に置き換える
+  // （続けて保存すると、前の保存が複製元になる）。ジョブを変えると外す。リロードでは引き継がない
   const [sourceTimelineId, setSourceTimelineId] = useState<string | null>(null);
   const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
   // 共有タイムラインの取得が終わった時点のエントリで上書きの確認を判定するため、最新の値を持っておく
@@ -87,6 +91,11 @@ export function App() {
     };
   }, [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows]);
 
+  const saveSnapshot = useMemo<AppStateSnapshot>(
+    () => ({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows }),
+    [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows]
+  );
+
   const jobData = JOB_DATA[selectedJob];
 
   const handleJobChange = useCallback((jobId: JobId) => {
@@ -95,6 +104,8 @@ export function App() {
     setEntries([]);
     setPpsRange(null);
     setSelectedEntryUid(null);
+    // 中身が別のタイムラインになるので、複製元も外す
+    setSourceTimelineId(null);
   }, []);
 
   const applyAppState = useCallback((state: PersistedAppState) => {
@@ -331,6 +342,15 @@ export function App() {
           onLevelChange={setLevel}
         />
         <button
+          ref={saveButtonRef}
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setSaveOpen(true)}
+          style={styles.saveButton}
+        >
+          保存・共有
+        </button>
+        <button
           ref={settingsButtonRef}
           type="button"
           aria-label="設定"
@@ -351,6 +371,14 @@ export function App() {
         onChange={setSettings}
         onClose={() => setSettingsOpen(false)}
         returnFocusRef={settingsButtonRef}
+      />
+      <SaveTimelineDialog
+        open={saveOpen}
+        snapshot={saveSnapshot}
+        parentId={sourceTimelineId}
+        onSaved={setSourceTimelineId}
+        onClose={() => setSaveOpen(false)}
+        returnFocusRef={saveButtonRef}
       />
       {sharedLoadError !== null && (
         <div style={styles.sharedLoadError}>
@@ -493,6 +521,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     letterSpacing: "0.02em",
     color: "var(--color-text)",
+  },
+  saveButton: {
+    height: "40px",
+    padding: "0 var(--space-3)",
+    border: "1px solid var(--color-field)",
+    borderRadius: "var(--radius-lg)",
+    background: "var(--color-raised)",
+    color: "var(--color-text)",
+    fontFamily: "inherit",
+    fontSize: "13px",
+    cursor: "pointer",
   },
   settingsButton: {
     width: "40px",
