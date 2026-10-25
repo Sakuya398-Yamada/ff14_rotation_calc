@@ -99,7 +99,12 @@ npm install
 
 # ローカルの D1（リポジトリ直下の .wrangler/state）にマイグレーションを適用
 npm run db:migrate
+
+# Worker のローカルの secret（Turnstile のテスト用 secret）。.dev.vars は gitignore 済み
+Copy-Item .dev.vars.example .dev.vars
 ```
+
+クラウドセッションでは、SessionStart hook（`.claude/hooks/session-start-cloud-deps.sh`）が `.dev.vars` をコピーします（既にあれば上書きしません）。
 
 ### 日常開発コマンド
 
@@ -125,6 +130,21 @@ npm run db:migrate                        # ローカルの D1 に適用
 - ローカルの D1 は `npm run dev`（`vite.config.ts` の `persistState`）と wrangler CLI（`npx wrangler d1 execute DB --local --command "..."` 等）が同じ `.wrangler/state` を使う
 - テストは D1 ではなく better-sqlite3 のメモリ上の DB に同じマイグレーションを当てる（例: `src/server/db/__tests__/timelines.test.ts`）
 - 本番の D1 には、`main` のデプロイ（`npm run deploy`）がデプロイの前に適用する（後述「本番 D1 とビルド用トークン」）
+
+### 保存時のボット対策（Cloudflare Turnstile）
+
+保存 API（`POST /api/timelines`）は、保存ダイアログのウィジェットが発行したトークンを Turnstile の siteverify で確かめ、不合格なら 403 を返します（#479）。ローカルとテストでは、Cloudflare 公式の [テスト用キー](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) を使います。
+
+| | 渡し方 | ローカルの値 |
+|---|---|---|
+| sitekey（フロント） | ビルド時の環境変数 `VITE_TURNSTILE_SITE_KEY` | 未設定なら必ず成功するテスト用キー `1x00000000000000000000AA` |
+| secret（Worker） | Worker の secret `TURNSTILE_SECRET_KEY`（ローカルは `.dev.vars`） | `.dev.vars.example` の必ず成功するテスト用 secret |
+
+- ローカルではウィジェットにテスト用である旨が表示され、確認は自動で成功します
+- 失敗を試すとき:
+  - 検証の不合格（403）: `.dev.vars` の値を `2x0000000000000000000000000000000AA` に替えて `npm run dev` を起動し直す（`.dev.vars` の変更は起動し直すまで反映されない）
+  - ウィジェットのエラー: `$env:VITE_TURNSTILE_SITE_KEY="2x00000000000000000000AB"; npm run dev`
+- `.dev.vars` が無い（`TURNSTILE_SECRET_KEY` が未設定）と、保存は 500 になります。テスト用の secret には自動で切り替えません（本番で設定し忘れたときに、検証が黙って外れないようにするため）
 
 ---
 
@@ -177,6 +197,26 @@ npm run db:migrate                        # ローカルの D1 に適用
    npx wrangler d1 migrations list DB --remote   # 「No migrations to apply」なら適用済み
    ```
 
+### Turnstile（初回のみ・#479 のマージ前に）
+
+保存 API は Turnstile の検証に通らない保存を拒否します。本番の sitekey と secret を入れずにマージすると、本番の保存がすべて失敗する（sitekey が無いと 403、secret が無いと 500）ので、マージの前に次を済ませます。
+
+1. ダッシュボードの **Turnstile** で **Add widget** を選び、次を入れて **Create**:
+   - **Widget name**: 任意（例: `ff14-rotation-calc`）
+   - **Hostname management**: `ff14-rotation-calc.forestry-for.workers.dev`。PR のプレビュー（`<名前>-ff14-rotation-calc.forestry-for.workers.dev`）でも使うなら、代わりに `forestry-for.workers.dev` を入れる（登録したホスト名はサブドメインも通す）。`localhost` は入れない（ローカルはテスト用キーを使う）
+   - **Widget mode**: Managed
+2. 表示された sitekey を、Worker の **Settings** → **Build** → **Build variables and secrets** に `VITE_TURNSTILE_SITE_KEY` として足す（ビルド時にフロントに埋め込む値で、ページから誰でも見られる公開値）
+3. secret key を Worker の secret に入れる（どちらか）:
+
+   ```powershell
+   npx wrangler secret put TURNSTILE_SECRET_KEY   # 値を聞かれたら貼り付ける
+   ```
+
+   ダッシュボードなら Worker の **Settings** → **Variables and Secrets** → **Add**（Type: **Secret**）。`wrangler secret put` は今のコードのまま新しい版をデプロイするが、マージ前の版は secret を使わないので影響しない
+4. マージ後、本番の保存ダイアログで、ウィジェットにテスト用の表示が出ず、保存できることを確かめる
+
+PR のプレビューは本番の secret を引き継がず、今は D1 も付かないので保存できません（プレビュー用の設定は #581 で決める）。
+
 ### 動作確認手順
 
 1. 初回ビルドが成功し、本番 URL でフロントエンドが表示され、`/api/health` が `{"status":"ok"}` を返すことを確認
@@ -192,6 +232,8 @@ npm run db:migrate                        # ローカルの D1 に適用
 - **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews": {}` が消えていないか確認する（#485）
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す
+- **本番の保存がいつも「ボット対策の確認ができなかった」（403）になる**: ビルド変数 `VITE_TURNSTILE_SITE_KEY` が無いと、フロントはテスト用の sitekey で動き（ウィジェットにテスト用の表示が出る）、そのダミートークンを本番の secret が拒否する。上記「Turnstile」の手順 2 のとおり足して、ビルドし直す（ビルド変数は次のビルドから効く）。テスト用の表示が出ていなければ、sitekey と secret が別のウィジェットのものになっていないか確かめる
+- **本番の保存がいつも「保存できませんでした」（500）になる**: Worker の secret `TURNSTILE_SECRET_KEY` が無い。`npx wrangler tail` で保存すると `TURNSTILE_SECRET_KEY is not set` が出る。上記「Turnstile」の手順 3 のとおり入れる
 - **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
 
 ---
@@ -215,7 +257,7 @@ npm run db:migrate                        # ローカルの D1 に適用
 
 セッション開始時には SessionStart hook（`.claude/hooks/session-start-info.sh`）がリポジトリ状態のバナーを出します。バナーの `## Template version` は、`.claude/template-version` の版とテンプレート元（issue-driven-dev-starter）の最新リリースを比べた結果です（最新リリースは毎回取得し、取得に失敗したときだけ前回の結果を `cached` と付けて使う。前回の結果も無ければ `unknown`）。新しい版があれば `/issue-start` が更新用 Issue の起票を一度だけ提案します。取り込み手順は `.claude/skills/template-update/SKILL.md`（`/template-update`）を参照してください。
 
-Claude Code のクラウドセッション（claude.ai/code など）では、もう 1 つの SessionStart hook（`.claude/hooks/session-start-cloud-deps.sh`）が `npm ci` と、ローカルの D1 へのマイグレーション適用（`npx wrangler d1 migrations apply DB --local`）を実行します（`CLAUDE_CODE_REMOTE=true` のときだけ動き、ローカルでは何もしません）。
+Claude Code のクラウドセッション（claude.ai/code など）では、もう 1 つの SessionStart hook（`.claude/hooks/session-start-cloud-deps.sh`）が `npm ci`、`.dev.vars` の作成（`.dev.vars.example` からのコピー。既にあれば何もしない）、ローカルの D1 へのマイグレーション適用（`npx wrangler d1 migrations apply DB --local`）を実行します（`CLAUDE_CODE_REMOTE=true` のときだけ動き、ローカルでは何もしません）。
 
 詳細は `CLAUDE.md` を参照してください。
 

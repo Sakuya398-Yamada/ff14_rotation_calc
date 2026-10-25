@@ -8,7 +8,7 @@
 |---------|------|------|
 | 言語 | TypeScript | フロント・バックエンド統一 |
 | フロントエンド | React + Vite | SPA構成 |
-| バックエンド | Hono (Cloudflare Workers) | 軽量・Web標準準拠。フロントと同じ Worker で動かす（エントリ: `src/server/index.ts`、設定: `wrangler.jsonc`）。レート制限は Rate Limiting バインディング `TIMELINE_RATE_LIMITER`（`wrangler.jsonc` の `ratelimits`） |
+| バックエンド | Hono (Cloudflare Workers) | 軽量・Web標準準拠。フロントと同じ Worker で動かす（エントリ: `src/server/index.ts`、設定: `wrangler.jsonc`）。レート制限は Rate Limiting バインディング `TIMELINE_RATE_LIMITER`（`wrangler.jsonc` の `ratelimits`）。保存のボット対策は Cloudflare Turnstile（sitekey はビルド時の `VITE_TURNSTILE_SITE_KEY`、secret は Worker の secret `TURNSTILE_SECRET_KEY`。ローカルは `.dev.vars`。#479） |
 | API 入力検証 | zod 4 + `@hono/zod-validator` | スキーマは `src/server/routes/*-schema.ts`。Worker の型は `@cloudflare/workers-types` を入れず `src/server/env.ts` に使う分だけ書く（client と共用の tsconfig の DOM 型とぶつかるため） |
 | DB | Cloudflare D1（SQLite） | Worker のバインディング `DB`（`wrangler.jsonc` の `d1_databases`）。ローカルは `.wrangler/state` の D1 |
 | ORM | Drizzle ORM 0.45（drizzle-kit 0.31） | スキーマ `src/server/db/schema.ts`、マイグレーション `migrations/`（drizzle-kit が生成し、wrangler が適用） |
@@ -22,7 +22,7 @@
 ## 開発環境
 
 - **Windows 11 ローカル開発** を前提とする
-- **Claude Code のクラウドセッション**（Linux）でも開発できる。依存（`npm ci`）とローカル D1 へのマイグレーション適用は SessionStart hook `.claude/hooks/session-start-cloud-deps.sh` が `CLAUDE_CODE_REMOTE=true` のときだけ行う。クラウド環境の環境変数に `NODE_ENV=production` は入れない（devDependencies が入らなくなる）。MCP の違いは `mcp-setup.md`「クラウドセッションでの差分」
+- **Claude Code のクラウドセッション**（Linux）でも開発できる。依存（`npm ci`）、`.dev.vars` の作成（`.dev.vars.example` からのコピー）、ローカル D1 へのマイグレーション適用は SessionStart hook `.claude/hooks/session-start-cloud-deps.sh` が `CLAUDE_CODE_REMOTE=true` のときだけ行う。クラウド環境の環境変数に `NODE_ENV=production` は入れない（devDependencies が入らなくなる）。MCP の違いは `mcp-setup.md`「クラウドセッションでの差分」
 - 必要ツール: Node.js (v22 以上推奨, CIは v22)、npm、git、bash（Git Bash）、Microsoft Edge（Playwright MCP 用、Windows 11 標準）
 - hooks が JSON パースに `jq` を使う（無ければ `node` か `python3` にフォールバック。どれも無いと git のブランチ・コミット系のコマンドが止まる）
 - 任意ツール: `github-mcp-server` バイナリ（GitHub MCP 用、インストール手順は `CONTRIBUTING.md`「MCP サーバー（GitHub MCP による Issue/PR 操作）」）、`gh` CLI（MCP 未接続時のフォールバック）
