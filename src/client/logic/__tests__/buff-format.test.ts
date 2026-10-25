@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { describeBuffEffects, formatBuffRemaining } from "../buff-format";
+import {
+  describeBuffEffects,
+  formatBuffRemaining,
+  formatConsumedProc,
+  formatProcRate,
+  formatProcRateShort,
+} from "../buff-format";
 import type { BuffDefinition } from "../../types/skill";
 
 function makeBuff(effects: BuffDefinition["effects"]): BuffDefinition {
@@ -60,5 +66,40 @@ describe("formatBuffRemaining", () => {
 
   it("負にはならない", () => {
     expect(formatBuffRemaining({ buffId: "b", startTime: 0, endTime: 3 }, 5)).toBe("0.0s");
+  });
+});
+
+describe("formatProcRate", () => {
+  it.each([
+    [0.35, "35.0%"],
+    [0.2, "20.0%"],
+    // 1 − 0.65² は 0.5774999999999999 になるが、57.7 にしない (#615)
+    [1 - 0.65 ** 2, "57.8%"],
+    [1 - 0.8 * 0.65, "48.0%"],
+  ])("%s を小数第1位までの %s にする", (rate, expected) => {
+    expect(formatProcRate(rate)).toBe(expected);
+  });
+});
+
+describe("formatProcRateShort", () => {
+  it.each([
+    [0.35, "35%"],
+    [0.4, "40%"],
+    [1 - 0.65 ** 2, "58%"],
+    // 0.575 * 100 は 57.49999999999999 になるが、57 にしない
+    [0.575, "58%"],
+  ])("%s を整数の %s にする", (rate, expected) => {
+    expect(formatProcRateShort(rate)).toBe(expected);
+  });
+});
+
+describe("formatConsumedProc", () => {
+  it("バフ名を引いて「<バフ名>発動確率 xx.x%」にする", () => {
+    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "ホークアイ" }]]);
+    expect(formatConsumedProc({ buffId: "b", procRate: 0.35 }, buffDefMap)).toBe("ホークアイ発動確率 35.0%");
+  });
+
+  it("バフ定義が無いときは buffId を名前の代わりに使う", () => {
+    expect(formatConsumedProc({ buffId: "b", procRate: 0.35 }, new Map())).toBe("b発動確率 35.0%");
   });
 });

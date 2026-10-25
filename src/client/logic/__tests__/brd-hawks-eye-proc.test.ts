@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
-import type { Skill, TimelineEntry } from "../../types/skill";
+import type { ResolvedTimelineEntry, Skill, TimelineEntry } from "../../types/skill";
 import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
 import { BRD_BUFFS } from "../../data/brd-buffs";
 import { BRD_RESOURCES } from "../../data/brd-resources";
@@ -213,5 +213,67 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     const second = result.entries[4];
     expect(second.comboErrors).toEqual([]);
     expect(second.resolvedPotency).toBe(254);
+  });
+});
+
+// 期待値の根拠として画面に出す発動確率 P = 1 − Π(1 − p_i) (#615)
+describe("BRD: ホークアイの発動確率 P を解決結果に持たせる (#615)", () => {
+  function hawksEyeOf(e: ResolvedTimelineEntry) {
+    return e.activeBuffs.find((ab) => ab.buffId === "hawks-eye");
+  }
+
+  it("バーストショット → リフルジェントアローは、付与時点も消費時も P = 0.35", () => {
+    const result = resolve([entry("burst-shot"), entry("refulgent-arrow")]);
+
+    expect(hawksEyeOf(result.entries[0])?.procRate).toBeCloseTo(0.35, 10);
+    const refulgent = result.entries[1];
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.consumedProc?.buffId).toBe("hawks-eye");
+    expect(refulgent.consumedProc?.procRate).toBeCloseTo(0.35, 10);
+  });
+
+  it("バーストショット ×2 は、付与時点の P が 1本目 0.35・2本目 1 − 0.65²、消費時も 1 − 0.65²", () => {
+    const result = resolve([entry("burst-shot"), entry("burst-shot"), entry("refulgent-arrow")]);
+
+    expect(hawksEyeOf(result.entries[0])?.procRate).toBeCloseTo(0.35, 10);
+    expect(hawksEyeOf(result.entries[1])?.procRate).toBeCloseTo(1 - 0.65 ** 2, 10);
+    const refulgent = result.entries[2];
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.consumedProc?.procRate).toBeCloseTo(1 - 0.65 ** 2, 10);
+  });
+
+  // t=0 の付与元は 30 秒で切れるので、t=30 の付与では数えない
+  it.each([
+    [29.9, 1 - 0.65 ** 2],
+    [30, 0.35],
+  ])("t=%s に付与したホークアイの P は、効果時間内の付与元だけから %s になる", (time, expected) => {
+    const result = resolve([entry("burst-shot"), entry("burst-shot", time)]);
+
+    expect(result.entries[1].startTime).toBe(time);
+    expect(result.entries[1].recastError).toBeFalsy();
+    expect(hawksEyeOf(result.entries[1])?.procRate).toBeCloseTo(expected, 10);
+  });
+
+  it("ホークアイを消費した後の付与は、新たな付与元だけで P = 0.35 になる", () => {
+    const result = resolve([
+      entry("burst-shot"),
+      entry("burst-shot"),
+      entry("refulgent-arrow"),
+      entry("burst-shot"),
+    ]);
+
+    expect(hawksEyeOf(result.entries[3])?.procRate).toBeCloseTo(0.35, 10);
+  });
+
+  it("乱れ撃ちを優先消費したリフルジェントアローは P を持たず、乱れ撃ちのバフにも P は無い", () => {
+    const result = resolve([entry("barrage"), entry("burst-shot"), entry("refulgent-arrow")]);
+
+    const barrage = result.entries[0].activeBuffs.find((ab) => ab.buffId === "barrage");
+    expect(barrage).toBeDefined();
+    expect(barrage).not.toHaveProperty("procRate");
+    const refulgent = result.entries[2];
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.resolvedPotency).toBe(840);
+    expect(refulgent.consumedProc).toBeUndefined();
   });
 });

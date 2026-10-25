@@ -73,6 +73,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 | Phase | 検出場面 | 扱い |
 |-------|---------|------|
+| 1（Issue 分析） | 乖離チェック・外部情報の裏取りなどで見つけた別の問題 | Phase 1.5「補完結果の確認」と同じ呼び出しで、別の質問にして聞く（補完が無ければ、それだけを聞いてから Phase 2 に進む）。親の本文に子の番号を書くなら、まとめずに起票の確認を先に聞いて起票し、その番号を入れた補完案で確認する（「全体ルール」の「確認の聞き方」の、前の答えで次が決まる確認） |
 | 3（コード探索） | 既存コードの別バグ・設計上の違和感 | Phase 末尾で一覧化して提示 |
 | 5（実装） | 実装中に周辺コードのバグに遭遇 | 即時は記録のみ、Phase 末尾でまとめて提示 |
 | 6（レビュー） | レビュアーの指摘が当該 Issue の DoD 外 | スコープ内（即修正）／外（起票候補）に仕分け |
@@ -124,12 +125,13 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 ## ガードレール（自動）
 
-`.claude/settings.json` の PreToolUse hook が、`Bash` ツール経由の git 操作を決定論的に検証する（詳細は `.claude/rules/git-conventions.md`「自動検証」）：
+`.claude/settings.json` の PreToolUse hook が、`Bash` ツール経由の git 操作などを決定論的に検証する（git 操作の詳細は `.claude/rules/git-conventions.md`「自動検証」）：
 
 - ブランチ作成コマンドのブランチ名 → `.claude/hooks/validate-branch-name.sh`
 - `git commit` の件名 → `.claude/hooks/validate-commit-message.sh`
+- `pkill -f` / `pgrep -f` のパターンが、そのコマンドの全文（= Bash ツール自身のシェルのコマンドライン）に一致しないか → `.claude/hooks/validate-pkill-pattern.sh`。`run_in_background` で起動したものは `TaskStop` で止める
 
-違反は exit 2 でブロックされ、理由が返る。規約に合わせて直し、`--no-verify` や hook の無効化で回避しない。
+違反は exit 2 でブロックされ、理由が返る。規約（`pkill` なら理由に出る止め方）に合わせて直し、`--no-verify` や hook の無効化で回避しない。
 
 ## 注意事項
 

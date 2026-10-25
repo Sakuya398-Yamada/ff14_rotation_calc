@@ -3,7 +3,7 @@ import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats } fro
 import { calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
-import { describeBuffEffects, formatBuffRemaining } from "../logic/buff-format";
+import { describeBuffEffects, formatBuffRemaining, formatConsumedProc } from "../logic/buff-format";
 
 interface SkillDetailPanelProps {
   entry: ResolvedTimelineEntry;
@@ -200,6 +200,11 @@ export function SkillDetailPanel({
         <div style={styles.cell}>
           <div style={styles.cellLabel}>基本威力</div>
           <div className="num" style={styles.cellValue}>{entry.resolvedPotency}</div>
+          {entry.consumedProc && (
+            <div className="num" style={styles.expectedFormula}>
+              {formatConsumedProc(entry.consumedProc, buffDefMap)}
+            </div>
+          )}
         </div>
 
         <Section label="バフ倍率" value={`×${entry.buffMultiplier.toFixed(2)}`}>

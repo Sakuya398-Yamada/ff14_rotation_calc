@@ -24,7 +24,7 @@
 - **Windows 11 ローカル開発** を前提とする
 - **Claude Code のクラウドセッション**（Linux）でも開発できる。依存（`npm ci`）、`.dev.vars` の作成（`.dev.vars.example` からのコピー）、ローカル D1 へのマイグレーション適用は SessionStart hook `.claude/hooks/session-start-cloud-deps.sh` が `CLAUDE_CODE_REMOTE=true` のときだけ行う。クラウド環境の環境変数に `NODE_ENV=production` は入れない（devDependencies が入らなくなる）。MCP の違いは `mcp-setup.md`「クラウドセッションでの差分」
 - 必要ツール: Node.js (v22 以上推奨, CIは v22)、npm、git、bash（Git Bash）、Microsoft Edge（Playwright MCP 用、Windows 11 標準）
-- hooks が JSON パースに `jq` を使う（無ければ `node` か `python3` にフォールバック。どれも無いと git のブランチ・コミット系のコマンドが止まる）
+- hooks が JSON パースに `jq` を使う（無ければ `node` か `python3` にフォールバック。どれも無いと git のブランチ・コミット系と `pkill` / `pgrep` のコマンドが止まる）
 - 任意ツール: `github-mcp-server` バイナリ（GitHub MCP 用、インストール手順は `CONTRIBUTING.md`「MCP サーバー（GitHub MCP による Issue/PR 操作）」）、`gh` CLI（MCP 未接続時のフォールバック）
 - ネイティブモジュール (better-sqlite3 等) は基本 prebuilt バイナリで導入されるため、Visual Studio Build Tools は通常不要。フォールバック時のみ必要
 - ローカルの D1 はリポジトリ直下の `.wrangler/state`（gitignore 済み）。`npm run dev`（`vite.config.ts` の `persistState`）と wrangler CLI が同じ場所を使う

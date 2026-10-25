@@ -116,6 +116,28 @@ describe("BLM: ファイアのファイガ効果アップ（発動確率 40%）"
     expect(fire3.castTime).toBe(0);
     expect(fire3.unconfirmedProcBuffs).toBeUndefined();
   });
+
+  // ファイアスターターは効果時間が無期限なので、消費した付与元を数え続けると P が上がり続ける (#615)
+  it("付与時点の発動確率は、ファイガで消費したあと 0.4 から数え直す", () => {
+    const entries = resolve(["fire", "fire-3", "fire", "fire"]).entries;
+    const firestarterOf = (e: ResolvedTimelineEntry) => e.activeBuffs.find((ab) => ab.buffId === "firestarter");
+
+    expect(entries.flatMap((e) => [...e.comboErrors, ...e.resourceErrors])).toEqual([]);
+    expect(firestarterOf(entries[0])?.procRate).toBeCloseTo(0.4, 10);
+    expect(firestarterOf(entries[1])).toBeUndefined();
+    expect(firestarterOf(entries[2])?.procRate).toBeCloseTo(0.4, 10);
+    expect(firestarterOf(entries[3])?.procRate).toBeCloseTo(1 - 0.6 ** 2, 10);
+  });
+
+  it("パラドックスで確定付与したあとファイアが重なっても、確定のままで発動確率は付かない", () => {
+    const entries = resolve(["fire-3", "manafont", "paradox", "fire"]).entries;
+    const fire = entries[3];
+
+    expect(fire.comboErrors).toEqual([]);
+    const firestarter = fire.activeBuffs.find((ab) => ab.buffId === "firestarter");
+    expect(firestarter).toBeDefined();
+    expect(firestarter).not.toHaveProperty("procRate");
+  });
 });
 
 describe("BLM: マナフォントの発動条件（アストラルファイア効果中）", () => {
