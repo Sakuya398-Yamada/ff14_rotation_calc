@@ -49,3 +49,15 @@ export const saveTimelineRequestSchema = z.object({
 });
 
 export const timelineIdParamSchema = z.object({ id: timelineIdSchema });
+
+// 一覧が返した nextCursor（<created_at の秒>.<id>）。秒は unixepoch() なので 10 桁に収まり、id（nanoid）に「.」は入らない
+export const myTimelinesQuerySchema = z.object({
+  cursor: z
+    .string()
+    .regex(/^\d{1,10}\.[A-Za-z0-9_-]{21}$/)
+    .transform((value) => {
+      const [createdAt, id] = value.split(".");
+      return { createdAt: Number(createdAt), id };
+    })
+    .optional(),
+});
