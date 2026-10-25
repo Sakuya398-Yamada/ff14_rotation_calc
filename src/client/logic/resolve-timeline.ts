@@ -1768,14 +1768,14 @@ export function resolveTimeline(
         }
       }
 
-      // refreshesDots: 指定DoTの効果時間をリセットし、バフスナップショットを再取得
+      // refreshesDots: 効いている指定DoTの効果時間をリセットし、バフスナップショットを再取得（切れたDoTは付与しなおさない）
       if (skill.refreshesDots) {
         const refreshBuffMultiplier = buffMultiplierBeforeApply;
         const refreshCritRateBonus = baseCritRateBonus;
         const refreshDhRateBonus = dhRateBonusBeforeApply;
         for (const dotSkillId of skill.refreshesDots) {
           const stream = dotStreams.get(dotSkillId);
-          if (!stream) continue;
+          if (!stream || stream.currentEndTime <= startTime) continue;
           // 元DoTの持続時間で延長（dotPotency元スキルのdotDurationを参照）
           const dotSkill = skillMap.get(dotSkillId);
           if (!dotSkill?.dotDuration) continue;
