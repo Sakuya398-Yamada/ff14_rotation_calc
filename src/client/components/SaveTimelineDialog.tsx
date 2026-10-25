@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
+import { CONTENT_CATALOG, CONTENT_CATEGORIES } from "../data/content-catalog";
 import {
   MAX_TITLE_LENGTH,
   SAVE_ERROR_MESSAGES,
@@ -30,11 +31,14 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
   // 送信中の保存。閉じたときに中断する
   const saveControllerRef = useRef<AbortController | null>(null);
   const [title, setTitle] = useState("");
+  // "" は指定なし
+  const [contentId, setContentId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<SaveError | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const titleId = useId();
+  const contentFieldId = useId();
   const urlId = useId();
 
   useEffect(() => {
@@ -46,7 +50,7 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
     } else if (!open && dialog.open) {
       saveControllerRef.current?.abort();
       saveControllerRef.current = null;
-      // 次に開いたときは入力から始める（タイトルは残す）。閉じている間に戻すので、開いた時点で入力欄にフォーカスできる
+      // 次に開いたときは入力から始める（タイトルとコンテンツは残す）。閉じている間に戻すので、開いた時点で入力欄にフォーカスできる
       setSaving(false);
       setError(null);
       setShareUrl(null);
@@ -68,7 +72,10 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
     saveControllerRef.current = controller;
     setSaving(true);
     setError(null);
-    const outcome = await saveTimeline({ state: snapshot, title, parentId }, { signal: controller.signal });
+    const outcome = await saveTimeline(
+      { state: snapshot, title, parentId, contentId: contentId || null },
+      { signal: controller.signal }
+    );
     // 閉じて中断された保存の結果は捨てる（状態は閉じたときに戻してある）
     if (controller.signal.aborted) return;
     saveControllerRef.current = null;
@@ -143,6 +150,28 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
               <span style={styles.note}>
                 {MAX_TITLE_LENGTH} 文字まで。タイトルとタイムラインの内容は、保存後は変更できません（編集して保存し直すと、別の URL になります）
               </span>
+            </div>
+            <div style={styles.field}>
+              <label htmlFor={contentFieldId} style={styles.label}>
+                コンテンツ（任意）
+              </label>
+              <select
+                id={contentFieldId}
+                value={contentId}
+                onChange={(e) => setContentId(e.target.value)}
+                style={styles.input}
+              >
+                <option value="">指定なし</option>
+                {CONTENT_CATEGORIES.map((category) => (
+                  <optgroup key={category.id} label={category.label}>
+                    {CONTENT_CATALOG.filter((c) => c.category === category.id).map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
             </div>
             {error !== null && (
               <p role="alert" style={styles.error}>

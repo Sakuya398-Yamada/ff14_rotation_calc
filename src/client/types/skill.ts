@@ -451,6 +451,11 @@ export interface ActiveBuff {
   endTime: number;
   /** 現在のスタック数（スタック付きバフの場合） */
   stacks?: number;
+  /**
+   * 確率付き（buffApplicationProcRates）で付与したときの、付与時点の発動確率。
+   * 効いている間に重ねた効果時間内の付与元から 1 − Π(1 − p_i) で求める。確定付与で付いている間は無い
+   */
+  procRate?: number;
 }
 
 /** 自動生成リソースの付与 1 回（リソースレーンの段差表示用） */
@@ -577,6 +582,11 @@ export interface ResolvedTimelineEntry {
   wsComboError: boolean;
   /** 1 未満の確率付与（buffApplicationProcRates）だけで付いたバフを自動消費したときのバフID。警告でありハードエラーではない（威力・効果はそのまま） */
   unconfirmedProcBuffs?: string[];
+  /**
+   * buffConsumptionAnyOf の fallbackPotency で威力を期待値に補正したときの、消費したバフと発動確率 P。
+   * 乱れ撃ちのような確定のバフを消費したときは無い
+   */
+  consumedProc?: { buffId: string; procRate: number };
   /**
    * このエントリ実行**後**にアクティブなバフ一覧（guaranteedCrit/Dh・consumeOnGcd 等の
    * 自動消費を反映済み）。次エントリの speed 計算 / バフレーン終端検出に使用される。
