@@ -275,6 +275,7 @@ describe("Timeline: ホークアイの発動確率 (#615)", () => {
       expect.stringMatching(/\) 発動確率 35\.0%（付与時点）$/),
       expect.stringMatching(/\) 発動確率 57\.8%（付与時点）$/),
     ]);
+    expect(bars.map((bar) => bar.textContent)).toEqual(["x1 (35%)", "x1 (58%)"]);
   });
 
   it("乱れ撃ちを優先消費したリフルジェントアローと、乱れ撃ちのバーには発動確率が出ない", () => {
@@ -288,5 +289,6 @@ describe("Timeline: ホークアイの発動確率 (#615)", () => {
       "title",
       expect.stringMatching(/^乱れ撃ち x1 \([^)]*\)$/)
     );
+    expect(screen.getByTitle(/^乱れ撃ち x1 /)).toHaveTextContent(/^x1$/);
   });
 });

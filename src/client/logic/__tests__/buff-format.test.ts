@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { describeBuffEffects, formatBuffRemaining, formatConsumedProc, formatProcRate } from "../buff-format";
+import {
+  describeBuffEffects,
+  formatBuffRemaining,
+  formatConsumedProc,
+  formatProcRate,
+  formatProcRateShort,
+} from "../buff-format";
 import type { BuffDefinition } from "../../types/skill";
 
 function makeBuff(effects: BuffDefinition["effects"]): BuffDefinition {
@@ -72,6 +78,18 @@ describe("formatProcRate", () => {
     [1 - 0.8 * 0.65, "48.0%"],
   ])("%s を小数第1位までの %s にする", (rate, expected) => {
     expect(formatProcRate(rate)).toBe(expected);
+  });
+});
+
+describe("formatProcRateShort", () => {
+  it.each([
+    [0.35, "35%"],
+    [0.4, "40%"],
+    [1 - 0.65 ** 2, "58%"],
+    // 0.575 * 100 は 57.49999999999999 になるが、57 にしない
+    [0.575, "58%"],
+  ])("%s を整数の %s にする", (rate, expected) => {
+    expect(formatProcRateShort(rate)).toBe(expected);
   });
 });
 

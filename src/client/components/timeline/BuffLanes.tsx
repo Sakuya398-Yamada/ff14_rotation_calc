@@ -1,5 +1,5 @@
 import type { BuffDefinition, ActiveBuff } from "../../types/skill";
-import { formatProcRate } from "../../logic/buff-format";
+import { formatProcRate, formatProcRateShort } from "../../logic/buff-format";
 import { styles } from "./styles";
 import { PX_PER_SEC } from "./constants";
 
@@ -42,6 +42,9 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                   : buffDef.duration === null
                     ? "∞"
                     : `${buffDef.duration}s`;
+                const procRateShortLabel = span.procRate !== undefined
+                  ? ` (${formatProcRateShort(span.procRate)})`
+                  : "";
                 return (
                   <div
                     key={i}
@@ -62,7 +65,7 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                       style={styles.buffIcon}
                     />
                     <span className="num" style={styles.buffDuration}>
-                      {durationLabel}
+                      {durationLabel}{procRateShortLabel}
                     </span>
                   </div>
                 );

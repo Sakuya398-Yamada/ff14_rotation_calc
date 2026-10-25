@@ -44,10 +44,20 @@ export function formatBuffRemaining(activeBuff: ActiveBuff, useTime: number): st
   return `${Math.max(0, activeBuff.endTime - useTime).toFixed(1)}s`;
 }
 
+function formatPercentRounded(rate: number, fractionDigits: number): string {
+  const scale = 10 ** fractionDigits;
+  // 1 − 0.65² = 0.5774999999999999 を 57.7 に、0.575 を 57 にしないよう、浮動小数の誤差を落としてから四捨五入する
+  return `${(Math.round(Number((rate * (100 * scale)).toPrecision(12))) / scale).toFixed(fractionDigits)}%`;
+}
+
 /** 発動確率を小数第1位までの % にする */
 export function formatProcRate(rate: number): string {
-  // 1 − 0.65² = 0.5774999999999999 を 57.7 にしないよう、浮動小数の誤差を落としてから四捨五入する
-  return `${(Math.round(Number((rate * 1000).toPrecision(12))) / 10).toFixed(1)}%`;
+  return formatPercentRounded(rate, 1);
+}
+
+/** 発動確率を整数の % にする（バフバーのラベル用） */
+export function formatProcRateShort(rate: number): string {
+  return formatPercentRounded(rate, 0);
 }
 
 /** 期待値の補正に使った発動確率。例: "ホークアイ発動確率 35.0%" */
