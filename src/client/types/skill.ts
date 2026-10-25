@@ -48,6 +48,8 @@ export interface TraitPotencyOverride {
   cooldown?: number;
   /** 変更後の付与バフIDリスト（undefinedの場合は変更なし） */
   buffApplications?: string[];
+  /** 変更後のバフ消費のOR条件（配列ごと置き換える。undefinedの場合は変更なし） */
+  buffConsumptionAnyOf?: Skill["buffConsumptionAnyOf"];
 }
 
 /** サポートするプレイヤーレベル */

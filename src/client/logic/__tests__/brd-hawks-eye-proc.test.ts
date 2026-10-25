@@ -4,8 +4,18 @@ import type { Skill, TimelineEntry } from "../../types/skill";
 import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
 import { BRD_BUFFS } from "../../data/brd-buffs";
 import { BRD_RESOURCES } from "../../data/brd-resources";
+import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
 
-const skillMap = new Map(BRD_ATTACK_SKILLS.map((s) => [s.id, s]));
+// fallbackPotency は Lv76 / Lv82 の上書きで決まるので、App と同じくレベル調整したスキルで解決する (#600)
+const buffIds = new Set(BRD_BUFFS.map((b) => b.id));
+const resourceIds = new Set(BRD_RESOURCES.map((r) => r.id));
+const skillMap = getAllSkillMapForLevel(
+  BRD_ATTACK_SKILLS,
+  getSkillsForLevel(BRD_ATTACK_SKILLS, 100, buffIds, resourceIds),
+  100,
+  buffIds,
+  resourceIds,
+);
 
 function entry(skillId: string, manualStartTime?: number): TimelineEntry {
   return { uid: `${skillId}-${Math.random()}`, skillId, manualStartTime };
@@ -50,7 +60,7 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
   });
 
   it("スキル定義: ホークアイの消費側はすべて fallbackPotency を持つ", () => {
-    const consumers = BRD_ATTACK_SKILLS.flatMap((s) =>
+    const consumers = [...skillMap.values()].flatMap((s) =>
       (s.buffConsumptionAnyOf ?? [])
         .filter((o) => o.buffId === "hawks-eye")
         .map((o) => [s.id, o.fallbackPotency] as const),
