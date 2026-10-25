@@ -206,6 +206,8 @@ describe("buildShareUrl", () => {
 });
 
 describe("saveTimeline", () => {
+  const TURNSTILE_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
+
   function snapshot(): AppStateSnapshot {
     const { version: _version, ...rest } = savedState();
     return rest;
@@ -220,42 +222,43 @@ describe("saveTimeline", () => {
     fetchMock.mockImplementation(async () => jsonResponse({ id: ID }, 201));
   });
 
-  it("POST /api/timelines に JSON で送り、201 の id を返す。data には version を付ける", async () => {
-    const outcome = await saveTimeline({ state: snapshot(), title: "零式 4 層", parentId: null, contentId: null });
+  it("POST /api/timelines に JSON で送り、201 の id を返す。data には version を付け、Turnstile のトークンはヘッダで送る", async () => {
+    const outcome = await saveTimeline({ state: snapshot(), title: "零式 4 層", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN });
 
     expect(outcome).toEqual({ kind: "saved", id: ID });
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("/api/timelines");
     expect(init?.method).toBe("POST");
     expect(new Headers(init?.headers).get("Content-Type")).toBe("application/json");
+    expect(new Headers(init?.headers).get("X-Turnstile-Token")).toBe(TURNSTILE_TOKEN);
     expect(sentBody()).toEqual({ data: savedState(), title: "零式 4 層" });
   });
 
   it("タイトルは前後の空白を除いて送り、空なら title を送らない", async () => {
-    await saveTimeline({ state: snapshot(), title: "  零式  ", parentId: null, contentId: null });
+    await saveTimeline({ state: snapshot(), title: "  零式  ", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN });
     expect(sentBody().title).toBe("零式");
 
     fetchMock.mockClear();
-    await saveTimeline({ state: snapshot(), title: "   ", parentId: null, contentId: null });
+    await saveTimeline({ state: snapshot(), title: "   ", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN });
     expect(sentBody()).not.toHaveProperty("title");
   });
 
   it("parentId があれば送り、null なら送らない", async () => {
     const parentId = "abcdefghijklmnopqrstu";
-    await saveTimeline({ state: snapshot(), title: "", parentId, contentId: null });
+    await saveTimeline({ state: snapshot(), title: "", parentId, contentId: null, turnstileToken: TURNSTILE_TOKEN });
     expect(sentBody().parentId).toBe(parentId);
 
     fetchMock.mockClear();
-    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null });
+    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN });
     expect(sentBody()).not.toHaveProperty("parentId");
   });
 
   it("contentId があれば送り、null なら送らない", async () => {
-    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: "m4s" });
+    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: "m4s", turnstileToken: TURNSTILE_TOKEN });
     expect(sentBody().contentId).toBe("m4s");
 
     fetchMock.mockClear();
-    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null });
+    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN });
     expect(sentBody()).not.toHaveProperty("contentId");
   });
 
@@ -264,6 +267,7 @@ describe("saveTimeline", () => {
     ["400（parent_not_found）", "invalid", () => Promise.resolve(jsonResponse({ error: "parent_not_found" }, 400))],
     ["413", "too_large", () => Promise.resolve(new Response("Payload Too Large", { status: 413 }))],
     ["429", "rate_limited", () => Promise.resolve(jsonResponse({ error: "rate_limited" }, 429))],
+    ["403（turnstile_failed）", "verification_failed", () => Promise.resolve(jsonResponse({ error: "turnstile_failed" }, 403))],
     ["415", "network", () => Promise.resolve(jsonResponse({ error: "unsupported_media_type" }, 415))],
     ["500", "network", () => Promise.resolve(jsonResponse({ error: "internal" }, 500))],
     ["通信断（fetch が reject する）", "network", () => Promise.reject(new TypeError("Failed to fetch"))],
@@ -272,7 +276,7 @@ describe("saveTimeline", () => {
   ] as const)("%s → エラー（%s）", async (_label, error, respond) => {
     fetchMock.mockImplementation(respond);
 
-    expect(await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null })).toEqual({ kind: "error", error });
+    expect(await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN })).toEqual({ kind: "error", error });
   });
 
   it("送信中に中断されたら、通信エラーにしない", async () => {
@@ -283,7 +287,7 @@ describe("saveTimeline", () => {
         }),
     );
     const controller = new AbortController();
-    const pending = saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null }, { signal: controller.signal });
+    const pending = saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN }, { signal: controller.signal });
     controller.abort();
 
     expect(await pending).toEqual({ kind: "cancelled" });

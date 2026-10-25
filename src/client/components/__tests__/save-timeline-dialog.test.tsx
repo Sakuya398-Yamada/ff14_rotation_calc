@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup, act, within } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, act, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
 import { SaveTimelineDialog } from "../SaveTimelineDialog";
@@ -37,9 +37,38 @@ function jsonResponse(body: unknown, status: number): Response {
 
 let fetchMock: ReturnType<typeof vi.fn<(url: string, init?: RequestInit) => Promise<Response>>>;
 
+interface TurnstileOptions {
+  callback: (token: string) => void;
+  "expired-callback": () => void;
+  "error-callback": () => void;
+}
+
+// window.turnstile の代わり。既定では描画したその場でトークンを渡し、描画のたびに別のトークンにする
+let turnstile: {
+  render: ReturnType<typeof vi.fn<(container: HTMLElement, options: TurnstileOptions) => string>>;
+  remove: ReturnType<typeof vi.fn<(widgetId: string) => void>>;
+};
+
+function renderedOptions(index = 0): TurnstileOptions {
+  return turnstile.render.mock.calls[index][1];
+}
+
+function sentToken(index = 0): string | null {
+  return new Headers(fetchMock.mock.calls[index][1]?.headers).get("X-Turnstile-Token");
+}
+
 beforeEach(() => {
   fetchMock = vi.fn(async () => jsonResponse({ id: ID }, 201));
   vi.stubGlobal("fetch", fetchMock);
+  turnstile = {
+    render: vi.fn((_container, options) => {
+      const n = turnstile.render.mock.calls.length;
+      options.callback(`token-${n}`);
+      return `widget-${n}`;
+    }),
+    remove: vi.fn(),
+  };
+  vi.stubGlobal("turnstile", turnstile);
 });
 
 afterEach(() => {
@@ -99,6 +128,7 @@ describe("SaveTimelineDialog", () => {
     ["400", "invalid", () => Promise.resolve(jsonResponse({ error: "invalid_request" }, 400))],
     ["413", "too_large", () => Promise.resolve(new Response("Payload Too Large", { status: 413 }))],
     ["429", "rate_limited", () => Promise.resolve(jsonResponse({ error: "rate_limited" }, 429))],
+    ["403", "verification_failed", () => Promise.resolve(jsonResponse({ error: "turnstile_failed" }, 403))],
     ["通信エラー", "network", () => Promise.reject(new TypeError("Failed to fetch"))],
   ] as const)("%s のときはメッセージを出し、もう一度保存できる", async (_label, error: SaveError, respond) => {
     fetchMock.mockImplementation(respond);
@@ -106,7 +136,8 @@ describe("SaveTimelineDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(SAVE_ERROR_MESSAGES[error]);
-    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
+    // 使ったトークンの代わりを取ってから押せるようになる
+    await waitFor(() => expect(screen.getByRole("button", { name: "保存" })).toBeEnabled());
     expect(props.onSaved).not.toHaveBeenCalled();
   });
 
@@ -220,5 +251,82 @@ describe("SaveTimelineDialog", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
     expect(props.onSaved).not.toHaveBeenCalled();
+  });
+});
+
+describe("SaveTimelineDialog: Turnstile", () => {
+  it("トークンを取るまで保存できず、期限が切れたらまた保存できなくなる。取れたトークンをヘッダで送る", async () => {
+    turnstile.render.mockReturnValue("widget-1");
+    renderDialog();
+    const button = screen.getByRole("button", { name: "保存" });
+    expect(button).toBeDisabled();
+
+    act(() => renderedOptions().callback("token-a"));
+    expect(button).toBeEnabled();
+    act(() => renderedOptions()["expired-callback"]());
+    expect(button).toBeDisabled();
+
+    act(() => renderedOptions().callback("token-b"));
+    await saveAndWaitForUrl();
+    expect(sentToken()).toBe("token-b");
+  });
+
+  it("保存に失敗したら、使ったトークンの代わりを取るためにウィジェットを描画し直し、次は新しいトークンで送る", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "turnstile_failed" }, 403));
+    renderDialog();
+    // 描画し直したウィジェットは、まだトークンを渡さない
+    turnstile.render.mockReturnValue("widget-2");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await screen.findByRole("alert");
+    await waitFor(() => expect(turnstile.render).toHaveBeenCalledTimes(2));
+
+    expect(turnstile.remove).toHaveBeenCalledWith("widget-1");
+    // 使ったトークンでは押せない
+    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+    act(() => renderedOptions(1).callback("token-2"));
+    await saveAndWaitForUrl();
+    expect(sentToken(0)).toBe("token-1");
+    expect(sentToken(1)).toBe("token-2");
+  });
+
+  it("閉じている間はウィジェットを描画せず、閉じたら取り除いてトークンも捨てる", () => {
+    const { props, rerender } = renderDialog({ open: false });
+    expect(turnstile.render).not.toHaveBeenCalled();
+
+    rerender(<SaveTimelineDialog {...props} open={true} />);
+    expect(turnstile.render).toHaveBeenCalledTimes(1);
+    rerender(<SaveTimelineDialog {...props} open={false} />);
+    expect(turnstile.remove).toHaveBeenCalledWith("widget-1");
+
+    // 開き直して、新しいトークンがまだ来ていないとき
+    turnstile.render.mockReturnValue("widget-2");
+    rerender(<SaveTimelineDialog {...props} open={true} />);
+    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+  });
+
+  it("ウィジェットがエラーを知らせたら、メッセージを出して保存できなくする", () => {
+    renderDialog();
+    act(() => renderedOptions()["error-callback"]());
+
+    expect(screen.getByRole("alert")).toHaveTextContent(SAVE_ERROR_MESSAGES.verification_failed);
+    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+  });
+
+  it("Turnstile のスクリプトを読み込めなかったら、メッセージを出し、次に開いたときに読み込み直す", async () => {
+    vi.stubGlobal("turnstile", undefined);
+    const scripts = () => document.head.querySelectorAll('script[src^="https://challenges.cloudflare.com/turnstile/v0/api.js"]');
+    const { props, rerender } = renderDialog();
+    expect(scripts()).toHaveLength(1);
+    expect(scripts()[0].getAttribute("src")).toContain("render=explicit");
+
+    fireEvent.error(scripts()[0]);
+    expect(await screen.findByRole("alert")).toHaveTextContent(SAVE_ERROR_MESSAGES.verification_failed);
+    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+
+    rerender(<SaveTimelineDialog {...props} open={false} />);
+    rerender(<SaveTimelineDialog {...props} open={true} />);
+    expect(scripts()).toHaveLength(1);
+    fireEvent.error(scripts()[0]);
+    await screen.findByRole("alert");
   });
 });
