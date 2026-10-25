@@ -455,7 +455,7 @@ interface DoTStream {
   dotPotency: number;
   /** 最初の適用時刻（ティックタイマーの基準） */
   firstAppliedAt: number;
-  /** 現在の終了時刻（再適用で延長される） */
+  /** 現在の終了時刻（再適用で延長され、replacesDots で打ち切られる） */
   currentEndTime: number;
   /** 適用セグメント: 各適用時点のバフスナップショットを記録 */
   segments: Array<{
@@ -923,6 +923,8 @@ export function resolveTimeline(
 
   // 確率付きで付与したバフの付与元（バフIDごと。buffConsumptionAnyOf で消費するまで蓄積する）
   const procSources = new Map<string, { endTime: number; rate: number }[]>();
+  // 1 未満の確率付与だけで付き、確定付与で付け直されていないバフ（自動消費したエントリで警告する）
+  const unconfirmedProcBuffs = new Set<string>();
 
   // リソース初期化
   for (const res of resources) {
@@ -1233,6 +1235,11 @@ export function resolveTimeline(
       }
     }
 
+    // forbiddenBuff: 指定バフがアクティブならエラー
+    if (skill.forbiddenBuff && currentActiveBuffs.some((ab) => ab.buffId === skill.forbiddenBuff)) {
+      comboErrors.push(skill.forbiddenBuff);
+    }
+
     // requiredBuffAnyOf: いずれかのバフがアクティブであればよい（バフは消費しない）
     if (skill.requiredBuffAnyOf && skill.requiredBuffAnyOf.length > 0) {
       const anyActive = skill.requiredBuffAnyOf.some((buffId) =>
@@ -1516,6 +1523,14 @@ export function resolveTimeline(
         }
       }
 
+      // removesBuffs: アクティブなら解除する（無くてもエラーにしない）
+      for (const buffId of skill.removesBuffs ?? []) {
+        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+        if (idx < 0) continue;
+        currentActiveBuffs.splice(idx, 1);
+        resetResourcesOnBuffEnd(buffId, resourceState, resources);
+      }
+
       // buffConsumptionAnyOf: マッチしたバフを消費
       if (anyOfMatchedBuffId) {
         const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === anyOfMatchedBuffId);
@@ -1634,6 +1649,12 @@ export function resolveTimeline(
             sources.push({ endTime: newBuff.endTime, rate });
             procSources.set(buffId, sources);
           }
+          // 確定で付いている間に確率付与が重なっても確定のまま。確定付与で付け直したら確定に戻す
+          if (rate !== undefined && rate < 1) {
+            if (existingIdx < 0) unconfirmedProcBuffs.add(buffId);
+          } else {
+            unconfirmedProcBuffs.delete(buffId);
+          }
         }
       }
 
@@ -1720,6 +1741,15 @@ export function resolveTimeline(
         const dotDhRateBonus = dhRateBonusBeforeApply;
         const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
+        // replacesDots: 同時に1種類だけの DoT は、他スキルの DoT をこの時点で打ち切る
+        for (const otherId of skill.replacesDots ?? []) {
+          if (otherId === skill.id) continue;
+          const other = dotStreams.get(otherId);
+          if (!other || other.currentEndTime <= startTime) continue;
+          other.currentEndTime = startTime;
+          for (const seg of other.segments) seg.endTime = Math.min(seg.endTime, startTime);
+        }
+
         const existing = dotStreams.get(skill.id);
         if (existing) {
           // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
@@ -1789,21 +1819,25 @@ export function resolveTimeline(
     // - consumeOnAction: 黙想（oGCD でも消費）
     // 同一バフが両エフェクトを併せ持っても収集側で Set 化済みのため二重消費は起きない。
     // スキル実行中に新規付与されたバフは消費しない（収集を実行前に済ませているため）。
+    const consumedUnconfirmed: string[] = [];
     if (!hasError && consumeBuffTargets.size > 0) {
       for (const buffId of consumeBuffTargets) {
         const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
         if (idx >= 0) {
+          if (unconfirmedProcBuffs.has(buffId)) consumedUnconfirmed.push(buffId);
           const ab = currentActiveBuffs[idx];
           if (ab.stacks !== undefined) {
             ab.stacks = Math.max(0, ab.stacks - 1);
             if (ab.stacks === 0) {
               currentActiveBuffs.splice(idx, 1);
+              unconfirmedProcBuffs.delete(buffId);
               // applyBuffOnDeplete: スタックを消費し切った時点で別バフを付与する
               // （例: インスタレーション 5 スタック枯渇 → レインボードリップ効果アップ）
               applyBuffsOnDeplete(currentActiveBuffs, buffId, startTime, buffDefMap, resourceState, resources);
             }
           } else {
             currentActiveBuffs.splice(idx, 1);
+            unconfirmedProcBuffs.delete(buffId);
           }
         }
       }
@@ -1834,6 +1868,7 @@ export function resolveTimeline(
       untargetableError,
       recastError,
       wsComboError,
+      ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),
       activeBuffsAtUse,
@@ -1885,6 +1920,11 @@ export function resolveTimeline(
       tickTime += DOT_TICK_INTERVAL;
     }
     while (tickTime <= stream.currentEndTime) {
+      // 付与時刻 < tick <= 終了 のセグメントが無いティック（切れてから掛け直すまで・replacesDots で打ち切った後）は数えない
+      if (!stream.segments.some((seg) => seg.appliedAt < tickTime && tickTime <= seg.endTime)) {
+        tickTime += DOT_TICK_INTERVAL;
+        continue;
+      }
       // このティック時点で有効なセグメントのバフ倍率を取得
       // （最後に適用されたセグメントで appliedAt <= tickTime のもの）
       let activeSegment = stream.segments[0];
