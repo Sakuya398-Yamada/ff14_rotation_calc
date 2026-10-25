@@ -103,6 +103,13 @@ describe("侍: 黙想の GCD リキャスト", () => {
     expect(e[2].activeBuffs.some((b) => b.buffId === "fuka")).toBe(true);
   });
 
+  it("黙想で終わるタイムラインの終了時刻に黙想の GCD リキャストが入る（#589）", () => {
+    const r = resolve([entry("gyofu"), entry("meditate")]);
+    expect(r.entries[1].startTime).toBe(2.5);
+    expect(r.lastGcdEndTime).toBe(5);
+    expect(r.timelineEndTime).toBe(5);
+  });
+
   it("GCD のリキャスト中に手動で置くとリキャストエラーになり、黙想は付かない", () => {
     const e = resolve([entry("gyofu"), entry("meditate", 1)]).entries;
     expect(e[1].recastError).toBe(true);
