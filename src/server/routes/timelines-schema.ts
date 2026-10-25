@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CONTENT_CATALOG } from "../../client/data/content-catalog";
 import { JOB_DATA, type JobId } from "../../client/data/job-registry";
 import { MAX_TITLE_LENGTH } from "../../client/logic/shared-timeline";
 import { SCHEMA_VERSION } from "../../client/logic/timeline-storage";
@@ -6,6 +7,7 @@ import { SCHEMA_VERSION } from "../../client/logic/timeline-storage";
 const MAX_ENTRIES = 2000;
 
 const JOB_IDS = Object.keys(JOB_DATA) as [JobId, ...JobId[]];
+const CONTENT_IDS = CONTENT_CATALOG.map((c) => c.id) as [string, ...string[]];
 const SKILL_IDS_BY_JOB = Object.fromEntries(
   JOB_IDS.map((job) => [job, new Set(JOB_DATA[job].skills.map((s) => s.id))]),
 ) as Record<JobId, Set<string>>;
@@ -46,6 +48,7 @@ export const saveTimelineRequestSchema = z.object({
   data: persistedAppStateSchema,
   title: z.string().max(MAX_TITLE_LENGTH).optional(),
   parentId: timelineIdSchema.optional(),
+  contentId: z.enum(CONTENT_IDS).optional(),
 });
 
 export const timelineIdParamSchema = z.object({ id: timelineIdSchema });

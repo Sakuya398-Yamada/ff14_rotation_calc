@@ -83,7 +83,7 @@ describe("loadSharedTimeline", () => {
     const outcome = await loadSharedTimeline(ID, d);
 
     expect(fetchMock).toHaveBeenCalledWith(`/api/timelines/${ID}`, expect.anything());
-    expect(outcome).toEqual({ kind: "apply", id: ID, state: savedState() });
+    expect(outcome).toEqual({ kind: "apply", id: ID, state: savedState(), title: null, contentId: null });
     expect(d.confirmOverwrite).not.toHaveBeenCalled();
   });
 
@@ -91,7 +91,7 @@ describe("loadSharedTimeline", () => {
     const d = deps({ hasWorkingEntries: () => true, confirmOverwrite: () => true });
     const outcome = await loadSharedTimeline(ID, d);
 
-    expect(outcome).toEqual({ kind: "apply", id: ID, state: savedState() });
+    expect(outcome).toEqual({ kind: "apply", id: ID, state: savedState(), title: null, contentId: null });
     expect(d.confirmOverwrite).toHaveBeenCalledTimes(1);
   });
 
@@ -118,7 +118,23 @@ describe("loadSharedTimeline", () => {
     const data = { ...savedState(), entries: [...savedState().entries, { uid: "entry-9", skillId: "no-such-skill" }] };
     fetchMock.mockResolvedValue(jsonResponse(timelineResponse({ data })));
 
-    expect(await loadSharedTimeline(ID, deps())).toEqual({ kind: "apply", id: ID, state: savedState() });
+    expect(await loadSharedTimeline(ID, deps())).toEqual({ kind: "apply", id: ID, state: savedState(), title: null, contentId: null });
+  });
+
+  it("タイトルとコンテンツの ID を一緒に返す", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(timelineResponse({ title: "零式4層 2分", contentId: "m4s" })));
+
+    expect(await loadSharedTimeline(ID, deps())).toMatchObject({ kind: "apply", title: "零式4層 2分", contentId: "m4s" });
+  });
+
+  it.each<[string, Record<string, unknown>]>([
+    ["数値", { title: 1, contentId: 4 }],
+    ["オブジェクト", { title: {}, contentId: {} }],
+    ["キーが無い", { title: undefined, contentId: undefined }],
+  ])("タイトル・コンテンツの ID が文字列でない（%s）なら null にする", async (_, overrides) => {
+    fetchMock.mockResolvedValue(jsonResponse({ ...timelineResponse(), ...overrides }));
+
+    expect(await loadSharedTimeline(ID, deps())).toMatchObject({ kind: "apply", title: null, contentId: null });
   });
 
   it.each([
@@ -205,7 +221,7 @@ describe("saveTimeline", () => {
   });
 
   it("POST /api/timelines に JSON で送り、201 の id を返す。data には version を付ける", async () => {
-    const outcome = await saveTimeline({ state: snapshot(), title: "零式 4 層", parentId: null });
+    const outcome = await saveTimeline({ state: snapshot(), title: "零式 4 層", parentId: null, contentId: null });
 
     expect(outcome).toEqual({ kind: "saved", id: ID });
     const [url, init] = fetchMock.mock.calls[0];
@@ -216,22 +232,31 @@ describe("saveTimeline", () => {
   });
 
   it("タイトルは前後の空白を除いて送り、空なら title を送らない", async () => {
-    await saveTimeline({ state: snapshot(), title: "  零式  ", parentId: null });
+    await saveTimeline({ state: snapshot(), title: "  零式  ", parentId: null, contentId: null });
     expect(sentBody().title).toBe("零式");
 
     fetchMock.mockClear();
-    await saveTimeline({ state: snapshot(), title: "   ", parentId: null });
+    await saveTimeline({ state: snapshot(), title: "   ", parentId: null, contentId: null });
     expect(sentBody()).not.toHaveProperty("title");
   });
 
   it("parentId があれば送り、null なら送らない", async () => {
     const parentId = "abcdefghijklmnopqrstu";
-    await saveTimeline({ state: snapshot(), title: "", parentId });
+    await saveTimeline({ state: snapshot(), title: "", parentId, contentId: null });
     expect(sentBody().parentId).toBe(parentId);
 
     fetchMock.mockClear();
-    await saveTimeline({ state: snapshot(), title: "", parentId: null });
+    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null });
     expect(sentBody()).not.toHaveProperty("parentId");
+  });
+
+  it("contentId があれば送り、null なら送らない", async () => {
+    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: "m4s" });
+    expect(sentBody().contentId).toBe("m4s");
+
+    fetchMock.mockClear();
+    await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null });
+    expect(sentBody()).not.toHaveProperty("contentId");
   });
 
   it.each([
@@ -247,7 +272,7 @@ describe("saveTimeline", () => {
   ] as const)("%s → エラー（%s）", async (_label, error, respond) => {
     fetchMock.mockImplementation(respond);
 
-    expect(await saveTimeline({ state: snapshot(), title: "", parentId: null })).toEqual({ kind: "error", error });
+    expect(await saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null })).toEqual({ kind: "error", error });
   });
 
   it("送信中に中断されたら、通信エラーにしない", async () => {
@@ -258,7 +283,7 @@ describe("saveTimeline", () => {
         }),
     );
     const controller = new AbortController();
-    const pending = saveTimeline({ state: snapshot(), title: "", parentId: null }, { signal: controller.signal });
+    const pending = saveTimeline({ state: snapshot(), title: "", parentId: null, contentId: null }, { signal: controller.signal });
     controller.abort();
 
     expect(await pending).toEqual({ kind: "cancelled" });
