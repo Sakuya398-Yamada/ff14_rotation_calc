@@ -400,6 +400,7 @@ export function Timeline({
                 entriesWithErrors={entriesWithErrors}
                 getResolvedEntryRecast={getResolvedEntryRecast}
                 stats={stats}
+                buffDefMap={buffDefMap}
                 selectedEntryUid={selectedEntryUid}
                 draggingEntryUid={draggingEntryUid}
                 labelBg={labelBg}

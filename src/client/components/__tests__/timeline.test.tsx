@@ -14,6 +14,10 @@ import { Timeline } from "../Timeline";
 import { DELETE_ZONE_ID } from "../timeline/dnd-types";
 import { resolveTimeline } from "../../logic/resolve-timeline";
 import { calcEntryExpectedPotency } from "../../logic/expected-potency";
+import { getAllSkillMapForLevel, getSkillsForLevel } from "../../logic/skill-level";
+import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
+import { BRD_BUFFS } from "../../data/brd-buffs";
+import { BRD_RESOURCES } from "../../data/brd-resources";
 import type {
   Skill,
   TimelineEntry,
@@ -226,5 +230,63 @@ describe("Timeline", () => {
       />
     );
     expect(screen.getByAltText("別ジョブGCD")).toBeInTheDocument();
+  });
+});
+
+describe("Timeline: ホークアイの発動確率 (#615)", () => {
+  const brdBuffIds = new Set(BRD_BUFFS.map((b) => b.id));
+  const brdResourceIds = new Set(BRD_RESOURCES.map((r) => r.id));
+  const brdSkills = getSkillsForLevel(BRD_ATTACK_SKILLS, 100, brdBuffIds, brdResourceIds);
+  const brdSkillMap = getAllSkillMapForLevel(BRD_ATTACK_SKILLS, brdSkills, 100, brdBuffIds, brdResourceIds);
+
+  function renderBrd(skillIds: string[]) {
+    const resolvedEntries = resolveTimeline(
+      skillIds.map(makeEntry),
+      brdSkillMap,
+      BRD_RESOURCES,
+      defaultStats,
+      BRD_BUFFS
+    ).entries;
+    renderTimeline({
+      skills: brdSkills,
+      allSkillMap: brdSkillMap,
+      resolvedEntries,
+      resources: BRD_RESOURCES,
+      buffs: BRD_BUFFS,
+    });
+  }
+
+  it("バーストショット → リフルジェントアローは、リフルジェントアローのツールチップに 35.0% が出る", () => {
+    renderBrd(["burst-shot", "refulgent-arrow"]);
+
+    expect(
+      screen.getByTitle(/^リフルジェントアロー \(威力: .* \/ ホークアイ発動確率 35\.0%\)/)
+    ).toBeInTheDocument();
+  });
+
+  it("バーストショット ×2 は、リフルジェントアローが 57.8%、ホークアイのバーが付与時点の 35.0% と 57.8% になる", () => {
+    renderBrd(["burst-shot", "burst-shot", "refulgent-arrow"]);
+
+    expect(
+      screen.getByTitle(/^リフルジェントアロー \(威力: .* \/ ホークアイ発動確率 57\.8%\)/)
+    ).toBeInTheDocument();
+    const bars = screen.getAllByTitle(/^ホークアイ x1 /);
+    expect(bars.map((bar) => bar.getAttribute("title"))).toEqual([
+      expect.stringMatching(/\) 発動確率 35\.0%（付与時点）$/),
+      expect.stringMatching(/\) 発動確率 57\.8%（付与時点）$/),
+    ]);
+  });
+
+  it("乱れ撃ちを優先消費したリフルジェントアローと、乱れ撃ちのバーには発動確率が出ない", () => {
+    renderBrd(["barrage", "burst-shot", "refulgent-arrow"]);
+
+    expect(screen.getByTitle(/^リフルジェントアロー \(威力: /)).not.toHaveAttribute(
+      "title",
+      expect.stringContaining("発動確率")
+    );
+    expect(screen.getByTitle(/^乱れ撃ち x1 /)).toHaveAttribute(
+      "title",
+      expect.stringMatching(/^乱れ撃ち x1 \([^)]*\)$/)
+    );
   });
 });
