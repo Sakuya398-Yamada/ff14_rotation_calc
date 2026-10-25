@@ -100,10 +100,16 @@ export interface Skill {
   resourceChanges?: ResourceChange[];
   /** 使用時に付与するバフのIDリスト */
   buffApplications?: string[];
-  /** buffApplications で付与するバフの付与確率（0〜1。キーの無いバフは確定付与） */
+  /**
+   * buffApplications で付与するバフの付与確率（0〜1。キーの無いバフは確定付与）。
+   * タイムライン上は確定で付き、1 未満の確率だけで付いたバフを自動消費すると ResolvedTimelineEntry.unconfirmedProcBuffs で警告する。
+   * 確定扱いに戻すのは buffApplications の確定付与だけ（comboBuffApplications 等の付与経路は見ない）
+   */
   buffApplicationProcRates?: Record<string, number>;
   /** 使用時に消費するバフスタック */
   buffConsumptions?: BuffConsumption[];
+  /** 使用時にアクティブなら解除するバフID（未アクティブでもエラーにしない。例: UB 中のファイアは UB を解除するだけ） */
+  removesBuffs?: string[];
   /** 詠唱時間（秒）。詠唱中はoGCDスキルを使用できない。未設定の場合はインスタント（詠唱なし） */
   castTime?: number;
   /** 個別リキャストタイム（秒）。oGCDスキル等の固有クールダウン。未設定の場合はリキャスト制約なし */
@@ -125,6 +131,8 @@ export interface Skill {
   dotDuration?: number;
   /** 使用時にDoT効果時間をリセットする対象スキルIDリスト（バフスナップショットも再取得） */
   refreshesDots?: string[];
+  /** このスキルの DoT 付与時に、列挙した他スキルの DoT をその時点で打ち切る（同時に1種類だけの DoT 用。自スキルIDは無視） */
+  replacesDots?: string[];
   /** コンボ元スキルIDリスト（いずれかの直後に使用するとコンボ成立） */
   comboFrom?: string[];
   /** 非コンボ時の威力（コンボ不成立時に適用。未設定の場合はpotencyを使用） */
@@ -186,6 +194,8 @@ export interface Skill {
   conditionalPotencyBuffs?: { buffId: string; potency: number }[];
   /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */
   requiredBuff?: string;
+  /** このバフがアクティブな間は使用不可（アクティブ時はエラー、威力を計上しない。例: 黒魔紋は「黒魔紋」非効果中のみ） */
+  forbiddenBuff?: string;
   /** スキル使用に必要なバフIDのOR条件（いずれか1つでもアクティブなら可。全て未アクティブ時はエラー、威力を計上しない。バフは消費しない） */
   requiredBuffAnyOf?: string[];
   /**
@@ -558,6 +568,8 @@ export interface ResolvedTimelineEntry {
   recastError: boolean;
   /** WSコンボ不成立（エラーではないがコンボ威力が適用されない） */
   wsComboError: boolean;
+  /** 1 未満の確率付与（buffApplicationProcRates）だけで付いたバフを自動消費したときのバフID。警告でありハードエラーではない（威力・効果はそのまま） */
+  unconfirmedProcBuffs?: string[];
   /**
    * このエントリ実行**後**にアクティブなバフ一覧（guaranteedCrit/Dh・consumeOnGcd 等の
    * 自動消費を反映済み）。次エントリの speed 計算 / バフレーン終端検出に使用される。
