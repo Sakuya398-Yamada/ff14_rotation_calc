@@ -1,16 +1,17 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq } from "drizzle-orm";
-import { Hono } from "hono";
+import { and, desc, eq, lt, lte, or } from "drizzle-orm";
+import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { getCookie, setCookie } from "hono/cookie";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
 import { nanoid } from "nanoid";
+import type { MyTimelinesResponse } from "../../client/logic/my-timelines";
 import type { TimelineResponse } from "../../client/logic/shared-timeline";
 import { timelines } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
 import { generateOwnerToken, hashOwnerToken, isOwnerToken } from "../services/owner-token";
-import { saveTimelineRequestSchema, timelineIdParamSchema } from "./timelines-schema";
+import { myTimelinesQuerySchema, saveTimelineRequestSchema, timelineIdParamSchema } from "./timelines-schema";
 
 type RouteEnv = { Bindings: Bindings; Variables: { ownerHash: string } };
 
@@ -18,6 +19,7 @@ type RouteEnv = { Bindings: Bindings; Variables: { ownerHash: string } };
 const OWNER_COOKIE_MAX_AGE = 400 * 24 * 60 * 60;
 // #462 の実測で、最悪ケースの 1200 エントリが約 100KB
 const MAX_BODY_BYTES = 256 * 1024;
+const MY_TIMELINES_PAGE_SIZE = 20;
 
 const requireJson = createMiddleware(async (c, next) => {
   if (!/^application\/json\s*(;|$)/i.test(c.req.header("Content-Type") ?? "")) {
@@ -26,13 +28,22 @@ const requireJson = createMiddleware(async (c, next) => {
   await next();
 });
 
+/** Cookie の匿名トークン。無いか、形が不正なら undefined */
+function readOwnerToken(c: Context): string | undefined {
+  const token = getCookie(c, "owner", "host");
+  return token !== undefined && isOwnerToken(token) ? token : undefined;
+}
+
+function setOwnerCookie(c: Context, token: string) {
+  setCookie(c, "owner", token, { prefix: "host", httpOnly: true, sameSite: "Lax", maxAge: OWNER_COOKIE_MAX_AGE });
+}
+
 const ownerToken = createMiddleware<RouteEnv>(async (c, next) => {
-  const current = getCookie(c, "owner", "host");
   // 形の不正な値は無いものとして扱い、作り直す
-  const token = current !== undefined && isOwnerToken(current) ? current : generateOwnerToken();
+  const token = readOwnerToken(c) ?? generateOwnerToken();
   c.set("ownerHash", await hashOwnerToken(token));
   // 期限を延ばすため、既存のトークンでも毎回付け直す
-  setCookie(c, "owner", token, { prefix: "host", httpOnly: true, sameSite: "Lax", maxAge: OWNER_COOKIE_MAX_AGE });
+  setOwnerCookie(c, token);
   await next();
 });
 
@@ -110,6 +121,58 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
         // DB は unixepoch() の秒
         createdAt: new Date(row.createdAt * 1000).toISOString(),
       } satisfies TimelineResponse);
+    },
+  );
+}
+
+/**
+ * 持ち主の行を新しい順に、次のページがあるか分かるよう 1 件多く選ぶ。
+ * 同じ秒の行は id の降順に並べ、cursor（前のページの最後の行）より後ろだけを選ぶ
+ */
+export function selectMyTimelines(db: AppDb, ownerHash: string, cursor?: { createdAt: number; id: string }) {
+  return db
+    .select({
+      id: timelines.id,
+      title: timelines.title,
+      job: timelines.job,
+      level: timelines.level,
+      contentId: timelines.contentId,
+      createdAt: timelines.createdAt,
+    })
+    .from(timelines)
+    .where(
+      and(
+        eq(timelines.ownerHash, ownerHash),
+        // 「created_at < ? OR (created_at = ? AND id < ?)」と同じ条件。その OR だけで書くと、値をパラメータで渡したときに
+        // created_at がインデックスの範囲検索に使われず、持ち主の行を新しい方から全部たどることになる
+        cursor && lte(timelines.createdAt, cursor.createdAt),
+        cursor && or(lt(timelines.createdAt, cursor.createdAt), lt(timelines.id, cursor.id)),
+      ),
+    )
+    .orderBy(desc(timelines.createdAt), desc(timelines.id))
+    .limit(MY_TIMELINES_PAGE_SIZE + 1);
+}
+
+// /api/me/timelines にマウントする。読むのはインデックスで 1 ページ分だけなので、GET /:id と同じくレート制限は使わない
+export function createMyTimelinesRoute(getDb: (env: Bindings) => AppDb) {
+  return new Hono<{ Bindings: Bindings }>().get(
+    "/",
+    zValidator("query", myTimelinesQuerySchema, (result, c) => {
+      if (!result.success) return c.json({ error: "invalid_request" }, 400);
+    }),
+    async (c) => {
+      const token = readOwnerToken(c);
+      // 一覧を見ただけでは Cookie を発行しない。トークンが無ければ、その持ち主の行も無い
+      if (token === undefined) return c.json({ items: [], nextCursor: null } satisfies MyTimelinesResponse);
+      setOwnerCookie(c, token);
+      const { cursor } = c.req.valid("query");
+      const rows = await selectMyTimelines(getDb(c.env), await hashOwnerToken(token), cursor);
+      const page = rows.slice(0, MY_TIMELINES_PAGE_SIZE);
+      const last = page[page.length - 1];
+      return c.json({
+        items: page.map((row) => ({ ...row, createdAt: new Date(row.createdAt * 1000).toISOString() })),
+        nextCursor: rows.length > MY_TIMELINES_PAGE_SIZE ? `${last.createdAt}.${last.id}` : null,
+      } satisfies MyTimelinesResponse);
     },
   );
 }
