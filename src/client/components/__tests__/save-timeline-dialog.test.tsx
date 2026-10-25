@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup, act } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, act, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
 import { SaveTimelineDialog } from "../SaveTimelineDialog";
+import { CONTENT_CATALOG } from "../../data/content-catalog";
 import { SAVE_ERROR_MESSAGES, type SaveError } from "../../logic/shared-timeline";
 import type { AppStateSnapshot } from "../../logic/timeline-storage";
 
@@ -166,6 +167,41 @@ describe("SaveTimelineDialog", () => {
     expect(screen.queryByLabelText("共有 URL")).not.toBeInTheDocument();
     expect(screen.getByLabelText("タイトル（任意）")).toHaveValue("零式 4 層");
     expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
+  });
+
+  it("コンテンツの選択欄は「指定なし」が既定で、マスタを零式・絶の区分に分けて並べる", () => {
+    renderDialog();
+    const select = screen.getByLabelText("コンテンツ（任意）");
+
+    expect(select).toHaveValue("");
+    expect(within(select).getAllByRole("option")).toHaveLength(CONTENT_CATALOG.length + 1);
+    expect(within(select).getAllByRole("group").map((g) => g.getAttribute("label"))).toEqual(["零式", "絶"]);
+    expect(within(within(select).getByRole("group", { name: "絶" })).getByRole("option", { name: "絶妖星乱舞" })).toHaveValue(
+      "dancing-mad"
+    );
+  });
+
+  it("選んだコンテンツを contentId で送り、指定なしなら contentId を送らない", async () => {
+    renderDialog();
+    fireEvent.change(screen.getByLabelText("コンテンツ（任意）"), { target: { value: "m4s" } });
+    await saveAndWaitForUrl();
+    expect(sentBody().contentId).toBe("m4s");
+
+    cleanup();
+    fetchMock.mockClear();
+    renderDialog();
+    await saveAndWaitForUrl();
+    expect(sentBody()).not.toHaveProperty("contentId");
+  });
+
+  it("開き直しても、コンテンツの選択は残っている", () => {
+    const { props, rerender } = renderDialog();
+    fireEvent.change(screen.getByLabelText("コンテンツ（任意）"), { target: { value: "fru" } });
+
+    rerender(<SaveTimelineDialog {...props} open={false} />);
+    rerender(<SaveTimelineDialog {...props} open={true} />);
+
+    expect(screen.getByLabelText("コンテンツ（任意）")).toHaveValue("fru");
   });
 
   it("保存中に閉じたら送信を中断し、閉じた後に応答が届いても結果を出さない", async () => {

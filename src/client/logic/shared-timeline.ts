@@ -18,7 +18,7 @@ export interface TimelineResponse {
 export type SharedLoadError = "not_found" | "unsupported_version" | "invalid_data" | "network";
 
 export type SharedLoadOutcome =
-  | { kind: "apply"; id: string; state: PersistedAppState }
+  | { kind: "apply"; id: string; state: PersistedAppState; title: string | null; contentId: string | null }
   | { kind: "cancelled" }
   | { kind: "error"; error: SharedLoadError };
 
@@ -77,7 +77,13 @@ export async function loadSharedTimeline(
   if (!state) return failed("invalid_data");
 
   if (deps.hasWorkingEntries() && !deps.confirmOverwrite()) return CANCELLED;
-  return { kind: "apply", id, state };
+  return {
+    kind: "apply",
+    id,
+    state,
+    title: typeof body.title === "string" ? body.title : null,
+    contentId: typeof body.contentId === "string" ? body.contentId : null,
+  };
 }
 
 /** 共有 URL（/t/<id>）を作る。getSharedTimelineId の逆 */
@@ -102,7 +108,7 @@ function saveFailed(error: SaveError): SaveOutcome {
 
 /** タイムラインをサーバーに保存する（POST /api/timelines）。保存した行は書き換えられない */
 export async function saveTimeline(
-  request: { state: AppStateSnapshot; title: string; parentId: string | null },
+  request: { state: AppStateSnapshot; title: string; parentId: string | null; contentId: string | null },
   deps: { signal?: AbortSignal } = {},
 ): Promise<SaveOutcome> {
   const data: PersistedAppState = { version: SCHEMA_VERSION, ...request.state };
@@ -111,6 +117,7 @@ export async function saveTimeline(
     data,
     ...(title !== "" && { title }),
     ...(request.parentId !== null && { parentId: request.parentId }),
+    ...(request.contentId !== null && { contentId: request.contentId }),
   };
 
   let id: unknown;
