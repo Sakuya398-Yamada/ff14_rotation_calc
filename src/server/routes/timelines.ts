@@ -11,6 +11,7 @@ import type { TimelineResponse } from "../../client/logic/shared-timeline";
 import { timelines } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
 import { generateOwnerToken, hashOwnerToken, isOwnerToken } from "../services/owner-token";
+import { MAX_TURNSTILE_TOKEN_LENGTH, verifyTurnstileToken } from "../services/turnstile";
 import { myTimelinesQuerySchema, saveTimelineRequestSchema, timelineIdParamSchema } from "./timelines-schema";
 
 type RouteEnv = { Bindings: Bindings; Variables: { ownerHash: string } };
@@ -53,6 +54,18 @@ const rateLimit = createMiddleware<RouteEnv>(async (c, next) => {
   await next();
 });
 
+const turnstile = createMiddleware<RouteEnv>(async (c, next) => {
+  const secret = c.env.TURNSTILE_SECRET_KEY;
+  // 設定の誤りは利用者の失敗ではないので 403 にせず、例外（既定の onError がログに出して 500）にする。テスト用の secret には落とさない
+  if (!secret) throw new Error("TURNSTILE_SECRET_KEY is not set");
+  const token = c.req.header("X-Turnstile-Token");
+  if (!token || token.length > MAX_TURNSTILE_TOKEN_LENGTH) return c.json({ error: "turnstile_failed" }, 403);
+  if (!(await verifyTurnstileToken(secret, token, c.req.header("CF-Connecting-IP")))) {
+    return c.json({ error: "turnstile_failed" }, 403);
+  }
+  await next();
+});
+
 export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
   return new Hono<RouteEnv>().post(
     "/",
@@ -63,6 +76,8 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
     ownerToken,
     // 不正な本文の連投も数え、検証にかかる CPU を守るため、検証より前に置く
     rateLimit,
+    // siteverify を呼ぶ回数をレート制限で抑え、不合格の要求には本文の検証の CPU を使わせない。トークンを本文ではなくヘッダで受けるのも、本文をパースせずに判定するため
+    turnstile,
     zValidator("json", saveTimelineRequestSchema, (result, c) => {
       if (!result.success) return c.json({ error: "invalid_request" }, 400);
     }),

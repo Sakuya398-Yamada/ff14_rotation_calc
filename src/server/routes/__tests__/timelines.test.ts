@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { Hono } from "hono";
-import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import type { z } from "zod";
 import type { PersistedAppState } from "../../../client/logic/timeline-storage";
 import { timelines } from "../../db/schema";
@@ -15,6 +15,12 @@ import type { persistedAppStateSchema } from "../timelines-schema";
 const MIGRATIONS_FOLDER = fileURLToPath(new URL("../../../../migrations", import.meta.url));
 const URL_BASE = "http://localhost/api/timelines";
 const TOKEN_RE = /__Host-owner=([A-Za-z0-9_-]{43})/;
+const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+// Cloudflare 公式のテスト用キー（https://developers.cloudflare.com/turnstile/troubleshooting/testing/）
+const TURNSTILE_PASS_SECRET = "1x0000000000000000000000000000000AA";
+const TURNSTILE_FAIL_SECRET = "2x0000000000000000000000000000000AA";
+// テスト用の sitekey のウィジェットが返すダミートークン
+const TURNSTILE_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
 
 // src/server/db/__tests__/timelines.test.ts と同じく、本番の D1 と同じマイグレーションを当てた better-sqlite3 の DB を使う（#574）
 function createTestDb() {
@@ -43,19 +49,39 @@ function validData(overrides: Partial<PersistedAppState> = {}): PersistedAppStat
   };
 }
 
+// siteverify の代わり。送られた secret ごとに、公式のテスト用キーと同じ結果を返す
+async function fakeSiteverify(_input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const secret = new URLSearchParams(init?.body as URLSearchParams).get("secret");
+  const result =
+    secret === TURNSTILE_PASS_SECRET
+      ? { success: true, "error-codes": [] }
+      : secret === TURNSTILE_FAIL_SECRET
+        ? { success: false, "error-codes": ["invalid-input-response"] }
+        : { success: false, "error-codes": ["invalid-input-secret"] };
+  return Response.json(result);
+}
+
 let db: ReturnType<typeof createTestDb>;
 let limit: ReturnType<typeof vi.fn<(options: { key: string }) => Promise<{ success: boolean }>>>;
+let siteverify: ReturnType<typeof vi.fn<typeof fetch>>;
+let turnstileSecret: string | undefined;
 let app: Hono;
 
-function post(body: unknown, headers: Record<string, string> = {}) {
+// headers の値を undefined にすると、そのヘッダを送らない
+function post(body: unknown, headers: Record<string, string | undefined> = {}) {
+  const requestHeaders = new Headers({
+    "Content-Type": "application/json",
+    Origin: "http://localhost",
+    "X-Turnstile-Token": TURNSTILE_TOKEN,
+  });
+  for (const [name, value] of Object.entries(headers)) {
+    if (value === undefined) requestHeaders.delete(name);
+    else requestHeaders.set(name, value);
+  }
   return app.request(
     URL_BASE,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Origin: "http://localhost", ...headers },
-      body: typeof body === "string" ? body : JSON.stringify(body),
-    },
-    { DB: undefined, TIMELINE_RATE_LIMITER: { limit } },
+    { method: "POST", headers: requestHeaders, body: typeof body === "string" ? body : JSON.stringify(body) },
+    { DB: undefined, TIMELINE_RATE_LIMITER: { limit }, TURNSTILE_SECRET_KEY: turnstileSecret },
   );
 }
 
@@ -66,9 +92,18 @@ async function rows() {
 beforeEach(() => {
   db = createTestDb();
   limit = vi.fn(async () => ({ success: true }));
+  // app.request はグローバルの fetch を使わないので、差し替わるのは siteverify の呼び出しだけ
+  siteverify = vi.fn(fakeSiteverify);
+  vi.stubGlobal("fetch", siteverify);
+  turnstileSecret = TURNSTILE_PASS_SECRET;
   app = new Hono()
     .route("/api/timelines", createTimelinesRoute(() => db))
     .route("/api/me/timelines", createMyTimelinesRoute(() => db));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("POST /api/timelines: 保存", () => {
@@ -281,6 +316,82 @@ describe("POST /api/timelines: レート制限", () => {
     const res = await post({ data: { version: 2 } });
 
     expect(res.status).toBe(429);
+  });
+
+  it("制限を超えていれば、siteverify を呼ばずに 429 を返す", async () => {
+    limit.mockResolvedValue({ success: false });
+    const res = await post({ data: validData() });
+
+    expect(res.status).toBe(429);
+    expect(siteverify).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/timelines: Turnstile", () => {
+  it("成功用のテスト用 secret なら 201 で、siteverify に secret・トークン・接続元 IP を送る", async () => {
+    const res = await post({ data: validData() }, { "CF-Connecting-IP": "203.0.113.7" });
+
+    expect(res.status).toBe(201);
+    expect(siteverify).toHaveBeenCalledTimes(1);
+    const [url, init] = siteverify.mock.calls[0];
+    expect(url).toBe(SITEVERIFY_URL);
+    expect(init?.method).toBe("POST");
+    expect(Object.fromEntries(new URLSearchParams(init?.body as URLSearchParams))).toEqual({
+      secret: TURNSTILE_PASS_SECRET,
+      response: TURNSTILE_TOKEN,
+      remoteip: "203.0.113.7",
+    });
+  });
+
+  it("失敗用のテスト用 secret なら 403 で保存しない", async () => {
+    turnstileSecret = TURNSTILE_FAIL_SECRET;
+    const res = await post({ data: validData() });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "turnstile_failed" });
+    expect(await rows()).toHaveLength(0);
+  });
+
+  it.each([
+    ["無い", undefined],
+    ["空", ""],
+    ["2049 文字", "x".repeat(2049)],
+  ])("トークンのヘッダが%sなら、siteverify を呼ばずに 403", async (_label, token) => {
+    const res = await post({ data: validData() }, { "X-Turnstile-Token": token });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "turnstile_failed" });
+    expect(siteverify).not.toHaveBeenCalled();
+    expect(await rows()).toHaveLength(0);
+  });
+
+  it("検証に落ちれば、本文が不正でも 400 より先に 403 を返す", async () => {
+    turnstileSecret = TURNSTILE_FAIL_SECRET;
+    const res = await post({ data: { version: 2 } });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("secret が設定されていなければ、siteverify を呼ばずに 500 で保存しない", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    turnstileSecret = undefined;
+    const res = await post({ data: validData() });
+
+    expect(res.status).toBe(500);
+    expect(siteverify).not.toHaveBeenCalled();
+    expect(await rows()).toHaveLength(0);
+  });
+
+  it.each([
+    ["通信に失敗した", () => Promise.reject(new TypeError("fetch failed"))],
+    ["200 以外を返した", async () => Response.json({ success: false, "error-codes": ["internal-error"] }, { status: 500 })],
+  ])("siteverify が%sら 500 で保存しない", async (_label, response) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    siteverify.mockImplementation(response);
+    const res = await post({ data: validData() });
+
+    expect(res.status).toBe(500);
+    expect(await rows()).toHaveLength(0);
   });
 });
 

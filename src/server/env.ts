@@ -9,6 +9,8 @@ export type Bindings = {
   // drizzle-orm/d1 の drizzle() に渡すだけなので型は付けない
   DB: unknown;
   TIMELINE_RATE_LIMITER: RateLimiter;
+  // Worker の secret。ローカルは .dev.vars から読む。PR プレビューには無い
+  TURNSTILE_SECRET_KEY?: string;
 };
 
 // 本番の D1（async）とテストの better-sqlite3（sync）のどちらも入る。await で使えるクエリビルダーだけを呼ぶ
