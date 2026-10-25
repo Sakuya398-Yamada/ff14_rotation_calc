@@ -1,18 +1,21 @@
 ---
 paths:
   - ".claude/agents/*.md"
+  - ".claude/settings.json"
 ---
 
 # モデルと effort の割り当て
 
-frontmatter の `paths:` により、`.claude/agents/*.md` を Read / Edit / Write したときだけ読み込まれる。モデルや effort を変えるとき・新しいモデルに移るときの判断材料。割り当ての理由と出典の正本は #495 の[割り当て表のコメント](https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues/495#issuecomment-6381308423)。
+frontmatter の `paths:` により、`.claude/agents/*.md` か `.claude/settings.json` を Read / Edit / Write したときだけ読み込まれる。モデルや effort を変えるとき・新しいモデルに移るときの判断材料。割り当ての理由と出典の正本は #495 の[割り当て表のコメント](https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues/495#issuecomment-6381308423)。セッションの既定の effort を `.claude/settings.json` で決めた経緯は #597。
 
-## 今の割り当て（#495、2026-10）
+## 今の割り当て（#495・#597、2026-10）
 
 | 対象 | model | effort | 置き場所 |
 |------|-------|--------|---------|
-| `/issue-plan` | 推奨: Fable 5.1 | 推奨: `high` | セッション開始時にユーザーが選ぶ。frontmatter には書かない |
-| `/issue-start` のメインセッション | Opus 5.5 | `high` | セッション側（`/model`・`/effort`）。frontmatter には書かない |
+| `/issue-plan` | 推奨: Fable 5.1 | `high` | model はセッション開始時にユーザーが選ぶ。effort は `.claude/settings.json` の `modelSettings`。frontmatter には書かない |
+| `/issue-start` のメインセッション | Opus 5.5 | `xhigh` | effort は `.claude/settings.json` の `modelSettings`（`/effort` でそのセッションだけ変えられる）。frontmatter には書かない |
+| ルーティン `weekly` | Fable 5.1 | `high` | model はスケジュールタスクの登録側、effort は `.claude/settings.json` の `modelSettings` |
+| ルーティン `daily-triage` / `weekday-issue-start` | Opus 5.5 | `xhigh` | 同上 |
 | `code-explorer` / `code-reviewer` | `claude-opus-5-5` | `high` | agents の frontmatter |
 | `code-architect` | `claude-opus-5-5` | `xhigh` | agents の frontmatter |
 
@@ -20,9 +23,11 @@ frontmatter の `paths:` により、`.claude/agents/*.md` を Read / Edit / Wri
 
 - model はエイリアス（`opus` 等）ではなく完全なモデル ID で書く。effort の目盛りはモデルごとに較正されているので、エイリアスの指す先が黙って変わると model と effort の組み合わせがずれる。新しいモデルに移るときは、この表と frontmatter を同じ PR で書き換える
 - effort も明示する。書かないとセッションの effort を引き継ぐ（#495 のクラウドセッションでは xhigh で動いていた）
+- メインセッションとルーティンの effort は `.claude/settings.json` の `modelSettings` にモデルごとに書く。トップレベルの `effortLevel` は全モデルに同じ値で効くので、モデルの違うルーティンに別々の effort を割り当てられない。プロジェクト設定はユーザー設定（`/effort` で保存した既定）より優先されるので、このリポジトリではこちらが既定になる。`/effort` と `--effort` はそのセッションだけ上書きする。どこにも指定が無いと Opus 5.5 は `medium` で動く（#597 で計測）
+- ルーティンのモデルはスケジュールタスクの登録側で選ぶ（リポジトリからは変えられない）。ルーティンのモデルを替えたら、そのモデルの `modelSettings` があるかを見る。無ければそのモデルの既定の effort で動く
 - skill には `model` も `effort` も書かない。skill はユーザーがセッション開始画面でモデルと effort を選んで始めるもので、frontmatter の値はその選択を、skill を呼んだターンの残りだけ黙って上書きし、次のメッセージで戻す。モデルを切り替えたターンは会話全体をキャッシュ無しで読み直すうえ、クラウドセッションで Claude が Skill ツールから呼んだ経路では `model` が効かなかった（#495）
 - 無人ルーティン（`.claude/routines/`）から起動するサブエージェントにも agents の frontmatter が効く
-- Fable は Max プランでは週の利用枠の 50% までの別上限があり、ほかのモデルより早く枠を減らす。無人で回る経路（ルーティンから起動するサブエージェントなど）には割り当てない
+- Fable は Max プランでは週の利用枠の 50% までの別上限があり、ほかのモデルより早く枠を減らす。無人で回る経路のうち毎日動くもの（日次のルーティンと、ルーティンから起動するサブエージェント）には割り当てない。週 1 回の `weekly` は Fable 5.1 で動かす（#597 でユーザーが決定）
 
 ## 変えたときの検証
 
@@ -32,4 +37,5 @@ frontmatter の `paths:` により、`.claude/agents/*.md` を Read / Edit / Wri
   jq -c 'select(.type=="assistant") | {model: .message.model, requestedModel, effort}' <file> | sort | uniq -c
   ```
 
+- メインセッションの effort は、Bash と hooks に渡る `$CLAUDE_EFFORT` で確かめられる。`.claude/settings.json` の `modelSettings` を変えたら、push してから PR ブランチで effort を選ばずにクラウドセッションを立て（`create_session` に `source_revision` と `model`）、`echo "$CLAUDE_EFFORT"` の結果を `list_events` で読む（#597）
 - 作業中のセッションでは `.claude/agents/` の変更が読み込まれないことがある（#495 のクラウドセッションでは、新しく置いたエージェントも `Agent type '...' not found` になった）。model はエイリアスと完全な ID が同じモデルに解決されると区別できないので、effort がセッションの値のままなら、push してから PR ブランチで立てた新しいセッションで確かめる（`phases/05-implementation.md`「起動時に読まれる設定の検証」）
