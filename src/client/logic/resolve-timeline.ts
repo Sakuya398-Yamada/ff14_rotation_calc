@@ -1905,11 +1905,11 @@ export function resolveTimeline(
   // ティックを時刻順にソート
   dotTicks.sort((a, b) => a.time - b.time);
 
-  // 最後のGCDのリキャスト完了時刻を算出
+  // 最後のGCDのリキャスト完了時刻を算出（GCD リキャストを発生させる oGCD の黙想も含める）
   let lastGcdEndTime = 0;
   for (const entry of resolved) {
     const skill = skillMap.get(entry.resolvedSkillId);
-    if (!skill || skill.type !== "gcd") continue;
+    if (!skill || (skill.type !== "gcd" && !skill.triggersGcdRecast)) continue;
     // gcdAvailableAt は実行前バフ（recastOverride / speed）で算出済みの値をそのまま使う
     const endTime = entry.gcdAvailableAt;
     if (endTime > lastGcdEndTime) lastGcdEndTime = endTime;
