@@ -176,9 +176,19 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 70,
     replacesSkillId: "straight-shot",
+    // fallback は proc しなかったときに撃つ GCD の威力。Lv76 でバーストショットを修得するまではヘヴィショット (#600)
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 840 },
-      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 220 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 160 },
+    ],
+    traitPotencyOverrides: [
+      {
+        traitLevel: 76,
+        buffConsumptionAnyOf: [
+          { buffId: "barrage", stacks: 1, potency: 840 },
+          { buffId: "hawks-eye", stacks: 1, fallbackPotency: 220 },
+        ],
+      },
     ],
   },
   {
@@ -243,9 +253,19 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 72,
     replacesSkillId: "wide-volley",
+    // fallback は proc しなかったときに撃つ GCD の威力。Lv82 でラドンバイトを修得するまではクイックノック (#600)
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 300 },
-      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 140 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 110 },
+    ],
+    traitPotencyOverrides: [
+      {
+        traitLevel: 82,
+        buffConsumptionAnyOf: [
+          { buffId: "barrage", stacks: 1, potency: 300 },
+          { buffId: "hawks-eye", stacks: 1, fallbackPotency: 140 },
+        ],
+      },
     ],
     // 対象とその周囲にヒット。減衰なし（対象数上限なし）
     maxTargets: Infinity,
