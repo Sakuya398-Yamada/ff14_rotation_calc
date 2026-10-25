@@ -189,6 +189,11 @@ export interface Skill {
   /** スキル使用に必要なバフIDのOR条件（いずれか1つでもアクティブなら可。全て未アクティブ時はエラー、威力を計上しない。バフは消費しない） */
   requiredBuffAnyOf?: string[];
   /**
+   * 発動条件の上限。実行前のリソース量が maxAmount を超えていたらエラー（resourceErrors）にし、実行しない。
+   * 例: 踏鳴（ビーストチャクラ 0）、鉄山闘気（闘気 5 未満 = maxAmount 4）。未習得のリソースは 0 として扱う
+   */
+  resourceMaxConditions?: { resourceId: string; maxAmount: number }[];
+  /**
    * 自動変化条件。
    * - 配列形式: 先頭から優先評価し、最初に条件を満たすエントリの変化先を採用
    * - 単一エントリ形式: 後方互換のため維持
@@ -222,10 +227,12 @@ export interface Skill {
    */
   falloffStartTarget?: number;
   /**
-   * oGCD のまま、ウェポンスキルと同じ GCD リキャストも発生させる（黙想）。
+   * oGCD のまま、ウェポンスキルと同じ GCD リキャストも発生させる（黙想・鉄山闘気／陰陽闘気）。
    * GCD のリキャスト明けまで実行できない。コンボ・確定クリ/DH・consumeOnGcd の対象にはならない
    */
   triggersGcdRecast?: boolean;
+  /** triggersGcdRecast で発生させる GCD の基礎リキャスト（秒。スキルスピード・ヘイスト補正前）。未設定は 2.5 秒（黙想） */
+  gcdRecastTime?: number;
 }
 
 /** タイムラインに配置されたスキル */
