@@ -7,6 +7,7 @@ import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsDialog } from "./SettingsDialog";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
+import { MyTimelinesDialog } from "./MyTimelinesDialog";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
@@ -37,6 +38,8 @@ export function App() {
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const [myTimelinesOpen, setMyTimelinesOpen] = useState(false);
+  const myTimelinesButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     saveSettings(settings);
@@ -351,6 +354,15 @@ export function App() {
           保存・共有
         </button>
         <button
+          ref={myTimelinesButtonRef}
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setMyTimelinesOpen(true)}
+          style={styles.saveButton}
+        >
+          保存したタイムライン
+        </button>
+        <button
           ref={settingsButtonRef}
           type="button"
           aria-label="設定"
@@ -379,6 +391,11 @@ export function App() {
         onSaved={setSourceTimelineId}
         onClose={() => setSaveOpen(false)}
         returnFocusRef={saveButtonRef}
+      />
+      <MyTimelinesDialog
+        open={myTimelinesOpen}
+        onClose={() => setMyTimelinesOpen(false)}
+        returnFocusRef={myTimelinesButtonRef}
       />
       {sharedLoadError !== null && (
         <div style={styles.sharedLoadError}>
