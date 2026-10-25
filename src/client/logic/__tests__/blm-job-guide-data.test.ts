@@ -98,29 +98,29 @@ describe("BLM: ジョブガイド準拠の計算結果", () => {
   });
 
   it("パラドックスは AF 中に撃つとファイアスターターを付与する", () => {
-    // マナフォントで AF3 + パラドックスゲージ 1
+    // ファイガで AF3 → マナフォント（AF 中のみ。#519）でパラドックスゲージ 1
     const result = resolveTimeline(
-      [entry("manafont"), entry("paradox")],
-      skillMap,
-      BLM_RESOURCES,
-      undefined,
-      BLM_BUFFS,
-    );
-    const paradox = result.entries[1];
-    expect(paradox.resourceErrors).toEqual([]);
-    expect(paradox.activeBuffs.some((ab) => ab.buffId === "firestarter")).toBe(true);
-  });
-
-  it("パラドックスは UB 中に撃ってもファイアスターターを付与しない", () => {
-    // マナフォントでパラドックスゲージ 1 → ブリザガで UB3 へ切替
-    const result = resolveTimeline(
-      [entry("manafont"), entry("blizzard-3"), entry("paradox")],
+      [entry("fire-3"), entry("manafont"), entry("paradox")],
       skillMap,
       BLM_RESOURCES,
       undefined,
       BLM_BUFFS,
     );
     const paradox = result.entries[2];
+    expect(paradox.resourceErrors).toEqual([]);
+    expect(paradox.activeBuffs.some((ab) => ab.buffId === "firestarter")).toBe(true);
+  });
+
+  it("パラドックスは UB 中に撃ってもファイアスターターを付与しない", () => {
+    // ファイガで AF3 → マナフォントでパラドックスゲージ 1 → ブリザガで UB3 へ切替
+    const result = resolveTimeline(
+      [entry("fire-3"), entry("manafont"), entry("blizzard-3"), entry("paradox")],
+      skillMap,
+      BLM_RESOURCES,
+      undefined,
+      BLM_BUFFS,
+    );
+    const paradox = result.entries[3];
     expect(paradox.resourceErrors).toEqual([]);
     expect(paradox.activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
     expect(paradox.activeBuffs.some((ab) => ab.buffId === "firestarter")).toBe(false);

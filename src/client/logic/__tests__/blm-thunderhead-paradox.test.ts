@@ -51,6 +51,9 @@ describe("BLM: サンダーヘッドは AF/UB の付与・反転時だけ付与�
     { label: "UB3 中のブリザガ", setupIds: ["blizzard-3"], skillId: "blizzard-3", resolved: "blizzard-3-in-ub" },
     { label: "UB3 中のハイブリザラ", setupIds: ["blizzard-3"], skillId: "high-blizzard-2", resolved: "high-blizzard-2-in-ub" },
     { label: "UB3 中のフリーズ", setupIds: ["blizzard-3"], skillId: "freeze", resolved: "freeze" },
+    // UB 中のファイア・AF 中のブリザドは属性を解除するだけ（#519）
+    { label: "UB1 中のファイア（UB を解除）", setupIds: ["blizzard"], skillId: "fire", resolved: "fire-in-ub" },
+    { label: "AF1 中のブリザド（AF を解除）", setupIds: ["fire"], skillId: "blizzard", resolved: "blizzard-in-af" },
   ])("$label はサンダーヘッドを付与しない", ({ setupIds, skillId, resolved }) => {
     const entries = resolve100([...setupIds, "high-thunder", skillId]);
     const target = entries[entries.length - 1];
@@ -63,9 +66,7 @@ describe("BLM: サンダーヘッドは AF/UB の付与・反転時だけ付与�
   it.each([
     { label: "AF/UB 無しからのファイア", setupIds: [], skillId: "fire" },
     { label: "UB3 からのファイガ（UB→AF の反転）", setupIds: ["blizzard-3"], skillId: "fire-3" },
-    { label: "UB1 からのファイア（UB→AF の反転）", setupIds: ["blizzard"], skillId: "fire" },
     { label: "AF3 からのブリザガ（AF→UB の反転）", setupIds: ["fire-3"], skillId: "blizzard-3" },
-    { label: "AF1 からのブリザド（AF→UB の反転）", setupIds: ["fire"], skillId: "blizzard" },
     { label: "AF3 からのハイブリザラ（AF→UB の反転）", setupIds: ["fire-3"], skillId: "high-blizzard-2" },
   ])("$label はサンダーヘッドを付与する", ({ setupIds, skillId }) => {
     const ids = setupIds.length > 0 ? [...setupIds, "high-thunder", skillId] : [skillId];
@@ -86,10 +87,10 @@ describe("BLM: パラドックスは反対属性への反転で付与される�
     expect(entries[2].resourceSnapshot["paradox-gauge"]).toBe(0);
   });
 
-  it("AF3 からのブリザド・トランスでもパラドックスが付与される", () => {
+  it("AF3 からのトランスでもパラドックスが付与される（ブリザドは AF を解除するだけで付与しない。#519）", () => {
     const viaBlizzard = resolve100(["fire-3", "blizzard"]);
-    expect(viaBlizzard[1].resolvedSkillId).toBe("blizzard-from-af3");
-    expect(viaBlizzard[1].resourceSnapshot["paradox-gauge"]).toBe(1);
+    expect(viaBlizzard[1].resolvedSkillId).toBe("blizzard-in-af");
+    expect(viaBlizzard[1].resourceSnapshot["paradox-gauge"]).toBe(0);
 
     const viaTranspose = resolve100(["fire-3", "transpose"]);
     expect(viaTranspose[1].resolvedSkillId).toBe("transpose-to-ub1-from-af3");

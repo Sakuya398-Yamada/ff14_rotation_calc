@@ -284,6 +284,14 @@ export function SkillDetailPanel({
               {entry.wsComboError ? "不成立" : "成立"}
             </span>
           </div>
+          {entry.unconfirmedProcBuffs && (
+            <div style={styles.metaRow}>
+              <span style={{ ...styles.cellLabel, flexShrink: 0 }}>警告</span>
+              <span style={styles.metaWarning}>
+                {entry.unconfirmedProcBuffs.map((id) => buffDefMap.get(id)?.name ?? id).join(", ")}（確率付与。発動しない場合あり）
+              </span>
+            </div>
+          )}
           <div style={styles.metaRow}>
             <span style={styles.cellLabel}>エラー</span>
             {errorMessages.length === 0 ? (

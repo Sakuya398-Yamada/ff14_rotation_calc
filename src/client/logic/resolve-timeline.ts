@@ -25,7 +25,7 @@ const DOT_TICK_INTERVAL = 3;
 /** コンボタイマー（秒）。この時間以上経過するとコンボがリセットされる */
 const COMBO_TIMER = 15;
 
-/** triggersGcdRecast の oGCD（黙想）が発生させる GCD の基礎リキャスト（秒） */
+/** triggersGcdRecast の oGCD が gcdRecastTime を持たないときに発生させる GCD の基礎リキャスト（秒。黙想） */
 const BASE_GCD_RECAST = 2.5;
 
 /**
@@ -465,7 +465,7 @@ interface DoTStream {
   dotPotency: number;
   /** 最初の適用時刻（ティックタイマーの基準） */
   firstAppliedAt: number;
-  /** 現在の終了時刻（再適用で延長される） */
+  /** 現在の終了時刻（再適用で延長され、replacesDots で打ち切られる） */
   currentEndTime: number;
   /** 適用セグメント: 各適用時点のバフスナップショットを記録 */
   segments: Array<{
@@ -933,6 +933,8 @@ export function resolveTimeline(
 
   // 確率付きで付与したバフの付与元（バフIDごと。buffConsumptionAnyOf で消費するまで蓄積する）
   const procSources = new Map<string, { endTime: number; rate: number }[]>();
+  // 1 未満の確率付与だけで付き、確定付与で付け直されていないバフ（自動消費したエントリで警告する）
+  const unconfirmedProcBuffs = new Set<string>();
 
   // リソース初期化
   for (const res of resources) {
@@ -1052,7 +1054,7 @@ export function resolveTimeline(
       expireBuffsUntil(startTime);
 
     } else {
-      // GCD リキャストも発生させる oGCD（黙想）は、GCD と同じくリキャスト明けを待つ
+      // GCD リキャストも発生させる oGCD（黙想・鉄山闘気等）は、GCD と同じくリキャスト明けを待つ
       autoStartTime = originalSkill.triggersGcdRecast
         ? Math.max(gcdAvailableAt, actionAvailableAt)
         : actionAvailableAt;
@@ -1110,10 +1112,12 @@ export function resolveTimeline(
     advanceAutoGen(startTime);
 
     // GCD のリキャスト・詠唱時間は変化先スキルの値で計算する（例: レッドファイア → シアンブリザドで 2.5 秒 → 3.3 秒）。
-    // triggersGcdRecast の oGCD は recastTime がアニメーションロックなので、ウェポンスキルと同じ基礎リキャストから計算する
+    // triggersGcdRecast の oGCD は recastTime がアニメーションロックなので、gcdRecastTime（ジョブのウェポンスキルと同じ基礎リキャスト）から計算する
     if (originalSkill.type === "gcd" || originalSkill.triggersGcdRecast) {
       // recastOverride バフ（レインボードリップ効果アップ等）があれば基礎リキャストを置き換えてから補正を掛ける
-      const baseRecastTime = originalSkill.type === "gcd" ? skill.recastTime : BASE_GCD_RECAST;
+      const baseRecastTime = originalSkill.type === "gcd"
+        ? skill.recastTime
+        : originalSkill.gcdRecastTime ?? BASE_GCD_RECAST;
       const overriddenRecast = getBaseRecastTime(originalSkill.id, baseRecastTime, currentActiveBuffs, buffDefMap);
       const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
       // 速度バフを適用してリキャスト・詠唱時間計算
@@ -1210,6 +1214,15 @@ export function resolveTimeline(
       }
     }
 
+    // resourceMaxConditions: 実行前のリソース量が上限を超えていたらエラー（超えたリソースをすべて報告）
+    if (skill.resourceMaxConditions) {
+      for (const condition of skill.resourceMaxConditions) {
+        if ((resourceState[condition.resourceId] ?? 0) > condition.maxAmount) {
+          resourceErrors.push(condition.resourceId);
+        }
+      }
+    }
+
     // バフスタック消費チェック
     const comboErrors: string[] = [];
     if (skill.buffConsumptions) {
@@ -1230,6 +1243,11 @@ export function resolveTimeline(
       if (!activeBuff) {
         comboErrors.push(skill.requiredBuff);
       }
+    }
+
+    // forbiddenBuff: 指定バフがアクティブならエラー
+    if (skill.forbiddenBuff && currentActiveBuffs.some((ab) => ab.buffId === skill.forbiddenBuff)) {
+      comboErrors.push(skill.forbiddenBuff);
     }
 
     // requiredBuffAnyOf: いずれかのバフがアクティブであればよい（バフは消費しない）
@@ -1515,6 +1533,14 @@ export function resolveTimeline(
         }
       }
 
+      // removesBuffs: アクティブなら解除する（無くてもエラーにしない）
+      for (const buffId of skill.removesBuffs ?? []) {
+        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+        if (idx < 0) continue;
+        currentActiveBuffs.splice(idx, 1);
+        resetResourcesOnBuffEnd(buffId, resourceState, resources);
+      }
+
       // buffConsumptionAnyOf: マッチしたバフを消費
       if (anyOfMatchedBuffId) {
         const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === anyOfMatchedBuffId);
@@ -1634,6 +1660,12 @@ export function resolveTimeline(
             procSources.set(buffId, sources);
             newBuff.procRate = calcLiveProcRate(sources, startTime);
           }
+          // 確定で付いている間に確率付与が重なっても確定のまま。確定付与で付け直したら確定に戻す
+          if (rate !== undefined && rate < 1) {
+            if (existingIdx < 0) unconfirmedProcBuffs.add(buffId);
+          } else {
+            unconfirmedProcBuffs.delete(buffId);
+          }
         }
       }
 
@@ -1720,6 +1752,15 @@ export function resolveTimeline(
         const dotDhRateBonus = dhRateBonusBeforeApply;
         const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
 
+        // replacesDots: 同時に1種類だけの DoT は、他スキルの DoT をこの時点で打ち切る
+        for (const otherId of skill.replacesDots ?? []) {
+          if (otherId === skill.id) continue;
+          const other = dotStreams.get(otherId);
+          if (!other || other.currentEndTime <= startTime) continue;
+          other.currentEndTime = startTime;
+          for (const seg of other.segments) seg.endTime = Math.min(seg.endTime, startTime);
+        }
+
         const existing = dotStreams.get(skill.id);
         if (existing) {
           // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
@@ -1738,14 +1779,14 @@ export function resolveTimeline(
         }
       }
 
-      // refreshesDots: 指定DoTの効果時間をリセットし、バフスナップショットを再取得
+      // refreshesDots: 効いている指定DoTの効果時間をリセットし、バフスナップショットを再取得（切れたDoTは付与しなおさない）
       if (skill.refreshesDots) {
         const refreshBuffMultiplier = buffMultiplierBeforeApply;
         const refreshCritRateBonus = baseCritRateBonus;
         const refreshDhRateBonus = dhRateBonusBeforeApply;
         for (const dotSkillId of skill.refreshesDots) {
           const stream = dotStreams.get(dotSkillId);
-          if (!stream) continue;
+          if (!stream || stream.currentEndTime <= startTime) continue;
           // 元DoTの持続時間で延長（dotPotency元スキルのdotDurationを参照）
           const dotSkill = skillMap.get(dotSkillId);
           if (!dotSkill?.dotDuration) continue;
@@ -1789,21 +1830,25 @@ export function resolveTimeline(
     // - consumeOnAction: 黙想（oGCD でも消費）
     // 同一バフが両エフェクトを併せ持っても収集側で Set 化済みのため二重消費は起きない。
     // スキル実行中に新規付与されたバフは消費しない（収集を実行前に済ませているため）。
+    const consumedUnconfirmed: string[] = [];
     if (!hasError && consumeBuffTargets.size > 0) {
       for (const buffId of consumeBuffTargets) {
         const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
         if (idx >= 0) {
+          if (unconfirmedProcBuffs.has(buffId)) consumedUnconfirmed.push(buffId);
           const ab = currentActiveBuffs[idx];
           if (ab.stacks !== undefined) {
             ab.stacks = Math.max(0, ab.stacks - 1);
             if (ab.stacks === 0) {
               currentActiveBuffs.splice(idx, 1);
+              unconfirmedProcBuffs.delete(buffId);
               // applyBuffOnDeplete: スタックを消費し切った時点で別バフを付与する
               // （例: インスタレーション 5 スタック枯渇 → レインボードリップ効果アップ）
               applyBuffsOnDeplete(currentActiveBuffs, buffId, startTime, buffDefMap, resourceState, resources);
             }
           } else {
             currentActiveBuffs.splice(idx, 1);
+            unconfirmedProcBuffs.delete(buffId);
           }
         }
       }
@@ -1835,6 +1880,7 @@ export function resolveTimeline(
       recastError,
       wsComboError,
       consumedProc,
+      ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),
       activeBuffsAtUse,
@@ -1886,6 +1932,11 @@ export function resolveTimeline(
       tickTime += DOT_TICK_INTERVAL;
     }
     while (tickTime <= stream.currentEndTime) {
+      // 付与時刻 < tick <= 終了 のセグメントが無いティック（切れてから掛け直すまで・replacesDots で打ち切った後）は数えない
+      if (!stream.segments.some((seg) => seg.appliedAt < tickTime && tickTime <= seg.endTime)) {
+        tickTime += DOT_TICK_INTERVAL;
+        continue;
+      }
       // このティック時点で有効なセグメントのバフ倍率を取得
       // （最後に適用されたセグメントで appliedAt <= tickTime のもの）
       let activeSegment = stream.segments[0];
@@ -1917,7 +1968,7 @@ export function resolveTimeline(
   // ティックを時刻順にソート
   dotTicks.sort((a, b) => a.time - b.time);
 
-  // 最後のGCDのリキャスト完了時刻を算出（GCD リキャストを発生させる oGCD の黙想も含める）
+  // 最後のGCDのリキャスト完了時刻を算出（GCD リキャストを発生させる oGCD（黙想・鉄山闘気等）も含める）
   let lastGcdEndTime = 0;
   for (const entry of resolved) {
     const skill = skillMap.get(entry.resolvedSkillId);

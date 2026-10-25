@@ -100,10 +100,16 @@ export interface Skill {
   resourceChanges?: ResourceChange[];
   /** 使用時に付与するバフのIDリスト */
   buffApplications?: string[];
-  /** buffApplications で付与するバフの付与確率（0〜1。キーの無いバフは確定付与） */
+  /**
+   * buffApplications で付与するバフの付与確率（0〜1。キーの無いバフは確定付与）。
+   * タイムライン上は確定で付き、1 未満の確率だけで付いたバフを自動消費すると ResolvedTimelineEntry.unconfirmedProcBuffs で警告する。
+   * 確定扱いに戻すのは buffApplications の確定付与だけ（comboBuffApplications 等の付与経路は見ない）
+   */
   buffApplicationProcRates?: Record<string, number>;
   /** 使用時に消費するバフスタック */
   buffConsumptions?: BuffConsumption[];
+  /** 使用時にアクティブなら解除するバフID（未アクティブでもエラーにしない。例: UB 中のファイアは UB を解除するだけ） */
+  removesBuffs?: string[];
   /** 詠唱時間（秒）。詠唱中はoGCDスキルを使用できない。未設定の場合はインスタント（詠唱なし） */
   castTime?: number;
   /** 個別リキャストタイム（秒）。oGCDスキル等の固有クールダウン。未設定の場合はリキャスト制約なし */
@@ -125,6 +131,8 @@ export interface Skill {
   dotDuration?: number;
   /** 使用時にDoT効果時間をリセットする対象スキルIDリスト（バフスナップショットも再取得） */
   refreshesDots?: string[];
+  /** このスキルの DoT 付与時に、列挙した他スキルの DoT をその時点で打ち切る（同時に1種類だけの DoT 用。自スキルIDは無視） */
+  replacesDots?: string[];
   /** コンボ元スキルIDリスト（いずれかの直後に使用するとコンボ成立） */
   comboFrom?: string[];
   /** 非コンボ時の威力（コンボ不成立時に適用。未設定の場合はpotencyを使用） */
@@ -186,8 +194,15 @@ export interface Skill {
   conditionalPotencyBuffs?: { buffId: string; potency: number }[];
   /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */
   requiredBuff?: string;
+  /** このバフがアクティブな間は使用不可（アクティブ時はエラー、威力を計上しない。例: 黒魔紋は「黒魔紋」非効果中のみ） */
+  forbiddenBuff?: string;
   /** スキル使用に必要なバフIDのOR条件（いずれか1つでもアクティブなら可。全て未アクティブ時はエラー、威力を計上しない。バフは消費しない） */
   requiredBuffAnyOf?: string[];
+  /**
+   * 発動条件の上限。実行前のリソース量が maxAmount を超えていたらエラー（resourceErrors）にし、実行しない。
+   * 例: 踏鳴（ビーストチャクラ 0）、鉄山闘気（闘気 5 未満 = maxAmount 4）。未習得のリソースは 0 として扱う
+   */
+  resourceMaxConditions?: { resourceId: string; maxAmount: number }[];
   /**
    * 自動変化条件。
    * - 配列形式: 先頭から優先評価し、最初に条件を満たすエントリの変化先を採用
@@ -222,10 +237,12 @@ export interface Skill {
    */
   falloffStartTarget?: number;
   /**
-   * oGCD のまま、ウェポンスキルと同じ GCD リキャストも発生させる（黙想）。
+   * oGCD のまま、ウェポンスキルと同じ GCD リキャストも発生させる（黙想・鉄山闘気／陰陽闘気）。
    * GCD のリキャスト明けまで実行できない。コンボ・確定クリ/DH・consumeOnGcd の対象にはならない
    */
   triggersGcdRecast?: boolean;
+  /** triggersGcdRecast で発生させる GCD の基礎リキャスト（秒。スキルスピード・ヘイスト補正前）。未設定は 2.5 秒（黙想） */
+  gcdRecastTime?: number;
 }
 
 /** タイムラインに配置されたスキル */
@@ -563,6 +580,8 @@ export interface ResolvedTimelineEntry {
   recastError: boolean;
   /** WSコンボ不成立（エラーではないがコンボ威力が適用されない） */
   wsComboError: boolean;
+  /** 1 未満の確率付与（buffApplicationProcRates）だけで付いたバフを自動消費したときのバフID。警告でありハードエラーではない（威力・効果はそのまま） */
+  unconfirmedProcBuffs?: string[];
   /**
    * buffConsumptionAnyOf の fallbackPotency で威力を期待値に補正したときの、消費したバフと発動確率 P。
    * 乱れ撃ちのような確定のバフを消費したときは無い

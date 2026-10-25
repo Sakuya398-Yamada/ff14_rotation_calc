@@ -12,7 +12,7 @@ function entry(skillId: string): TimelineEntry {
 }
 
 describe("BLM: AF/UB 排他と威力倍率", () => {
-  it("ファイア使用で AF1 が付与され、ブリザド使用で UB1 が付与される（AF/UB は排他）", () => {
+  it("ファイア使用で AF1 が付与され、AF 中のブリザドは AF を解除するだけで UB1 を付与しない（#519）", () => {
     const result = resolveTimeline(
       [entry("fire"), entry("blizzard")],
       skillMap,
@@ -24,10 +24,11 @@ describe("BLM: AF/UB 排他と威力倍率", () => {
     // ファイア直後は AF1 がアクティブ
     const afterFire = result.entries[0];
     expect(afterFire.activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
-    // ブリザド後: AF1 は同一 exclusiveGroup により解除され、UB1 が付与されている
+    // ブリザド後: AF1 は解除され、UB1 は付与されない
     const afterBlizzard = result.entries[1];
+    expect(afterBlizzard.resolvedSkillId).toBe("blizzard-in-af");
     expect(afterBlizzard.activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(false);
-    expect(afterBlizzard.activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+    expect(afterBlizzard.activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(false);
   });
 
   it("AF3 中のファイジャは威力倍率（AF3 fire +80% × エノキアン +27% ≒ 2.286）が適用される", () => {
@@ -275,8 +276,8 @@ describe("BLM: UB 段階別 MP 回復", () => {
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
-  it("UB 外（AF 中）のブリザドは UB1 を付与するが MP は回復しない", () => {
-    // fire-3（AF3、MP -2000）→ blizzard（AF3 中は通常 blizzard、UB1 付与、MP 変化なし）
+  it("UB 外（AF 中）のブリザドは AF を解除するだけで、UB1 を付与せず MP も回復しない（#519）", () => {
+    // fire-3（AF3、MP -2000）→ blizzard（AF3 中は AF を解除するだけ、MP 変化なし）
     const result = resolveTimeline(
       [entry("fire-3"), entry("blizzard")],
       skillMap,
@@ -287,7 +288,7 @@ describe("BLM: UB 段階別 MP 回復", () => {
     const before = result.entries[0].resourceSnapshot["mp"];
     const after = result.entries[1].resourceSnapshot["mp"];
     expect(after - before).toBe(0);
-    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(false);
     expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(false);
   });
 
