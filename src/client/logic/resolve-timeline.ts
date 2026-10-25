@@ -38,6 +38,16 @@ function computeBuffEndTime(startTime: number, duration: number | null): number 
 }
 
 /**
+ * 確率付きで付与したバフが time 時点で1回以上発動している確率 1 − Π(1 − p_i)。
+ * 効果時間内の付与元だけを数え、付与元が無ければ undefined を返す。
+ */
+function calcLiveProcRate(sources: { endTime: number; rate: number }[] | undefined, time: number): number | undefined {
+  const liveSources = (sources ?? []).filter((s) => s.endTime > time);
+  if (liveSources.length === 0) return undefined;
+  return 1 - liveSources.reduce((acc, s) => acc * (1 - s.rate), 1);
+}
+
+/**
  * 自動生成タイマーの状態。
  * リソースが最大未満になった時点からタイマーが開始し、
  * interval秒経過ごとに1つ生成される。最大に達するとタイマー停止。
@@ -1302,12 +1312,12 @@ export function resolveTimeline(
       resolvedPotency = skill.nonComboPotency;
     }
     // proc確率を期待値として威力に適用: fallbackPotency + (potency - fallbackPotency) * P
-    // P は効果時間内の付与元が1回以上発動している確率 1 − Π(1 − p_i)
+    let consumedProc: ResolvedTimelineEntry["consumedProc"];
     if (anyOfMatchedBuffId && anyOfFallbackPotency !== undefined) {
-      const liveSources = (procSources.get(anyOfMatchedBuffId) ?? []).filter((s) => s.endTime > startTime);
-      if (liveSources.length > 0) {
-        const procRate = 1 - liveSources.reduce((acc, s) => acc * (1 - s.rate), 1);
+      const procRate = calcLiveProcRate(procSources.get(anyOfMatchedBuffId), startTime);
+      if (procRate !== undefined) {
         resolvedPotency = Math.floor(anyOfFallbackPotency + (resolvedPotency - anyOfFallbackPotency) * procRate);
+        consumedProc = { buffId: anyOfMatchedBuffId, procRate };
       }
     }
 
@@ -1645,7 +1655,9 @@ export function resolveTimeline(
 
           const rate = skill.buffApplicationProcRates?.[buffId];
           if (rate !== undefined) {
-            const sources = procSources.get(buffId) ?? [];
+            // 効いていないバフの付与元は、消費・解除・失効で使い終わっているので数えない
+            // （ファイアスターターのような無期限のバフは、時間では付与元が外れない。#615）
+            const sources = existingIdx >= 0 ? procSources.get(buffId) ?? [] : [];
             sources.push({ endTime: newBuff.endTime, rate });
             procSources.set(buffId, sources);
           }
@@ -1654,6 +1666,9 @@ export function resolveTimeline(
             if (existingIdx < 0) unconfirmedProcBuffs.add(buffId);
           } else {
             unconfirmedProcBuffs.delete(buffId);
+          }
+          if (unconfirmedProcBuffs.has(buffId)) {
+            newBuff.procRate = calcLiveProcRate(procSources.get(buffId), startTime);
           }
         }
       }
@@ -1868,6 +1883,7 @@ export function resolveTimeline(
       untargetableError,
       recastError,
       wsComboError,
+      consumedProc,
       ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),

@@ -1,4 +1,5 @@
 import type { BuffDefinition, ActiveBuff } from "../../types/skill";
+import { formatProcRate, formatProcRateShort } from "../../logic/buff-format";
 import { styles } from "./styles";
 import { PX_PER_SEC } from "./constants";
 
@@ -32,11 +33,18 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                   ? ` x${span.stacks}`
                   : "";
                 const endTimeLabel = isPermanent ? "∞" : `${span.endTime.toFixed(2)}s`;
+                // 先の付与元が切れると実際の確率は下がるが、付与した時点の値だけを出す (#615)
+                const procRateLabel = span.procRate !== undefined
+                  ? ` 発動確率 ${formatProcRate(span.procRate)}（付与時点）`
+                  : "";
                 const durationLabel = buffDef.maxStacks
                   ? `x${span.stacks ?? buffDef.maxStacks}`
                   : buffDef.duration === null
                     ? "∞"
                     : `${buffDef.duration}s`;
+                const procRateShortLabel = span.procRate !== undefined
+                  ? ` (${formatProcRateShort(span.procRate)})`
+                  : "";
                 return (
                   <div
                     key={i}
@@ -49,7 +57,7 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                       backgroundColor: `color-mix(in srgb, ${buffDef.color} 19%, transparent)`,
                       borderColor: buffDef.color,
                     }}
-                    title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${endTimeLabel})`}
+                    title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${endTimeLabel})${procRateLabel}`}
                   >
                     <img
                       src={buffDef.icon}
@@ -57,7 +65,7 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                       style={styles.buffIcon}
                     />
                     <span className="num" style={styles.buffDuration}>
-                      {durationLabel}
+                      {durationLabel}{procRateShortLabel}
                     </span>
                   </div>
                 );
