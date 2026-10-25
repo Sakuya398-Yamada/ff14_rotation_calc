@@ -453,7 +453,7 @@ export interface ActiveBuff {
   stacks?: number;
   /**
    * 確率付き（buffApplicationProcRates）で付与したときの、付与時点の発動確率。
-   * 効果時間内の付与元から 1 − Π(1 − p_i) で求める。確定で付与したバフには無い
+   * 効いている間に重ねた効果時間内の付与元から 1 − Π(1 − p_i) で求める。確定付与で付いている間は無い
    */
   procRate?: number;
 }

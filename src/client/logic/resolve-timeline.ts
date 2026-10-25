@@ -1655,16 +1655,20 @@ export function resolveTimeline(
 
           const rate = skill.buffApplicationProcRates?.[buffId];
           if (rate !== undefined) {
-            const sources = procSources.get(buffId) ?? [];
+            // 効いていないバフの付与元は、消費・解除・失効で使い終わっているので数えない
+            // （ファイアスターターのような無期限のバフは、時間では付与元が外れない。#615）
+            const sources = existingIdx >= 0 ? procSources.get(buffId) ?? [] : [];
             sources.push({ endTime: newBuff.endTime, rate });
             procSources.set(buffId, sources);
-            newBuff.procRate = calcLiveProcRate(sources, startTime);
           }
           // 確定で付いている間に確率付与が重なっても確定のまま。確定付与で付け直したら確定に戻す
           if (rate !== undefined && rate < 1) {
             if (existingIdx < 0) unconfirmedProcBuffs.add(buffId);
           } else {
             unconfirmedProcBuffs.delete(buffId);
+          }
+          if (unconfirmedProcBuffs.has(buffId)) {
+            newBuff.procRate = calcLiveProcRate(procSources.get(buffId), startTime);
           }
         }
       }
