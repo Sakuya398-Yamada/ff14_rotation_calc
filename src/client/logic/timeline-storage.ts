@@ -32,7 +32,7 @@ export interface PersistedAppState {
 export type AppStateSnapshot = Omit<PersistedAppState, "version">;
 
 function isJobId(value: unknown): value is JobId {
-  return typeof value === "string" && value in JOB_DATA;
+  return typeof value === "string" && Object.hasOwn(JOB_DATA, value);
 }
 
 function isPlayerLevel(value: unknown): value is PlayerLevel {

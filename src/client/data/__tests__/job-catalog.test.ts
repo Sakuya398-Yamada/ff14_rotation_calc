@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { JOB_CATALOG, JOB_ROLES } from "../job-catalog";
+import { JOB_CATALOG, JOB_ROLES, isImplementedJob } from "../job-catalog";
 import { JOB_DATA } from "../job-registry";
 import type { JobId } from "../job-registry";
 
@@ -18,5 +18,17 @@ describe("JOB_CATALOG", () => {
     expect(new Set(ids).size).toBe(ids.length);
     const roleIds = new Set(JOB_ROLES.map((r) => r.id));
     expect(JOB_CATALOG.every((j) => roleIds.has(j.role))).toBe(true);
+  });
+});
+
+describe("isImplementedJob", () => {
+  it("実装済みジョブの ID は true", () => {
+    expect(isImplementedJob("whm")).toBe(true);
+  });
+
+  it("Object のプロトタイプのキーは false", () => {
+    for (const key of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      expect(isImplementedJob(key), key).toBe(false);
+    }
   });
 });

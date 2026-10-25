@@ -59,6 +59,14 @@ describe("serializeAppState / deserializeAppState", () => {
     expect(deserializeAppState(badLevel)).toBeNull();
   });
 
+  it("Object のプロトタイプのキーをジョブIDにした JSON は例外を投げずに null を返す", () => {
+    for (const key of ["constructor", "toString", "__proto__"]) {
+      const json = JSON.stringify({ version: SCHEMA_VERSION, ...makeSnapshot(), selectedJob: key });
+      expect(() => deserializeAppState(json), key).not.toThrow();
+      expect(deserializeAppState(json), key).toBeNull();
+    }
+  });
+
   it("stats のフィールド欠落・非数値は null を返す", () => {
     const missing = JSON.stringify({
       version: SCHEMA_VERSION,
