@@ -594,7 +594,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
   },
   // 紅蓮・閃影のリキャストは Lv94 特性「必殺剣効果アップ」で 120 秒から 60 秒に短縮される。
-  // レベル依存のリキャストは表現できないため、Lv94 以降の 60 秒で定義する
+  // 共有リキャストグループ内で cooldown を揃えるため、両方に同じ上書きを入れる
   {
     id: "hissatsu-guren",
     name: "必殺剣・紅蓮",
@@ -605,7 +605,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: 0.65,
     acquiredLevel: 70,
-    cooldown: 60,
+    cooldown: 120,
+    traitPotencyOverrides: [{ traitLevel: 94, cooldown: 60 }],
     cooldownGroup: "hissatsu-senei-guren",
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
     maxTargets: Infinity,
@@ -620,7 +621,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: 0.65,
     acquiredLevel: 72,
-    cooldown: 60,
+    cooldown: 120,
+    traitPotencyOverrides: [{ traitLevel: 94, cooldown: 60 }],
     cooldownGroup: "hissatsu-senei-guren",
     resourceChanges: [{ resourceId: "kenki", amount: -25 }],
   },
