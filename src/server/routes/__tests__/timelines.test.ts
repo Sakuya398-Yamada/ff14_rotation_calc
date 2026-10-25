@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import type { z } from "zod";
 import type { PersistedAppState } from "../../../client/logic/timeline-storage";
 import { timelines } from "../../db/schema";
-import { createTimelinesRoute } from "../timelines";
+import { createMyTimelinesRoute, createTimelinesRoute, selectMyTimelines } from "../timelines";
 import type { persistedAppStateSchema } from "../timelines-schema";
 
 const MIGRATIONS_FOLDER = fileURLToPath(new URL("../../../../migrations", import.meta.url));
@@ -66,7 +66,9 @@ async function rows() {
 beforeEach(() => {
   db = createTestDb();
   limit = vi.fn(async () => ({ success: true }));
-  app = new Hono().route("/api/timelines", createTimelinesRoute(() => db));
+  app = new Hono()
+    .route("/api/timelines", createTimelinesRoute(() => db))
+    .route("/api/me/timelines", createMyTimelinesRoute(() => db));
 });
 
 describe("POST /api/timelines: 保存", () => {
@@ -353,6 +355,137 @@ describe("GET /api/timelines/:id: 読み込み", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Set-Cookie")).toBeNull();
     expect(limit).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/me/timelines: 自分のタイムラインの一覧", () => {
+  const TOKEN = "A".repeat(43);
+  const OTHER_TOKEN = "B".repeat(43);
+  const ME_URL = "http://localhost/api/me/timelines";
+
+  function getMine(query = "", headers: Record<string, string> = { Cookie: `__Host-owner=${TOKEN}` }) {
+    return app.request(`${ME_URL}${query}`, { headers }, { DB: undefined, TIMELINE_RATE_LIMITER: { limit } });
+  }
+
+  // nanoid と同じ 21 文字。n の大小が id の大小と一致するよう 0 で埋める
+  function idOf(n: number): string {
+    return `id${String(n).padStart(19, "0")}`;
+  }
+
+  async function insertRow(n: number, createdAt: number, overrides: Partial<typeof timelines.$inferInsert> = {}) {
+    await db.insert(timelines).values({
+      id: idOf(n),
+      schemaVer: 1,
+      data: JSON.stringify(validData()),
+      job: "blm",
+      level: 100,
+      ownerHash: sha256Hex(TOKEN),
+      createdAt,
+      ...overrides,
+    });
+  }
+
+  async function ids(res: Response): Promise<string[]> {
+    return ((await res.json()) as { items: { id: string }[] }).items.map((item) => item.id);
+  }
+
+  function queryPlan(query: { toSQL(): { sql: string; params: unknown[] } }): string[] {
+    const { sql, params } = query.toSQL();
+    return (db.$client.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...params) as { detail: string }[]).map((r) => r.detail);
+  }
+
+  it("Cookie の持ち主の行だけを新しい順に返し、同じ秒の行は id の降順に並べる", async () => {
+    await insertRow(1, 100);
+    // 同じ秒の 2 行は、id の大きい方を先に入れる（挿入順＝rowid 順と、id 順が逆になるように）
+    await insertRow(4, 300);
+    await insertRow(3, 200);
+    await insertRow(2, 300);
+    await insertRow(5, 400, { ownerHash: sha256Hex(OTHER_TOKEN) });
+
+    expect(await ids(await getMine())).toEqual([idOf(4), idOf(2), idOf(3), idOf(1)]);
+    expect(await ids(await getMine("", { Cookie: `__Host-owner=${OTHER_TOKEN}` }))).toEqual([idOf(5)]);
+  });
+
+  it("id・title・job・level・contentId・createdAt（ISO 文字列）だけを返し、data と owner_hash は返さない", async () => {
+    await insertRow(1, 1700000000, { title: "零式4層 2分", contentId: "m4s", job: "drg", level: 90 });
+    const res = await getMine();
+
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    // toEqual は余分なキー（data・ownerHash・parentId・schemaVer）があると失敗する
+    expect(JSON.parse(text)).toEqual({
+      items: [
+        { id: idOf(1), title: "零式4層 2分", job: "drg", level: 90, contentId: "m4s", createdAt: "2023-11-14T22:13:20.000Z" },
+      ],
+      nextCursor: null,
+    });
+    expect(text).not.toContain(sha256Hex(TOKEN));
+  });
+
+  it("有効な Cookie は同じトークンで期限を延ばし、レート制限は数えない", async () => {
+    const res = await getMine();
+
+    const setCookie = res.headers.get("Set-Cookie") ?? "";
+    expect(TOKEN_RE.exec(setCookie)?.[1]).toBe(TOKEN);
+    expect(setCookie).toContain("Max-Age=34560000");
+    expect(limit).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["無い", {}],
+    ["不正な形の", { Cookie: "__Host-owner=short" }],
+  ])("Cookie が%sときは、DB に問い合わせずに空の一覧を返し、Cookie を発行しない", async (_label, headers) => {
+    await insertRow(1, 100);
+    const select = vi.spyOn(db, "select");
+    const res = await getMine("", headers);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ items: [], nextCursor: null });
+    expect(res.headers.get("Set-Cookie")).toBeNull();
+    expect(select).not.toHaveBeenCalled();
+  });
+
+  it("21 件以上なら 20 件と nextCursor を返し、nextCursor で続きを重複も欠落も無く返す", async () => {
+    // 3 件ずつ同じ秒にし、1 ページ目の 20 件目（n=6）と 2 ページ目の先頭（n=5）を同じ秒にする
+    for (let n = 1; n <= 25; n++) await insertRow(n, 1000 + Math.ceil(n / 3));
+
+    const first = (await (await getMine()).json()) as { items: { id: string }[]; nextCursor: string | null };
+    expect(first.items.map((item) => item.id)).toEqual(Array.from({ length: 20 }, (_, i) => idOf(25 - i)));
+    expect(first.nextCursor).toEqual(expect.any(String));
+
+    const second = await getMine(`?cursor=${encodeURIComponent(first.nextCursor!)}`);
+    expect(second.status).toBe(200);
+    expect(await second.clone().json()).toMatchObject({ nextCursor: null });
+    expect(await ids(second)).toEqual([idOf(5), idOf(4), idOf(3), idOf(2), idOf(1)]);
+  });
+
+  it("ちょうど 20 件なら nextCursor は null", async () => {
+    for (let n = 1; n <= 20; n++) await insertRow(n, 1000 + n);
+
+    expect(await (await getMine()).json()).toMatchObject({ nextCursor: null });
+  });
+
+  it.each([
+    ["形の違う文字列", "?cursor=abc"],
+    ["id が短い", "?cursor=1700000000.short"],
+    ["秒が負", `?cursor=-1.${idOf(1)}`],
+    ["秒が 11 桁", `?cursor=${"1".repeat(11)}.${idOf(1)}`],
+    ["cursor が 2 つ", `?cursor=1700000000.${idOf(1)}&cursor=1700000000.${idOf(2)}`],
+  ])("不正なカーソル（%s）→ 400", async (_label, query) => {
+    const res = await getMine(query);
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "invalid_request" });
+  });
+
+  it("一覧のクエリは、1 ページ目もカーソル付きも、インデックス (owner_hash, created_at) で持ち主の行だけを読む", () => {
+    const first = queryPlan(selectMyTimelines(db, sha256Hex(TOKEN)));
+    const next = queryPlan(selectMyTimelines(db, sha256Hex(TOKEN), { createdAt: 1000, id: idOf(1) }));
+
+    expect(first).toContainEqual(expect.stringContaining("USING INDEX idx_timelines_owner (owner_hash=?)"));
+    expect(next).toContainEqual(expect.stringContaining("USING INDEX idx_timelines_owner (owner_hash=? AND created_at<?)"));
+    // better-sqlite3 と D1 で SQLite の版が違い得るので、計画の全文ではなく、表の全件走査が無いことだけを見る
+    for (const plan of [first, next]) expect(plan).not.toContainEqual(expect.stringMatching(/^SCAN timelines/));
   });
 });
 
