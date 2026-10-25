@@ -29,13 +29,15 @@ let loading: Promise<TurnstileApi> | null = null;
 function loadTurnstile(): Promise<TurnstileApi> {
   loading ??= new Promise<TurnstileApi>((resolve, reject) => {
     const script = document.createElement("script");
+    // 読み込み直すときに、失敗した script を残さない
+    const fail = (message: string) => {
+      script.remove();
+      reject(new Error(message));
+    };
     script.src = SCRIPT_URL;
     script.async = true;
-    script.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("turnstile is not defined")));
-    script.onerror = () => {
-      script.remove();
-      reject(new Error("failed to load turnstile"));
-    };
+    script.onload = () => (window.turnstile ? resolve(window.turnstile) : fail("turnstile is not defined"));
+    script.onerror = () => fail("failed to load turnstile");
     document.head.appendChild(script);
   }).catch((error: unknown) => {
     loading = null;

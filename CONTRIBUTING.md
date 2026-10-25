@@ -142,8 +142,8 @@ npm run db:migrate                        # ローカルの D1 に適用
 
 - ローカルではウィジェットにテスト用である旨が表示され、確認は自動で成功します
 - 失敗を試すとき:
-  - 検証の不合格（403）: `.dev.vars` の値を `2x0000000000000000000000000000000AA` に替えて `npm run dev` を起動し直す（`.dev.vars` の変更は起動し直すまで反映されない）
-  - ウィジェットのエラー: `$env:VITE_TURNSTILE_SITE_KEY="2x00000000000000000000AB"; npm run dev`
+  - 検証の不合格（403）: `.dev.vars` の値を `2x0000000000000000000000000000000AA` に替えて `npm run dev` を起動し直す（`.dev.vars` の変更は起動し直すまで反映されない）。戻すときは `1x0000000000000000000000000000000AA` にして起動し直す
+  - ウィジェットのエラー: `$env:VITE_TURNSTILE_SITE_KEY="2x00000000000000000000AB"; npm run dev`。この値は止めた後もその端末に残るので、戻すときは `Remove-Item Env:VITE_TURNSTILE_SITE_KEY` してから起動し直す（または端末を閉じる）
 - `.dev.vars` が無い（`TURNSTILE_SECRET_KEY` が未設定）と、保存は 500 になります。テスト用の secret には自動で切り替えません（本番で設定し忘れたときに、検証が黙って外れないようにするため）
 
 ---
@@ -232,7 +232,7 @@ PR のプレビューは本番の secret を引き継がず、今は D1 も付�
 - **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews": {}` が消えていないか確認する（#485）
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す
-- **本番の保存がいつも「ボット対策の確認ができなかった」（403）になる**: ビルド変数 `VITE_TURNSTILE_SITE_KEY` が無いと、フロントはテスト用の sitekey で動き（ウィジェットにテスト用の表示が出る）、そのダミートークンを本番の secret が拒否する。上記「Turnstile」の手順 2 のとおり足して、ビルドし直す（ビルド変数は次のビルドから効く）。テスト用の表示が出ていなければ、sitekey と secret が別のウィジェットのものになっていないか確かめる
+- **本番の保存がいつも「ボット対策の確認ができませんでした」（403）になる**: ビルド変数 `VITE_TURNSTILE_SITE_KEY` が無いと、フロントはテスト用の sitekey で動き（ウィジェットにテスト用の表示が出る）、そのダミートークンを本番の secret が拒否する。上記「Turnstile」の手順 2 のとおり足して、ビルドし直す（ビルド変数は次のビルドから効く）。テスト用の表示が出ていなければ、sitekey と secret が別のウィジェットのものになっていないか確かめる
 - **本番の保存がいつも「保存できませんでした」（500）になる**: Worker の secret `TURNSTILE_SECRET_KEY` が無い。`npx wrangler tail` で保存すると `TURNSTILE_SECRET_KEY is not set` が出る。上記「Turnstile」の手順 3 のとおり入れる
 - **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
 
