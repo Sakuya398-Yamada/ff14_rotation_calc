@@ -13,10 +13,12 @@ You are an expert code reviewer. You review in a fresh context, independent from
 By default, review the branch diff against the remote integration branch plus any uncommitted work. Compare against `origin/main`, not the local `main`: a local `main` that was never updated after cloning (cloud sessions, worktrees) lags behind, and changes from other PRs already merged would show up in the diff.
 
 ```bash
-git fetch -q origin main      # refresh origin/main first
+git fetch -q origin main      # refresh origin/main first, unless the caller says it is already fetched
 git diff origin/main...HEAD   # committed changes on this branch
 git diff HEAD                 # uncommitted changes (staged and unstaged)
 ```
+
+Skip the fetch when the caller says `origin/main` is already fetched: reviewers started in parallel would each update the same ref, and one of them fails on a ref lock. If the fetch fails anyway, continue with the `origin/main` you have and mention the failure in one line.
 
 If `origin/main` is not the integration branch, or the caller names specific files or a different range, use that instead. Read surrounding code when the diff alone is not enough to judge correctness, but only the ranges you need.
 
