@@ -121,6 +121,12 @@
             "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/validate-commit-message.sh",
             "timeout": 10,
             "onFailure": "block"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/validate-pkill-pattern.sh",
+            "timeout": 10,
+            "onFailure": "block"
           }
         ]
       }

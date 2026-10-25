@@ -47,7 +47,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 
 ## 自動ガードレール
 
-`.claude/settings.json` の PreToolUse hook が、ブランチ名とコミット件名の規約を機械的に検証し、違反を exit 2 でブロックして理由を返す（対象と規約は `.claude/rules/git-conventions.md`「自動検証」）。規約は CLAUDE.md への記述だけでは長いセッションで守られなくなるため、機械判定できるものは hook で強制する。ブロックされたら規約に合わせて直す。`--no-verify` や hook の無効化で回避しない。
+`.claude/settings.json` の PreToolUse hook が、ブランチ名とコミット件名の規約を機械的に検証し、違反を exit 2 でブロックして理由を返す（対象と規約は `.claude/rules/git-conventions.md`「自動検証」）。Bash ツール自身のシェルに一致して落とす `pkill -f` / `pgrep -f` も同じく止める（`.claude/hooks/validate-pkill-pattern.sh`）。規約は CLAUDE.md への記述だけでは長いセッションで守られなくなるため、機械判定できるものは hook で強制する。ブロックされたら規約（`pkill` なら理由に出る止め方）に合わせて直す。`--no-verify` や hook の無効化で回避しない。
 
 ## ドキュメントの更新
 

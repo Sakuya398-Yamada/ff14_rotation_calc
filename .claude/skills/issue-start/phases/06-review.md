@@ -12,7 +12,7 @@
    | 小（1〜2 ファイル、数十行） | `code-reviewer` 1 個（観点: バグと DoD 充足） |
    | 中〜大、複数領域 | 2〜3 個を並列。観点を分ける |
 
-3. `Agent` ツールで `subagent_type: "code-reviewer"` を起動する（定義は `.claude/agents/code-reviewer.md`）。プロンプトに **Issue 番号・DoD・レビュー範囲（既定は `git fetch origin main` したあとの `origin/main...HEAD` と未コミット分。Phase 2・7 と同じ基準で、ローカルの `main` には依存しない）・観点** を書く。観点の例：
+3. `Agent` ツールで `subagent_type: "code-reviewer"` を起動する（定義は `.claude/agents/code-reviewer.md`）。起動する前に、主セッションで `git fetch origin main` を 1 回だけ実行する。プロンプトに **Issue 番号・DoD・レビュー範囲（既定は `origin/main...HEAD` と未コミット分。Phase 2・7 と同じ基準で、ローカルの `main` には依存しない）・観点** と、「`origin/main` は fetch 済みなので fetch しない」を書く。並列に起動したレビュアーがそれぞれ fetch すると、同じ ref の更新がぶつかり、片方が ref ロックの競合で失敗する。観点の例：
    - **バグ・機能的正確性**: ロジックエラー、境界条件、エラー処理、並行性
    - **要件充足**: Issue の DoD と設計との対応、同系統要素の網羅性
    - **ランブック（手順・コマンドを含むドキュメント）**: コマンドの構文と実行可能性、他ファイルから参照される節番号・見出しの整合（振り直しで参照がずれていないか）、手順どおりに動くか（構造的に到達しない分岐が無いか）
