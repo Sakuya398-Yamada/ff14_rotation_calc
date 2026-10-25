@@ -35,7 +35,8 @@ import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
 
 /**
  * モンク（MNK）の攻撃スキル定義（パッチ7.5系の公式ジョブガイド準拠、Lv100想定）。
- * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）との既知の差分は #521
+ * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）とは #521 で GCD の拘束・発動条件を揃えた。
+ * 既知の差分は、型の発動条件（#610）と Lv100 未満の特性値（#517）
  *
  * ## 型（フォーム）のモデル化
  * 壱→弐→参の型は WS コンボ（comboFrom）で表現する。
@@ -521,7 +522,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   // oGCD: 闘気（チャクラ）関連
   // ============================================================
-  // 鉄山闘気: 闘気を1つ開く（Lv54で陰陽闘気に変化）
+  // 鉄山闘気: 闘気を1つ開く（Lv54で陰陽闘気に変化）。闘気 5 未満で実行でき、ウェポンスキルと同じ GCD リキャストを発生させる
   {
     id: "steeled-meditation",
     name: "鉄山闘気",
@@ -535,6 +536,9 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     cooldown: 1,
     cooldownGroup: "mnk-meditation",
     resourceChanges: [{ resourceId: "chakra", amount: 1 }],
+    resourceMaxConditions: [{ resourceId: "chakra", maxAmount: 4 }],
+    triggersGcdRecast: true,
+    gcdRecastTime: GCD_RECAST,
   },
   {
     id: "forbidden-meditation",
@@ -550,6 +554,9 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     cooldown: 1,
     cooldownGroup: "mnk-meditation",
     resourceChanges: [{ resourceId: "chakra", amount: 1 }],
+    resourceMaxConditions: [{ resourceId: "chakra", maxAmount: 4 }],
+    triggersGcdRecast: true,
+    gcdRecastTime: GCD_RECAST,
   },
   // 鉄山靠: 闘気5消費（Lv54で陰陽闘気斬に変化）
   {
@@ -616,7 +623,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   // oGCD: バフ・その他アビリティ
   // ============================================================
-  // 踏鳴: 3スタック付与。WS を型不問で成立させ、ビーストチャクラを獲得できる
+  // 踏鳴: 3スタック付与。WS を型不問で成立させ、ビーストチャクラを獲得できる。ビーストチャクラが無いときだけ実行できる
   {
     id: "perfect-balance",
     name: "踏鳴",
@@ -630,6 +637,11 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     cooldown: 40,
     maxCharges: 2,
     buffApplications: ["perfect-balance"],
+    resourceMaxConditions: [
+      { resourceId: "opo-chakra", maxAmount: 0 },
+      { resourceId: "raptor-chakra", maxAmount: 0 },
+      { resourceId: "coeurl-chakra", maxAmount: 0 },
+    ],
   },
   // 紅蓮の極意: 与ダメージ15%上昇 + 乾坤闘気弾実行可を付与
   {

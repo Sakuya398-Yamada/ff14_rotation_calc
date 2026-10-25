@@ -46,10 +46,9 @@ const COEURL_WS = [
 /** 型に紐づく全 WS（踏鳴・零の型のコンボバイパス対象） */
 const FORM_WS = [...OPO_WS, ...RAPTOR_WS, ...COEURL_WS];
 
-/** 全ウェポンスキル（桃園結義のチャクラ獲得対象。アビリティは対象外） */
+/** 攻撃するウェポンスキル（桃園結義の闘気獲得対象。攻撃しない演武とアビリティは対象外） */
 const ALL_WS = [
   ...FORM_WS,
-  "form-shift",
   "six-sided-star",
   "masterful-blitz",
   "phantom-rush",
@@ -138,7 +137,7 @@ export const MNK_BUFFS: BuffDefinition[] = [
     color: "#80deea",
     acquiredLevel: 96,
   },
-  // 桃園結義: 与ダメージ5%上昇 + WS使用時にチャクラ獲得（Meditative Brotherhood）。
+  // 桃園結義: 与ダメージ5%上昇 + 攻撃する WS の使用時に闘気獲得（Meditative Brotherhood）。
   // パーティメンバーのWSによる確率獲得（20%）は乱数のため対象外とし、
   // 自身のWSによる獲得（確定）のみをモデル化する
   {
