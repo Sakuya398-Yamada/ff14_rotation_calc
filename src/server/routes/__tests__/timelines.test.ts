@@ -104,6 +104,15 @@ describe("POST /api/timelines: 保存", () => {
     expect(row.parentId).toBe(parent.id);
   });
 
+  it("マスタにある contentId を content_id に書き、省略すると NULL にする", async () => {
+    await post({ data: validData(), contentId: "m4s" });
+    await post({ data: validData() });
+
+    const contentIds = (await rows()).map((r) => r.contentId);
+    expect(contentIds).toHaveLength(2);
+    expect(contentIds).toEqual(expect.arrayContaining(["m4s", null]));
+  });
+
   it("title 100 文字・エントリ 2000 件は上限内として保存する", async () => {
     const entries = Array.from({ length: 2000 }, (_, i) => ({ uid: `entry-${i + 1}`, skillId: "fire" }));
     const res = await post({ data: validData({ entries }), title: "あ".repeat(100) });
@@ -182,6 +191,11 @@ describe("POST /api/timelines: 不正な入力", () => {
     ["title が 101 文字", { data: validData(), title: "あ".repeat(101) }],
     ["parentId の形が不正", { data: validData(), parentId: "../etc" }],
     ["parentId の行が無い", { data: validData(), parentId: "V1StGXR8_Z5jdHi6B-myT" }],
+    ["contentId がマスタに無い", { data: validData(), contentId: "m13s" }],
+    ["contentId が大文字", { data: validData(), contentId: "M4S" }],
+    ["contentId が prototype のキー", { data: validData(), contentId: "constructor" }],
+    ["contentId が空文字", { data: validData(), contentId: "" }],
+    ["contentId が数値", { data: validData(), contentId: 4 }],
     ["data が無い", { title: "x" }],
   ])("%s → 400 で保存しない", async (_, body) => {
     const res = await post(body);

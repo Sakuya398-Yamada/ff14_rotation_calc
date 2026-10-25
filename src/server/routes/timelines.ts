@@ -67,7 +67,7 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
       if (!result.success) return c.json({ error: "invalid_request" }, 400);
     }),
     async (c) => {
-      const { data, title, parentId } = c.req.valid("json");
+      const { data, title, parentId, contentId } = c.req.valid("json");
       const db = getDb(c.env);
       if (parentId !== undefined) {
         const [parent] = await db
@@ -87,6 +87,7 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
         level: data.level,
         // 空文字は省略と同じ扱いにする
         title: title || null,
+        contentId: contentId ?? null,
         ownerHash: c.get("ownerHash"),
       });
       return c.json({ id }, 201);
