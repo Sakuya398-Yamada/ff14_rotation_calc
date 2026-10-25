@@ -36,6 +36,10 @@ npm-debug.log*
 .env
 .env.local
 .env.*.local
+# Worker のローカルの secret（npm run dev が読む）。テスト用キーだけの見本は .dev.vars.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
 
 # Zenn articles
 articles/
