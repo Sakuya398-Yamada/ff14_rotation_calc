@@ -38,9 +38,10 @@ describe("BLM: 反対属性の MP 消費 0", () => {
   });
 
   it("UB 中のファイアは MP を消費しない", () => {
-    // ブリザド（MP -400、UB1）→ ファイア（UB1 中なので MP 0、AF1 へ）
+    // ブリザド（MP -400、UB1）→ ファイア（UB1 中なので MP 0、UB を解除するだけ。#519）
     const [blizzard, fire] = resolve(["blizzard", "fire"]);
     expectNoErrors(fire);
+    expect(fire.resolvedSkillId).toBe("fire-in-ub");
     expect(blizzard.resourceSnapshot["mp"]).toBe(10000 - 400);
     expect(fire.resourceSnapshot["mp"]).toBe(10000 - 400);
   });
@@ -74,8 +75,8 @@ describe("BLM: AF3 / UB3 中の反対属性の詠唱半減", () => {
 
 describe("BLM: ファイガ効果アップとパラドックスの MP 消費", () => {
   it("AF 中のパラドックスは MP 1600 を消費し、ファイガ効果アップで撃ったファイガは MP もアンブラルハートも消費しない", () => {
-    // マナフォント（AF3・UH3・パラドックス付与）→ パラドックス（AF 中: MP -1600、ファイアスターター付与）→ ファイガ
-    const [manafont, paradox, fire3] = resolve(["manafont", "paradox", "fire-3"]);
+    // ファイガ（AF3）→ マナフォント（AF 中のみ。MP 全回復・UH3・パラドックス付与）→ パラドックス（AF 中: MP -1600、ファイアスターター付与）→ ファイガ
+    const [, manafont, paradox, fire3] = resolve(["fire-3", "manafont", "paradox", "fire-3"]);
     expect(manafont.resourceSnapshot["mp"]).toBe(10000);
     expectNoErrors(paradox);
     expect(paradox.resourceSnapshot["mp"]).toBe(10000 - 1600);
@@ -88,15 +89,15 @@ describe("BLM: ファイガ効果アップとパラドックスの MP 消費", (
   });
 
   it("ファイガ効果アップが無い AF 中のファイガは、アンブラルハートを 1 消費して基本コストを払う", () => {
-    // 比較用: マナフォント（AF3・UH3）→ ファイガ（UH で倍化を打ち消して MP -2000）
-    const [, fire3] = resolve(["manafont", "fire-3"]);
+    // 比較用: ファイガ（AF3）→ マナフォント（MP 全回復・UH3）→ ファイガ（UH で倍化を打ち消して MP -2000）
+    const [, , fire3] = resolve(["fire-3", "manafont", "fire-3"]);
     expect(fire3.resourceSnapshot["mp"]).toBe(10000 - 2000);
     expect(fire3.resourceSnapshot["umbral-heart"]).toBe(2);
   });
 
   it("UB 中のパラドックスは MP を消費しない", () => {
-    // マナフォント（AF3・UH3・パラドックス）→ ファイジャ（UH 消費で MP -800）→ トランス（UB1）→ パラドックス
-    const [, fire4, , paradox] = resolve(["manafont", "fire-4", "transpose", "paradox"]);
+    // ファイガ（AF3）→ マナフォント（MP 全回復・UH3・パラドックス）→ ファイジャ（UH 消費で MP -800）→ トランス（UB1）→ パラドックス
+    const [, , fire4, , paradox] = resolve(["fire-3", "manafont", "fire-4", "transpose", "paradox"]);
     expect(fire4.resourceSnapshot["mp"]).toBe(10000 - 800);
     expectNoErrors(paradox);
     expect(paradox.activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);

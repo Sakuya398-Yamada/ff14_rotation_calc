@@ -48,6 +48,12 @@ const UB3_FULL_HEARTS = {
   resourceConditions: [{ resourceId: "umbral-heart", minAmount: 3 }],
 };
 
+/** ファイアの追加効果（発動確率 40%）でファイアスターターを付与する確率 */
+const FIRESTARTER_FROM_FIRE = { firestarter: 0.4 };
+
+/** サンダー系の DoT は同時に 1 種類だけ（付与時にほかのサンダー系の DoT を打ち切る） */
+const BLM_THUNDER_DOT_IDS = ["thunder-3", "high-thunder", "thunder-4", "high-thunder-2"];
+
 /** いずれかのバフがアクティブなら skillId に変化させる autoTransform エントリ群 */
 function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEntry[] {
   return buffIds.map((buffId) => ({ buffId, skillId }));
@@ -55,15 +61,15 @@ function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEnt
 
 /**
  * 黒魔道士のスキル定義。
- * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）との既知の差分は #519
+ * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）とは #519 で照合し、
+ * 属性の解除・発動条件・ファイガ効果アップを合わせた。既知の差分は #613（AF/UB の完全解除時のパラドックスゲージ・アストラルソウル）
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
  * - AF 中ファイア系は MP 消費増（アンブラルハートで軽減）
  * - UB 中ブリザド系は MP 消費 0 かつ MP 回復
  *
- * MP 消費量は公式値の近似を使用し、`resourceChanges` で表現する。
- * 正確な値は実機検証で調整する前提。
+ * MP 消費量はジョブガイドの値を `resourceChanges` で表現する（#515 の照合で全スキル一致）。
  *
  * ### AF/UB の段階付与
  * AF/UB は 3 段階のバフ（astral-fire-1/2/3, umbral-ice-1/2/3）で表現する。
@@ -75,14 +81,16 @@ function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEnt
  * 最大段階（AF3／UB3）を直接付与する。ファイジャ・デスペア・ブリザジャ・フリーズは
  * AF／UB 中なら段階不問で使用でき、ファイジャ・ブリザジャ・フリーズは段階を変えない（#417）。
  *
- * ### サンダーヘッド・パラドックス・ファイアスターター（#416）
+ * ### サンダーヘッド・パラドックス・ファイアスターター（#416 / #519）
  * サンダーヘッドは AF/UB が無い状態からいずれかが付与されたとき、または AF⇔UB が反転したときだけ付与する
  * （段階の維持・上昇では付与しない）。トランスによる反転では付与しない（#219 の判断を維持）。
  * パラドックスゲージ（Lv90）は AF3 から UB へ、または UB3 かつアンブラルハート 3 から AF へ反転したときに +1 する。
  * どちらも実行前の AF/UB の状態で付与内容が変わるため、変化元スキルの autoTransform で隠しスキル
  * （`*-in-af` / `*-in-ub` / `*-from-af3` / `*-from-ub3`。末尾の `deriveHidden` で生成）に切り替える。
- * AF/UB は時間で切れない（duration: null）ため、「AF/UB の解除でパラドックスが消える」は表現する場面が無い。
- * `firestarter` はパラドックス使用時（AF 中）に同時付与する。
+ * ファイア／ブリザドは反転させず、UB 中のファイアは UB を、AF 中のブリザドは AF を解除するだけ（`fire-in-ub` / `blizzard-in-af`）。
+ * この完全解除で「AF/UB の解除でパラドックスが消える」は未対応（#613）。
+ * `firestarter` はパラドックス使用時（AF 中）に確定で、ファイア使用時に発動確率 40% で付与する（`buffApplicationProcRates`）。
+ * タイムライン上はどちらも付与し、確率付与だけで付いたファイアスターターをファイガが使うと警告を出す。
  */
 const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
@@ -102,15 +110,16 @@ const BLM_BASE_SKILLS: Skill[] = [
     resourceChanges: [
       { resourceId: "mp", amount: -800 },
     ],
-    // 通常時（AF外/UB外）または UB 中（exclusiveGroup により UB が解除されて AF1 となる）に AF1 を付与
-    buffApplications: ["astral-fire-1", "thunderhead"],
+    // AF/UB が無いときに AF1 を付与。ファイアスターターは発動確率 40%（変化先も同じ）
+    buffApplications: ["astral-fire-1", "thunderhead", "firestarter"],
+    buffApplicationProcRates: FIRESTARTER_FROM_FIRE,
     // AF 中は段階を進める（サンダーヘッドは付与しない）。AF3 中は維持
-    // UB3 かつアンブラルハート 3 からの反転はパラドックスも付与する
+    // UB 中は UB を解除するだけ（AF・サンダーヘッド・パラドックスは付与しない）
     autoTransform: [
       { buffId: "astral-fire-3", skillId: "fire-stay-af3" },
       { buffId: "astral-fire-2", skillId: "fire-up-af3" },
       { buffId: "astral-fire-1", skillId: "fire-up-af2" },
-      { ...UB3_FULL_HEARTS, skillId: "fire-from-ub3" },
+      ...transformWhileAny(UMBRAL_ICE_ANY, "fire-in-ub"),
     ],
   },
   {
@@ -277,15 +286,15 @@ const BLM_BASE_SKILLS: Skill[] = [
     castTime: 2.0,
     acquiredLevel: 1,
     resourceChanges: [{ resourceId: "mp", amount: -400 }],
-    // UB外/AF中→UB1 付与時は MP 回復なし（UB 段階遷移時の回復は隠しスキル側で表現）
+    // AF/UB が無いときに UB1 を付与（MP 回復なし。UB 段階遷移時の回復は隠しスキル側で表現）
     buffApplications: ["umbral-ice-1", "thunderhead"],
     // UB 中は段階を進めつつヒット時 MP を回復する（隠しスキルに委譲、サンダーヘッドは付与しない）。UB3 中は維持＋全回復
-    // AF3 からの反転はパラドックスも付与する
+    // AF 中は AF を解除するだけ（UB・サンダーヘッド・パラドックスは付与しない）
     autoTransform: [
       { buffId: "umbral-ice-3", skillId: "blizzard-stay-ub3" },
       { buffId: "umbral-ice-2", skillId: "blizzard-up-ub3" },
       { buffId: "umbral-ice-1", skillId: "blizzard-up-ub2" },
-      { buffId: "astral-fire-3", skillId: "blizzard-from-af3" },
+      ...transformWhileAny(ASTRAL_FIRE_ANY, "blizzard-in-af"),
     ],
   },
   {
@@ -439,7 +448,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
     dotPotency: 60,
     dotDuration: 30,
-    refreshesDots: ["high-thunder"],
+    replacesDots: BLM_THUNDER_DOT_IDS,
   },
   {
     id: "thunder-3",
@@ -455,7 +464,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
     dotPotency: 50,
     dotDuration: 27,
-    refreshesDots: ["thunder-3"],
+    replacesDots: BLM_THUNDER_DOT_IDS,
     // Lv92 で high-thunder に置き換えられる。skill-level の replacedIds により自動除外される
   },
   {
@@ -473,7 +482,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
     dotPotency: 40,
     dotDuration: 24,
-    refreshesDots: ["high-thunder-2"],
+    replacesDots: BLM_THUNDER_DOT_IDS,
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -491,7 +500,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     buffConsumptions: [{ buffId: "thunderhead", stacks: 1 }],
     dotPotency: 35,
     dotDuration: 21,
-    refreshesDots: ["thunder-4"],
+    replacesDots: BLM_THUNDER_DOT_IDS,
     // 対象とその周囲の敵に減衰なしでヒット（対象数上限なし）
     maxTargets: Infinity,
   },
@@ -545,6 +554,8 @@ const BLM_BASE_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 100,
     acquiredLevel: 30,
+    // 発動条件: アストラルファイア効果中
+    requiredBuffAnyOf: ASTRAL_FIRE_ANY,
     // MP 全回復 + AF3 + アンブラルハート 3 + パラドックス + サンダーヘッド付与（7.2 仕様）
     resourceChanges: [
       { resourceId: "mp", amount: 10000 },
@@ -580,6 +591,8 @@ const BLM_BASE_SKILLS: Skill[] = [
     maxCharges: 2,
     acquiredLevel: 52,
     buffApplications: ["ley-lines"],
+    // 発動条件: 黒魔紋 非効果中（2 チャージを続けて使って効果を付け直すことはできない）
+    forbiddenBuff: "ley-lines",
   },
   {
     id: "transpose",
@@ -656,7 +669,7 @@ const BLM_BASE_SKILLS: Skill[] = [
 
   // ============================================================
   // 隠しスキル: AF/UB 段階進行・AF 中のパラドックス・トランス（fire/blizzard/transpose/paradox の autoTransform 先）
-  // 反転時のサンダーヘッド・パラドックス付与用の隠しスキルは BLM_ATTACK_SKILLS で deriveHidden から作る
+  // 反転時のサンダーヘッド・パラドックス付与用と、UB 中ファイア／AF 中ブリザドの解除用の隠しスキルは BLM_ATTACK_SKILLS で deriveHidden から作る
   // UI 非表示。元スキルから威力・コスト・キャストを引き継ぎ、付与バフのみが異なる
   // ============================================================
   {
@@ -672,7 +685,8 @@ const BLM_BASE_SKILLS: Skill[] = [
     acquiredLevel: 2,
     hidden: true,
     resourceChanges: [{ resourceId: "mp", amount: -800 }],
-    buffApplications: ["astral-fire-2"],
+    buffApplications: ["astral-fire-2", "firestarter"],
+    buffApplicationProcRates: FIRESTARTER_FROM_FIRE,
   },
   {
     id: "fire-up-af3",
@@ -687,7 +701,8 @@ const BLM_BASE_SKILLS: Skill[] = [
     acquiredLevel: 2,
     hidden: true,
     resourceChanges: [{ resourceId: "mp", amount: -800 }],
-    buffApplications: ["astral-fire-3"],
+    buffApplications: ["astral-fire-3", "firestarter"],
+    buffApplicationProcRates: FIRESTARTER_FROM_FIRE,
   },
   {
     id: "fire-stay-af3",
@@ -702,7 +717,8 @@ const BLM_BASE_SKILLS: Skill[] = [
     acquiredLevel: 2,
     hidden: true,
     resourceChanges: [{ resourceId: "mp", amount: -800 }],
-    buffApplications: ["astral-fire-3"],
+    buffApplications: ["astral-fire-3", "firestarter"],
+    buffApplicationProcRates: FIRESTARTER_FROM_FIRE,
   },
   // 注: ブリザド系の段階別 MP 回復（UB1: +2500, UB2: +5000, UB3: +10000）は
   // UB バフの `resourceGainOnSkill` 効果で自動発動するため、隠しスキル側に MP 回復を持たせない。
@@ -799,7 +815,8 @@ const BLM_BASE_SKILLS: Skill[] = [
 ];
 
 /**
- * 実行前の AF/UB の状態でサンダーヘッド・パラドックスの付与だけが変わる隠しスキルを、変化元スキルから作る（#416）。
+ * 実行前の AF/UB の状態で付与するバフだけが変わる隠しスキルを、変化元スキルから作る（#416）。
+ * 解除するバフ（`removesBuffs`）は呼び出し側で足す（#519）。
  * 威力・MP・詠唱などは変化元の値をそのまま使うので、変化元を直せば追従する。
  * `addsParadox` はパラドックスゲージ +1 を足す（Lv90 未満ではゲージごとレベル調整で外れる）。
  */
@@ -833,8 +850,9 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   deriveHidden("fire-3", "fire-3-in-af", "ファイガ (AF 中)", ["astral-fire-3"]),
   deriveHidden("fire-2", "fire-2-in-af", "ファイラ (AF 中)", ["astral-fire-3"]),
   deriveHidden("high-fire-2", "high-fire-2-in-af", "ハイファイラ (AF 中)", ["astral-fire-3"]),
+  // UB 中のファイアは UB を解除するだけ（ファイアスターターの付与確率は変化元から引き継ぐ）
+  { ...deriveHidden("fire", "fire-in-ub", "ファイア (UB 解除)", ["firestarter"]), removesBuffs: UMBRAL_ICE_ANY },
   // UB3 かつアンブラルハート 3 から AF への反転: サンダーヘッド＋パラドックス
-  deriveHidden("fire", "fire-from-ub3", "ファイア (UB3→AF1)", ["astral-fire-1", "thunderhead"], true),
   deriveHidden("fire-3", "fire-3-from-ub3", "ファイガ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
   deriveHidden("fire-2", "fire-2-from-ub3", "ファイラ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
   deriveHidden("high-fire-2", "high-fire-2-from-ub3", "ハイファイラ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
@@ -844,8 +862,9 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   deriveHidden("blizzard-3", "blizzard-3-in-ub", "ブリザガ (UB 中)", ["umbral-ice-3"]),
   deriveHidden("blizzard-2", "blizzard-2-in-ub", "ブリザラ (UB 中)", ["umbral-ice-3"]),
   deriveHidden("high-blizzard-2", "high-blizzard-2-in-ub", "ハイブリザラ (UB 中)", ["umbral-ice-3"]),
+  // AF 中のブリザドは AF を解除するだけ
+  { ...deriveHidden("blizzard", "blizzard-in-af", "ブリザド (AF 解除)", []), removesBuffs: ASTRAL_FIRE_ANY },
   // AF3 から UB への反転: サンダーヘッド＋パラドックス
-  deriveHidden("blizzard", "blizzard-from-af3", "ブリザド (AF3→UB1)", ["umbral-ice-1", "thunderhead"], true),
   deriveHidden("blizzard-3", "blizzard-3-from-af3", "ブリザガ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
   deriveHidden("blizzard-2", "blizzard-2-from-af3", "ブリザラ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
   deriveHidden("high-blizzard-2", "high-blizzard-2-from-af3", "ハイブリザラ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
@@ -881,7 +900,7 @@ export const BLM_FIRE_FAMILY_IDS = [
   "fire-3-in-af",
   "fire-2-in-af",
   "high-fire-2-in-af",
-  "fire-from-ub3",
+  "fire-in-ub",
   "fire-3-from-ub3",
   "fire-2-from-ub3",
   "high-fire-2-from-ub3",
@@ -901,7 +920,7 @@ export const BLM_BLIZZARD_FAMILY_IDS = [
   "blizzard-3-in-ub",
   "blizzard-2-in-ub",
   "high-blizzard-2-in-ub",
-  "blizzard-from-af3",
+  "blizzard-in-af",
   "blizzard-3-from-af3",
   "blizzard-2-from-af3",
   "high-blizzard-2-from-af3",
