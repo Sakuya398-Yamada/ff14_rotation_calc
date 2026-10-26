@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats } from "../types/skill";
+import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats, ResourceDefinition } from "../types/skill";
 import { calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
 import { describeBuffEffects, formatBuffRemaining, formatConsumedProc } from "../logic/buff-format";
+import { formatResourceErrors } from "../logic/resource-error-format";
 
 interface SkillDetailPanelProps {
   entry: ResolvedTimelineEntry;
   /** entry.resolvedSkillId に対応するスキル（autoTransform 後の実表示スキル） */
   resolvedSkill: Skill;
   buffDefMap: Map<string, BuffDefinition>;
+  resourceDefMap: Map<string, ResourceDefinition>;
   stats: CharacterStats;
   onClose: () => void;
   /** 開始時刻のマニュアル設定/解除ハンドラ。undefined を渡すと自動計算に戻る */
@@ -20,6 +22,7 @@ export function SkillDetailPanel({
   entry,
   resolvedSkill,
   buffDefMap,
+  resourceDefMap,
   stats,
   onClose,
   onManualStartTimeChange,
@@ -127,7 +130,7 @@ export function SkillDetailPanel({
   const isMultiTargetHit = breakdown !== null && breakdown.targets.length > 1;
 
   const errorMessages: string[] = [];
-  if (entry.resourceErrors.length > 0) errorMessages.push(`リソース不足: ${entry.resourceErrors.join(", ")}`);
+  errorMessages.push(...formatResourceErrors(entry.resourceErrors, resourceDefMap));
   if (entry.comboErrors.length > 0) errorMessages.push(`バフ条件未達成: ${entry.comboErrors.join(", ")}`);
   if (entry.untargetableError) errorMessages.push("ボス離脱中");
   if (entry.recastError) errorMessages.push("リキャスト中");

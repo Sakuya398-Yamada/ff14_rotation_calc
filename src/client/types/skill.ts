@@ -199,7 +199,7 @@ export interface Skill {
   /** スキル使用に必要なバフIDのOR条件（いずれか1つでもアクティブなら可。全て未アクティブ時はエラー、威力を計上しない。バフは消費しない） */
   requiredBuffAnyOf?: string[];
   /**
-   * 発動条件の上限。実行前のリソース量が maxAmount を超えていたらエラー（resourceErrors）にし、実行しない。
+   * 発動条件の上限。実行前のリソース量が maxAmount を超えていたらエラー（resourceErrors の overMax）にし、実行しない。
    * 例: 踏鳴（ビーストチャクラ 0）、鉄山闘気（闘気 5 未満 = maxAmount 4）。未習得のリソースは 0 として扱う
    */
   resourceMaxConditions?: { resourceId: string; maxAmount: number }[];
@@ -553,6 +553,14 @@ export interface TimelineResult {
   timelineEndTime: number;
 }
 
+/** リソースのエラーの種類。insufficient: 必要量に足りない / overMax: resourceMaxConditions の上限を超えている */
+export type ResourceErrorKind = "insufficient" | "overMax";
+
+export interface ResourceError {
+  resourceId: string;
+  kind: ResourceErrorKind;
+}
+
 /** 時間情報付きタイムラインエントリ（計算結果） */
 export interface ResolvedTimelineEntry {
   /** タイムラインエントリの一意ID */
@@ -575,8 +583,8 @@ export interface ResolvedTimelineEntry {
   manualStartTime?: number;
   /** スキル実行後のリソース状態（消費・獲得・バフ由来の自動消費すべて反映済み） */
   resourceSnapshot: ResourceSnapshot;
-  /** リソース不足のリソースIDリスト */
-  resourceErrors: string[];
+  /** 発動条件を満たさなかったリソースとその種類 */
+  resourceErrors: ResourceError[];
   /** バフスタック不足のバフIDリスト */
   comboErrors: string[];
   /** ボス離脱中に攻撃したエラー */

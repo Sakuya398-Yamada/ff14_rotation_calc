@@ -4,6 +4,7 @@ import type {
   ResolvedTimelineEntry,
   ResourceChange,
   ResourceDefinition,
+  ResourceError,
   ResourceBuffModifier,
   ResourceSnapshot,
   CharacterStats,
@@ -118,6 +119,11 @@ function getActiveResourceModifiers(
 ): ResourceBuffModifier[] {
   if (!def.whileBuffModifiers) return [];
   return def.whileBuffModifiers.filter((m) => activeBuffs.some((ab) => ab.buffId === m.buffId));
+}
+
+/** whileBuffModifiers の maxStacks を、効果中のバフで反映した上限（該当が無ければ基底の maxStacks） */
+export function getEffectiveMaxStacks(def: ResourceDefinition, activeBuffs: ActiveBuff[]): number {
+  return getActiveResourceModifiers(def, activeBuffs).find((m) => m.maxStacks !== undefined)?.maxStacks ?? def.maxStacks;
 }
 
 /**
@@ -956,9 +962,7 @@ export function resolveTimeline(
     // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
     for (const res of resources) {
       if (!res.whileBuffModifiers) continue;
-      const maxOverride = getActiveResourceModifiers(res, currentActiveBuffs)
-        .find((m) => m.maxStacks !== undefined)?.maxStacks;
-      resourceDefMap.set(res.id, maxOverride !== undefined ? { ...res, maxStacks: maxOverride } : res);
+      resourceDefMap.set(res.id, { ...res, maxStacks: getEffectiveMaxStacks(res, currentActiveBuffs) });
     }
 
     for (const res of resources) {
@@ -1188,7 +1192,7 @@ export function resolveTimeline(
         : baseResourceChanges;
 
     // リソース不足チェック
-    const resourceErrors: string[] = [];
+    const resourceErrors: ResourceError[] = [];
     if (effectiveResourceChanges) {
       for (const change of effectiveResourceChanges) {
         if (change.amount < 0) {
@@ -1196,7 +1200,7 @@ export function resolveTimeline(
           if (skippedResourceId !== null && change.resourceId === skippedResourceId) continue;
           const required = Math.abs(change.amount);
           if (resourceState[change.resourceId] < required) {
-            resourceErrors.push(change.resourceId);
+            resourceErrors.push({ resourceId: change.resourceId, kind: "insufficient" });
           }
         }
       }
@@ -1212,7 +1216,7 @@ export function resolveTimeline(
       }
       if (consumeAllCount === 0) {
         // 全て0 → エラー（先頭リソースIDをエラーとして報告）
-        resourceErrors.push(skill.consumeAllResources[0]);
+        resourceErrors.push({ resourceId: skill.consumeAllResources[0], kind: "insufficient" });
       }
     }
 
@@ -1220,7 +1224,7 @@ export function resolveTimeline(
     if (skill.resourceMaxConditions) {
       for (const condition of skill.resourceMaxConditions) {
         if ((resourceState[condition.resourceId] ?? 0) > condition.maxAmount) {
-          resourceErrors.push(condition.resourceId);
+          resourceErrors.push({ resourceId: condition.resourceId, kind: "overMax" });
         }
       }
     }

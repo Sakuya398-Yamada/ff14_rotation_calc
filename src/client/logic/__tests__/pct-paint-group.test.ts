@@ -117,7 +117,7 @@ describe("ピクトマンサー ペイントゲージ（WP/BP 共有5スロッ�
     const skillMap = new Map([[subtract.id, subtract]]);
     const result = resolveTimeline([makeEntry("subtract"), makeEntry("subtract")], skillMap, PAINT_RESOURCES);
 
-    expect(result.entries[0].resourceErrors).toContain("white-paint");
+    expect(result.entries[0].resourceErrors).toContainEqual({ resourceId: "white-paint", kind: "insufficient" });
     // 1 回目がエラーなのでリソースは変化していないまま 2 回目の実行に到達する
     expect(result.entries[1].resourceSnapshot["white-paint"]).toBe(0);
     expect(result.entries[1].resourceSnapshot["black-paint"]).toBe(0);

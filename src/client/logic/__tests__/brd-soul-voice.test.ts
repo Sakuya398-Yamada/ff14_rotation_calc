@@ -71,7 +71,8 @@ describe("BRD: ソウルボイスゲージの蓄積 (#116)", () => {
     // 歌の直後（自動蓄積の初回 tick より前）に撃ち、エンピリアルアロー分だけを観測する
     const withSong = resolve([entry("mages-ballad"), entry("empyreal-arrow")]);
     expect(withSong.entries[1].resourceSnapshot["soul-voice"]).toBe(5);
-    expect(withSong.entries[1].resourceSnapshot["repertoire"]).toBe(1);
+    // 賢人のバラード中は詩心が溜まらない（#631）
+    expect(withSong.entries[1].resourceSnapshot["repertoire"]).toBe(0);
   });
 
   it("歌を繋いで長時間経過させると 100 で頭打ちになる（上限クリップ）", () => {

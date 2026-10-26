@@ -102,7 +102,7 @@ describe("BLM: パラドックスは反対属性への反転で付与される�
     const entries = resolve100(["fire", "blizzard-3", "paradox"]);
     expect(entries[1].resolvedSkillId).toBe("blizzard-3");
     expect(entries[1].resourceSnapshot["paradox-gauge"]).toBe(0);
-    expect(entries[2].resourceErrors).toContain("paradox-gauge");
+    expect(entries[2].resourceErrors).toContainEqual({ resourceId: "paradox-gauge", kind: "insufficient" });
   });
 
   it("UB3 かつアンブラルハート 3 からファイガで AF へ反転するとパラドックスが付与され、AF 中のパラドックスでファイアスターターが付く", () => {

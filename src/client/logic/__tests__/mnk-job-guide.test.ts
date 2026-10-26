@@ -104,7 +104,7 @@ describe("MNK: 鉄山闘気／陰陽闘気の GCD リキャスト", () => {
 describe("MNK: 鉄山闘気／陰陽闘気は闘気 5 未満で実行できる", () => {
   it.each(MEDITATIONS)("%s を初期値（闘気 5）で置くと resourceErrors になり、闘気は 5 のまま", (id) => {
     const e = resolve([entry(id)]).entries;
-    expect(e[0].resourceErrors).toEqual(["chakra"]);
+    expect(e[0].resourceErrors).toEqual([{ resourceId: "chakra", kind: "overMax" }]);
     expect(e[0].resourceSnapshot["chakra"]).toBe(5);
   });
 
@@ -115,20 +115,20 @@ describe("MNK: 鉄山闘気／陰陽闘気は闘気 5 未満で実行できる",
     ]).entries;
     expectNoError(e[5]);
     expect(e[5].resourceSnapshot["chakra"]).toBe(5);
-    expect(e[6].resourceErrors).toEqual(["chakra"]);
+    expect(e[6].resourceErrors).toEqual([{ resourceId: "chakra", kind: "overMax" }]);
     expect(e[6].resourceSnapshot["chakra"]).toBe(5);
   });
 
   it("エラーになった陰陽闘気でも GCD のリキャストは発生する（GCD・黙想のエラーと同じ扱い）", () => {
     const e = resolve([entry("forbidden-meditation"), entry("leaping-opo")]).entries;
-    expect(e[0].resourceErrors).toEqual(["chakra"]);
+    expect(e[0].resourceErrors).toEqual([{ resourceId: "chakra", kind: "overMax" }]);
     expect(gap(e[0], e[1])).toBe(2);
   });
 
   it("桃園結義の効果中（闘気の上限 10）でも、闘気 5 ではエラーになる", () => {
     const e = resolve([entry("brotherhood"), entry("forbidden-meditation")]).entries;
     expect(e[1].activeBuffsAtUse.some((b) => b.buffId === "brotherhood")).toBe(true);
-    expect(e[1].resourceErrors).toEqual(["chakra"]);
+    expect(e[1].resourceErrors).toEqual([{ resourceId: "chakra", kind: "overMax" }]);
   });
 });
 
@@ -151,7 +151,7 @@ describe("MNK: 踏鳴はチャクラが無いときだけ実行できる", () =>
   ])("%s で %s が残っていると resourceErrors になり、踏鳴は付け直されない", (ws, chakraId) => {
     const e = resolve([entry("perfect-balance"), entry(ws), entry("perfect-balance")]).entries;
     expect(e[1].resourceSnapshot[chakraId]).toBe(1);
-    expect(e[2].resourceErrors).toEqual([chakraId]);
+    expect(e[2].resourceErrors).toEqual([{ resourceId: chakraId, kind: "overMax" }]);
     expect(pbStacks(e[2])).toBe(2);
   });
 
@@ -161,7 +161,7 @@ describe("MNK: 踏鳴はチャクラが無いときだけ実行できる", () =>
       entry("perfect-balance"), entry("leaping-opo"), entry("perfect-balance"),
       entry("leaping-opo"), entry("leaping-opo"), entry("masterful-blitz"), entry("perfect-balance"),
     ]).entries;
-    expect(e[2].resourceErrors).toEqual(["opo-chakra"]);
+    expect(e[2].resourceErrors).toEqual([{ resourceId: "opo-chakra", kind: "overMax" }]);
     expect(e[5].resolvedSkillId).toBe("elixir-burst");
     expect(e[6].startTime).toBeLessThan(40);
     expectNoError(e[6]);
