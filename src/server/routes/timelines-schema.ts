@@ -13,6 +13,7 @@ const SKILL_IDS_BY_JOB = Object.fromEntries(
 ) as Record<JobId, Set<string>>;
 
 // deserializeAppState（localStorage の復元）は不明なスキル ID のエントリを黙って除外するが、サーバーは保存した行を書き換えないので拒否する
+// uid はクライアントがエントリを見分けるキー（React の key、並べ替え・削除の対象）なので、重複も拒否する
 export const persistedAppStateSchema = z
   .object({
     version: z.literal(SCHEMA_VERSION),
@@ -34,10 +35,15 @@ export const persistedAppStateSchema = z
   })
   .superRefine((data, ctx) => {
     const skillIds = SKILL_IDS_BY_JOB[data.selectedJob];
+    const uids = new Set<string>();
     data.entries.forEach((entry, i) => {
       if (!skillIds.has(entry.skillId)) {
         ctx.addIssue({ code: "custom", path: ["entries", i, "skillId"], message: "unknown skill id" });
       }
+      if (uids.has(entry.uid)) {
+        ctx.addIssue({ code: "custom", path: ["entries", i, "uid"], message: "duplicate uid" });
+      }
+      uids.add(entry.uid);
     });
   });
 
