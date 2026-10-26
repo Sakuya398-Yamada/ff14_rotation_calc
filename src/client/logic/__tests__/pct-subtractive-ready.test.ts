@@ -104,7 +104,7 @@ describe("サブトラReady によるサブトラクティブパレット発動�
       [SUBTRACTIVE_READY_BUFF]
     );
 
-    expect(result.entries[1].resourceErrors).toContain("palette-gauge");
+    expect(result.entries[1].resourceErrors).toContainEqual({ resourceId: "palette-gauge", kind: "insufficient" });
   });
 
   it("subtractive-ready なし・PG50以上 → 正常実行（PG=-50, WP=-1, BP=+1）", () => {

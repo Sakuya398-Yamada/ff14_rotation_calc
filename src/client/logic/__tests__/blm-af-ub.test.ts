@@ -570,7 +570,7 @@ describe("BLM: フレアスターとアストラルソウル", () => {
       BLM_BUFFS,
     );
     // astral-soul 0 で -6 しようとして不足エラー
-    expect(result.entries[1].resourceErrors).toContain("astral-soul");
+    expect(result.entries[1].resourceErrors).toContainEqual({ resourceId: "astral-soul", kind: "insufficient" });
   });
 
   it("ファイジャ 6 発でアストラルソウル 6 蓄積後、フレアスターを使うと正常に実行される", () => {

@@ -3,6 +3,7 @@ import type { Skill, ResolvedTimelineEntry, CharacterStats, BuffDefinition } fro
 import type { DisplayEntry } from "./types";
 import { calcEntryPotencyBreakdown } from "../../logic/expected-potency";
 import { formatConsumedProc } from "../../logic/buff-format";
+import { formatResourceErrorWarnings } from "../../logic/resource-error-format";
 import { formatTargetBreakdown } from "./helpers";
 import { ManualStartTimeBadge } from "./ManualStartTimeBadge";
 import { styles } from "./styles";
@@ -147,7 +148,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}${consumedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.unconfirmedProcBuffs ? " ⚠ 確率付与のバフを消費" : ""}${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}${consumedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.unconfirmedProcBuffs ? " ⚠ 確率付与のバフを消費" : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
@@ -202,7 +203,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${entry.resourceErrors.length > 0 ? " ⚠ リソース不足" : ""}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                  title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${formatResourceErrorWarnings(entry.resourceErrors)}${entry.comboErrors.length > 0 ? " ⚠ バフ条件未達成" : ""}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img

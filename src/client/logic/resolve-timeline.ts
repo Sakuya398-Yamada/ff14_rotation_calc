@@ -4,6 +4,7 @@ import type {
   ResolvedTimelineEntry,
   ResourceChange,
   ResourceDefinition,
+  ResourceError,
   ResourceBuffModifier,
   ResourceSnapshot,
   CharacterStats,
@@ -1189,7 +1190,7 @@ export function resolveTimeline(
         : baseResourceChanges;
 
     // リソース不足チェック
-    const resourceErrors: string[] = [];
+    const resourceErrors: ResourceError[] = [];
     if (effectiveResourceChanges) {
       for (const change of effectiveResourceChanges) {
         if (change.amount < 0) {
@@ -1197,7 +1198,7 @@ export function resolveTimeline(
           if (skippedResourceId !== null && change.resourceId === skippedResourceId) continue;
           const required = Math.abs(change.amount);
           if (resourceState[change.resourceId] < required) {
-            resourceErrors.push(change.resourceId);
+            resourceErrors.push({ resourceId: change.resourceId, kind: "insufficient" });
           }
         }
       }
@@ -1213,7 +1214,7 @@ export function resolveTimeline(
       }
       if (consumeAllCount === 0) {
         // 全て0 → エラー（先頭リソースIDをエラーとして報告）
-        resourceErrors.push(skill.consumeAllResources[0]);
+        resourceErrors.push({ resourceId: skill.consumeAllResources[0], kind: "insufficient" });
       }
     }
 
@@ -1221,7 +1222,7 @@ export function resolveTimeline(
     if (skill.resourceMaxConditions) {
       for (const condition of skill.resourceMaxConditions) {
         if ((resourceState[condition.resourceId] ?? 0) > condition.maxAmount) {
-          resourceErrors.push(condition.resourceId);
+          resourceErrors.push({ resourceId: condition.resourceId, kind: "overMax" });
         }
       }
     }

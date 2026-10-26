@@ -27,7 +27,7 @@ function getMarkers(group: ResourceGroup, entries: ResolvedTimelineEntry[], tick
     time: entry.startTime,
     snapshot: entry.resourceSnapshot,
     activeBuffs: entry.activeBuffs,
-    hasError: group.resources.some((r) => entry.resourceErrors.includes(r.id)),
+    hasError: group.resources.some((r) => entry.resourceErrors.some((e) => e.resourceId === r.id)),
   }));
   if (group.resources.length !== 1) return entryMarkers;
   const resourceId = group.resources[0].id;

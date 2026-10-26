@@ -81,7 +81,7 @@ describe("calcEntryPotencyBreakdown: 通常スキル", () => {
 
 describe("calcEntryPotencyBreakdown: エラーエントリ", () => {
   it.each([
-    { name: "resourceErrors", overrides: { resourceErrors: ["mp"] } },
+    { name: "resourceErrors", overrides: { resourceErrors: [{ resourceId: "mp", kind: "insufficient" as const }] } },
     { name: "comboErrors", overrides: { comboErrors: ["combo"] } },
     { name: "untargetableError", overrides: { untargetableError: true } },
     { name: "recastError", overrides: { recastError: true } },

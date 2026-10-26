@@ -171,7 +171,7 @@ describe("BRD: 歌が上書き・時間切れで終わると詩心が 0 にな�
     expect(minuet.resourceSnapshot["repertoire"]).toBe(0);
     // パイオンの詩心 4 は引き継がれず、メヌエット直後のピッチパーフェクトは詩心不足
     expect(pitch.comboErrors).toEqual([]);
-    expect(pitch.resourceErrors).toContain("repertoire");
+    expect(pitch.resourceErrors).toContainEqual({ resourceId: "repertoire", kind: "insufficient" });
   });
 
   it("上書き後のメヌエットで溜め直した詩心は上限 3 で、ピッチパーフェクトは 3 を消費する", () => {

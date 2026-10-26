@@ -106,7 +106,7 @@ describe("侍: リソース定義（剣気・閃3種・剣圧）", () => {
       SAM_BUFFS
     );
 
-    expect(result.entries[0].resourceErrors).toContain("setsu");
+    expect(result.entries[0].resourceErrors).toContainEqual({ resourceId: "setsu", kind: "insufficient" });
     // エラーなので剣気は獲得されない
     expect(result.entries[0].resourceSnapshot.kenki ?? 0).toBe(0);
   });
