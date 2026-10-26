@@ -120,6 +120,11 @@ function getActiveResourceModifiers(
   return def.whileBuffModifiers.filter((m) => activeBuffs.some((ab) => ab.buffId === m.buffId));
 }
 
+/** whileBuffModifiers の maxStacks を、効果中のバフで反映した上限（該当が無ければ基底の maxStacks） */
+export function getEffectiveMaxStacks(def: ResourceDefinition, activeBuffs: ActiveBuff[]): number {
+  return getActiveResourceModifiers(def, activeBuffs).find((m) => m.maxStacks !== undefined)?.maxStacks ?? def.maxStacks;
+}
+
 /**
  * リソース量に応じたヘイスト（gcdHastePerStack）の合成倍率を計算する。
  * 例: 軍神のパイオン中は詩心 1 つにつき 4% → 詩心 4 で 0.84 倍
@@ -956,9 +961,7 @@ export function resolveTimeline(
     // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
     for (const res of resources) {
       if (!res.whileBuffModifiers) continue;
-      const maxOverride = getActiveResourceModifiers(res, currentActiveBuffs)
-        .find((m) => m.maxStacks !== undefined)?.maxStacks;
-      resourceDefMap.set(res.id, maxOverride !== undefined ? { ...res, maxStacks: maxOverride } : res);
+      resourceDefMap.set(res.id, { ...res, maxStacks: getEffectiveMaxStacks(res, currentActiveBuffs) });
     }
 
     for (const res of resources) {
