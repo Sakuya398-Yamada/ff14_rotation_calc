@@ -213,7 +213,7 @@ describe("SGE: アダーステック", () => {
     const e = setup().resolve(["toxikon2", "toxikon2", "toxikon2", "toxikon2"]).entries;
     e.slice(0, 3).forEach(expectNoError);
     expect(e.slice(0, 3).map(addersting)).toEqual([2, 1, 0]);
-    expect(e[3].resourceErrors).toEqual(["addersting"]);
+    expect(e[3].resourceErrors).toEqual([{ resourceId: "addersting", kind: "insufficient" }]);
   });
 
   it("エウクラシアの後のディアグノシスは E.ディアグノシスに変わり、アダーステックが 1 戻ってエウクラシアが外れる", () => {
@@ -254,7 +254,7 @@ describe("SGE: アダーガル", () => {
     ]).entries;
     expect([e[0], e[2], e[4]].map(addersgall)).toEqual([2, 1, 0]);
     expect(e[6].recastError).toBeFalsy();
-    expect(e[6].resourceErrors).toEqual(["addersgall"]);
+    expect(e[6].resourceErrors).toEqual([{ resourceId: "addersgall", kind: "insufficient" }]);
   });
 
   it.each([[19, 1], [21, 2]])("最初の消費から %i 秒後に使うと、アダーガルは %i（20 秒ごとに 1 たまる）", (time, after) => {
