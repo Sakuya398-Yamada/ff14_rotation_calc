@@ -223,7 +223,7 @@ import { XXX_RESOURCES } from "./<job>-resources";
 import { XXX_BUFFS } from "./<job>-buffs";
 
 // 2. JobId Union に追加
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "<job>";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "<job>";
 
 // 3. JOB_DATA に追加
 export const JOB_DATA: Record<JobId, JobData> = {
@@ -234,9 +234,9 @@ export const JOB_DATA: Record<JobId, JobData> = {
 
 > `JOB_DATA` は `Record<JobId, JobData>` 型のため、`JobId` に追加したジョブをここに登録し忘れると **コンパイル時に検出される**。
 
-ジョブセレクタの選択肢（`JOB_OPTIONS`）は `JOB_DATA` のキー順から自動派生するため、**表示順は `JOB_DATA` レコードのキーの記述順で制御する**。`SkillPalette.tsx` 側への追記は不要。
+ジョブピッカーの表示順とロールは `src/client/data/job-catalog.ts` の `JOB_CATALOG` で決まる（`JOB_DATA` のキー順は表示に使われない）。`JOB_CATALOG` には未実装ジョブも含めて全 21 ジョブが載っているので、追加時に書き換える必要は無い。`JobId` には `JOB_CATALOG` の `id`（例: 学者なら `sch`）を使い、`JOB_DATA` の `name` / `abbreviation` を `JOB_CATALOG` の値と揃える。食い違うと `src/client/data/__tests__/job-catalog.test.ts` が赤になる。`JobPicker.tsx` 側への追記は不要（`JOB_DATA` にあるジョブが選べるようになる）。
 
-ただし `src/client/components/__tests__/skill-palette.test.tsx` のジョブセレクタ表示テストは**期待値を固定配列で assert している**ため、新ジョブの表示名を期待値配列に追記する（テスト名の「全Nジョブ」の数も合わせて更新する）。忘れると `npm test` がこのテストの失敗で赤になる（前例: MNK 追加の #282 / PR #319）。
+`src/client/components/__tests__/job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」は、選べることを確かめるジョブの表示名を**固定配列で列挙している**ため、新ジョブの表示名を配列に追記し、テスト名の N も合わせて更新する。このテストは列挙したジョブだけを確かめるので、追記を忘れても `npm test` は赤にならない（チェックリストで確かめる）。未実装ジョブの例にナイトを使っているので、ナイトを追加するときは別の未実装ジョブに差し替える。
 
 ---
 
@@ -267,8 +267,8 @@ SAM の以下が雛形として参考になる：
 - [ ] `src/client/data/<job>-buffs.ts` が存在し、`<JOB>_BUFFS` を export している
 - [ ] `src/client/data/<job>-resources.ts` が存在し、`<JOB>_RESOURCES` を export している
 - [ ] `src/client/assets/icons/<job>/` 配下に全スキル分のアイコンがある
-- [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（セレクタ表示順は `JOB_DATA` のキー順）
-- [ ] `skill-palette.test.tsx` のジョブセレクタ期待値（固定配列）に新ジョブの表示名が追記されている
+- [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（`JobId` は `JOB_CATALOG` の `id`、名前・略称は `JOB_CATALOG` と一致。ピッカーの表示順は `JOB_CATALOG` で決まる）
+- [ ] `job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」の期待値（固定配列）に新ジョブの表示名が追記され、テスト名の N が更新されている
 - [ ] `README.md` の「対応ジョブ」表と FAQ「使いたいジョブが未対応」のジョブ一覧・ジョブ数に新ジョブが追記されている（並び順は `JOB_DATA` のキー順）
 - [ ] `npm run build` / `npm test` が GREEN
 - [ ] パレットから新ジョブを選択でき、スキルをタイムラインに配置して期待威力が計算できる
