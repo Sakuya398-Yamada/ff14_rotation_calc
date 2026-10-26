@@ -1265,7 +1265,7 @@ export function resolveTimeline(
         currentActiveBuffs.some((ab) => ab.buffId === buffId)
       );
       if (!anyActive) {
-        comboErrors.push({ buffId: skill.requiredBuffAnyOf[0], kind: "missing" });
+        comboErrors.push({ buffId: skill.requiredBuffAnyOf[0], kind: "missing", anyOf: skill.requiredBuffAnyOf });
       }
     }
 
@@ -1285,7 +1285,11 @@ export function resolveTimeline(
       }
       if (!anyOfMatchedBuffId) {
         // いずれのバフも見つからない → エラー
-        comboErrors.push({ buffId: skill.buffConsumptionAnyOf[0].buffId, kind: "missing" });
+        comboErrors.push({
+          buffId: skill.buffConsumptionAnyOf[0].buffId,
+          kind: "missing",
+          anyOf: skill.buffConsumptionAnyOf.map((o) => o.buffId),
+        });
       }
     }
 

@@ -116,8 +116,12 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
   it("ホークアイなし・乱れ撃ちなしではリフルジェントアローは使用できない", () => {
     const result = resolve([entry("refulgent-arrow")]);
 
-    // buffConsumptionAnyOf 不成立時は先頭候補（barrage）の buffId がエラーとして記録される
-    expect(result.entries[0].comboErrors).toContainEqual({ buffId: "barrage", kind: "missing" });
+    // buffConsumptionAnyOf 不成立時は候補（乱れ撃ち・ホークアイ）をすべて持つエラーが記録される (#679)
+    expect(result.entries[0].comboErrors).toContainEqual({
+      buffId: "barrage",
+      kind: "missing",
+      anyOf: ["barrage", "hawks-eye"],
+    });
   });
 
   it("乱れ撃ち中はホークアイ不要で使用でき、威力 840 固定（proc 期待値は適用されない）", () => {
