@@ -26,9 +26,10 @@ describe("BRD: エンピリアルアローの詩心付与は歌の実行中の�
     expect(e.resourceSnapshot["soul-voice"]).toBe(0);
   });
 
-  it.each(["mages-ballad", "armys-paeon", "wanderers-minuet"] as const)(
-    "%s の実行中は詩心 +1・ソウルボイス +5",
-    (songId) => {
+  // 賢人のバラード中は詩心が溜まらない（#631）
+  it.each([["mages-ballad", 0], ["armys-paeon", 1], ["wanderers-minuet", 1]] as const)(
+    "%s の実行中は詩心 +%s・ソウルボイス +5",
+    (songId, repertoireGain) => {
       // 歌の直後（自動付与の初回 tick より前）に撃ち、エンピリアルアロー分だけを観測する
       const result = resolve([entry(songId), entry("empyreal-arrow")]);
 
@@ -36,7 +37,7 @@ describe("BRD: エンピリアルアローの詩心付与は歌の実行中の�
       const e = result.entries[1];
       expect(before.resourceSnapshot["repertoire"]).toBe(0);
       expect(before.resourceSnapshot["soul-voice"]).toBe(0);
-      expect(e.resourceSnapshot["repertoire"]).toBe(1);
+      expect(e.resourceSnapshot["repertoire"]).toBe(repertoireGain);
       expect(e.resourceSnapshot["soul-voice"]).toBe(5);
     },
   );
