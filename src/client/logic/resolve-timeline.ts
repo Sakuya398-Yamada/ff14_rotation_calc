@@ -1137,8 +1137,9 @@ export function resolveTimeline(
         ? hasInstantCastBuff(currentActiveBuffs, buffDefMap, originalSkill.id)
         : false;
       const castMul = getCastTimeMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
+      // 詠唱時間もリキャストと同じ式でスピードにより短縮される
       resolvedCastTime = skill.castTime && !instantCast
-        ? Math.round(skill.castTime * speedMul * castMul * 1000) / 1000
+        ? Math.round((stats ? calcGcd(skill.castTime, stats) : skill.castTime) * speedMul * castMul * 1000) / 1000
         : 0;
 
       gcdAvailableAt = startTime + recastTime;
