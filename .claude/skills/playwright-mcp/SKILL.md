@@ -211,6 +211,7 @@ async (page) => {
 | `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | dnd-kit の MouseSensor activation（distance: 4）と `dragTo` の一括ジェスチャが競合し、drop 前にドラッグが確定しない | 上記「dnd-kit ベース DnD の検証方法」のステップ分割マウス操作を `browser_run_code_unsafe` で実行する |
 | `browser_evaluate` で `select.value = '...'` を代入して `change` を dispatch しても UI が変化しない（値が空に戻る） | React の制御コンポーネントは value 代入を内部状態と同期しないため、直接代入では onChange が発火しない | 上記「React 制御フォーム要素の操作ワークアラウンド」の native setter スニペットを使う |
 | localStorage に保存データを書いてからリロードしても復元されない（タイムラインが空のまま） | アプリが `pagehide` で現在の状態を即時保存するため、リロード前に書いた値が離脱時の保存で上書きされる | 上記「保存データを注入して検証する」の `page.addInitScript` スニペットで、ページの読み込み前に書き込む |
+| `getByRole('status')` など `role="status"` のロケーターが `strict mode violation: getByRole('status') resolved to 2 elements` で止まる | dnd-kit の `DndContext` が、読み上げ用の `<div role="status" id="DndLiveRegion-0">` を常に描画している。画面には見えないがロケーターには当たるので、ページ全体で探すと目的の要素とあわせて 2 件以上になる | 対象のコンテナ（dialog など）の中に絞って探す（例: `page.getByRole('dialog').getByRole('status')`） |
 
 ## 切断時の再接続手順（Claude 向け）
 
