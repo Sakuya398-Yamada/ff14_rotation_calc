@@ -25,10 +25,13 @@ import { SCH_BUFFS } from "./sch-buffs";
 import { AST_ATTACK_SKILLS } from "./ast-skills";
 import { AST_RESOURCES } from "./ast-resources";
 import { AST_BUFFS } from "./ast-buffs";
+import { SGE_ATTACK_SKILLS } from "./sge-skills";
+import { SGE_RESOURCES } from "./sge-resources";
+import { SGE_BUFFS } from "./sge-buffs";
 import type { Skill, BuffDefinition, ResourceDefinition } from "../types/skill";
 
 /** ジョブID */
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge";
 
 /** ジョブデータ定義 */
 export interface JobData {
@@ -53,4 +56,5 @@ export const JOB_DATA: Record<JobId, JobData> = {
   mnk: { name: "モンク", abbreviation: "MNK", skills: MNK_ATTACK_SKILLS, buffs: MNK_BUFFS, resources: MNK_RESOURCES },
   sch: { name: "学者", abbreviation: "SCH", skills: SCH_ATTACK_SKILLS, buffs: SCH_BUFFS, resources: SCH_RESOURCES },
   ast: { name: "占星術師", abbreviation: "AST", skills: AST_ATTACK_SKILLS, buffs: AST_BUFFS, resources: AST_RESOURCES },
+  sge: { name: "賢者", abbreviation: "SGE", skills: SGE_ATTACK_SKILLS, buffs: SGE_BUFFS, resources: SGE_RESOURCES },
 };
