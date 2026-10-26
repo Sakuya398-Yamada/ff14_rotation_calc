@@ -102,7 +102,8 @@ describe("BRD: 軍神のパイオン中の歌で付く軍神の加護 (#420)", (
   });
 
   it("パイオン外の歌の上書きでは、詩心があっても軍神の加護は付かない", () => {
-    const result = resolveAt([entry("mages-ballad"), ...repeat("burst-shot", 10), entry("wanderers-minuet")]);
+    // 賢人のバラード中は詩心が溜まらない（#631）ので、詩心のある旅神のメヌエットをバラードで上書きする
+    const result = resolveAt([entry("wanderers-minuet"), ...repeat("burst-shot", 10), entry("mages-ballad")]);
     const before = result.entries[result.entries.length - 2];
     expect(before.resourceSnapshot["repertoire"]).toBeGreaterThan(0);
     expect(findBuff(result.entries[result.entries.length - 1], "armys-muse")).toBeUndefined();
