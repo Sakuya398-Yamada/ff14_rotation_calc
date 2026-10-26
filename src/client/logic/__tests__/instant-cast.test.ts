@@ -540,3 +540,47 @@ describe("複数 instantCast バフの優先順位（単発バフ優先）", () 
     ).toBe(false);
   });
 });
+
+describe("castTimeMultiplier で詠唱が 0 になる詠唱GCD（ライトスピード中の魔法）", () => {
+  const zeroCastBuff: BuffDefinition = {
+    id: "zero-cast-test",
+    name: "ライトスピード",
+    shortName: "LS",
+    icon: "",
+    duration: 15,
+    effects: [{ type: "castTimeMultiplier", value: 0 }],
+    color: "#90caf9",
+  };
+  const halfCastBuff: BuffDefinition = {
+    ...zeroCastBuff,
+    id: "half-cast-test",
+    effects: [{ type: "castTimeMultiplier", value: 0.5 }],
+  };
+
+  function resolveWith(castBuffId: string) {
+    const grant = makeSkill({ id: "grant", buffApplications: ["firestarter-test", castBuffId] });
+    const castSpell = makeSkill({ id: "cast-spell", castTime: 1.5 });
+    const skillMap = new Map([[grant.id, grant], [castSpell.id, castSpell]]);
+    return resolveTimeline(
+      [makeEntry("grant"), makeEntry("cast-spell")],
+      skillMap,
+      [],
+      undefined,
+      [firestarterBuff, zeroCastBuff, halfCastBuff]
+    );
+  }
+
+  it("倍率 0 のバフで詠唱が 0 になった詠唱GCDは、instantCast バフを消費しない", () => {
+    const result = resolveWith("zero-cast-test");
+
+    expect(result.entries[1].castTime).toBe(0);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "firestarter-test")).toBe(true);
+  });
+
+  it("倍率が 0 より大きいバフ中は、従来どおり instantCast バフを消費する（回帰チェック）", () => {
+    const result = resolveWith("half-cast-test");
+
+    expect(result.entries[1].castTime).toBe(0);
+    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "firestarter-test")).toBe(false);
+  });
+});

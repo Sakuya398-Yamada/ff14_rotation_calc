@@ -364,7 +364,7 @@ export interface BuffEffect {
    * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
    * - consumeOnAction: 付与した後の次のアクション（GCD/oGCD を問わない）の実行で消える（値は未使用、黙想等）
-   * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費）
+   * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費。castTimeMultiplier で詠唱が 0 になる GCD では消費しない）
    * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
    * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
    * - bypassCombo: バフアクティブ中、対象GCD WSのコンボ条件判定を強制成立扱いにする（値は未使用、appliesToSkillIds で対象限定）
