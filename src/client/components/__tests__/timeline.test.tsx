@@ -233,29 +233,29 @@ describe("Timeline", () => {
   });
 });
 
+const brdBuffIds = new Set(BRD_BUFFS.map((b) => b.id));
+const brdResourceIds = new Set(BRD_RESOURCES.map((r) => r.id));
+const brdSkills = getSkillsForLevel(BRD_ATTACK_SKILLS, 100, brdBuffIds, brdResourceIds);
+const brdSkillMap = getAllSkillMapForLevel(BRD_ATTACK_SKILLS, brdSkills, 100, brdBuffIds, brdResourceIds);
+
+function renderBrd(skillIds: string[]) {
+  const resolvedEntries = resolveTimeline(
+    skillIds.map(makeEntry),
+    brdSkillMap,
+    BRD_RESOURCES,
+    defaultStats,
+    BRD_BUFFS
+  ).entries;
+  renderTimeline({
+    skills: brdSkills,
+    allSkillMap: brdSkillMap,
+    resolvedEntries,
+    resources: BRD_RESOURCES,
+    buffs: BRD_BUFFS,
+  });
+}
+
 describe("Timeline: ホークアイの発動確率 (#615)", () => {
-  const brdBuffIds = new Set(BRD_BUFFS.map((b) => b.id));
-  const brdResourceIds = new Set(BRD_RESOURCES.map((r) => r.id));
-  const brdSkills = getSkillsForLevel(BRD_ATTACK_SKILLS, 100, brdBuffIds, brdResourceIds);
-  const brdSkillMap = getAllSkillMapForLevel(BRD_ATTACK_SKILLS, brdSkills, 100, brdBuffIds, brdResourceIds);
-
-  function renderBrd(skillIds: string[]) {
-    const resolvedEntries = resolveTimeline(
-      skillIds.map(makeEntry),
-      brdSkillMap,
-      BRD_RESOURCES,
-      defaultStats,
-      BRD_BUFFS
-    ).entries;
-    renderTimeline({
-      skills: brdSkills,
-      allSkillMap: brdSkillMap,
-      resolvedEntries,
-      resources: BRD_RESOURCES,
-      buffs: BRD_BUFFS,
-    });
-  }
-
   it("バーストショット → リフルジェントアローは、リフルジェントアローのツールチップに 35.0% が出る", () => {
     renderBrd(["burst-shot", "refulgent-arrow"]);
 
@@ -290,5 +290,37 @@ describe("Timeline: ホークアイの発動確率 (#615)", () => {
       expect.stringMatching(/^乱れ撃ち x1 \([^)]*\)$/)
     );
     expect(screen.getByTitle(/^乱れ撃ち x1 /)).toHaveTextContent(/^x1$/);
+  });
+});
+
+describe("Timeline: リソースのゲージ表示 (#632)", () => {
+  const burstShots = (count: number) => Array.from({ length: count }, () => "burst-shot");
+  const SONGS_ROTATION = [
+    "wanderers-minuet", ...burstShots(6),
+    "armys-paeon", ...burstShots(8),
+    "mages-ballad", ...burstShots(2),
+  ];
+
+  /** リソースマーカー（title が「名前: 値/上限」）の中のゲージの数字ラベルと塗りの幅 */
+  function readGauge(marker: HTMLElement) {
+    const label = marker.querySelector("span");
+    const fill = label?.previousElementSibling as HTMLElement | null | undefined;
+    return { label: label?.textContent, width: fill?.style.width };
+  }
+
+  it("詩心はゲージで描き、塗りの分母をその時点の歌の上限（メヌエット 3／パイオン 4）にする", () => {
+    renderBrd(SONGS_ROTATION);
+
+    expect(readGauge(screen.getAllByTitle(/^詩心: 3\/3$/)[0])).toEqual({ label: "3", width: "100%" });
+    expect(readGauge(screen.getAllByTitle(/^詩心: 3\/4$/)[0])).toEqual({ label: "3", width: "75%" });
+    expect(readGauge(screen.getAllByTitle(/^詩心: 4\/4$/)[0])).toEqual({ label: "4", width: "100%" });
+    // 賢人のバラード中（上限 0）のマーカーは描かない
+    expect(screen.queryAllByTitle(/^詩心: \d+\/0$/)).toEqual([]);
+  });
+
+  it("ソウルボイスは、これまでどおり上限 100 に対する割合のゲージで描く", () => {
+    renderBrd(SONGS_ROTATION);
+
+    expect(readGauge(screen.getAllByTitle(/^ソウルボイス: 5\/100$/)[0])).toEqual({ label: "5", width: "5%" });
   });
 });

@@ -112,13 +112,13 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, resourceTicks, 
                       );
                     })() : group.resources.map((res) => {
                       const count = m.snapshot[res.id] ?? 0;
-                      if (res.maxStacks > 10) {
+                      if (res.displayAsGauge) {
                         return (
                           <div key={res.id} style={styles.resourceGauge}>
                             <div
                               style={{
                                 ...styles.resourceGaugeFill,
-                                width: `${(count / res.maxStacks) * 100}%`,
+                                width: `${(count / getEffectiveMaxStacks(res, m.activeBuffs)) * 100}%`,
                                 backgroundColor: res.color,
                               }}
                             />
