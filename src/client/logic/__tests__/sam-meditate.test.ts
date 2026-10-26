@@ -187,7 +187,7 @@ describe("侍: 黙想の剣気・剣圧", () => {
     ["GCD リキャスト中の刃風", entry("gyofu", 1), "recastError"],
   ] as const)("エラーのある行動（%s）では外れない", (_, errored, errorKey) => {
     const e = resolve([entry("meditate"), errored, entry("true-north", 20)]).entries;
-    if (errorKey === "resourceErrors") expect(e[1].resourceErrors).toContain("meditation");
+    if (errorKey === "resourceErrors") expect(e[1].resourceErrors).toContainEqual({ resourceId: "meditation", kind: "insufficient" });
     else expect(e[1].recastError).toBe(true);
     expect(hasMeditate(e[1].activeBuffs)).toBe(true);
     expectNoError(e[2]);

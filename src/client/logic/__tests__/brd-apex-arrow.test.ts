@@ -84,7 +84,7 @@ describe("BRD: エイペックスアローのソウルボイス残量による�
     const result = resolve([entry("apex-arrow")]);
 
     const apex = result.entries[0];
-    expect(apex.resourceErrors).toContain("soul-voice");
+    expect(apex.resourceErrors).toContainEqual({ resourceId: "soul-voice", kind: "insufficient" });
     // エラー時はリソースが変動しない
     expect(apex.resourceSnapshot["soul-voice"]).toBe(0);
   });
@@ -94,7 +94,7 @@ describe("BRD: エイペックスアローのソウルボイス残量による�
     assertNoEmpyrealRecastError(result);
 
     const apex = result.entries[result.entries.length - 1];
-    expect(apex.resourceErrors).toContain("soul-voice");
+    expect(apex.resourceErrors).toContainEqual({ resourceId: "soul-voice", kind: "insufficient" });
     expect(apex.resourceSnapshot["soul-voice"]).toBe(15);
   });
 

@@ -85,7 +85,7 @@ describe("DRG: 天竜点睛による天竜眼の消費 (#351)", () => {
     const wyrmwind = result.entries[result.entries.length - 1];
     const before = prefix.length > 0 ? result.entries[prefix.length - 1].resourceSnapshot[FOCUS] : 0;
 
-    expect(wyrmwind.resourceErrors).toContain(FOCUS);
+    expect(wyrmwind.resourceErrors).toContainEqual({ resourceId: FOCUS, kind: "insufficient" });
     expect(wyrmwind.resourceSnapshot[FOCUS]).toBe(before);
   });
 
@@ -113,7 +113,7 @@ describe("DRG: 天竜点睛による天竜眼の消費 (#351)", () => {
 
     expect(wyrmwinds[0].resourceErrors).toHaveLength(0);
     expect(wyrmwinds[1].recastError).toBeFalsy();
-    expect(wyrmwinds[1].resourceErrors).toContain(FOCUS);
+    expect(wyrmwinds[1].resourceErrors).toContainEqual({ resourceId: FOCUS, kind: "insufficient" });
     expect(wyrmwinds[1].resourceSnapshot[FOCUS]).toBe(1);
   });
 });

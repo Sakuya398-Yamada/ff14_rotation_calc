@@ -35,7 +35,7 @@ describe("MNK: 闘気（チャクラ）", () => {
       MNK_BUFFS
     );
 
-    expect(result.entries[1].resourceErrors).toContain("chakra");
+    expect(result.entries[1].resourceErrors).toContainEqual({ resourceId: "chakra", kind: "insufficient" });
   });
 
   it("六合星導脚は闘気1つにつき威力+80で全消費する", () => {

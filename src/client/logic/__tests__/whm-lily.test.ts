@@ -115,7 +115,7 @@ describe("WHM: ブラッドリリーの蓄積とハート・オブ・ミゼリ (
     const result = resolve([entry("heart-of-solace"), entry("heart-of-misery")]);
 
     const misery = result.entries[1];
-    expect(misery.resourceErrors).toContain("blood-lily");
+    expect(misery.resourceErrors).toContainEqual({ resourceId: "blood-lily", kind: "insufficient" });
     // エラー時はリソース変動が適用されず、蓄積分は残ったまま
     expect(misery.resourceSnapshot["blood-lily"]).toBe(1);
   });
