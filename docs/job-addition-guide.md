@@ -223,7 +223,7 @@ import { XXX_RESOURCES } from "./<job>-resources";
 import { XXX_BUFFS } from "./<job>-buffs";
 
 // 2. JobId Union に追加
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "<job>";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "<job>";
 
 // 3. JOB_DATA に追加
 export const JOB_DATA: Record<JobId, JobData> = {
@@ -234,7 +234,7 @@ export const JOB_DATA: Record<JobId, JobData> = {
 
 > `JOB_DATA` は `Record<JobId, JobData>` 型のため、`JobId` に追加したジョブをここに登録し忘れると **コンパイル時に検出される**。
 
-ジョブピッカーの表示順とロールは `src/client/data/job-catalog.ts` の `JOB_CATALOG` で決まる（`JOB_DATA` のキー順は表示に使われない）。`JOB_CATALOG` には未実装ジョブも含めて全 21 ジョブが載っているので、追加時に書き換える必要は無い。`JobId` には `JOB_CATALOG` の `id`（例: 学者なら `sch`）を使い、`JOB_DATA` の `name` / `abbreviation` を `JOB_CATALOG` の値と揃える。食い違うと `src/client/data/__tests__/job-catalog.test.ts` が赤になる。`JobPicker.tsx` 側への追記は不要（`JOB_DATA` にあるジョブが選べるようになる）。
+ジョブピッカーの表示順とロールは `src/client/data/job-catalog.ts` の `JOB_CATALOG` で決まる（`JOB_DATA` のキー順は表示に使われない）。`JOB_CATALOG` には未実装ジョブも含めて全 21 ジョブが載っているので、追加時に書き換える必要は無い。`JobId` には `JOB_CATALOG` の `id`（例: 占星術師なら `ast`）を使い、`JOB_DATA` の `name` / `abbreviation` を `JOB_CATALOG` の値と揃える。食い違うと `src/client/data/__tests__/job-catalog.test.ts` が赤になる。`JobPicker.tsx` 側への追記は不要（`JOB_DATA` にあるジョブが選べるようになる）。
 
 `src/client/components/__tests__/job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」は、選べることを確かめるジョブの表示名を**固定配列で列挙している**ため、新ジョブの表示名を配列に追記し、テスト名の N も合わせて更新する。このテストは列挙したジョブだけを確かめるので、追記を忘れても `npm test` は赤にならない（チェックリストで確かめる）。未実装ジョブの例にナイトを使っているので、ナイトを追加するときは別の未実装ジョブに差し替える。
 
