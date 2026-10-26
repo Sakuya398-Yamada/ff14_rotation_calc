@@ -1380,7 +1380,9 @@ export function resolveTimeline(
     //   （例: 迅速魔 + 三連魔 → 迅速魔のみ消費、三連魔は据え置き）
     const consumeBuffTargets = new Set<string>();
     if (skill.type === "gcd") {
-      const isCastingGcd = !!skill.castTime && skill.castTime > 0;
+      // castTimeMultiplier で詠唱が 0 になった魔法（ライトスピード中）では、実機どおり迅速魔等を消費しない
+      const isCastingGcd = !!skill.castTime && skill.castTime > 0
+        && getCastTimeMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id) > 0;
       const instantCastCandidates: string[] = [];
       for (const ab of currentActiveBuffs) {
         const def = buffDefMap.get(ab.buffId);

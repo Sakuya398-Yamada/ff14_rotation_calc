@@ -35,10 +35,10 @@ describe("JobPicker", () => {
     expect(button).toHaveTextContent("遠隔魔法DPS · Lv90");
   });
 
-  it("実装済み8ジョブは選べ、未実装ジョブは「未対応」で選べない", () => {
+  it("実装済み9ジョブは選べ、未実装ジョブは「未対応」で選べない", () => {
     renderPicker();
     const dialog = openPicker();
-    for (const name of ["白魔道士", "竜騎士", "詩人", "ピクトマンサー", "黒魔道士", "侍", "モンク", "学者"]) {
+    for (const name of ["白魔道士", "竜騎士", "詩人", "ピクトマンサー", "黒魔道士", "侍", "モンク", "学者", "占星術師"]) {
       expect(within(dialog).getByRole("button", { name: new RegExp(`^[A-Z]{3}\\s?${name}$`) })).toBeEnabled();
     }
     const paladin = within(dialog).getByRole("button", { name: /ナイト/ });
