@@ -1124,20 +1124,23 @@ export function resolveTimeline(
         ? skill.recastTime
         : originalSkill.gcdRecastTime ?? BASE_GCD_RECAST;
       const overriddenRecast = getBaseRecastTime(originalSkill.id, baseRecastTime, currentActiveBuffs, buffDefMap);
-      const baseRecast = stats ? calcGcd(overriddenRecast, stats) : overriddenRecast;
+      // エウクラシア・E.ドシス等はスピードで縮めない。変化後の skill で判定する（ドシスIII → E.ドシスIII）
+      const fixedRecast = originalSkill.type === "gcd" && skill.fixedGcdRecast === true;
+      const baseRecast = stats && !fixedRecast ? calcGcd(overriddenRecast, stats) : overriddenRecast;
       // 速度バフを適用してリキャスト・詠唱時間計算
       // 対象スキル限定の speed バフ（インスタレーション等）を正しくフィルタするため originalSkill.id を渡す
       const speedMul = getSpeedMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id)
         * getResourceHasteMultiplier(resources, resourceState, currentActiveBuffs);
-      const recastTime = Math.round(baseRecast * speedMul * 1000) / 1000;
+      const recastTime = fixedRecast ? baseRecast : Math.round(baseRecast * speedMul * 1000) / 1000;
       // instantCast バフがアクティブなら詠唱時間を 0 に上書きする（三連魔・ファイアスターター等）
       // 対象スキル限定バフ（appliesToSkillIds）を正しくフィルタするため originalSkill.id を渡す
       const instantCast = skill.castTime
         ? hasInstantCastBuff(currentActiveBuffs, buffDefMap, originalSkill.id)
         : false;
       const castMul = getCastTimeMultiplier(currentActiveBuffs, buffDefMap, originalSkill.id);
+      // 詠唱時間もリキャストと同じ式でスピードにより短縮される
       resolvedCastTime = skill.castTime && !instantCast
-        ? Math.round(skill.castTime * speedMul * castMul * 1000) / 1000
+        ? Math.round((stats ? calcGcd(skill.castTime, stats) : skill.castTime) * speedMul * castMul * 1000) / 1000
         : 0;
 
       gcdAvailableAt = startTime + recastTime;
