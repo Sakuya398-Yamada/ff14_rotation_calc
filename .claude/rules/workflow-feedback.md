@@ -19,11 +19,13 @@
 node .claude/scripts/knowledge-board.cjs open            # 未回収の知見を 1 件 1 行（ID・日付・作業Issue・重要度・還元先・気づきの冒頭）
 node .claude/scripts/knowledge-board.cjs grep <pattern>  # 本文を検索（大文字小文字を区別しない正規表現）。当たったコメントの ID・日付・作業Issue・回収状況と該当行だけ
 node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
+node .claude/scripts/knowledge-board.cjs mark <id> "<印>"  # コメントの末尾に空行と印の 1 行を追記し、取り直して照合する（#305 のコメントにも使える）
 ```
 
 - 毎回 `gh api` で 1 ページ 100 件ずつ取り直し、連結した JSON を OS の一時ディレクトリ（`knowledge-board-195.json`）に保存する。続けて何度も読むときは `--cached` を付けると取り直さずに保存済みの JSON を使う
 - 未回収の判定は後述「回収済み判定の正」の 2 形式のマーカーで行う
 - コメントの編集（✅ マーカー追記・還元先の更新）に要るコメント ID は `open` / `grep` の先頭列から取る
+- `mark` は編集の直前に本文を取り直し（`--cached` は使わない）、更新後にもう一度取り直して送った本文と照合する（クラウドの経路が付ける署名フッターは位置を問わず除いて比べる）。照合が合わなければ非 0 で終わる。同じ印が既にあれば何もせず 0、別の `✅ Issue` の印があれば書き込まずに非 0（回収済みの知見への二重の印を防ぐ）。保存済みの JSON があれば、その本文も差し替える
 
 ## テンプレート元の情報
 
@@ -103,7 +105,7 @@ node .claude/scripts/knowledge-board.cjs show <id>       # 1 件の本文
 ユーザーによる手動棚卸し（随時）も引き続き認める。手順は日次ルーティンと同じ：
 
 1. `knowledge-board.cjs open` で未回収の知見を洗い出し、独立した改善Issue として昇格起票する（既存 Issue との重複は `search_issues`、過去の知見との重なりは `grep <キーワード>` で確かめる）
-2. 元コメントへ ✅ マーカーを追記する
+2. 元コメントへ ✅ マーカーを `knowledge-board.cjs mark <id> "✅ Issue #<番号> で対応"` で追記する
 3. 昇格後Issueは通常の `/issue-start` フローで実装する
 4. 実装した改善が **テンプレート汎用** で、まだ還元していなければ（元コメントの `還元先` が `テンプレート汎用（未還元）`、または `還元先` 未記入で汎用と判断できる）、`phases/08-issue-recording.md` 手順 6 でテンプレート元にも Issue を起票する（Phase 8 で還元済みなら不要）
 
