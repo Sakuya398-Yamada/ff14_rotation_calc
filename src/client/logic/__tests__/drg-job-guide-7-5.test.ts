@@ -68,7 +68,7 @@ describe("DRG: 竜眼", () => {
 describe("DRG: 紅の竜血を発動条件とするスキル", () => {
   it("スターダイバーは紅の竜血が無いとエラー", () => {
     const result = resolveAtLevel(100, [entry("stardiver")]);
-    expect(result.entries[0].comboErrors).toContain("life-of-the-dragon");
+    expect(result.entries[0].comboErrors).toContainEqual({ buffId: "life-of-the-dragon", kind: "missing" });
   });
 
   it("スターダイバーは紅の竜血効果中なら使用できる", () => {
@@ -86,7 +86,7 @@ describe("DRG: 紅の竜血を発動条件とするスキル", () => {
     const result = resolveAtLevel(100, [entry("geirskogul"), entry("stardiver", 5), entry("starcross", 22)]);
     const starcross = result.entries[2];
     expect(starcross.activeBuffsAtUse.some((ab) => ab.buffId === "starcross-ready")).toBe(true);
-    expect(starcross.comboErrors).toContain("life-of-the-dragon");
+    expect(starcross.comboErrors).toContainEqual({ buffId: "life-of-the-dragon", kind: "missing" });
   });
 });
 

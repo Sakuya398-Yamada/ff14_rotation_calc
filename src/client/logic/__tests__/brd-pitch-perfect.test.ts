@@ -34,14 +34,14 @@ describe("BRD: ピッチパーフェクトのメヌエット限定条件 (#108)"
 
   it("歌なしでは使用できない（comboErrors）", () => {
     const result = resolve([entry("pitch-perfect")]);
-    expect(result.entries[0].comboErrors).toContain("wanderers-minuet");
+    expect(result.entries[0].comboErrors).toContainEqual({ buffId: "wanderers-minuet", kind: "missing" });
   });
 
   it.each(["mages-ballad", "armys-paeon"] as const)(
     "メヌエット以外の歌（%s）中も使用できない",
     (songId) => {
       const result = resolve([entry(songId), entry("pitch-perfect")]);
-      expect(result.entries[1].comboErrors).toContain("wanderers-minuet");
+      expect(result.entries[1].comboErrors).toContainEqual({ buffId: "wanderers-minuet", kind: "missing" });
     },
   );
 

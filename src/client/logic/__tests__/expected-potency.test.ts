@@ -82,7 +82,7 @@ describe("calcEntryPotencyBreakdown: 通常スキル", () => {
 describe("calcEntryPotencyBreakdown: エラーエントリ", () => {
   it.each([
     { name: "resourceErrors", overrides: { resourceErrors: [{ resourceId: "mp", kind: "insufficient" as const }] } },
-    { name: "comboErrors", overrides: { comboErrors: ["combo"] } },
+    { name: "comboErrors", overrides: { comboErrors: [{ buffId: "combo", kind: "missing" as const }] } },
     { name: "untargetableError", overrides: { untargetableError: true } },
     { name: "recastError", overrides: { recastError: true } },
   ])("$name のエントリは 0 / 空配列を返す", ({ overrides }) => {

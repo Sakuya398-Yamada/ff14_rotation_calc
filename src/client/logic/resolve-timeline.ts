@@ -5,6 +5,7 @@ import type {
   ResourceChange,
   ResourceDefinition,
   ResourceError,
+  ComboError,
   ResourceBuffModifier,
   ResourceSnapshot,
   CharacterStats,
@@ -1228,15 +1229,15 @@ export function resolveTimeline(
     }
 
     // バフスタック消費チェック
-    const comboErrors: string[] = [];
+    const comboErrors: ComboError[] = [];
     if (skill.buffConsumptions) {
       for (const consumption of skill.buffConsumptions) {
         const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === consumption.buffId);
         if (!activeBuff) {
-          comboErrors.push(consumption.buffId);
+          comboErrors.push({ buffId: consumption.buffId, kind: "missing" });
         } else if (activeBuff.stacks !== undefined && activeBuff.stacks < consumption.stacks) {
           // スタック付きバフはスタック数チェック。スタックなしバフは存在すればOK
-          comboErrors.push(consumption.buffId);
+          comboErrors.push({ buffId: consumption.buffId, kind: "missing" });
         }
       }
     }
@@ -1245,13 +1246,13 @@ export function resolveTimeline(
     if (skill.requiredBuff) {
       const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === skill.requiredBuff);
       if (!activeBuff) {
-        comboErrors.push(skill.requiredBuff);
+        comboErrors.push({ buffId: skill.requiredBuff, kind: "missing" });
       }
     }
 
     // forbiddenBuff: 指定バフがアクティブならエラー
     if (skill.forbiddenBuff && currentActiveBuffs.some((ab) => ab.buffId === skill.forbiddenBuff)) {
-      comboErrors.push(skill.forbiddenBuff);
+      comboErrors.push({ buffId: skill.forbiddenBuff, kind: "forbidden" });
     }
 
     // requiredBuffAnyOf: いずれかのバフがアクティブであればよい（バフは消費しない）
@@ -1260,7 +1261,7 @@ export function resolveTimeline(
         currentActiveBuffs.some((ab) => ab.buffId === buffId)
       );
       if (!anyActive) {
-        comboErrors.push(skill.requiredBuffAnyOf[0]);
+        comboErrors.push({ buffId: skill.requiredBuffAnyOf[0], kind: "missing" });
       }
     }
 
@@ -1280,7 +1281,7 @@ export function resolveTimeline(
       }
       if (!anyOfMatchedBuffId) {
         // いずれのバフも見つからない → エラー
-        comboErrors.push(skill.buffConsumptionAnyOf[0].buffId);
+        comboErrors.push({ buffId: skill.buffConsumptionAnyOf[0].buffId, kind: "missing" });
       }
     }
 

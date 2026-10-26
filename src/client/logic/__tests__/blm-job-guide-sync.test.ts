@@ -160,7 +160,7 @@ describe("BLM: 黒魔紋の発動条件（黒魔紋 非効果中）", () => {
   it("黒魔紋の効果中に 2 チャージ目を使うと発動条件エラーになる", () => {
     const entries = resolve(["ley-lines", "ley-lines"]).entries;
     expect(entries[1].recastError).toBe(false);
-    expect(entries[1].comboErrors).toEqual(["ley-lines"]);
+    expect(entries[1].comboErrors).toEqual([{ buffId: "ley-lines", kind: "forbidden" }]);
   });
 
   it("効果が切れた後なら 2 チャージ目を使える", () => {

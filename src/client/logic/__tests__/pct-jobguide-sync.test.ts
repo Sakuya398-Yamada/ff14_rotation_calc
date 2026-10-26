@@ -104,7 +104,7 @@ describe("PCT: ハンマーコンボ実行可", () => {
     for (const e of [stamp, brush, polish]) expect(e.comboErrors).toEqual([]);
     expect(hasBuff(brush, "hammer-combo-ready")).toBe(true);
     expect(hasBuff(polish, "hammer-combo-ready")).toBe(false);
-    expect(extra.comboErrors).toContain("hammer-combo-ready");
+    expect(extra.comboErrors).toContainEqual({ buffId: "hammer-combo-ready", kind: "missing" });
   });
 
   it("Lv86 未満ではハンマースタンプを 3 回実行できる", () => {
@@ -113,7 +113,7 @@ describe("PCT: ハンマーコンボ実行可", () => {
       expect(e.resolvedSkillId).toBe("hammer-stamp");
       expect(e.comboErrors).toEqual([]);
     }
-    expect(entries[4].comboErrors).toContain("hammer-combo-ready");
+    expect(entries[4].comboErrors).toContainEqual({ buffId: "hammer-combo-ready", kind: "missing" });
   });
 });
 

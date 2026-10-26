@@ -114,7 +114,7 @@ describe("SCH: 埋伏の毒", () => {
 
   it("連環計を使わずに置くと、埋伏の毒実行可が無いのでエラーになり DoT も入らない", () => {
     const result = setup(100).resolve(["baneful-impaction"]);
-    expect([...new Set(result.entries[0].comboErrors)]).toEqual(["impact-imminent"]);
+    expect([...new Set(result.entries[0].comboErrors.map((e) => e.buffId))]).toEqual(["impact-imminent"]);
     expect(result.dotTicks.filter((t) => t.skillId === "baneful-impaction")).toHaveLength(0);
   });
 
@@ -122,7 +122,7 @@ describe("SCH: 埋伏の毒", () => {
     const result = setup(100).resolve(["chain-stratagem", "baneful-impaction", "broil4", "baneful-impaction"]);
     expectNoError(result.entries[1]);
     expect(result.entries[3].recastError).toBeFalsy();
-    expect([...new Set(result.entries[3].comboErrors)]).toEqual(["impact-imminent"]);
+    expect([...new Set(result.entries[3].comboErrors.map((e) => e.buffId))]).toEqual(["impact-imminent"]);
   });
 
   it("Lv90 では埋伏の毒はパレットに無く、連環計も埋伏の毒実行可を付与しない", () => {

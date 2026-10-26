@@ -65,6 +65,6 @@ describe("BRD: ワイドボレー (#513)", () => {
   it("ホークアイも乱れ撃ちも無ければワイドボレーは使用できない", () => {
     const wideVolley = resolveAtLevel(["wide-volley"], 70).entries[0];
 
-    expect(wideVolley.comboErrors).toContain("barrage");
+    expect(wideVolley.comboErrors).toContainEqual({ buffId: "barrage", kind: "missing" });
   });
 });

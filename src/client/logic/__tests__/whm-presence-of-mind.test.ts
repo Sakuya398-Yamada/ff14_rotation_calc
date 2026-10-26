@@ -71,7 +71,7 @@ describe("WHM: sacred-sight とグレアジャ (#322)", () => {
   it("sacred-sight なしではグレアジャが使用できない（comboErrors）", () => {
     const result = resolve([entry("glare4")]);
 
-    expect(result.entries[0].comboErrors).toContain("sacred-sight");
+    expect(result.entries[0].comboErrors).toContainEqual({ buffId: "sacred-sight", kind: "missing" });
   });
 
   it("神速魔後はグレアジャを3回使用でき、4回目はエラーになる", () => {
@@ -94,7 +94,7 @@ describe("WHM: sacred-sight とグレアジャ (#322)", () => {
 
     // 4回目: 3スタック消費済みでバフが消えており、使用不可
     const fourth = result.entries[4];
-    expect(fourth.comboErrors).toContain("sacred-sight");
+    expect(fourth.comboErrors).toContainEqual({ buffId: "sacred-sight", kind: "missing" });
     expect(fourth.activeBuffs.some((ab) => ab.buffId === "sacred-sight")).toBe(false);
   });
 });

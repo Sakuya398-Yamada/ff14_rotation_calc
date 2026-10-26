@@ -50,7 +50,7 @@ describe("MNK: 極意バフと派生 WS", () => {
       MNK_BUFFS
     );
 
-    expect(result.entries[0].comboErrors).toContain("fire-rumination");
+    expect(result.entries[0].comboErrors).toContainEqual({ buffId: "fire-rumination", kind: "missing" });
   });
 
   it("疾風の極意後に絶空拳が使用できる", () => {

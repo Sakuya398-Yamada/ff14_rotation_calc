@@ -11,6 +11,9 @@ import { BRD_RESOURCES } from "../../data/brd-resources";
 import { MNK_ATTACK_SKILLS } from "../../data/mnk-skills";
 import { MNK_BUFFS } from "../../data/mnk-buffs";
 import { MNK_RESOURCES } from "../../data/mnk-resources";
+import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
+import { BLM_BUFFS } from "../../data/blm-buffs";
+import { BLM_RESOURCES } from "../../data/blm-resources";
 import type { BuffDefinition, CharacterStats, ResourceDefinition, Skill } from "../../types/skill";
 
 const stats: CharacterStats = {
@@ -41,6 +44,7 @@ function setupJob(skills: Skill[], buffs: BuffDefinition[], resources: ResourceD
 
 const BRD = setupJob(BRD_ATTACK_SKILLS, BRD_BUFFS, BRD_RESOURCES);
 const MNK = setupJob(MNK_ATTACK_SKILLS, MNK_BUFFS, MNK_RESOURCES);
+const BLM = setupJob(BLM_ATTACK_SKILLS, BLM_BUFFS, BLM_RESOURCES);
 
 /** skillIds を解決し、最後のエントリの詳細パネルを描画する */
 function renderLastEntry(skillIds: string[], job = BRD) {
@@ -105,5 +109,22 @@ describe("SkillDetailPanel: リソースのエラーを種類ごとの文言と�
 
     expect(screen.getByText(/リソース不足: 闘気/)).toBeInTheDocument();
     expect(screen.queryByText(/リソース超過|chakra/)).not.toBeInTheDocument();
+  });
+});
+
+describe("SkillDetailPanel: バフ条件のエラーを種類ごとの文言とバフ名で出す (#666)", () => {
+  it("歌なしのピッチパーフェクトは「バフ条件未達成」で、バフ名が出る", () => {
+    // 歌なしでは詩心も 0 で「リソース不足: 詩心」も並ぶので、部分一致で見る
+    renderLastEntry(["pitch-perfect"]);
+
+    expect(screen.getByText(/バフ条件未達成: 旅神のメヌエット/)).toBeInTheDocument();
+    expect(screen.queryByText(/wanderers-minuet/)).not.toBeInTheDocument();
+  });
+
+  it("黒魔紋の効果中に置いた黒魔紋は「バフ効果中」で、バフ名が出る", () => {
+    renderLastEntry(["ley-lines", "ley-lines"], BLM);
+
+    expect(screen.getByText("バフ効果中: 黒魔紋")).toBeInTheDocument();
+    expect(screen.queryByText(/バフ条件未達成|ley-lines/)).not.toBeInTheDocument();
   });
 });

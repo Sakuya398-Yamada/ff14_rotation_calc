@@ -194,7 +194,7 @@ export interface Skill {
   conditionalPotencyBuffs?: { buffId: string; potency: number }[];
   /** スキル使用に必要なバフID（未アクティブ時はエラー、威力を計上しない） */
   requiredBuff?: string;
-  /** このバフがアクティブな間は使用不可（アクティブ時はエラー、威力を計上しない。例: 黒魔紋は「黒魔紋」非効果中のみ） */
+  /** このバフがアクティブな間は使用不可（アクティブ時はエラー（comboErrors の forbidden）、威力を計上しない。例: 黒魔紋は「黒魔紋」非効果中のみ） */
   forbiddenBuff?: string;
   /** スキル使用に必要なバフIDのOR条件（いずれか1つでもアクティブなら可。全て未アクティブ時はエラー、威力を計上しない。バフは消費しない） */
   requiredBuffAnyOf?: string[];
@@ -556,6 +556,14 @@ export interface ResourceError {
   kind: ResourceErrorKind;
 }
 
+/** バフ条件のエラーの種類。missing: 必要なバフが無い・スタックが足りない / forbidden: forbiddenBuff のバフが効果中 */
+export type ComboErrorKind = "missing" | "forbidden";
+
+export interface ComboError {
+  buffId: string;
+  kind: ComboErrorKind;
+}
+
 /** 時間情報付きタイムラインエントリ（計算結果） */
 export interface ResolvedTimelineEntry {
   /** タイムラインエントリの一意ID */
@@ -580,8 +588,8 @@ export interface ResolvedTimelineEntry {
   resourceSnapshot: ResourceSnapshot;
   /** 発動条件を満たさなかったリソースとその種類 */
   resourceErrors: ResourceError[];
-  /** バフスタック不足のバフIDリスト */
-  comboErrors: string[];
+  /** 発動条件を満たさなかったバフとその種類 */
+  comboErrors: ComboError[];
   /** ボス離脱中に攻撃したエラー */
   untargetableError: boolean;
   /** リキャスト中に使用したエラー */
