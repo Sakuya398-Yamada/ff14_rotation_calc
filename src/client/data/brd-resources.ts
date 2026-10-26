@@ -18,6 +18,7 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     shortName: "ｿｳﾙ\nﾎﾞｲｽ",
     maxStacks: 100,
     color: "#ffd700",
+    displayAsGauge: true,
     acquiredLevel: 80,
     autoGenerateInterval: 3.75,
     autoGenerateAmount: 5,
@@ -59,6 +60,8 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     // 詩心を使わない時間帯（歌なし・賢人のバラード中）は上限 0。上限は歌ごとに whileBuffModifiers で決める
     maxStacks: 0,
     color: "#4caf50",
+    // ドットだと、アビリティを続けて並べたときに隣のマーカーの丸とつながって数が読めないので、数字付きのゲージで描く
+    displayAsGauge: true,
     acquiredLevel: 52,
     autoGenerateInterval: 3.75,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],

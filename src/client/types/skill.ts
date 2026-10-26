@@ -319,6 +319,8 @@ export interface ResourceDefinition {
   acquiredLevel?: number;
   /** 表示グループ名（同じグループのリソースは1行にまとめて表示） */
   displayGroup?: string;
+  /** true ならドットではなく塗り＋数字ラベルのゲージで描く。塗りの分母はその時点の上限（whileBuffModifiers を反映） */
+  displayAsGauge?: boolean;
   /** ドット1行あたりのスタック数（未設定の場合はmaxStacksを1行で表示。maxStacksがこの値を超える場合は複数行に折り返される） */
   stacksPerRow?: number;
   /**

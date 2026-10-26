@@ -63,6 +63,7 @@ FF14 Rotation Calculator に新しいジョブを追加するときの手順書�
 | `acquiredLevel` | 解放レベル | `whm-resources.ts:26` |
 | `displayGroup` + `groupMaxStacks` + `displayGroupPriority` | 複数リソースを 1 レーンに統合表示・合計キャップ | `sam-resources.ts:34-36, 45-47, 56-58`（雪/月/花 → `"sen"` レーン統合、合計 3 まで） |
 | `stacksPerRow` | ドット表示の折り返し | |
+| `displayAsGauge` | ドットではなく塗り＋数字のゲージで描く。上限の大きいリソース（100 等）は必ず付ける（無いとドットが上限の数だけ並ぶ） | `brd-resources.ts`（ソウルボイス・詩心） |
 
 ### 最小例（WHM ヒーリングリリー風）
 
@@ -77,6 +78,7 @@ export const XXX_RESOURCES: ResourceDefinition[] = [
     shortName: "○ゲ",
     maxStacks: 100,
     color: "#7AC0FF",
+    displayAsGauge: true,
     acquiredLevel: 60,
   },
 ];

@@ -23,6 +23,7 @@ export const BLM_RESOURCES: ResourceDefinition[] = [
     maxStacks: 10000,
     initialStacks: 10000,
     color: "#5b9bd5",
+    displayAsGauge: true,
     acquiredLevel: 1,
     // ルーシッドドリーム（ロールアクション）付与中のみ 3 秒ごとに 550 回復
     autoGenerateInterval: 3,
