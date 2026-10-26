@@ -9,13 +9,19 @@ import {
 import { SGE_ATTACK_SKILLS } from "../../data/sge-skills";
 import { SGE_BUFFS } from "../../data/sge-buffs";
 import { SGE_RESOURCES } from "../../data/sge-resources";
-import type { CharacterStats, PlayerLevel, ResolvedTimelineEntry, TimelineEntry } from "../../types/skill";
+import type {
+  CharacterStats,
+  MultiTargetWindow,
+  PlayerLevel,
+  ResolvedTimelineEntry,
+  TimelineEntry,
+} from "../../types/skill";
 
 function entry(skillId: string, manualStartTime?: number): TimelineEntry {
   return { uid: `${skillId}-${Math.random()}`, skillId, manualStartTime };
 }
 
-function setup(level: PlayerLevel = 100, stats?: CharacterStats) {
+function setup(level: PlayerLevel = 100, stats?: CharacterStats, multiTargetWindows?: MultiTargetWindow[]) {
   const buffs = getBuffsForLevel(SGE_BUFFS, level);
   const resources = getResourcesForLevel(SGE_RESOURCES, level);
   const buffIds = new Set(buffs.map((b) => b.id));
@@ -29,6 +35,8 @@ function setup(level: PlayerLevel = 100, stats?: CharacterStats) {
       resources,
       stats,
       buffs,
+      [],
+      multiTargetWindows,
     );
   return { skills, resolve };
 }
@@ -133,6 +141,16 @@ describe("SGE: エウクラシア", () => {
     expect(firstTicks.length).toBeLessThan(10);
     expect(firstTicks.every((t) => t.time <= overwrittenAt)).toBe(true);
     expect(result.dotTicks.filter((t) => t.skillId === secondDot)).toHaveLength(10);
+  });
+
+  it("E.ディスクラシアの DoT は、敵が 3 体いる時間帯でも 1 体分（10 ティック × 40 = 400）で数える", () => {
+    const windows: MultiTargetWindow[] = [{ startTime: 0, endTime: 60, targetCount: 3 }];
+    const result = setup(100, undefined, windows).resolve(["eukrasia", "dyskrasia2"]);
+    const [, eDyskrasia] = result.entries;
+    expectNoError(eDyskrasia);
+    expect(eDyskrasia.resolvedSkillId).toBe("eukrasian-dyskrasia");
+    expect(eDyskrasia.targetCount).toBe(3);
+    expect(result.dotTotalPotency).toBe(400);
   });
 });
 
