@@ -219,6 +219,17 @@ describe("POST /api/timelines: 不正な入力", () => {
     ["レベルが 70/80/90/100 以外", { data: { ...validData(), level: 85 } }],
     ["存在しないスキル ID", { data: validData({ entries: [{ uid: "entry-1", skillId: "no-such-skill" }] }) }],
     ["別のジョブのスキル ID", { data: validData({ entries: [{ uid: "entry-1", skillId: "stone" }] }) }],
+    [
+      "エントリの uid が重複",
+      {
+        data: validData({
+          entries: [
+            { uid: "entry-1", skillId: "fire-3" },
+            { uid: "entry-1", skillId: "fire-4", manualStartTime: 2.5 },
+          ],
+        }),
+      },
+    ],
     ["エントリが 2001 件", { data: validData({ entries: entries2001 }) }],
     ["stats が文字列", { data: { ...validData(), stats: { ...validData().stats, critical: "3000" } } }],
     ["ウィンドウの endTime が無い", { data: { ...validData(), untargetableWindows: [{ startTime: 1 }] } }],
