@@ -319,6 +319,10 @@ export function App() {
     () => new Map(levelBuffs.map((b) => [b.id, b])),
     [levelBuffs]
   );
+  const resourceDefMap = useMemo(
+    () => new Map(levelResources.map((r) => [r.id, r])),
+    [levelResources]
+  );
 
   const selectedEntry = useMemo(() => {
     if (selectedEntryUid === null) return null;
@@ -490,6 +494,7 @@ export function App() {
               entry={selectedEntry}
               resolvedSkill={selectedSkill}
               buffDefMap={buffDefMap}
+              resourceDefMap={resourceDefMap}
               stats={stats}
               onClose={() => setSelectedEntryUid(null)}
               onManualStartTimeChange={handleManualStartTimeChange}

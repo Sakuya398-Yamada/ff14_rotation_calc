@@ -181,7 +181,7 @@ describe("AST: ドローとクラウンロード", () => {
     expectNoError(first);
     expect(first.resolvedPotency).toBe(400);
     expect(lord(first)).toBe(0);
-    expect(second.resourceErrors).toEqual(["lord-of-crowns"]);
+    expect(second.resourceErrors).toEqual([{ resourceId: "lord-of-crowns", kind: "insufficient" }]);
   });
 
   it("開幕に置いたドローはアンブラルドローになり、使わずにいたクラウンロードも消える", () => {
@@ -190,7 +190,7 @@ describe("AST: ドローとクラウンロード", () => {
     expect(draw.resolvedSkillId).toBe("umbral-draw");
     expect(lord(draw)).toBe(0);
     expect(umbralNext(draw)).toBe(0);
-    expect(crowns.resourceErrors).toEqual(["lord-of-crowns"]);
+    expect(crowns.resourceErrors).toEqual([{ resourceId: "lord-of-crowns", kind: "insufficient" }]);
   });
 
   it("アンブラルドローの次のドローはアストラルドローになり、クラウンロードがまた使える", () => {

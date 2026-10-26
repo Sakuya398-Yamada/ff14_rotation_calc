@@ -138,7 +138,7 @@ describe("SCH: 埋伏の毒", () => {
 describe("SCH: エーテルフロー", () => {
   it("開始時は 0 なので、エナジードレインはリソース不足のエラーになる", () => {
     const [drain] = setup().resolve(["energy-drain"]).entries;
-    expect(drain.resourceErrors).toEqual(["aetherflow"]);
+    expect(drain.resourceErrors).toEqual([{ resourceId: "aetherflow", kind: "insufficient" }]);
     expect(aetherflow(drain)).toBe(0);
   });
 
@@ -153,7 +153,7 @@ describe("SCH: エーテルフロー", () => {
       expect(aetherflow(entries[i])).toBe(rest);
     }
     expect(entries[7].recastError).toBeFalsy();
-    expect(entries[7].resourceErrors).toEqual(["aetherflow"]);
+    expect(entries[7].resourceErrors).toEqual([{ resourceId: "aetherflow", kind: "insufficient" }]);
   });
 
   it("転化でも 3 獲得する", () => {

@@ -52,7 +52,7 @@ describe("BRD: ピッチパーフェクトのメヌエット限定条件 (#108)"
     // 歌の条件は満たしている
     expect(pitch.comboErrors).toEqual([]);
     // 詩心はまだ蓄積していないためリソース不足
-    expect(pitch.resourceErrors).toContain("repertoire");
+    expect(pitch.resourceErrors).toContainEqual({ resourceId: "repertoire", kind: "insufficient" });
   });
 
   it("メヌエット中に詩心 3（上限）まで蓄積すれば使用でき、威力 360 で詩心を全て消費する", () => {
