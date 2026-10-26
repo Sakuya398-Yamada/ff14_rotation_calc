@@ -88,7 +88,7 @@
   - clone が shallow（既定ブランチの直近数十コミット）のことがある。古いブランチと既定ブランチの merge-base が見つからず、`git merge` が `refusing to merge unrelated histories` で止まる
 - **回避**:
   - push 先は、セッションの指示にあるブランチか、割り当てられたブランチにする。プロキシが通しても、指示に無いブランチへは push しない
-  - ブランチの削除は、実行するコマンドを示してユーザーに頼む（`phases/01-issue-analysis.md`「GitHub 上の操作だけで終わる Issue」手順 2）
+  - ブランチの削除は、実行するコマンドを示してユーザーに頼む（`phases/01-no-repo-change.md`「GitHub 上の操作だけで終わる Issue」手順 2）
   - shallow かどうかは `git rev-parse --is-shallow-repository` で見る。`true` なら、取り込む前に `git fetch --unshallow origin` で全履歴を取る（還元元では数秒・約 20MiB）
 - **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#132。別ブランチへの push が通ることは、還元元の報告とルーティンの公式ドキュメントに拠る（このテンプレート元では試していない）。`git push --delete` の拒否は、このテンプレート元のセッションでも同じメッセージで確かめた。REST の DELETE と shallow clone は還元元の報告で、このテンプレート元のセッションの clone は shallow ではなかった（環境やリポジトリの大きさで変わる）
 
