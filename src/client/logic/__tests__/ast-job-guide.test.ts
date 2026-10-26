@@ -116,14 +116,14 @@ describe("AST: オラクル", () => {
 
   it("ディヴィネーションを使っていなければ、オラクルは「オラクル実行可」不足のエラーになる", () => {
     const [oracle] = setup().resolve(["oracle"]).entries;
-    expect(oracle.comboErrors).toEqual(["divining"]);
+    expect(oracle.comboErrors).toEqual([{ buffId: "divining", kind: "missing" }]);
   });
 
   it("オラクルを 1 回使うと「オラクル実行可」は消え、2 回目はエラーになる", () => {
     const entries = setup().resolve(["divination", "oracle", "fall-malefic", "oracle"]).entries;
     expectNoError(entries[1]);
     expect(entries[3].recastError).toBeFalsy();
-    expect(entries[3].comboErrors).toEqual(["divining"]);
+    expect(entries[3].comboErrors).toEqual([{ buffId: "divining", kind: "missing" }]);
   });
 
   it("Lv90 ではパレットにオラクルが無く、ディヴィネーションで「オラクル実行可」も付かない", () => {
@@ -151,12 +151,12 @@ describe("AST: アーサリースターとステラデトネーション", () =>
   it("設置から 20 秒経つとアーサリースターは消え、ステラデトネーションはエラーになる（自動爆発は数えない）", () => {
     const [, detonation] = setup().resolve(["earthly-star", entry("stellar-detonation", 20)]).entries;
     expect(detonation.recastError).toBeFalsy();
-    expect(detonation.comboErrors).toEqual(["earthly-star"]);
+    expect(detonation.comboErrors).toEqual([{ buffId: "earthly-star", kind: "missing" }]);
   });
 
   it("アーサリースターを設置していなければ、ステラデトネーションはエラーになる", () => {
     const [detonation] = setup().resolve(["stellar-detonation"]).entries;
-    expect(detonation.comboErrors).toEqual(["earthly-star"]);
+    expect(detonation.comboErrors).toEqual([{ buffId: "earthly-star", kind: "missing" }]);
   });
 
   it("成熟前にステラデトネーションを使うと、アーサリースターと星の支配者の両方が消える", () => {

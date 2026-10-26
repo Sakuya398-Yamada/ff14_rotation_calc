@@ -53,7 +53,7 @@ describe("竜騎士バフ条件による使用制限", () => {
 
       const result = resolveTimeline([makeEntry("mirage-dive")], skillMap, [], undefined, allBuffs);
 
-      expect(result.entries[0].comboErrors).toContain("dive-ready");
+      expect(result.entries[0].comboErrors).toContainEqual({ buffId: "dive-ready", kind: "missing" });
     });
 
     it("ハイジャンプ後にダイブレディが付与されミラージュダイブが使える", () => {
@@ -91,7 +91,7 @@ describe("竜騎士バフ条件による使用制限", () => {
 
       const result = resolveTimeline([makeEntry("rise-of-the-dragon")], skillMap, [], undefined, allBuffs);
 
-      expect(result.entries[0].comboErrors).toContain("dragons-flight");
+      expect(result.entries[0].comboErrors).toContainEqual({ buffId: "dragons-flight", kind: "missing" });
     });
 
     it("ドラゴンダイブ後にドラゴンフライトが付与されドラゴンライズが使える", () => {
@@ -129,7 +129,7 @@ describe("竜騎士バフ条件による使用制限", () => {
 
       const result = resolveTimeline([makeEntry("nastrond")], skillMap, [], undefined, allBuffs);
 
-      expect(result.entries[0].comboErrors).toContain("nastrond-ready");
+      expect(result.entries[0].comboErrors).toContainEqual({ buffId: "nastrond-ready", kind: "missing" });
     });
   });
 
@@ -189,7 +189,7 @@ describe("竜騎士バフ条件による使用制限", () => {
       );
 
       expect(result.entries[1].comboErrors).toHaveLength(0);
-      expect(result.entries[2].comboErrors).toContain("nastrond-ready");
+      expect(result.entries[2].comboErrors).toContainEqual({ buffId: "nastrond-ready", kind: "missing" });
     });
   });
 
@@ -238,7 +238,7 @@ describe("竜騎士バフ条件による使用制限", () => {
 
       const result = resolveTimeline([makeEntry("starcross")], skillMap, [], undefined, allBuffs);
 
-      expect(result.entries[0].comboErrors).toContain("starcross-ready");
+      expect(result.entries[0].comboErrors).toContainEqual({ buffId: "starcross-ready", kind: "missing" });
     });
   });
 });

@@ -117,7 +117,7 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     const result = resolve([entry("refulgent-arrow")]);
 
     // buffConsumptionAnyOf 不成立時は先頭候補（barrage）の buffId がエラーとして記録される
-    expect(result.entries[0].comboErrors).toContain("barrage");
+    expect(result.entries[0].comboErrors).toContainEqual({ buffId: "barrage", kind: "missing" });
   });
 
   it("乱れ撃ち中はホークアイ不要で使用でき、威力 840 固定（proc 期待値は適用されない）", () => {

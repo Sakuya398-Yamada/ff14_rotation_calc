@@ -5,6 +5,7 @@ import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
 import { describeBuffEffects, formatBuffRemaining, formatConsumedProc } from "../logic/buff-format";
 import { formatResourceErrors } from "../logic/resource-error-format";
+import { formatComboErrors } from "../logic/combo-error-format";
 
 interface SkillDetailPanelProps {
   entry: ResolvedTimelineEntry;
@@ -131,7 +132,7 @@ export function SkillDetailPanel({
 
   const errorMessages: string[] = [];
   errorMessages.push(...formatResourceErrors(entry.resourceErrors, resourceDefMap));
-  if (entry.comboErrors.length > 0) errorMessages.push(`バフ条件未達成: ${entry.comboErrors.join(", ")}`);
+  errorMessages.push(...formatComboErrors(entry.comboErrors, buffDefMap));
   if (entry.untargetableError) errorMessages.push("ボス離脱中");
   if (entry.recastError) errorMessages.push("リキャスト中");
 
