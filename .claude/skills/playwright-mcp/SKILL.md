@@ -34,6 +34,8 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
    ```
    `VITE vX.Y.Z  ready in ...ms` のログを待ってから次へ。デフォルトは `http://localhost:5173/` だが、ポート競合時は 5174 等にフォールバックされるためログで実 URL を確認する。
 
+   検証が終わったら `TaskStop`（起動時のタスク ID）で止める。`run_in_background` 以外で起動したときは、ポートを LISTEN している PID を `kill` する（Linux は `kill $(lsof -ti:<ポート>)`）。`$!` は npm の PID で、kill しても Vite が残る。`pkill -f` は使わない（`.claude/hooks/validate-pkill-pattern.sh` が止める）。
+
    **Vite v8 で Local URL がログに出ない場合**: Vite v8 は `ready in 150ms` のみ出力し `Local: http://localhost:NNNN/` 行を出さないことがある。複数 worktree 並行運用時（5173〜5177 が複数 Vite で埋まる状況）はどのポートで起動したか判別できないため、以下で対処する（知見ボード #195、発生元 #255）：
 
    - **明示ポート指定で起動するのが確実**: `npx vite --port <空きポート> --strictPort`（`--strictPort` により競合時はフォールバックせず起動失敗するので、起動成功 = 指定ポートが確定する）
@@ -53,6 +55,7 @@ Playwright MCP に接続できない（`CONNECT_TIMEOUT`、環境変数が未設
 1. Vite を固定ポートで起動する: `npx vite --port <空きポート> --strictPort`（run_in_background: true）
 2. 次のスクリプトを scratchpad に `.cjs` で置き、`NODE_PATH=$(npm root -g) node <スクリプト> http://localhost:<ポート>/` で実行する
 3. 撮ったスクリーンショットを Read ツールで開いて確かめる
+4. 確かめ終わったら Vite を `TaskStop`（手順 1 のタスク ID）で止める。`run_in_background` 以外で起動したときは `kill $(lsof -ti:<ポート>)` で止める（`$!` は npx の PID で、kill しても Vite が残る）。`pkill -f` は使わない（`.claude/hooks/validate-pkill-pattern.sh` が止める）
 
 ```js
 const { chromium } = require('playwright');
@@ -133,6 +136,7 @@ async (page) => {
 5. **エントリのクリック選択との共存**: MouseSensor は distance: 4 未満の移動ならクリック扱いになる。選択の回帰確認は通常の `click()` でよい（詳細パネルの表示で判定）
 6. **ビューポートを先に拡大する**: 既定サイズではパレット下部（ロールアクション等）が画面外にあり、`boundingBox` の座標がビューポート外になってドロップを取りこぼす。スニペット冒頭の `setViewportSize` で全体を画面内に収める（#350 で発生）
 7. **空タイムラインでは `.timeline-scroll` が存在しない**: エントリ 0 件のときはプレースホルダー（「スキルパレットからドラッグ＆ドロップしてスキルを追加」）だけが描画されるため、`.timeline-scroll` の `boundingBox` はタイムアウトする。スニペットのようにプレースホルダー文言へフォールバックする
+8. **ドラッグ中の状態は 1 回だけ読まない**: 挿入インジケーターの位置（`style.left`）のようにドラッグ中にだけ出る状態は、ページ読み込み直後や HMR 直後の最初のドラッグだと、移動後に 1 回読むだけでは値が実行ごとにずれることがある。少し動かしながら間隔を空けて複数回読み（例: 250ms 間隔で 4 回）、値がそろうことを確かめてから判定する（#471 で、移動後 300ms に 1 回読むと 252px / 104px / 空とずれた。原因は未特定）
 
 ## React 制御フォーム要素の操作ワークアラウンド（`value` 直接代入が効かない場合）
 
@@ -210,6 +214,7 @@ async (page) => {
 | `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | dnd-kit の MouseSensor activation（distance: 4）と `dragTo` の一括ジェスチャが競合し、drop 前にドラッグが確定しない | 上記「dnd-kit ベース DnD の検証方法」のステップ分割マウス操作を `browser_run_code_unsafe` で実行する |
 | `browser_evaluate` で `select.value = '...'` を代入して `change` を dispatch しても UI が変化しない（値が空に戻る） | React の制御コンポーネントは value 代入を内部状態と同期しないため、直接代入では onChange が発火しない | 上記「React 制御フォーム要素の操作ワークアラウンド」の native setter スニペットを使う |
 | localStorage に保存データを書いてからリロードしても復元されない（タイムラインが空のまま） | アプリが `pagehide` で現在の状態を即時保存するため、リロード前に書いた値が離脱時の保存で上書きされる | 上記「保存データを注入して検証する」の `page.addInitScript` スニペットで、ページの読み込み前に書き込む |
+| `getByRole('status')` など `role="status"` のロケーターが `strict mode violation: getByRole('status') resolved to 2 elements` で止まる | dnd-kit の `DndContext` が、読み上げ用の `<div role="status" id="DndLiveRegion-0">` を常に描画している。画面には見えないがロケーターには当たるので、ページ全体で探すと目的の要素とあわせて 2 件以上になる | 対象のコンテナ（dialog など）の中に絞って探す（例: `page.getByRole('dialog').getByRole('status')`） |
 
 ## 切断時の再接続手順（Claude 向け）
 
