@@ -220,7 +220,7 @@ async (page) => {
 ポイント:
 
 1. **`url` ではなく `domain` と `path` を渡す**: `url` を渡すと、Playwright が `secure` を「`url` が `https:` か」で決め直す。http の localhost では `Secure` が外れ、`Secure` が必須の `__Host-` の Cookie として `Invalid cookie fields` で拒まれる（#480）
-2. ページを開いてから `page.evaluate` で `` document.cookie = `__Host-owner=${token}; Secure; Path=/; SameSite=Lax` `` と書いても入る（localhost は安全なコンテキストなので `Secure` 付きでも入る。サーバーは HttpOnly かどうかを見ない）
+2. ページを開いてから `page.evaluate` で `` document.cookie = `__Host-owner=${token}; Secure; Path=/; SameSite=Lax` `` と書いても入る（localhost は安全なコンテキストなので `Secure` 付きでも入る。サーバーは HttpOnly かどうかを見ない）。ただし、有効なトークンで一覧や保存の API を一度呼ぶと、サーバーが同じ Cookie を HttpOnly で付け直すので、そのあと別のトークンへの切り替えは `document.cookie` では効かない（エラーにならず無視される）。切り替えは `addCookies` で行う（HttpOnly の Cookie も上書きできる）
 
 ### レート制限を超える件数をローカルの D1 に入れる
 
