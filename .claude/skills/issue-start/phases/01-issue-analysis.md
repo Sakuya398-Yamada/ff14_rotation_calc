@@ -212,8 +212,8 @@ Issue #3 の内容を確認しました。以下の点を決めてください�
 
 ラベル `needs-decision` は、日次の `weekday-issue-start` が要件の分岐を決められずに付けたもの（決められなかった点は Issue のコメントにある）。付いている間はルーティンの選定から外れ続けるので、このセッションで質問して決定を得たら、このセッションで次を行う:
 
-1. 決定と根拠を Issue にコメントする（どの問いに何を決めたか、その理由）
-2. `needs-decision` を外す。GitHub MCP の `issue_write`（method: `update`）の `labels` はラベル全体を置き換えるので、現在のラベルから `needs-decision` だけを除いた配列を渡す。`gh` なら `gh api -X DELETE repos/{owner}/{repo}/issues/<番号>/labels/needs-decision`
+1. 決定と根拠を Issue にコメントする（`add_issue_comment`。どの問いに何を決めたか、その理由）
+2. `needs-decision` を外す。GitHub MCP の `issue_write`（method: `update`）の `labels` はラベル全体を置き換えるので、送る直前に取り直したラベルから `needs-decision` だけを除いた配列を渡す。`gh` なら `gh api -X DELETE repos/{owner}/{repo}/issues/<番号>/labels/needs-decision`
 3. 本文の `## 未確定事項` に `[要確認]` の行が残っていれば、`[要確認]` を外して決定を書き、手順 1 のコメントへのリンクを添える書き換え案を、Phase 1.5「補完結果の確認」に含めて聞く（本文の更新はユーザーの確認を得てから）。行が残ると、ラベルを外してもルーティンは決定待ちとして選ばない
 
 ## Phase 1.5: Issue の補完（関連 Issue & 完了条件）
