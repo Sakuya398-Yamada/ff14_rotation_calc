@@ -91,7 +91,7 @@ export function buildShareUrl(origin: string, id: string): string {
   return `${origin}/t/${id}`;
 }
 
-export type SaveError = "invalid" | "too_large" | "rate_limited" | "network";
+export type SaveError = "invalid" | "too_large" | "rate_limited" | "verification_failed" | "network";
 
 export type SaveOutcome = { kind: "saved"; id: string } | { kind: "cancelled" } | { kind: "error"; error: SaveError };
 
@@ -99,6 +99,8 @@ export const SAVE_ERROR_MESSAGES: Record<SaveError, string> = {
   invalid: "タイムラインに保存できない内容が含まれているため、保存できませんでした。",
   too_large: "タイムラインが大きすぎて保存できません。エントリを減らしてから保存してください。",
   rate_limited: "短時間に続けて保存したため、保存できませんでした。1 分ほど待ってから、もう一度保存してください。",
+  // 保存を押す前のウィジェットのエラーにも出すので、「保存できませんでした」とは書かない
+  verification_failed: "ボット対策の確認ができませんでした。確認が終わってから保存してください（続くときは、ページを再読み込みしてください）。",
   network: "保存できませんでした。通信状況を確かめて、もう一度保存してください。",
 };
 
@@ -106,9 +108,15 @@ function saveFailed(error: SaveError): SaveOutcome {
   return { kind: "error", error };
 }
 
-/** タイムラインをサーバーに保存する（POST /api/timelines）。保存した行は書き換えられない */
+/** タイムラインをサーバーに保存する（POST /api/timelines）。保存した行は書き換えられない。turnstileToken は 1 回しか使えない */
 export async function saveTimeline(
-  request: { state: AppStateSnapshot; title: string; parentId: string | null; contentId: string | null },
+  request: {
+    state: AppStateSnapshot;
+    title: string;
+    parentId: string | null;
+    contentId: string | null;
+    turnstileToken: string;
+  },
   deps: { signal?: AbortSignal } = {},
 ): Promise<SaveOutcome> {
   const data: PersistedAppState = { version: SCHEMA_VERSION, ...request.state };
@@ -124,12 +132,14 @@ export async function saveTimeline(
   try {
     const res = await fetch("/api/timelines", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Turnstile-Token": request.turnstileToken },
       body: JSON.stringify(body),
       signal: deps.signal,
     });
     // 400 は invalid_request と parent_not_found のどちらも、利用者にはタイムラインの内容の問題として伝える
     if (res.status === 400) return saveFailed("invalid");
+    // csrf の 403 は別オリジンのフォーム送信だけで、このアプリからは起きない
+    if (res.status === 403) return saveFailed("verification_failed");
     if (res.status === 413) return saveFailed("too_large");
     if (res.status === 429) return saveFailed("rate_limited");
     if (res.status !== 201) return saveFailed("network");

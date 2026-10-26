@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SessionStart hook (matcher: startup|resume): installs the project's dependencies in
-# Claude Code cloud sessions, whose containers start from a fresh clone, and applies the D1
-# migrations to the local database. Local sessions exit at once so an existing node_modules
-# is never reinstalled.
+# Claude Code cloud sessions, whose containers start from a fresh clone, creates .dev.vars
+# (the Worker's local secrets) from .dev.vars.example, and applies the D1 migrations to the
+# local database. Local sessions exit at once so an existing node_modules is never reinstalled.
 #
 # Output goes to stdout as a short banner (Claude Code adds it to Claude's context);
 # npm / npx output goes to a log file instead. A failed npm ci is retried once, since
@@ -26,6 +26,19 @@ report_failure() {
 }
 
 printf '## Cloud setup\n'
+
+# `npm run dev` reads the Worker's secrets (TURNSTILE_SECRET_KEY) from .dev.vars, which is
+# gitignored. The example holds only Cloudflare's public test keys. An existing .dev.vars is
+# never overwritten. Done before npm ci so a failed install still leaves it in place.
+if [[ ! -e .dev.vars && -f .dev.vars.example ]]; then
+  cp .dev.vars.example .dev.vars >>"$log" 2>&1
+  rc=$?
+  if (( rc == 0 )); then
+    printf -- '- .dev.vars: created from .dev.vars.example\n'
+  else
+    report_failure ".dev.vars" "$rc" 'Copy `.dev.vars.example` to `.dev.vars` before `npm run dev`'
+  fi
+fi
 
 # npm writes node_modules/.package-lock.json at the end of an install. Skip only when
 # it exists and is not older than package-lock.json (an interrupted install or a lock

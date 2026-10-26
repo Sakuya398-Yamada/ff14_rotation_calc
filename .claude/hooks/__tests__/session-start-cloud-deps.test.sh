@@ -130,6 +130,7 @@ check "fresh: tool output kept out of stdout" "$(lacks 'STUB-NOISE')"
 check "fresh: tool output written to the log" "$(is "$(grep -c STUB-NOISE "$TMP_ROOT/session-start-cloud-deps.log")" 100)"
 check "fresh: stdout is 3 lines" "$(is "$(printf '%s\n' "$out" | wc -l | tr -d '[:space:]')" 3)"
 check "fresh: no stderr" "$(is "$err" "")"
+check "fresh: no .dev.vars without an example" "$([[ ! -e "$proj/.dev.vars" ]] && echo 1 || echo 0)"
 
 # 3. Resumed session: node_modules is newer than package-lock.json, so npm ci is skipped
 proj=$(make_proj resumed)
@@ -184,6 +185,26 @@ check "migrations fail: exit 0" "$(is "$rc" 0)"
 check "migrations fail: npm ci reported done" "$(contains '- npm ci: done in ')"
 check "migrations fail: failure reported" "$(contains 'local D1 migrations failed** (exit 1')"
 check "migrations fail: says how to retry" "$(contains 'Run `npm run db:migrate` before `npm run dev`')"
+
+# 8. .dev.vars.example and no .dev.vars: the local secrets for `npm run dev` are copied from the example
+proj=$(make_proj dev-vars)
+printf 'TURNSTILE_SECRET_KEY=example\n' >"$proj/.dev.vars.example"
+run_hook "$proj" true
+check "dev vars: created from the example" "$(is "$(cat "$proj/.dev.vars" 2>/dev/null)" 'TURNSTILE_SECRET_KEY=example')"
+check "dev vars: reported" "$(contains '- .dev.vars: created from .dev.vars.example')"
+check "dev vars: stdout is 4 lines" "$(is "$(printf '%s\n' "$out" | wc -l | tr -d '[:space:]')" 4)"
+
+# 8b. An existing .dev.vars (a developer's own secrets) is never overwritten
+printf 'TURNSTILE_SECRET_KEY=mine\n' >"$proj/.dev.vars"
+run_hook "$proj" true
+check "dev vars exist: not overwritten" "$(is "$(cat "$proj/.dev.vars")" 'TURNSTILE_SECRET_KEY=mine')"
+check "dev vars exist: not reported" "$(lacks '.dev.vars')"
+
+# 8c. Copied before npm ci, so a failed install still leaves it in place
+proj=$(make_proj dev-vars-npm-fails)
+printf 'TURNSTILE_SECRET_KEY=example\n' >"$proj/.dev.vars.example"
+run_hook "$proj" true 1 0
+check "dev vars, npm fails: still created" "$([[ -f "$proj/.dev.vars" ]] && echo 1 || echo 0)"
 
 echo
 printf 'Result: %d passed, %d failed\n' "$pass" "$fail"

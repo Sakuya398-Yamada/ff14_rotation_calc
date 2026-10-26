@@ -9,6 +9,7 @@ import {
   type SaveError,
 } from "../logic/shared-timeline";
 import type { AppStateSnapshot } from "../logic/timeline-storage";
+import { TurnstileWidget } from "./TurnstileWidget";
 import "./save-timeline-dialog.css";
 
 interface SaveTimelineDialogProps {
@@ -37,6 +38,10 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
   const [error, setError] = useState<SaveError | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  // ボット対策（Turnstile）のトークン。1 回しか使えないので、保存を試したら使い切る
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  // 変えるとウィジェットを描画し直し、新しいトークンを取る
+  const [widgetKey, setWidgetKey] = useState(0);
   const titleId = useId();
   const contentFieldId = useId();
   const urlId = useId();
@@ -55,6 +60,8 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
       setError(null);
       setShareUrl(null);
       setCopyState("idle");
+      // ウィジェットは閉じると外れるので、そのトークンも捨てる
+      setTurnstileToken(null);
       dialog.close();
       // モーダル中は外側の要素にフォーカスできないため、close() の後で戻す
       returnFocusRef.current?.focus();
@@ -68,12 +75,14 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
   }, [shareUrl]);
 
   const handleSave = async () => {
+    if (turnstileToken === null) return;
+    setTurnstileToken(null);
     const controller = new AbortController();
     saveControllerRef.current = controller;
     setSaving(true);
     setError(null);
     const outcome = await saveTimeline(
-      { state: snapshot, title, parentId, contentId: contentId || null },
+      { state: snapshot, title, parentId, contentId: contentId || null, turnstileToken },
       { signal: controller.signal }
     );
     // 閉じて中断された保存の結果は捨てる（状態は閉じたときに戻してある）
@@ -85,6 +94,7 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
       onSaved(outcome.id);
     } else if (outcome.kind === "error") {
       setError(outcome.error);
+      setWidgetKey((key) => key + 1);
     }
   };
 
@@ -173,6 +183,16 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
                 ))}
               </select>
             </div>
+            {open && (
+              <TurnstileWidget
+                key={widgetKey}
+                onToken={setTurnstileToken}
+                onError={() => {
+                  setTurnstileToken(null);
+                  setError("verification_failed");
+                }}
+              />
+            )}
             {error !== null && (
               <p role="alert" style={styles.error}>
                 {SAVE_ERROR_MESSAGES[error]}
@@ -183,7 +203,12 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
             <button type="button" onClick={onClose} style={styles.secondaryButton}>
               閉じる
             </button>
-            <button type="button" onClick={() => void handleSave()} disabled={saving} style={styles.primaryButton}>
+            <button
+              type="button"
+              onClick={() => void handleSave()}
+              disabled={saving || turnstileToken === null}
+              style={saving || turnstileToken === null ? { ...styles.primaryButton, ...styles.disabledButton } : styles.primaryButton}
+            >
               {saving ? "保存中…" : "保存"}
             </button>
           </div>
@@ -334,6 +359,10 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     background: "var(--color-text)",
     color: "var(--color-bg)",
+  },
+  disabledButton: {
+    opacity: 0.5,
+    cursor: "default",
   },
   secondaryButton: {
     ...buttonBase,
