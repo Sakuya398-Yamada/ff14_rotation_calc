@@ -569,6 +569,8 @@ export type ComboErrorKind = "missing" | "forbidden";
 export interface ComboError {
   buffId: string;
   kind: ComboErrorKind;
+  /** OR 条件（requiredBuffAnyOf / buffConsumptionAnyOf）の候補。どれか 1 つあればよい。buffId には先頭の候補が入る */
+  anyOf?: string[];
 }
 
 /** 時間情報付きタイムラインエントリ（計算結果） */
