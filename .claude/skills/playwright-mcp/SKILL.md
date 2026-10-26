@@ -34,6 +34,8 @@ Playwright MCP のツールは **deferred** で、起動直後はスキーマが
    ```
    `VITE vX.Y.Z  ready in ...ms` のログを待ってから次へ。デフォルトは `http://localhost:5173/` だが、ポート競合時は 5174 等にフォールバックされるためログで実 URL を確認する。
 
+   検証が終わったら `TaskStop`（起動時のタスク ID）で止める。`run_in_background` 以外で起動したときは、ポートを LISTEN している PID を `kill` する（Linux は `kill $(lsof -ti:<ポート>)`）。`$!` は npm の PID で、kill しても Vite が残る。`pkill -f` は使わない（`.claude/hooks/validate-pkill-pattern.sh` が止める）。
+
    **Vite v8 で Local URL がログに出ない場合**: Vite v8 は `ready in 150ms` のみ出力し `Local: http://localhost:NNNN/` 行を出さないことがある。複数 worktree 並行運用時（5173〜5177 が複数 Vite で埋まる状況）はどのポートで起動したか判別できないため、以下で対処する（知見ボード #195、発生元 #255）：
 
    - **明示ポート指定で起動するのが確実**: `npx vite --port <空きポート> --strictPort`（`--strictPort` により競合時はフォールバックせず起動失敗するので、起動成功 = 指定ポートが確定する）
@@ -53,6 +55,7 @@ Playwright MCP に接続できない（`CONNECT_TIMEOUT`、環境変数が未設
 1. Vite を固定ポートで起動する: `npx vite --port <空きポート> --strictPort`（run_in_background: true）
 2. 次のスクリプトを scratchpad に `.cjs` で置き、`NODE_PATH=$(npm root -g) node <スクリプト> http://localhost:<ポート>/` で実行する
 3. 撮ったスクリーンショットを Read ツールで開いて確かめる
+4. 確かめ終わったら Vite を `TaskStop`（手順 1 のタスク ID）で止める。`run_in_background` 以外で起動したときは `kill $(lsof -ti:<ポート>)` で止める（`$!` は npx の PID で、kill しても Vite が残る）。`pkill -f` は使わない（`.claude/hooks/validate-pkill-pattern.sh` が止める）
 
 ```js
 const { chromium } = require('playwright');
