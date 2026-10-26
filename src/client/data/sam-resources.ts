@@ -20,6 +20,7 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
     shortName: "剣気",
     maxStacks: 100,
     color: "#d32f2f",
+    displayAsGauge: true,
     acquiredLevel: 52,
     autoGenerateInterval: 3,
     autoGenerateAmount: 10,

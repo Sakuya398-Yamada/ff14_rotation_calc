@@ -319,6 +319,8 @@ export interface ResourceDefinition {
   acquiredLevel?: number;
   /** 表示グループ名（同じグループのリソースは1行にまとめて表示） */
   displayGroup?: string;
+  /** true ならドットではなく塗り＋数字ラベルのゲージで描く。塗りの分母はその時点の上限（whileBuffModifiers を反映） */
+  displayAsGauge?: boolean;
   /** ドット1行あたりのスタック数（未設定の場合はmaxStacksを1行で表示。maxStacksがこの値を超える場合は複数行に折り返される） */
   stacksPerRow?: number;
   /**
@@ -567,6 +569,8 @@ export type ComboErrorKind = "missing" | "forbidden";
 export interface ComboError {
   buffId: string;
   kind: ComboErrorKind;
+  /** OR 条件（requiredBuffAnyOf / buffConsumptionAnyOf）の候補。どれか 1 つあればよい。buffId には先頭の候補が入る */
+  anyOf?: string[];
 }
 
 /** 時間情報付きタイムラインエントリ（計算結果） */

@@ -10,6 +10,7 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
     shortName: "ﾊﾟﾚｯﾄ",
     maxStacks: 100,
     color: "#7e57c2",
+    displayAsGauge: true,
     acquiredLevel: 60,
   },
 

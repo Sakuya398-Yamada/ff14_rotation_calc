@@ -128,3 +128,19 @@ describe("SkillDetailPanel: バフ条件のエラーを種類ごとの文言と�
     expect(screen.queryByText(/バフ条件未達成|ley-lines/)).not.toBeInTheDocument();
   });
 });
+
+describe("SkillDetailPanel: OR 条件のバフが未達のとき、候補をすべて出す (#679)", () => {
+  it("AF 無しで置いたデスペアは、AF の段階を問わないことが分かる形で出る", () => {
+    renderLastEntry(["despair"], BLM);
+
+    expect(
+      screen.getByText(/バフ条件未達成: アストラルファイア I・アストラルファイア II・アストラルファイア III のいずれか/)
+    ).toBeInTheDocument();
+  });
+
+  it("ホークアイも乱れ撃ちも無いリフルジェントアローは、どちらか一方でよいことが分かる形で出る", () => {
+    renderLastEntry(["refulgent-arrow"]);
+
+    expect(screen.getByText(/バフ条件未達成: 乱れ撃ち・ホークアイ のいずれか/)).toBeInTheDocument();
+  });
+});
