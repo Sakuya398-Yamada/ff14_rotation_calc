@@ -37,6 +37,7 @@ git checkout -b <type>/#<issue番号>-<kebab-case説明>
 - 作業中の変更がある場合は、ユーザーに確認してから切り替える
 - **同名ブランチが既にある**（ローカルまたは `origin`）場合は過去の試行の残り。黙って `-B` / force-push で上書きせず、Phase 1 手順 2「オープンな旧 PR／既存ブランチがある場合」の確認結果に従う（作り直すなら `-v2` 等を付けた別名で切る）
 - `claude --worktree` で起動したセッション（`.claude/worktrees/<name>/`、初期ブランチ `worktree-<name>`）でも Issue ブランチを切ってから作業する。`main` は他の worktree で checkout 済みのことが多く `git checkout main` が失敗するため、`git fetch origin main` → `git checkout -b <type>/#<issue番号>-<kebab-case説明> --no-track origin/main` で切る。`--no-track` が無いと、リモート追跡ブランチから切ったブランチの upstream が `origin/main` になり（`branch.autoSetupMerge` の既定）、Phase 7 の `git push -u` までのあいだ、素の `git pull` が main を取り込み、`git status` も main との差を表示する
+- **`routine-ok` の付いた Issue では、ブランチを切ったら Issue に着手の印をコメントする**（`add_issue_comment`。書式は下の「クラウドセッションの場合」手順 4 の `## 着手`。「セッション」の行は同じ手順のとおり、`CLAUDE_CODE_REMOTE_SESSION_ID` が無ければ（ローカルでは）省く）。このブランチは Phase 7 まで push しないので、印が無いと日次の `weekday-issue-start` が作業中と分からず、同じ Issue を無人実装することがある（`.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」）。作業をやめるときは、印の見出しを「## 着手（取り下げ）」に書き換える。スケジュール実行の `weekday-issue-start` 自身は付けない（同ルーティンの手順 4 の表）
 
 ### クラウドセッションの場合（割り当て済みの作業ブランチ）
 
