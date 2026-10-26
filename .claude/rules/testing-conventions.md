@@ -6,7 +6,7 @@ paths:
 # テスト規約（既知の罠と回避パターン）
 
 frontmatter の `paths:` により、テスト（`src/**/__tests__/**`）を Read / Edit / Write したときだけ読み込まれる。
-`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389 / #433 / #429、発生元: #198 / #217 / #351 / #410 / #412）。
+`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389 / #433 / #429 / #628、発生元: #198 / #217 / #351 / #410 / #412 / #521）。
 
 ## 罠1: `activeBuffs` の `stacks` は #429 より前は後続処理で書き換わっていた（解消済み）
 
@@ -122,3 +122,47 @@ expect(after).toBe(/* 期待値。上限到達なら 10000 */);
 
 - 参考実装: `src/client/logic/__tests__/pct-jobguide-sync.test.ts` の「タイムライン上でもサブトラクティブ色魔法・ブラックコメットは詠唱 2.3 秒・リキャスト 3.3 秒になる」
 - skillMap の組み方は罠4 に従う（組み方が違うと、アプリでは起きない差分が出る）
+
+## 罠6: `recastError` には 3 つの原因があり、狙っていない原因で立ってもテストが通る
+
+### 何が起きるか
+
+`recastError` は 1 つのフラグだが、立つ原因は 3 つある（`src/client/logic/resolve-timeline.ts` の「チャージ回復処理 & リキャストチェック」）：
+
+| 原因 | 立つ条件 |
+|------|---------|
+| アニメーションロック（詠唱のあるスキルは詠唱の完了まで） | `entry.manualStartTime` が `autoStartTime`（自動配置なら置かれる時刻）より早い |
+| GCD の拘束（GCD と `triggersGcdRecast` の oGCD） | 同上（`autoStartTime` は `gcdAvailableAt` と `actionAvailableAt` の遅い方） |
+| チャージ切れ（固有リキャスト。`skill.cooldown` があるスキル） | `state.charges <= 0`。`manualStartTime` が無くても立つ（自動配置はチャージの回復を待たない） |
+
+アニメーションロックと GCD の拘束は同じ分岐なので、フラグからはどちらに当たったか見分けられない。そのため「GCD の拘束で `recastError` になる」を確かめるテストが、**別の原因のエラーで修正前から通ってしまう**。#521 では、陰陽闘気（GCD を拘束する oGCD）を 1 秒に手動で置いたテストが修正前から通っていた。1 秒は直前の WS（0.65 秒）のアニメーションロック（1.3 秒まで）の中で、GCD の拘束が無くてもエラーになる時刻だった。罠3 と同じく「エラーが狙った理由で起きているか」の問題。
+
+### テストでの回避パターン
+
+- **狙う原因以外の 2 つが明けている時刻に置く**：
+  - GCD の拘束を見るなら、直前のアクションのアニメーションロックが明けてから、GCD が明ける前に置く。初めて使う（チャージの残っている）スキルで見る
+  - アニメーションロックを見るなら、GCD を拘束しない oGCD を、初めて使う状態で、直前のアクションのアニメーションロック中に置く
+  - チャージ切れを見るなら、`manualStartTime` を付けずに置く（自動配置はアニメーションロックと GCD の明けを待つので、残る原因はチャージ切れだけになる。例: `src/client/logic/__tests__/charge-system.test.ts`）
+- **できれば、狙う原因を外すとエラーが消えることも確かめる**。同じ時刻に狙う原因の無いスキルを置いてエラーにならなければ、その時刻ではほかの 2 つが明けていると分かる：
+
+  ```ts
+  // NG: 1.0 秒は猿舞連撃（0.65 秒）のアニメーションロック（1.3 秒まで）の中。GCD を拘束しなくてもエラーになる
+  const ng = resolve([
+    entry("the-forbidden-chakra"), entry("leaping-opo"), entry("forbidden-meditation", 1.0),
+  ]).entries;
+  expect(ng[2].recastError).toBe(true);
+
+  // OK: アニメーションロックは明けていて、GCD のリキャスト（2.65 秒まで）は明けていない 1.5 秒に置く
+  const e = resolve([
+    entry("the-forbidden-chakra"), entry("leaping-opo"), entry("forbidden-meditation", 1.5),
+  ]).entries;
+  expect(e[2].recastError).toBe(true);
+
+  // 狙う原因を外す: 同じ 1.5 秒でも、GCD を拘束しない oGCD（紅蓮の極意）ならエラーにならない
+  const control = resolve([
+    entry("the-forbidden-chakra"), entry("leaping-opo"), entry("riddle-of-fire", 1.5),
+  ]).entries;
+  expect(control[2].recastError).toBe(false);
+  ```
+
+- 参考実装: `src/client/logic/__tests__/mnk-job-guide.test.ts` の「GCD のリキャスト中に手動で置くとリキャストエラーになり、闘気は増えない」（`resolve` / `entry` はこのファイルのヘルパー）
