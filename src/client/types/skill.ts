@@ -243,6 +243,11 @@ export interface Skill {
   triggersGcdRecast?: boolean;
   /** triggersGcdRecast で発生させる GCD の基礎リキャスト（秒。スキルスピード・ヘイスト補正前）。未設定は 2.5 秒（黙想） */
   gcdRecastTime?: number;
+  /**
+   * GCD のリキャストを recastTime のまま固定し、スキルスピード・speed バフ・リソースのヘイストで縮めない
+   * （賢者のエウクラシア 1.0 秒・エウクラシア系魔法 1.5 秒）。autoTransform の変化先に付けたときは変化先で判定する。詠唱時間には作用しない
+   */
+  fixedGcdRecast?: boolean;
 }
 
 /** タイムラインに配置されたスキル */
