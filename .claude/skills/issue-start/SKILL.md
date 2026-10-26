@@ -25,7 +25,7 @@ argument-hint: "#<Issue番号>"
 | 7 | PR作成 | `phases/07-pr-creation.md` | 不可 |
 | 8 | Issueへの記録（+ 知見ボード・テンプレート元への還元） | `phases/08-issue-recording.md` | 不可 |
 
-> **リポジトリへの変更が出ない Issue**（「〜を裏取りし、必要なら修正 Issue を起票、不要ならクローズ」のような調査だけの Issue と、Issue 本文の書き換えやマージ済みブランチの削除のような GitHub 上の操作だけで終わる Issue）は、Phase 2〜7 を省略して Phase 8 に進む。調査の結果リポジトリへの変更が出れば、通常どおり Phase 2 から進める。分岐の詳細は `phases/01-issue-analysis.md`「リポジトリへの変更が出ない Issue（調査・GitHub 上の操作だけ）」
+> **リポジトリへの変更が出ない Issue**（「〜を裏取りし、必要なら修正 Issue を起票、不要ならクローズ」のような調査だけの Issue と、Issue 本文の書き換えやマージ済みブランチの削除のような GitHub 上の操作だけで終わる Issue）は、Phase 2〜7 を省略して Phase 8 に進む。調査の結果リポジトリへの変更が出れば、通常どおり Phase 2 から進める。分岐の詳細は `phases/01-no-repo-change.md`
 
 ## 全体ルール
 
