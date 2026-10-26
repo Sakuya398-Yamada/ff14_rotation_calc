@@ -1246,9 +1246,10 @@ export function resolveTimeline(
     }
 
     // requiredBuff: 指定バフがアクティブでなければエラー（バフは消費しない）
+    // 同じバフを buffConsumptions でも消費するスキルは上で積み済みなので、二重に積まない
     if (skill.requiredBuff) {
       const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === skill.requiredBuff);
-      if (!activeBuff) {
+      if (!activeBuff && !comboErrors.some((e) => e.buffId === skill.requiredBuff)) {
         comboErrors.push({ buffId: skill.requiredBuff, kind: "missing" });
       }
     }

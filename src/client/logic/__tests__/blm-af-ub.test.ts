@@ -122,7 +122,7 @@ describe("BLM: サンダーヘッドとサンダー系 DoT", () => {
       BLM_BUFFS,
     );
 
-    expect(result.entries[0].comboErrors).toContainEqual({ buffId: "thunderhead", kind: "missing" });
+    expect(result.entries[0].comboErrors).toEqual([{ buffId: "thunderhead", kind: "missing" }]);
   });
 });
 
