@@ -297,7 +297,7 @@ export function SkillDetailPanel({
             </div>
           )}
           <div style={styles.metaRow}>
-            <span style={styles.cellLabel}>エラー</span>
+            <span style={{ ...styles.cellLabel, flexShrink: 0 }}>エラー</span>
             {errorMessages.length === 0 ? (
               <span style={styles.metaOk}>なし</span>
             ) : (
