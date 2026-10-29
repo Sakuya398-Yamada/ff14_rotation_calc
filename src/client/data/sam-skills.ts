@@ -52,6 +52,8 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 /**
  * 侍（SAM）攻撃スキル定義（Lv100まで）
  * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）との既知の差分は #520
+ * 明鏡止水効果アップ（Lv76）・アクション威力アップII（Lv84）・アクション威力アップIII（Lv94）による変動は traitPotencyOverrides で定義し、
+ * 基本値は特性修得前の値にする（#607。consolegameswiki の Notes で照合。照破の Lv94 未満の 560 は、7.0 の「560 → 640」以降に威力の変更が無いことからの推定）
  *
  * 大別:
  * 1. 単体WSコンボ（月/花/雪の3系統、起点共通の刃風）
@@ -94,8 +96,9 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "jinpu",
     name: "陣風",
-    potency: 300,
-    nonComboPotency: 140,
+    potency: 280,
+    nonComboPotency: 120,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 300, nonComboPotency: 140 }],
     type: "gcd",
     target: "enemy",
     icon: jinpuIcon,
@@ -109,8 +112,9 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "shifu",
     name: "士風",
-    potency: 300,
-    nonComboPotency: 140,
+    potency: 280,
+    nonComboPotency: 120,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 300, nonComboPotency: 140 }],
     type: "gcd",
     target: "enemy",
     icon: shifuIcon,
@@ -124,8 +128,12 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "yukikaze",
     name: "雪風",
-    potency: 340,
-    nonComboPotency: 160,
+    potency: 280,
+    nonComboPotency: 100,
+    traitPotencyOverrides: [
+      { traitLevel: 84, potency: 290, nonComboPotency: 110 },
+      { traitLevel: 94, potency: 340, nonComboPotency: 160 },
+    ],
     type: "gcd",
     target: "enemy",
     icon: yukikazeIcon,
@@ -139,13 +147,17 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
-    // 月光: コンボ成立時威力 370 + 背面ボーナス 50 = 420、コンボ不成立時 160 + 50 = 210（方向指定成功前提）
+    // 月光: コンボ成立時威力 370 + 背面ボーナス 50 = 420、コンボ不成立時 160 + 50 = 210（方向指定成功前提。Lv94 以降の値）
     // 単体コンボでは風月バフは陣風（2段目）のみが付与する（範囲コンボでは満月も付与）。明鏡止水中の月光時の風月付与は、
     // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "gekko",
     name: "月光",
-    potency: 420,
-    nonComboPotency: 210,
+    potency: 360,
+    nonComboPotency: 150,
+    traitPotencyOverrides: [
+      { traitLevel: 84, potency: 370, nonComboPotency: 160 },
+      { traitLevel: 94, potency: 420, nonComboPotency: 210 },
+    ],
     type: "gcd",
     target: "enemy",
     icon: gekkoIcon,
@@ -159,13 +171,17 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     ],
   },
   {
-    // 花車: コンボ成立時威力 370 + 側面ボーナス 50 = 420、コンボ不成立時 160 + 50 = 210（方向指定成功前提）
+    // 花車: コンボ成立時威力 370 + 側面ボーナス 50 = 420、コンボ不成立時 160 + 50 = 210（方向指定成功前提。Lv94 以降の値）
     // 単体コンボでは風花バフは士風（2段目）のみが付与する（範囲コンボでは桜花も付与）。明鏡止水中の花車時の風花付与は、
     // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "kasha",
     name: "花車",
-    potency: 420,
-    nonComboPotency: 210,
+    potency: 360,
+    nonComboPotency: 150,
+    traitPotencyOverrides: [
+      { traitLevel: 84, potency: 370, nonComboPotency: 160 },
+      { traitLevel: 94, potency: 420, nonComboPotency: 210 },
+    ],
     type: "gcd",
     target: "enemy",
     icon: kashaIcon,
@@ -352,8 +368,9 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     hidden: true,
     consumeAllResources: ["setsu", "getsu", "ka"],
     resourceChanges: [{ resourceId: "meditation", amount: 1 }],
-    dotPotency: 50,
+    dotPotency: 45,
     dotDuration: 60,
+    traitPotencyOverrides: [{ traitLevel: 94, dotPotency: 50 }],
   },
   {
     id: "tenka-goken",
@@ -375,7 +392,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "midare-setsugekka",
     name: "乱れ雪月花",
-    potency: 680,
+    potency: 620,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 680 }],
     type: "gcd",
     target: "enemy",
     icon: midareSetsugekkaIcon,
@@ -465,7 +483,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "kaeshi-setsugekka",
     name: "返し雪月花",
-    potency: 680,
+    potency: 620,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 680 }],
     type: "gcd",
     target: "enemy",
     icon: kaeshiSetsugekkaIcon,
@@ -510,7 +529,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "kaeshi-namikiri",
     name: "返し波切",
-    potency: 1000,
+    potency: 860,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 1000 }],
     type: "gcd",
     target: "enemy",
     icon: kaeshiNamikiriIcon,
@@ -531,7 +551,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "ogi-namikiri",
     name: "奥義波切",
-    potency: 1000,
+    potency: 860,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 1000 }],
     type: "gcd",
     target: "enemy",
     icon: ogiNamikiriIcon,
@@ -668,7 +689,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     recastTime: 2.5,
     animationLock: 0.65,
     acquiredLevel: 15,
-    conditionalPotencyBuffs: [{ buffId: "enhanced-enpi", potency: 270 }],
+    conditionalPotencyBuffs: [{ buffId: "enhanced-enpi", potency: 260 }],
+    traitPotencyOverrides: [{ traitLevel: 94, conditionalPotencyBuffs: [{ buffId: "enhanced-enpi", potency: 270 }] }],
     resourceChanges: [{ resourceId: "kenki", amount: 10 }],
   },
   {
@@ -700,7 +722,7 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     animationLock: 0.65,
     acquiredLevel: 50,
     cooldown: 55,
-    maxCharges: 2,
+    traitPotencyOverrides: [{ traitLevel: 76, maxCharges: 2 }],
     buffApplications: ["meikyo-shisui", "tendo"],
   },
   {
@@ -723,7 +745,8 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     id: "shoha",
     name: "照破",
-    potency: 640,
+    potency: 560,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 640 }],
     type: "ogcd",
     target: "enemy",
     icon: shohaIcon,

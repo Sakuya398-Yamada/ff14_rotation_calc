@@ -1,12 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
-import { getSkillsForLevel } from "../skill-level";
+import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
 import { SAM_ATTACK_SKILLS } from "../../data/sam-skills";
 import { SAM_BUFFS } from "../../data/sam-buffs";
 import { SAM_RESOURCES } from "../../data/sam-resources";
 import type { TimelineEntry } from "../../types/skill";
 
-const skillMap = new Map(SAM_ATTACK_SKILLS.map((s) => [s.id, s]));
+// 特性の上書きを反映した Lv100 のスキル（基本値は特性修得前の値。#607）
+const buffIds = new Set(SAM_BUFFS.map((b) => b.id));
+const resourceIds = new Set(SAM_RESOURCES.map((r) => r.id));
+const skillMap = getAllSkillMapForLevel(
+  SAM_ATTACK_SKILLS,
+  getSkillsForLevel(SAM_ATTACK_SKILLS, 100, buffIds, resourceIds),
+  100,
+  buffIds,
+  resourceIds,
+);
 const buffMap = new Map(SAM_BUFFS.map((b) => [b.id, b]));
 
 function entry(skillId: string): TimelineEntry {

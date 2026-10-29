@@ -50,6 +50,8 @@ export interface TraitPotencyOverride {
   buffApplications?: string[];
   /** 変更後のバフ消費のOR条件（配列ごと置き換える。undefinedの場合は変更なし） */
   buffConsumptionAnyOf?: Skill["buffConsumptionAnyOf"];
+  /** 変更後のバフ有効時の威力上書き（配列ごと置き換える。undefinedの場合は変更なし） */
+  conditionalPotencyBuffs?: Skill["conditionalPotencyBuffs"];
 }
 
 /** サポートするプレイヤーレベル */
