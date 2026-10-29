@@ -15,6 +15,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   let cooldown = skill.cooldown;
   let buffApplications = skill.buffApplications;
   let buffConsumptionAnyOf = skill.buffConsumptionAnyOf;
+  let conditionalPotencyBuffs = skill.conditionalPotencyBuffs;
 
   // traitLevelの昇順で適用（低い方から順に上書き）
   const sorted = [...skill.traitPotencyOverrides].sort((a, b) => a.traitLevel - b.traitLevel);
@@ -27,6 +28,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
       if (override.cooldown !== undefined) cooldown = override.cooldown;
       if (override.buffApplications !== undefined) buffApplications = override.buffApplications;
       if (override.buffConsumptionAnyOf !== undefined) buffConsumptionAnyOf = override.buffConsumptionAnyOf;
+      if (override.conditionalPotencyBuffs !== undefined) conditionalPotencyBuffs = override.conditionalPotencyBuffs;
     }
   }
 
@@ -37,12 +39,23 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     maxCharges === skill.maxCharges &&
     cooldown === skill.cooldown &&
     buffApplications === skill.buffApplications &&
-    buffConsumptionAnyOf === skill.buffConsumptionAnyOf
+    buffConsumptionAnyOf === skill.buffConsumptionAnyOf &&
+    conditionalPotencyBuffs === skill.conditionalPotencyBuffs
   ) {
     return skill;
   }
 
-  return { ...skill, potency, nonComboPotency, dotPotency, maxCharges, cooldown, buffApplications, buffConsumptionAnyOf };
+  return {
+    ...skill,
+    potency,
+    nonComboPotency,
+    dotPotency,
+    maxCharges,
+    cooldown,
+    buffApplications,
+    buffConsumptionAnyOf,
+    conditionalPotencyBuffs,
+  };
 }
 
 /**
