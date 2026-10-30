@@ -19,7 +19,7 @@
 
   ```bash
   # 1. ジョブガイドの生 HTML を取得（URL は WebFetch / 検索で特定済みのもの）
-  curl -sL "https://jp.finalfantasyxiv.com/jobguide/blackmage/" -o "$TMPDIR/jobguide.html"
+  curl -sL "https://jp.finalfantasyxiv.com/jobguide/blackmage/" -o "${TMPDIR:-/tmp}/jobguide.html"
 
   # 2. タグ除去してスキル名の前後220字の原文を抽出
   node -e '
@@ -36,7 +36,7 @@
     console.log(text.slice(Math.max(0, i - 220), i + 220));
     console.log();
   }
-  ' "$TMPDIR/jobguide.html" "ハイファイラ"
+  ' "${TMPDIR:-/tmp}/jobguide.html" "ハイファイラ"
   ```
 
   運用上の注意:
@@ -48,7 +48,7 @@
   1. 各版のパッチノートの PvE 欄から「修得時の威力」の履歴（「アクション威力アップIII修得時の威力が 640 → 680 に変更されます」のような行。特性名の I〜III はジョブ・版で変わる）を抜き出す。上のスニペットに検索語 `修得時の威力` を渡せば取れる。各版の URL は後述「パッチ追従の検証（定型）」① のパッチノート一覧から取る
   2. consolegameswiki（`https://ffxiv.consolegameswiki.com/wiki/<英語のアクション名。空白は _>`）の「Potency is N prior to learning the ... trait」「The potency of this action is N until ... is learned」の行で裏取りする。パッチノートに出るのは変更のあった値だけなので、変更の無い値はここで取る。ジョブ間で名前が被るアクションは `Ruin_II_(scholar)` のように、小文字のジョブ名が付いたページを見る
   3. XIVAPI v2（`ActionTransient` の `Description`）は出典に使わない。`@as(raw)` を付けても、レベル条件分岐を評価済みの Lv100 の文面しか返さない
-- **パッチ追従の検証**（「パッチ X.Y の調整をデータに反映済みか確かめる」等）は、個別スキルの裏取りではなくジョブ全体の照合になる。後述「パッチ追従の検証（定型）」に従う。生 HTML の取得とタグ除去には上のスニペットをそのまま使う
+- **パッチ追従の検証**（「パッチ X.Y の調整をデータに反映済みか確かめる」等）は、個別スキルの裏取りではなくジョブ全体の照合になる。後述「パッチ追従の検証（定型）」に従う。ジョブガイドの生 HTML の取得とタグ除去には上のスニペットをそのまま使い、パッチノートは ① のスニペット（PvE 欄の判定込み）を使う
 
 ## パッチ追従の検証（定型）
 
@@ -56,6 +56,34 @@
 
 1. **① パッチノートの PvE ジョブ調整抽出**: 対象範囲の各版のパッチノートから、実装済みジョブの PvE 調整を抜き出し、データに反映済みかを確かめる
    - 各版の URL はパッチノート一覧（`https://jp.finalfantasyxiv.com/lodestone/special/patchnote_log/`）の生 HTML から取る。Issue 作成後に公開された版があれば対象に含めてよいかユーザーに確認する
+   - PvE 欄の抜き出しは次のスニペットで行う（後述の境界の判定込み。#499 で使った方法）
+
+     ```bash
+     # 1. パッチノートの生 HTML を取得（URL はパッチノート一覧から取ったもの。例は 7.2）
+     curl -sL "https://jp.finalfantasyxiv.com/lodestone/topics/detail/272e3ae76b2663ef84b4d5833441597813e29d75/" -o "${TMPDIR:-/tmp}/patchnote.html"
+
+     # 2. タグ除去して、PvE 欄に出た検索語の前後220字の原文だけを抽出
+     node -e '
+     const fs = require("fs");
+     const text = fs.readFileSync(process.argv[1], "utf8")
+       .replace(/<script[\s\S]*?<\/script>/g, " ")
+       .replace(/<style[\s\S]*?<\/style>/g, " ")
+       .replace(/<[^>]+>/g, " ")
+       .replace(/\s+/g, " ");
+     const name = process.argv[2];
+     let i = -1;
+     while ((i = text.indexOf(name, i + 1)) !== -1) {
+       // 見出しは冒頭の目次にも並ぶので、最初の出現では切らない。直前にある最後の「バトル関連」が、直前にある最後の「PvP全般」より後ろなら PvE 欄
+       if (text.lastIndexOf("バトル関連", i) <= text.lastIndexOf("PvP全般", i)) continue;
+       console.log("--- PvE match at " + i + " ---");
+       console.log(text.slice(Math.max(0, i - 220), i + 220));
+       console.log();
+     }
+     ' "${TMPDIR:-/tmp}/patchnote.html" "竜騎士"
+     ```
+
+     - ジョブの調整は「<ジョブ名> 名称 変更点」の表で始まる。表が 220 字に収まらないときは、表に出たアクション名で引き直す
+     - 「PvP全般」の節が無い版（7.01・7.05・7.21 など）では、「バトル関連」より後ろの節（不具合修正・新規アイテム追加など）に出た語も PvE 欄と判定される。周辺原文で見分ける（「〜の不具合」、「マムーナイト」のように別の語の一部に当たったもの）
    - 結果は「版／ジョブ／変更／データへの反映」の表にまとめ、PvE 変更が無かった版・ジョブも明記する
 2. **② ジョブガイドとデータの全件照合**: 実装済みジョブごとに、公式ジョブガイド（`https://jp.finalfantasyxiv.com/jobguide/<job>/`）の PvE 欄と `src/client/data/<job>-skills.ts`（関係する `*-buffs.ts` / `*-resources.ts` も）を **全スキル** 照合する。威力だけでなく、リキャスト・効果時間・範囲の減衰率など、データが持つ項目はすべて比べる
    - 結果はジョブごとに「一致 N / 全 M 件」と不一致の一覧（スキル名・データ値・ジョブガイド原文の値）で返す
@@ -65,7 +93,7 @@
 
 | 情報源 | PvE 欄の範囲 |
 |-------|-------------|
-| パッチノート | 「バトル関連」の見出しから「PvP全般」の見出しの手前まで |
+| パッチノート | 「バトル関連」の見出しから「PvP全般」の見出しの手前まで。見出しは冒頭の目次にも出るので、最初の出現で切らない（① のスニペットの判定を使う） |
 | ジョブガイド | 「PatchX.Y…のPvP全般のアップデート内容は」の行より前 |
 
 **照合時の判定基準**:
