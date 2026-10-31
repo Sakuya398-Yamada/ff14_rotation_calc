@@ -176,7 +176,7 @@ expect(after).toBe(/* 期待値。上限到達なら 10000 */);
 | 書き方 | 型を変えたあと | 見つかる確認 |
 |------|--------------|-------------|
 | `Set` に通してから比べる（`expect([...new Set(entry.comboErrors)]).toEqual(["impact-imminent"])`） | `Set` はオブジェクトを参照で比べるので、中身が同じ要素の重複が除かれずに落ちる | スイートの実行（メソッド名の Grep には当たらない） |
-| 古い型で値を組むフィクスチャ（`overrides: { comboErrors: ["combo"] }`）、`entry.comboErrors.includes("combo")` | フィクスチャは中身を見ないテストなら通る。`includes` は常に `false` | `npx tsc --noEmit` だけ（Vitest は型を検査しない） |
+| 古い型で値を組むフィクスチャ（`overrides: { comboErrors: ["combo"] }`）、`entry.comboErrors.includes("combo")` | フィクスチャは中身を見ないテストなら通る。`includes` は常に `false` | `npx tsc --noEmit`（Vitest は型を検査しない。`includes` は `.toBe(true)` で見ていればスイートでも落ちるが、`.toBe(false)` だと通る） |
 | 否定の assert（`expect(entry.comboErrors).not.toContain("combo")`） | 文字列とオブジェクトを比べることになり、常に通る | スイートでも `tsc` でも見つからない（`toContain` / `toEqual` の引数の型は、配列の要素の型に縛られない） |
 
 #666 では、メソッド名で Grep して 22 件と見積もったが、`Set` の形の 2 件と `expected-potency.test.ts` のフィクスチャ 1 件を数え漏らした。#612 では、否定の assert が常に通るようになることに気付き、書き換えの前に Grep して該当が無いことを確かめた。
