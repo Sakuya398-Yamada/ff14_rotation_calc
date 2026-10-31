@@ -146,7 +146,7 @@ priority ラベルを案のとおり付け替えますか？
 
 - [E] の場合は修正を反映して再提示し、改めて Y/E/N を取る
 - ルーティン向け（`routine-ok` 付き）の Issue は、priority に関係なく次以降の `weekday-issue-start` で無人実装される。priority が決めるのは選ぶ順だけで、無人実装してよいかは `routine-ok` が決める。priority を見送った Issue には、日次ルーティン `daily-triage`（`.claude/routines/daily-triage.md`）が次の実行で手順 4 の判定どおりに付ける
-- 人がいるセッションでやりたい Issue に `routine-ok` が付いていれば、外すことをユーザーに提案する。無人向き候補に `routine-ok` を付けるかはユーザーが決める（どちらもこのスキルの手順の外で行う）
+- 人がいるセッションでやりたい Issue に `routine-ok` が付いていれば、外すことをユーザーに提案する。`needs-decision` が付いている Issue には提案しない（人が決めて `needs-decision` を外せばルーティン向けに戻る）。無人向き候補に `routine-ok` を付けるかはユーザーが決める（どちらもこのスキルの手順の外で行う）
 
 ### 6. ラベルを付け替える
 
