@@ -121,7 +121,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 | 1 | #N タイトル | medium | 公式の値に合わせるデータ修正、依存は解消済み |
 - （該当が無ければ「なし」）
 ### 注記
-- weekday-issue-start が動いていれば次に選ぶ見込み: #N タイトル（ルーティン向けの 1 番目）／ 候補なし（`routine-ok` の付いた候補なし）
+- weekday-issue-start が動いていれば次に選ぶ見込み: #N タイトル（ルーティン向けの 1 番目）／ 候補なし（`routine-ok` の付いた候補なし）／ なし（weekday-issue-start の Open PR が N 件で上限に到達）。最後の書き方は、手順 4（`/issue-priority` 手順 1-2）で数えた weekday-issue-start 自身の Open PR が `weekday-issue-start.md`「1. 事前点検（安全弁）」手順 5 の上限に達しているときに使う。ルーティンは Issue の選定に進まないので、ルーティン向けの Issue があってもこれにする
 - 進行中: #N（PR #M、マージ可能）… ／ なし
 - ファイルが重なる組み合わせ・依存とリスクの食い違い: … ／ なし
 ### その他
