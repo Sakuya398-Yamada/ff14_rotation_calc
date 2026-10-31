@@ -45,7 +45,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 
 手順 2 に入る前に 1 回だけ数える。数は実行報告の「その他」に書く。この数え方と上限の正本はこの節で、週次 `weekly` の系統4 も同じ数え方で見送りを判定する。
 
-1. **Open の作業 Issue** を数える: Open Issue のうち、`meta` / `question` ラベルの Issue、#2 のテンプレート Issue、sub-issue を持つ親 Issue を除いたもの。依存待ち・進行中の Issue も含める（抱えている量を測るため）
+1. **Open の作業 Issue** を数える: Open Issue のうち、`meta` / `question` ラベルの Issue、#2 のテンプレート Issue、sub-issue を持つ親 Issue（`sub_issues_summary.total` が 1 以上。子がすべて Closed でも除く。`weekday-issue-start.md`「2. 対象 Issue の選定」手順 1 の親 Issue と同じ読み方）を除いたもの。依存待ち・進行中の Issue も含める（抱えている量を測るため）。一覧は `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues?state=open&per_page=100" --jq '[.[] | select(.pull_request | not) | {number, labels: [.labels[].name], sub_issues: .sub_issues_summary.total}]'` で取る（GitHub MCP の `list_issues` は `sub_issues_summary` を返さないので、共通ルール 3 の MCP 優先によらず `gh api` を使う。この API は PR も返すので `pull_request` の有無で除く）
 2. **25 件以上なら手順 3 の昇格起票（手順 3-2 の後者）だけを見送る**。手順 3-1 の一覧と手順 3-2 の前者（還元済みの知見への ✅ マーカー追記と「取り込み待ち」の報告）はバックログを増やさないので、上限に達していても行う。実行報告の「見送り」に「バックログ上限 25 件に到達（N 件）のため知見の昇格起票を見送り（候補 M 件）」と書く（M は手順 3-2 の後者に当たる知見の数。手順 3-4 と違って ID は書かない。上限が続く間は候補がすべて残り、毎回並べると報告が長くなるため）。手順 2（メモ inbox）は人が起点なので見送らない
 3. 上限 25 件は暫定値。2026-10-18 時点のバックログ 21 件に、知見の 1 日の上限（手順 3-4 の 3 件）の 1〜2 回分の余裕を足した。人の消化ペースがまだ測れていないので、2026-11-01 ごろに #448 の実績で見直す（#502）
 
