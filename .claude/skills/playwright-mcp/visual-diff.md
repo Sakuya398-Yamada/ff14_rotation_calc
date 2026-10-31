@@ -7,12 +7,12 @@
 スクリーンショットを目視で見比べるより、比べたい要素の属性を JSON に落として diff し、PNG はピクセル差分で差の範囲を出す方が、「変わっていない」を確実に示せる（#632 で発生）。何も変わっていなければ、JSON の diff が空で、差の範囲が `None` になる。
 
 1. **変更前は、Phase 5 の最初の編集の前に撮る**: 作業ツリーを変えたあとでは、同じ手順では変更前を撮れない。撮った JSON と PNG はリポジトリの外（下の例では `${TMPDIR:-/tmp}/visual-diff/`）に置く
-   - 撮り忘れて編集を始めていたら、作業ツリーには触らず、`origin/main` を別の worktree に出してそこで撮る。worktree には `node_modules` が無いので `npm ci` が要る。Vite は作業ツリーのものとは別のポートで起動する
+   - 撮り忘れて編集を始めていたら、作業ツリーには触らず、`origin/main` を別の worktree に出してそこで撮る。worktree には `node_modules` が無いので `npm ci` が要る。Vite は作業ツリーのものとは別のポートで起動する。Bash ツールの `cd` は作業ディレクトリの外だと次の呼び出しに残らないので、行ごとに `cd` を付ける（付けないと Vite が作業ツリーで起動し、変更後を変更前として撮ってしまう）
 
      ```bash
      git worktree add --detach "${TMPDIR:-/tmp}/visual-diff-main" origin/main
      cd "${TMPDIR:-/tmp}/visual-diff-main" && npm ci
-     npx vite --port <空きポート> --strictPort   # run_in_background: true
+     cd "${TMPDIR:-/tmp}/visual-diff-main" && npx vite --port <空きポート> --strictPort   # run_in_background: true
      ```
 
      撮り終えたら、その Vite を `TaskStop` で止め、リポジトリに戻って `git worktree remove "${TMPDIR:-/tmp}/visual-diff-main"` で消す
@@ -22,7 +22,7 @@
 撮るスクリプト（実行のしかたは `SKILL.md`「MCP が使えないとき」と同じ）。scratchpad に `snap.cjs` で置く:
 
 ```js
-// 使い方: NODE_PATH=$(npm root -g) node snap.cjs <URL> <出力先の接頭辞> [ビューポートの幅]
+// 使い方: NODE_PATH=$(npm root -g) node <scratchpad>/snap.cjs <URL> <出力先の接頭辞> [ビューポートの幅]
 const fs = require('fs');
 const { chromium } = require('playwright');
 
@@ -68,8 +68,8 @@ const collect = (page) => page.$$eval('.timeline-scroll [title]', (els) => els.m
 
 ```bash
 mkdir -p "${TMPDIR:-/tmp}/visual-diff"
-NODE_PATH=$(npm root -g) node snap.cjs http://localhost:<ポート>/ "${TMPDIR:-/tmp}/visual-diff/before"
-NODE_PATH=$(npm root -g) node snap.cjs http://localhost:<ポート>/ "${TMPDIR:-/tmp}/visual-diff/after" <控えた幅>
+NODE_PATH=$(npm root -g) node <scratchpad>/snap.cjs http://localhost:<ポート>/ "${TMPDIR:-/tmp}/visual-diff/before"
+NODE_PATH=$(npm root -g) node <scratchpad>/snap.cjs http://localhost:<ポート>/ "${TMPDIR:-/tmp}/visual-diff/after" <控えた幅>
 ```
 
 比べる:
