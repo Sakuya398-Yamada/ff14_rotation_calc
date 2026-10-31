@@ -21,7 +21,7 @@
 |---|---|
 | 1. hook / `.gitattributes` / テストで防げる | それを実装し、文は書かない |
 | 2. 手順が不正確・不足だった | 注意書きを足さず、該当 phase のステップ自体を正しい形に書き直す |
-| 3. 環境条件付き（特定の OS・ツール・版・端末） | `.claude/skills/issue-start/pitfalls.md` に「条件 / 症状 / 回避 / 確認（版 / 年月 / 出自 Issue）」で 1 項目。該当 phase から見出し名で参照する。常駐 rules には書かない |
+| 3. 環境条件付き（特定の OS・ツール・版・端末） | `.claude/skills/issue-start/pitfalls.md`（テンプレートに還元しないプロジェクト固有の項目は `pitfalls-project.md`。判定は `workflow-feedback.md`「還元する / しないの判定」）に「条件 / 症状 / 回避 / 確認（版 / 年月 / 出自 Issue）」で 1 項目。該当 phase から見出し名で参照する。常駐 rules には書かない |
 | 4. 横断的な規約 | 対応する rules に書く（常駐量の予算から払う） |
 
 ## 新規 rules ファイル追加時のチェック
