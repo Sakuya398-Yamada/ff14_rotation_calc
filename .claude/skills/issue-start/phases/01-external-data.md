@@ -47,7 +47,12 @@
 - **特性習得前の値（Lv100 未満で使う値）の出典**: ジョブガイドは Lv100 時点の値しか載せないので、新規ジョブの追加や既存ジョブへの特性の反映で特性習得前の値が要るときは、次の順で取る（#498 で確定した手順）
   1. 各版のパッチノートの PvE 欄から「修得時の威力」の履歴（「アクション威力アップIII修得時の威力が 640 → 680 に変更されます」のような行。特性名の I〜III はジョブ・版で変わる）を抜き出す。上のスニペットに検索語 `修得時の威力` を渡せば取れる。各版の URL は後述「パッチ追従の検証（定型）」① のパッチノート一覧から取る
   2. consolegameswiki（`https://ffxiv.consolegameswiki.com/wiki/<英語のアクション名。空白は _>`）の「Potency is N prior to learning the ... trait」「The potency of this action is N until ... is learned」の行で裏取りする。パッチノートに出るのは変更のあった値だけなので、変更の無い値はここで取る。ジョブ間で名前が被るアクションは `Ruin_II_(scholar)` のように、小文字のジョブ名が付いたページを見る
-  3. XIVAPI v2（`ActionTransient` の `Description`）は出典に使わない。`@as(raw)` を付けても、レベル条件分岐を評価済みの Lv100 の文面しか返さない
+  3. 1・2 段で決まらないとき（パッチノートの「威力が A → B」に「修得時」が付かず、wiki の Notes にも特性前の値が無いとき）は、consolegameswiki の特性ページの改訂履歴を見て、そのパッチ時点の版の説明文（ゲーム内説明文の写し）にそのアクションが入っていたかを確かめる。入っていなければ「A → B」は基本値の変更、入っていれば特性値の変更と読める（#500 では、`Magick_Mastery_(Sage)` の 7.3 版までは E.ドシスIII が無く 7.4 版から入っていたので、7.2 の 75 → 80 を基本値の変更と決めた）
+     - 版の一覧: `https://ffxiv.consolegameswiki.com/mediawiki/api.php?action=query&prop=revisions&titles=<特性名>_(<Job>)&rvlimit=50&rvprop=ids|timestamp&format=json`。各版の `timestamp` をパッチの公開日と並べて、どの版がどのパッチ時点かを決める（パッチ当日に書き換わることが多い）。公開日は同じ wiki の `Patch_<X.Y>` ページの `releasedate-1` の行にある（`Patch_7.3` なら `7.3 - 5 August 2025`）
+     - 各版の本文: `https://ffxiv.consolegameswiki.com/mediawiki/api.php?action=query&prop=revisions&revids=<版 ID>&rvprop=content&rvslots=main&format=json`。本文は wikitext で、説明文は `description =` の行
+     - ジョブ間で名前が被る特性は、ページ名に大文字始まりのジョブ名が付く（`Magick_Mastery_(Sage)`・`Melee_Mastery_(Dark_Knight)`）。2 段目のアクションページ（小文字の `Ruin_II_(scholar)`）と違い、大文字と小文字を取り違えると `missing` が返る。ジョブ名を付けないページは、存在しない（`missing`）か曖昧さ回避ページ（`{{disambig}}`）で、説明文は無い
+     - 3 段目で分かるのは、そのパッチ時点でアクションが特性の対象だったかまでで、特性前の値そのものは出ない。どの段でも決まらないときは推定値を使い、PR 本文とデータのコメントに推定と書く（#607 の照破）
+  4. XIVAPI v2（`ActionTransient` の `Description`）は出典に使わない。`@as(raw)` を付けても、レベル条件分岐を評価済みの Lv100 の文面しか返さない。過去版のジョブガイドを見る Wayback Machine（`web.archive.org`）も、クラウドセッションからは届かない（curl は agent proxy で接続が切れ、WebFetch は `unable to fetch from web.archive.org`。#500）
 - **パッチ追従の検証**（「パッチ X.Y の調整をデータに反映済みか確かめる」等）は、個別スキルの裏取りではなくジョブ全体の照合になる。後述「パッチ追従の検証（定型）」に従う。ジョブガイドの生 HTML の取得とタグ除去には上のスニペットをそのまま使い、パッチノートは ① のスニペット（PvE 欄の判定込み）を使う
 
 ## パッチ追従の検証（定型）
