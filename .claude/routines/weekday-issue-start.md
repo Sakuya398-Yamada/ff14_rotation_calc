@@ -55,7 +55,8 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 
 1. Open Issue のうち、次をすべて満たすものを候補にする
    - ラベル `routine-ok` が付いている（人が無人実装を許可した印。このルーティンは付けも外しもしない。#503）
-   - ラベルに `feature` / `bug` / `refactor` / `docs` / `test` のいずれかがある（`meta` / `question` は除く。#2 のテンプレート Issue も除く）
+   - ラベルに `feature` / `bug` / `refactor` / `docs` / `test` のいずれかがある
+   - ラベル `meta` / `question` が付いておらず、#2 のテンプレート Issue でもない（`meta` / `question` は、`feature` / `bug` などのラベルと一緒に付いていても除く。`daily-triage.md` 手順 1-1 と `/issue-priority` が対象から外す「`meta` / `question` ラベルの Issue」と同じ扱い）
    - ラベル `needs-decision` が付いていない（過去の実行が判断できずに人の決定を待っている Issue。人が決めてラベルを外すと再び候補になる）
    - その Issue に紐づく Open PR が無く、リモートに `*/#<番号>-*` のブランチも無い（別のセッションが着手済みの可能性があるため）
    - その Issue に紐づくマージ済み PR が無い（マージ後に行う DoD が残る Issue は、PR 本文を `refs #<番号>` にしてマージ後も Open のままにする。`/issue-start` Phase 7。残っているのはマージ後の作業で、実装し直すと同じ Issue に 2 本目の PR ができる。追加の実装が要るなら人が別の Issue に切る）
