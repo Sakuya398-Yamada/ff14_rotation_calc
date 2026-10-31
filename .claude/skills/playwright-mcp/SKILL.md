@@ -1,6 +1,6 @@
 ---
 name: playwright-mcp
-description: Playwright MCP で UI（src/client/**）の変更をブラウザで確かめるときの手順。ツールの事前ロード・dev サーバーの起動・dnd-kit の DnD・React 制御フォームの操作・保存データの注入・失敗時の診断・切断時の再接続・クラウドセッションのブラウザ設定と MCP が使えないときの代替（Node から Playwright を直接使う）を含む。/issue-start Phase 6 の UI 動作確認や、画面上の見え方を確かめたいときに使う。
+description: Playwright MCP で UI（src/client/**）の変更をブラウザで確かめるときの手順。ツールの事前ロード・dev サーバーの起動・dnd-kit の DnD・React 制御フォームの操作・保存データの注入・変更前後の見た目の比較・失敗時の診断・切断時の再接続・クラウドセッションのブラウザ設定と MCP が使えないときの代替（Node から Playwright を直接使う）を含む。/issue-start Phase 6 の UI 動作確認や、画面上の見え方を確かめたいときに使う。
 ---
 
 # Playwright MCP 利用ガイド（Claude 向け）
@@ -162,6 +162,10 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 ## 保存データを注入して検証する
 
 検証用のタイムラインを localStorage に入れる手順（リロード直前に書くと、離脱時の保存で上書きされる）と、子節「匿名トークンの Cookie を入れる」「レート制限を超える件数をローカルの D1 に入れる」は、`.claude/skills/playwright-mcp/seed-data.md`「保存データを注入して検証する」に分けてある。保存データを入れて確かめるときだけ Read で読む。
+
+## 変更前後で見た目が変わらないことを確かめる
+
+完了条件に「〜の見た目が変わらない（変更前後で比べる）」のような項目があるときの手順（変更前を撮る時機と撮り忘れたとき、横スクロールが出ないビューポートの幅、属性の JSON の diff と PNG のピクセル差分）は、`.claude/skills/playwright-mcp/visual-diff.md`「変更前後で見た目が変わらないことを確かめる」に分けてある。変更前は Phase 5 の最初の編集の前に撮るので、そうした項目があればその時点で Read で読む。
 
 ## 失敗時の診断
 
