@@ -114,11 +114,11 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 ### 着手順のおすすめ（上位 3 件）
 | 順 | Issue | priority | 区分 | 理由 |
 |----|-------|----------|------|------|
-| 1 | #N タイトル | high | 人がいるセッション向け | 後続 N 件の起点／要判断: … |
+| 1 | #N タイトル | high | 人がいるセッション向け | 後続 N 件の起点、依存は解消済み／要判断: … |
 ### routine-ok を付ける候補（無人向き、上位 3 件。ラベルは付けていない）
 | 順 | Issue | priority | 理由 |
 |----|-------|----------|------|
-| 1 | #N タイトル | medium | 公式の値に合わせるデータ修正、依存は解消済み |
+| 1 | #N タイトル | medium | `bug` ラベル／`routine-ok` 無し。無人向き候補（`routine-ok` を付ければルーティン向け） |
 - （該当が無ければ「なし」）
 ### 注記
 - weekday-issue-start が動いていれば次に選ぶ見込み: #N タイトル（ルーティン向けの 1 番目）／ 候補なし（`routine-ok` の付いた候補なし）／ なし（weekday-issue-start の Open PR が N 件で上限に到達）。最後の書き方は、手順 4（`/issue-priority` 手順 1-2）で数えた weekday-issue-start 自身の Open PR が `weekday-issue-start.md`「1. 事前点検（安全弁）」手順 5 の上限に達しているときに使う。ルーティンは Issue の選定に進まないので、ルーティン向けの Issue があってもこれにする
