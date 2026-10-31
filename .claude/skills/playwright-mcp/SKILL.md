@@ -67,7 +67,7 @@ const { chromium } = require('playwright');
     page.on('console', (msg) => { if (msg.type() === 'error') console.error('[console]', msg.text()); });
     await page.goto(process.argv[2]);
     await page.locator('#root > *').first().waitFor();
-    // ここで検証する: 保存データの注入や DnD はこのファイルのスニペットを関数として貼り、await fn(page) で呼ぶ
+    // ここで検証する: 保存データの注入（seed-data.md）や DnD（SKILL.md）のスニペットを関数として貼り、await fn(page) で呼ぶ
     await page.screenshot({ path: `${__dirname}/ui-check.png`, fullPage: true });
   } finally {
     await browser.close();
@@ -78,7 +78,7 @@ const { chromium } = require('playwright');
 ポイント:
 
 1. **拡張子は `.cjs`、読み込みは `require`**: `NODE_PATH` を見るのは `require` だけで、ESM の `import` は `ERR_MODULE_NOT_FOUND` になる
-2. **このファイルの `browser_run_code_unsafe` 用スニペットはそのまま使える**: 「保存データを注入して検証する」「dnd-kit ベース DnD の検証方法」は `async (page) => { ... }` の形なので、`const seed = async (page) => { ... };` のように貼って `await seed(page)` で呼ぶ。注入スニペットは `page.goto` の後に呼ぶ（スニペットの「アプリのページを開いてから実行する」）
+2. **このファイルと `seed-data.md` の `browser_run_code_unsafe` 用スニペットはそのまま使える**: `seed-data.md`「保存データを注入して検証する」と、このファイルの「dnd-kit ベース DnD の検証方法」は `async (page) => { ... }` の形なので、`const seed = async (page) => { ... };` のように貼って `await seed(page)` で呼ぶ。注入スニペットは `page.goto` の後に呼ぶ（スニペットの「アプリのページを開いてから実行する」）
 3. **要素の状態は属性やテキストで読む**: snapshot の ref は無いので、`page.locator('[data-skill-entry-uid]').first().getAttribute('title')` のようにロケーターで読み、`console.log` で出す
 
 ## 典型フロー
@@ -161,103 +161,7 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 
 ## 保存データを注入して検証する
 
-検証用のタイムライン等を localStorage（キー `ff14-rotation-calc:app-state`）に書いてからリロードしても、**復元されず空のまま** になる。アプリはページ離脱（`pagehide`）で現在の状態を即時保存する（`src/client/components/App.tsx`）ため、リロード直前に書いた値が離脱時の保存で上書きされる（#387 で発生）。
-
-ページの読み込み前に書き込めば上書きされない。アプリのページを開いた状態で `browser_run_code_unsafe` から `page.addInitScript` を登録してリロードする（Windows 11 + Microsoft Edge で動作検証済、2026-10-13、Issue #434）：
-
-```js
-async (page) => {
-  // 保存形式は src/client/logic/timeline-storage.ts の PersistedAppState。
-  // version 不一致・型不正なら初期状態に、選択ジョブに無い skillId のエントリは除外して復元される
-  const state = {
-    version: 1,
-    selectedJob: 'whm',
-    level: 100,
-    entries: [
-      { uid: 'entry-1', skillId: 'glare3' },
-      { uid: 'entry-2', skillId: 'glare3' },
-    ],
-    stats: { critical: 420, directHit: 420, determination: 440, speed: 420 },
-    untargetableWindows: [],
-    multiTargetWindows: [],
-  };
-  const flag = `seeded-app-state:${Date.now()}`;
-  await page.addInitScript(([json, flag]) => {
-    if (sessionStorage.getItem(flag)) return;   // 2 回目以降の読み込みでは書き込まない
-    localStorage.setItem('ff14-rotation-calc:app-state', json);
-    sessionStorage.setItem(flag, '1');
-  }, [JSON.stringify(state), flag]);
-  await page.reload();
-  await page.locator('[data-skill-entry-uid]').first().waitFor();
-  return await page.locator('[data-skill-entry-uid]').count();
-}
-```
-
-ポイント:
-
-1. **sessionStorage のフラグで 1 回だけ書き込む**: `addInitScript` は以後のページ読み込みのたびに実行される。フラグが無いと、注入後に UI で編集してリロードしたときも注入データに戻り、保存・復元の確認ができない
-2. **フラグ名は注入ごとに変える**: 別のデータを注入し直すときは、もう一度スニペットを実行するだけでよい。前回登録したスクリプトも残って実行されるが、そちらのフラグは立っているので書き込まない（フラグ名が同じだと新しい方も書き込まなくなる）
-3. **アプリのページを開いてから実行する**: localStorage はオリジン単位なので、`browser_navigate` で Vite の URL を開いた状態から `page.reload()` する
-4. 保存データの中身を手で組むのが面倒なときは、UI で状態を作ってから `localStorage.getItem('ff14-rotation-calc:app-state')` で取り出し、`JSON.parse` した値を `state` に使ってよい
-
-### 匿名トークンの Cookie を入れる
-
-保存したタイムラインの持ち主は、Cookie `__Host-owner` の匿名トークンで見分ける（`src/server/routes/timelines.ts` の `readOwnerToken`）。決まったトークンの持ち主として確かめたいときは、アプリのページを開いた状態から `browser_run_code_unsafe` で Cookie を入れる（クラウドセッションの Chromium 153 + playwright 1.63 で動作検証済、2026-10-26、Issue #626）：
-
-```js
-async (page) => {
-  // 32 バイトの乱数を base64url（パディング無し）にした 43 文字（src/server/services/owner-token.ts）。
-  // 形が違うと、サーバーは Cookie が無いものとして扱う。Node なら crypto.randomBytes(32).toString('base64url') で作れる
-  const token = '<トークン>';
-  await page.context().addCookies([
-    { name: '__Host-owner', value: token, domain: 'localhost', path: '/', secure: true, sameSite: 'Lax' },
-  ]);
-  // この持ち主の保存一覧の 1 ページ目（新しい順に 20 件）
-  return await page.evaluate(async () => (await fetch('/api/me/timelines')).json());
-}
-```
-
-ポイント:
-
-1. **`url` ではなく `domain` と `path` を渡す**: `url` を渡すと、Playwright が `secure` を「`url` が `https:` か」で決め直す。http の localhost では `Secure` が外れ、`Secure` が必須の `__Host-` の Cookie として `Invalid cookie fields` で拒まれる（#480）
-2. ページを開いてから `page.evaluate` で `` document.cookie = `__Host-owner=${token}; Secure; Path=/; SameSite=Lax` `` と書いても入る（localhost は安全なコンテキストなので `Secure` 付きでも入る。サーバーは HttpOnly かどうかを見ない）。ただし、有効なトークンで一覧や保存の API を一度呼ぶと、サーバーが同じ Cookie を HttpOnly で付け直すので、そのあと別のトークンへの切り替えは `document.cookie` では効かない（エラーにならず無視される）。切り替えは `addCookies` で行う（HttpOnly の Cookie も上書きできる）
-
-### レート制限を超える件数をローカルの D1 に入れる
-
-保存 API には持ち主ごとのレート制限（60 秒に 10 件。`wrangler.jsonc` の `ratelimits`）があるので、ページングのように多くの件数が要る確認では、ローカルの D1 に行を直接入れる。本番（`--remote`）には入れない。
-
-1. 次のスクリプトを scratchpad に `.cjs` で置き、`node <スクリプト> <件数> <SQL の出力先>` で実行する。新しいトークンとそのハッシュが出るので控える
-2. dev サーバーを起動したまま、リポジトリ直下で `npx wrangler d1 execute ff14-rotation-calc --local --file <SQL の出力先>` を実行する。dev サーバーを再起動しなくても、次の API の呼び出しから見える
-3. 上の「匿名トークンの Cookie を入れる」のスニペットに控えたトークンを入れて確かめる。一覧 API の続きのページは、応答の `nextCursor` を `/api/me/timelines?cursor=` に渡すと返る
-4. 確かめ終わったら `npx wrangler d1 execute ff14-rotation-calc --local --command "DELETE FROM timelines WHERE owner_hash = '<ハッシュ>'"` で消す。確かめる間に同じ Cookie で保存した行も一緒に消える
-
-```js
-// 新しいトークンを作り、その持ち主の行を <件数> 件入れる SQL を書き出す
-const crypto = require('crypto');
-const fs = require('fs');
-
-const [count, out] = [Number(process.argv[2]), process.argv[3]];
-const token = crypto.randomBytes(32).toString('base64url');
-// DB には SHA-256 の hex を書く（src/server/services/owner-token.ts の hashOwnerToken）
-const hash = crypto.createHash('sha256').update(token).digest('hex');
-// data は PersistedAppState の JSON（上の localStorage のスニペットと同じ形式）。列の定義は src/server/db/schema.ts
-const data = JSON.stringify({
-  version: 1, selectedJob: 'whm', level: 100,
-  entries: [{ uid: 'entry-1', skillId: 'glare3' }],
-  stats: { critical: 420, directHit: 420, determination: 440, speed: 420 },
-  untargetableWindows: [], multiTargetWindows: [],
-});
-const now = Math.floor(Date.now() / 1000);
-const sql = Array.from({ length: count }, (_, i) => {
-  // id は nanoid と同じ 21 文字。共有 URL（/api/timelines/:id）と一覧のカーソルはこの形しか受け付けない
-  const id = crypto.randomBytes(16).toString('base64url').slice(0, 21);
-  // created_at を 1 秒ずつずらし、新しい順の並びを title（seed 1 が最新）で追えるようにする。
-  // D1 は 1 文の長さに上限があるので、1 行ずつ別の INSERT にする
-  return `INSERT INTO timelines (id, schema_ver, data, job, level, title, owner_hash, created_at) VALUES ('${id}', 1, '${data}', 'whm', 100, 'seed ${i + 1}', '${hash}', ${now - i});`;
-});
-fs.writeFileSync(out, sql.join('\n') + '\n');
-console.log(JSON.stringify({ token, hash }));
-```
+検証用のタイムラインを localStorage に入れる手順（リロード直前に書くと、離脱時の保存で上書きされる）と、子節「匿名トークンの Cookie を入れる」「レート制限を超える件数をローカルの D1 に入れる」は、`.claude/skills/playwright-mcp/seed-data.md`「保存データを注入して検証する」に分けてある。保存データを入れて確かめるときだけ Read で読む。
 
 ## 失敗時の診断
 
@@ -272,8 +176,8 @@ console.log(JSON.stringify({ token, hash }));
 | 一度使えていた `mcp__playwright__*` ツールが突然 `No matching deferred tools found` になる | セッション長時間放置で stdio サーバーが切断 | 下記「切断時の再接続手順」を参照 |
 | `browser_drag` を呼んでも DnD ターゲットが反応しない（スキルが追加されない／並び替わらない／削除されない） | dnd-kit の MouseSensor activation（distance: 4）と `dragTo` の一括ジェスチャが競合し、drop 前にドラッグが確定しない | 上記「dnd-kit ベース DnD の検証方法」のステップ分割マウス操作を `browser_run_code_unsafe` で実行する |
 | `browser_evaluate` で `select.value = '...'` を代入して `change` を dispatch しても UI が変化しない（値が空に戻る） | React の制御コンポーネントは value 代入を内部状態と同期しないため、直接代入では onChange が発火しない | 上記「React 制御フォーム要素の操作ワークアラウンド」の native setter スニペットを使う |
-| localStorage に保存データを書いてからリロードしても復元されない（タイムラインが空のまま） | アプリが `pagehide` で現在の状態を即時保存するため、リロード前に書いた値が離脱時の保存で上書きされる | 上記「保存データを注入して検証する」の `page.addInitScript` スニペットで、ページの読み込み前に書き込む |
-| `addCookies` が `Protocol error (Storage.setCookies): Invalid cookie fields` で止まる | `url` を渡すと Playwright が `secure` を「`url` が `https:` か」で決め直すので、http の localhost では `__Host-` の Cookie に必須の `Secure` が外れる | 上記「匿名トークンの Cookie を入れる」のとおり、`url` の代わりに `domain: 'localhost'` と `path: '/'` を渡し、`secure: true` を付ける |
+| localStorage に保存データを書いてからリロードしても復元されない（タイムラインが空のまま） | アプリが `pagehide` で現在の状態を即時保存するため、リロード前に書いた値が離脱時の保存で上書きされる | `seed-data.md`「保存データを注入して検証する」の `page.addInitScript` スニペットで、ページの読み込み前に書き込む |
+| `addCookies` が `Protocol error (Storage.setCookies): Invalid cookie fields` で止まる | `url` を渡すと Playwright が `secure` を「`url` が `https:` か」で決め直すので、http の localhost では `__Host-` の Cookie に必須の `Secure` が外れる | `seed-data.md`「匿名トークンの Cookie を入れる」のとおり、`url` の代わりに `domain: 'localhost'` と `path: '/'` を渡し、`secure: true` を付ける |
 | `getByRole('status')` など `role="status"` のロケーターが `strict mode violation: getByRole('status') resolved to 2 elements` で止まる | dnd-kit の `DndContext` が、読み上げ用の `<div role="status" id="DndLiveRegion-0">` を常に描画している。画面には見えないがロケーターには当たるので、ページ全体で探すと目的の要素とあわせて 2 件以上になる | 対象のコンテナ（dialog など）の中に絞って探す（例: `page.getByRole('dialog').getByRole('status')`） |
 
 ## 切断時の再接続手順（Claude 向け）
