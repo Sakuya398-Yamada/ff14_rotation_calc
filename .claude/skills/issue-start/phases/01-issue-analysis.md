@@ -64,7 +64,7 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
 ## 手順
 
 1. GitHub MCP の `issue_read`（method: `get`）で本文・ラベルを取得し、`issue_read`（method: `get_comments`）でコメントも取得する。`get` の結果には sub-issue の親子関係（`parent` / `sub_issues_summary`）と、この Issue をクローズする設定の PR（`closed_by_pull_requests`）も含まれる
-2. **関連 PR の確認**: `closed_by_pull_requests` にマージ済み PR があるか、無ければ `search_pull_requests`（query に `"#<番号>" in:title`、`owner` / `repo` を指定）で関連 PR の状態を確認する。この Issue の PR と数えるのは `closed_by_pull_requests` の PR と、タイトル末尾が ` #<番号>` の PR（`.claude/rules/git-conventions.md`「PR のタイトルと本文」。`refs` の PR もここで拾う）だけで、本文で触れただけの PR（スコープ外の起票の報告など）は数えない
+2. **関連 PR の確認**: `closed_by_pull_requests` にマージ済み PR があるか、無ければ `search_pull_requests`（query は `"#<番号>" in:title`、`owner` / `repo` を指定、`perPage: 100`）で関連 PR の状態を確認する。この Issue の PR と数えるのは、`closed_by_pull_requests` の PR と、タイトル末尾の ` #N` の並びに `#<番号>` がある PR（`.claude/rules/git-conventions.md`「PR のタイトルと本文」。`refs` の PR もここで拾う）だけで、本文で触れただけの PR（スコープ外の起票の報告など）は数えない。検索は `#` を無視するので、タイトル中の同じ数字（版番号の一部など）にも当たる
    - マージ済み PR があれば、ユーザーに通知して追加作業の要否を確認する。不要なら処理を終了する
    - Issue が `OPEN` でも PR がマージ済みのことがあるので、Issue の state だけで判断しない
    - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は後述「オープンな旧 PR／既存ブランチがある場合」
