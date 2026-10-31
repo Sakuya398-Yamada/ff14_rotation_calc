@@ -174,4 +174,18 @@
   rm src/client/data/__tests__/tmp-check.test.ts
   git status --short
   ```
-- **確認**: tsx 4.23.15・Node 22.22.0・Vitest 4.1.12（Claude Code 2.1.310 クラウドセッション）/ 2026-10 / #629（tsx での停止）・#655（`agent` レポーター）
+  設計の承認前など作業ツリーを変えられない間は、scratchpad に一時テスト専用のディレクトリを作ってそこに置く（`--dir` の下の `*.test.ts` はすべて走るので、ほかのファイルと混ぜない）。テストのファイルがリポジトリの外にあるので、import はリポジトリの絶対パスで書く。リポジトリ直下で `--dir` にそのディレクトリを渡して回すと（`--dir` が `test.dir` を上書きする）、`vite.config.ts` を読んだまま、作業ツリーを変えずに値を出せる。`--dir` を広く取る（`/` など）と、テストのファイルを引数で指定していてもその下を全部走査し、`JavaScript heap out of memory` で落ちる
+  ```ts
+  // <scratchpad>/vitest-tmp/tmp-check.test.ts
+  import { test } from "vitest";
+  import { MNK_ATTACK_SKILLS } from "<リポジトリの絶対パス>/src/client/data/mnk-skills";
+
+  test("tmp", () => {
+    console.log(MNK_ATTACK_SKILLS.length, MNK_ATTACK_SKILLS[0]?.icon);
+  });
+  ```
+  ```bash
+  npx vitest run --dir <scratchpad>/vitest-tmp --reporter=default
+  git status --short
+  ```
+- **確認**: tsx 4.23.15・Node 22.22.0・Vitest 4.1.12（Claude Code 2.1.310 クラウドセッション）/ 2026-10 / #629（tsx での停止）・#655（`agent` レポーター）・#679 と #707（scratchpad での回し方と `--dir /` のヒープ不足。Node 22.23.4）
