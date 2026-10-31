@@ -1,6 +1,6 @@
 ---
 name: template-update
-description: テンプレート元（.claude/template-version の repo）でリリースされた新しい版を、このプロジェクトのカスタマイズを壊さずに取り込む手順（3-way マージ → 残差確認 → テンプレート外の参照確認 → template-version 更新 → バナー確認）。「refactor: テンプレートを vX.Y.Z に更新」Issue を /issue-start した Phase 5 で使う。更新の検知と更新用 Issue の起票は /issue-start Phase 1 手順 0.5 が行うので、ここでは行わない。
+description: テンプレート元（.claude/template-version の repo）でリリースされた新しい版を、このプロジェクトのカスタマイズを壊さずに取り込む手順（3-way マージ → 残差確認 → テンプレート外の参照確認 → template-version 更新 → バナー確認）。「refactor: テンプレートを vX.Y.Z に更新」Issue を /issue-start した Phase 5 で使う。更新の検知と更新用 Issue の起票の手順は /issue-start Phase 1 手順 0.5 が正本。更新用 Issue の外から呼ばれたら取り込まず、その手順で更新用 Issue に誘導する。
 argument-hint: "[vNEW]"
 ---
 
@@ -13,6 +13,7 @@ argument-hint: "[vNEW]"
 - `<repo>` は `.claude/template-version` の `repo`、`vOLD` は同ファイルの `version`、`vNEW` は更新用 Issue の版（引数で指定されていればそれ）
 - テンプレートのファイルはこのプロジェクト側でカスタマイズ済みなので、**機械的に上書きしない**
 - 作業は未コミットの変更が無い状態で始める（後述「3-way マージの定型手順」5 の理由）
+- 更新用 Issue の `/issue-start` の外から直接呼ばれたら、取り込みに入らない。版は引数、無ければ `.claude/skills/issue-start/phases/01-issue-analysis.md` 手順 0.5 の表と注記に沿って SessionStart バナーから決める（バナーが `⚠ Template update available` でなければ、表の動作に従い、取り込まずにその旨を伝えて終える）。そのうえで手順 0.5 の [Y] と同じ手順で同じ版の更新用 Issue を探し、無ければ起票を提案する。見つけた Issue か起票した Issue は、この流れのまま `/issue-start <番号>` を呼んで進める（その Phase 5 でこの手順に戻る）。起票を断られたら取り込まない（1 Issue = 1 PR）
 
 ## 取り込み手順
 
@@ -33,6 +34,7 @@ argument-hint: "[vNEW]"
    - [ ] Release notes の変更ファイルをすべて確認した
    - [ ] カスタマイズ済みファイルのプロジェクト固有記述が失われていない
    - [ ] テンプレートが持ち込んだ印・規約を、テンプレート外のファイルやプロジェクト固有の記述が参照していないか、旧形式の印が Issue コメントに残っていないかを確かめた（後述「テンプレート外の参照の確認」）
+   - [ ] skill のファイルがどれも 30,000 バイト未満（`find .claude/skills -name '*.md' -size +29999c` が何も出さない）。プロジェクト固有の追記とテンプレートの追記が合わさって超えることがある。超えたら、切り出す Issue を起票する（`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）
    - [ ] `.claude/template-version` の `version` を更新した
    - [ ] hooks テストが通る
    - [ ] SessionStart バナーが `up to date` になる（上記の直接実行で確認）
