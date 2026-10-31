@@ -90,7 +90,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 
 ## 7. 着手順のおすすめを選ぶ
 
-1. 手順 6 で付けたあとのラベルで、進行中を除く Issue を `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無し（見送り分）の順に並べる。同じ優先度の中は、塞いでいる後続の Open Issue が多い順、次に番号の小さい順
+1. 手順 6 で付けたあとのラベルで、進行中を除く Issue を `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無し（見送り分）の順に並べる。同じ優先度の中は、塞いでいる後続の Open Issue が多い順（鎖の先まで数える。数え方は `/issue-priority` の skill 手順 4）、次に番号の小さい順
 2. 依存先が Open の Issue（依存待ち）は今は着手できないので除き、上から **3 件** をおすすめにする。区分（ルーティン向け／人がいるセッション向け）は問わず、表の列に書く
 3. 理由は `/issue-priority` の skill 手順 4・5 の言い回しで書く（後続 N 件の起点、依存は解消済み、要判断: …、など）
 4. **routine-ok を付ける候補**: 手順 5 で無人向きと判定した Issue を、手順 7-1 の並びで上から **3 件まで** 挙げる。理由は手順 7-3 と同じ言い回しで書く。ラベルは付けない（付けるかは人が実行報告を読んで決める）

@@ -6,7 +6,7 @@ paths:
 # テスト規約（既知の罠と回避パターン）
 
 frontmatter の `paths:` により、テスト（`src/**/__tests__/**`）を Read / Edit / Write したときだけ読み込まれる。
-`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389 / #433 / #429 / #628、発生元: #198 / #217 / #351 / #410 / #412 / #521）。
+`resolve-timeline.ts` 周辺のテスト記述時に繰り返し踏みやすい罠と、その標準回避パターンをまとめる（導入Issue: #289 / #389 / #433 / #429 / #628 / #699、発生元: #198 / #217 / #351 / #410 / #412 / #521 / #612 / #666）。
 
 ## 罠1: `activeBuffs` の `stacks` は #429 より前は後続処理で書き換わっていた（解消済み）
 
@@ -166,3 +166,45 @@ expect(after).toBe(/* 期待値。上限到達なら 10000 */);
   ```
 
 - 参考実装: `src/client/logic/__tests__/mnk-job-guide.test.ts` の「GCD のリキャスト中に手動で置くとリキャストエラーになり、闘気は増えない」（`resolve` / `entry` はこのファイルのヘルパー）
+
+## 罠7: 結果の配列の要素の型を変えるとき、assert のメソッド名の Grep では影響するテストを数え漏らす
+
+### 何が起きるか
+
+`resolveTimeline` の結果の配列の要素の型を変えるとき（#612 の `resourceErrors`、#666 の `comboErrors` を、id の文字列から `{ resourceId, kind }` / `{ buffId, kind }` のオブジェクトへ）、影響するテストを `toContain("id")` / `toEqual(["id"])` のような assert のメソッド名で Grep して数えると漏れる。漏れる書き方は、どの確認で見つかるかで 3 つに分かれる：
+
+| 書き方 | 型を変えたあと | 見つかる確認 |
+|------|--------------|-------------|
+| `Set` に通してから比べる（`expect([...new Set(entry.comboErrors)]).toEqual(["impact-imminent"])`） | `Set` はオブジェクトを参照で比べるので、中身が同じ要素の重複が除かれずに落ちる | スイートの実行（メソッド名の Grep には当たらない） |
+| 古い型で値を組むフィクスチャ（`overrides: { comboErrors: ["combo"] }`）、`entry.comboErrors.includes("combo")` | フィクスチャは中身を見ないテストなら通る。`includes` は常に `false` | `npx tsc --noEmit`（Vitest は型を検査しない。`includes` は `.toBe(true)` で見ていればスイートでも落ちるが、`.toBe(false)` だと通る） |
+| 否定の assert（`expect(entry.comboErrors).not.toContain("combo")`） | 文字列とオブジェクトを比べることになり、常に通る | スイートでも `tsc` でも見つからない（`toContain` / `toEqual` の引数の型は、配列の要素の型に縛られない） |
+
+#666 では、メソッド名で Grep して 22 件と見積もったが、`Set` の形の 2 件と `expected-potency.test.ts` のフィクスチャ 1 件を数え漏らした。#612 では、否定の assert が常に通るようになることに気付き、書き換えの前に Grep して該当が無いことを確かめた。
+
+### テストでの回避パターン
+
+- **型を変えた直後にスイート全体と型チェックを回し、落ちたテストと型エラーで影響範囲を数える**。メソッド名の Grep で見積もらない：
+
+  ```bash
+  npx vitest run
+  npx tsc --noEmit
+  ```
+
+- **どちらでも見つからない否定の assert は、別に Grep して確かめる**。型を変えたフィールド名と `.not.` が同じ行にあるものを探す（`expect(` と `.not.` を別の行に分けた書き方は当たらない）：
+
+  ```bash
+  grep -rn "comboErrors" src --include="*.test.ts" --include="*.test.tsx" | grep "\.not\."
+  ```
+
+- **否定の assert は id に写してから比べる**。`not.toContainEqual` はオブジェクトの全体が一致しないと通るので、`kind` や `anyOf` が違うだけで通ってしまう：
+
+  ```ts
+  // NG: 要素がオブジェクトになると、常に通る
+  expect(entry.comboErrors).not.toContain("dive-ready");
+
+  // NG: dive-ready のエラーが無いことを見たいのに、kind が "forbidden" のものや anyOf の付いたものがあっても通る
+  expect(entry.comboErrors).not.toContainEqual({ buffId: "dive-ready", kind: "missing" });
+
+  // OK: id に写してから比べる
+  expect(entry.comboErrors.map((e) => e.buffId)).not.toContain("dive-ready");
+  ```
