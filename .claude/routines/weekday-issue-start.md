@@ -62,10 +62,10 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
    - その Issue に紐づくマージ済み PR が無い（マージ後に行う DoD が残る Issue は、PR 本文を `refs #<番号>` にしてマージ後も Open のままにする。`/issue-start` Phase 7。残っているのはマージ後の作業で、実装し直すと同じ Issue に 2 本目の PR ができる。追加の実装が要るなら人が別の Issue に切る）
    - コメントに「## 着手」の印が無い（クラウドセッションの作業ブランチ `claude/*` 等は名前に Issue 番号が入らず、ローカルの `/issue-start` が切ったブランチは Phase 7 まで push されないので、上の条件では作業中と分からないため。印の書式は `.claude/skills/issue-start/phases/02-branch-setup.md`「クラウドセッションの場合」手順 4、ローカルで `routine-ok` の Issue に付ける場面は同じファイルの「ブランチ作成」）。「## 着手（取り下げ）」に書き換わった印は数えない。印が古くても除外し続け、作業していないと分かった印は人が「## 着手（取り下げ）」に書き換えて外す（#493）
    - 本文の `依存: #M` がすべてクローズ済み
-   - sub-issue を持つ親 Issue ではない
+   - sub-issue を持つ親 Issue ではない。`sub_issues_summary.total` が 1 以上なら親で、子がすべて Closed でも除く（子が増えていく進捗管理用の親（#497）を実装しないため。親に残った実装は、人が片付けるか子 Issue に切る。#738）。子の本文に「親Issue: #N」と書かれているだけ（sub-issue になっていない）の #N は、親として扱わない（親かどうかは `total` だけで決める）
    - `## 未確定事項` に `[要確認]` の項目や、「ユーザー判断」のようにユーザーの決定待ちと明記された項目が無い（「`/issue-start` の探索で調べる」と書かれた項目は決定待ちではないので数えない）
 
-   確かめるときは、最初に `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues?state=open&labels=routine-ok&per_page=100" --jq '[.[] | select(.pull_request | not) | {number, title, labels: [.labels[].name]}]'` で `routine-ok` の付いた Issue に絞る（この API は PR も返すので `pull_request` の有無で除く）。0 件なら残りの条件は確かめずに手順 2-3 へ進む
+   確かめるときは、最初に `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues?state=open&labels=routine-ok&per_page=100" --jq '[.[] | select(.pull_request | not) | {number, title, labels: [.labels[].name], sub_issues: .sub_issues_summary.total}]'` で `routine-ok` の付いた Issue に絞る（この API は PR も返すので `pull_request` の有無で除く。`sub_issues` は親 Issue の条件に使う）。0 件なら残りの条件は確かめずに手順 2-3 へ進む
 
    着手の印は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments?per_page=100" --jq '[.[] | select(.body | startswith("## 着手\n"))] | length'` が `0` であることで確かめる（GitHub MCP なら `issue_read` の `get_comments`）。見出しの直後の改行まで含めて比べるので、「## 着手（取り下げ）」の印には当たらない
 
