@@ -25,7 +25,7 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 ### 1. 集める
 
 1. GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "labels"]`）で Open Issue を一覧する
-2. `list_pull_requests`（`state: open`、`fields: ["number", "title", "body", "draft", "head"]`）で Open PR を一覧し、タイトル末尾の `#N` と本文の `closes #N` で Issue に紐づける。一覧は `mergeable_state` を返さない（`fields` に入れても項目ごと落ちる）ので、紐づいた PR ごとに `pull_request_read`（method: `get`）で読む
+2. `list_pull_requests`（`state: open`、`fields: ["number", "title", "body", "draft", "head"]`）で Open PR を一覧し、タイトル末尾の `#N` と本文の `closes #N` で Issue に紐づける。一覧は `mergeable_state` を返さない（`fields` に入れても項目ごと落ちる）ので、紐づいた PR ごとに `pull_request_read`（method: `get`）で読む。あわせて、`weekday-issue-start` 自身の Open PR の件数を数える（手順 5 の注記に使う）。どの PR を自身の PR とみなすか（draft も含める）は `.claude/routines/weekday-issue-start.md`「1. 事前点検（安全弁）」手順 2 に従う（正本はルーティン側。ここに書き写さない）
 3. リモートのブランチから `*/#<番号>-*` に当たるものを Issue に紐づける。ブランチは百本を超えるので、全件を出さずに対象の番号で絞る: `git ls-remote --heads origin | grep -E '/#(475|476|...)-'`
 4. 対象の Issue ごとに、紐づくマージ済み PR があるかを見る。`refs #N` の PR はマージ後も Issue を Open のまま残し、head ブランチもマージ時に消えるので、手順 1-2・1-3 では見つからない。確かめ方は `.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」手順 1 の「マージ済み PR は、候補ごとに」で始まる段落に従う（正本はルーティン側。ここに書き写さない。GitHub MCP が使えないときの確かめ方も同じ段落にある）
 
@@ -130,7 +130,7 @@ GitHub MCP が使えなければ REST の gh api repos/{owner}/{repo}/issues/N�
 |----|-------|-----------|-----------------|
 
 ### 注記
-- 案のとおり付けたとき、次の `weekday-issue-start` が選ぶ Issue（ルーティン向けの 1 番目。空なら「なし（`routine-ok` の付いた候補なし）」）
+- 案のとおり付けたとき、次の `weekday-issue-start` が選ぶ Issue（ルーティン向けの 1 番目。空なら「なし（`routine-ok` の付いた候補なし）」。手順 1-2 で数えた `weekday-issue-start` 自身の Open PR が `weekday-issue-start.md`「1. 事前点検（安全弁）」手順 5 の上限に達していれば、ルーティンは Issue の選定に進まないので、ルーティン向けの表に関係なく「なし（`weekday-issue-start` の Open PR が N 件で上限に到達）」）
 - ファイルが重なる組み合わせ（マージ順の注意）、依存とリスクの食い違い
 
 priority ラベルを案のとおり付け替えますか？
