@@ -42,14 +42,14 @@ import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
 /**
  * モンク（MNK）の攻撃スキル定義（パッチ7.5系の公式ジョブガイド準拠。収録スキルは Lv70〜100 の実用キット）。
  * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）とは #521 で GCD の拘束・発動条件を揃えた。
- * 既知の差分は、型の発動条件（#610）
+ * #610 で型の発動条件も揃え、既知の差分なし
  *
  * ## 型（フォーム）のモデル化
- * 壱→弐→参の型は WS コンボ（comboFrom）で表現する。
- * - 壱の型の WS（連撃系・双竜脚・壊神衝系）→ 弐の型を付与 → 弐の型の WS が繋がる
- * - 踏鳴・零の型は bypassCombo バフ（mnk-buffs.ts）で型を無視して成立させる
- * - ゲーム内の型は 30 秒持続だが、本ツールのコンボタイマー（15秒）と、
- *   コンボ対象外 GCD（六合星導脚等）を挟むと型が切れる点は簡略化として許容する
+ * 壱→弐→参の型は、型のバフ（mnk-buffs.ts。効果時間 30 秒、同時に 1 つだけ）と付与バフで表すコンボ（comboFromBuff）で表現する。
+ * - 型の WS は型の成否を問わず buffApplications で次の型を付ける（壱→弐→参→壱）。型の付かない GCD（六合星導脚等）を挟んでも型は残る
+ * - 弐・参の型の WS は型が発動条件（required: true）。型が無ければ発動条件エラーにする
+ * - 壱の型の WS は型が無くても撃てる（required: false）。型が無いと警告を出し、双竜脚の壱の功力・壊神衝の威力アップが付かない
+ * - 踏鳴・零の型は bypassCombo バフ（mnk-buffs.ts）で型を無視して成立させる。そのときも追加効果は付く
  *
  * ## 功力のモデル化
  * 功力はリソース（opo-fury / raptor-fury / coeurl-fury）で表現し、
@@ -94,35 +94,13 @@ const GCD_TRAIT_LV76: TraitPotencyOverride = { traitLevel: 76, recastTime: GCD_R
 const MEDITATION_GCD_TRAIT_LV76: TraitPotencyOverride = { traitLevel: 76, gcdRecastTime: GCD_RECAST };
 const DEFAULT_ANIMATION_LOCK = 0.65;
 
-// 型を付与する WS（= 次の型の WS の comboFrom）。autoTransform の変化先も含める
-/** 壱の型を付与する WS（参の型の WS 群） */
-const GRANTS_OPO_FORM = [
-  "snap-punch",
-  "snap-punch-fury",
-  "pouncing-coeurl",
-  "pouncing-coeurl-fury",
-  "demolish",
-  "rockbreaker",
-];
-/** 弐の型を付与する WS（壱の型の WS 群） */
-const GRANTS_RAPTOR_FORM = [
-  "bootshine",
-  "bootshine-fury",
-  "leaping-opo",
-  "leaping-opo-fury",
-  "dragon-kick",
-  "arm-of-the-destroyer",
-  "shadow-of-the-destroyer",
-];
-/** 参の型を付与する WS（弐の型の WS 群） */
-const GRANTS_COEURL_FORM = [
-  "true-strike",
-  "true-strike-fury",
-  "rising-raptor",
-  "rising-raptor-fury",
-  "twin-snakes",
-  "four-point-fury",
-];
+// 型の WS の comboFromBuff（付与バフで表すコンボ）。型の WS は buffApplications で次の型を付ける（mnk-buffs.ts の型のバフ）
+/** 壱の型の WS: 型が無くても撃てる。壱の型効果中だけ追加効果（双竜脚の壱の功力・壊神衝の威力） */
+const FROM_OPO_FORM = { buffId: "opo-form", required: false };
+/** 弐の型の WS: 発動条件「弐の型」効果中 */
+const FROM_RAPTOR_FORM = { buffId: "raptor-form", required: true };
+/** 参の型の WS: 発動条件「参の型」効果中 */
+const FROM_COEURL_FORM = { buffId: "coeurl-form", required: true };
 
 /** ビーストチャクラの条件リストを組み立てる（必殺技の autoTransform 用） */
 function beastChakraConditions(
@@ -199,7 +177,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 50,
-    comboFrom: GRANTS_OPO_FORM,
+    comboFromBuff: FROM_OPO_FORM,
+    buffApplications: ["raptor-form"],
     comboResourceChanges: [{ resourceId: "opo-fury", amount: 1 }],
     traitPotencyOverrides: [
       GCD_TRAIT_LV76,
@@ -218,7 +197,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 1,
-    comboFrom: GRANTS_OPO_FORM,
+    comboFromBuff: FROM_OPO_FORM,
+    buffApplications: ["raptor-form"],
     guaranteedCrit: true,
     autoTransform: [
       { resourceConditions: [{ resourceId: "opo-fury", minAmount: 1 }], skillId: "bootshine-fury" },
@@ -235,7 +215,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 1,
-    comboFrom: GRANTS_OPO_FORM,
+    comboFromBuff: FROM_OPO_FORM,
+    buffApplications: ["raptor-form"],
     guaranteedCrit: true,
     resourceChanges: [{ resourceId: "opo-fury", amount: -1 }],
     hidden: true,
@@ -253,7 +234,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
     replacesSkillId: "bootshine",
-    comboFrom: GRANTS_OPO_FORM,
+    comboFromBuff: FROM_OPO_FORM,
+    buffApplications: ["raptor-form"],
     guaranteedCrit: true,
     autoTransform: [
       { resourceConditions: [{ resourceId: "opo-fury", minAmount: 1 }], skillId: "leaping-opo-fury" },
@@ -269,7 +251,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
-    comboFrom: GRANTS_OPO_FORM,
+    comboFromBuff: FROM_OPO_FORM,
+    buffApplications: ["raptor-form"],
     guaranteedCrit: true,
     resourceChanges: [{ resourceId: "opo-fury", amount: -1 }],
     hidden: true,
@@ -288,7 +271,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 18,
-    comboFrom: GRANTS_RAPTOR_FORM,
+    comboFromBuff: FROM_RAPTOR_FORM,
+    buffApplications: ["coeurl-form"],
     comboResourceChanges: [{ resourceId: "raptor-fury", amount: 1 }],
     traitPotencyOverrides: [
       GCD_TRAIT_LV76,
@@ -306,7 +290,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 4,
-    comboFrom: GRANTS_RAPTOR_FORM,
+    comboFromBuff: FROM_RAPTOR_FORM,
+    buffApplications: ["coeurl-form"],
     autoTransform: [
       { resourceConditions: [{ resourceId: "raptor-fury", minAmount: 1 }], skillId: "true-strike-fury" },
     ],
@@ -322,7 +307,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 4,
-    comboFrom: GRANTS_RAPTOR_FORM,
+    comboFromBuff: FROM_RAPTOR_FORM,
+    buffApplications: ["coeurl-form"],
     resourceChanges: [{ resourceId: "raptor-fury", amount: -1 }],
     hidden: true,
     traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 500 }],
@@ -339,7 +325,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
     replacesSkillId: "true-strike",
-    comboFrom: GRANTS_RAPTOR_FORM,
+    comboFromBuff: FROM_RAPTOR_FORM,
+    buffApplications: ["coeurl-form"],
     autoTransform: [
       { resourceConditions: [{ resourceId: "raptor-fury", minAmount: 1 }], skillId: "rising-raptor-fury" },
     ],
@@ -354,7 +341,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
-    comboFrom: GRANTS_RAPTOR_FORM,
+    comboFromBuff: FROM_RAPTOR_FORM,
+    buffApplications: ["coeurl-form"],
     resourceChanges: [{ resourceId: "raptor-fury", amount: -1 }],
     hidden: true,
   },
@@ -372,7 +360,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 30,
-    comboFrom: GRANTS_COEURL_FORM,
+    comboFromBuff: FROM_COEURL_FORM,
+    buffApplications: ["opo-form"],
     comboResourceChanges: [{ resourceId: "coeurl-fury", amount: 2 }],
     traitPotencyOverrides: [
       GCD_TRAIT_LV76,
@@ -391,7 +380,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 6,
-    comboFrom: GRANTS_COEURL_FORM,
+    comboFromBuff: FROM_COEURL_FORM,
+    buffApplications: ["opo-form"],
     autoTransform: [
       { resourceConditions: [{ resourceId: "coeurl-fury", minAmount: 1 }], skillId: "snap-punch-fury" },
     ],
@@ -408,7 +398,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 6,
-    comboFrom: GRANTS_COEURL_FORM,
+    comboFromBuff: FROM_COEURL_FORM,
+    buffApplications: ["opo-form"],
     resourceChanges: [{ resourceId: "coeurl-fury", amount: -1 }],
     hidden: true,
     traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 480 }],
@@ -425,7 +416,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
     replacesSkillId: "snap-punch",
-    comboFrom: GRANTS_COEURL_FORM,
+    comboFromBuff: FROM_COEURL_FORM,
+    buffApplications: ["opo-form"],
     autoTransform: [
       { resourceConditions: [{ resourceId: "coeurl-fury", minAmount: 1 }], skillId: "pouncing-coeurl-fury" },
     ],
@@ -441,7 +433,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
-    comboFrom: GRANTS_COEURL_FORM,
+    comboFromBuff: FROM_COEURL_FORM,
+    buffApplications: ["opo-form"],
     resourceChanges: [{ resourceId: "coeurl-fury", amount: -1 }],
     hidden: true,
   },
@@ -460,7 +453,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 26,
-    comboFrom: GRANTS_OPO_FORM,
+    comboFromBuff: FROM_OPO_FORM,
+    buffApplications: ["raptor-form"],
     maxTargets: Infinity,
     traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
@@ -476,7 +470,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 82,
     replacesSkillId: "arm-of-the-destroyer",
-    comboFrom: GRANTS_OPO_FORM,
+    comboFromBuff: FROM_OPO_FORM,
+    buffApplications: ["raptor-form"],
     guaranteedCrit: true,
     maxTargets: Infinity,
   },
@@ -490,7 +485,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 45,
-    comboFrom: GRANTS_RAPTOR_FORM,
+    comboFromBuff: FROM_RAPTOR_FORM,
+    buffApplications: ["coeurl-form"],
     maxTargets: Infinity,
     traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
@@ -504,7 +500,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 30,
-    comboFrom: GRANTS_COEURL_FORM,
+    comboFromBuff: FROM_COEURL_FORM,
+    buffApplications: ["opo-form"],
     maxTargets: Infinity,
     traitPotencyOverrides: [GCD_TRAIT_LV76],
   },

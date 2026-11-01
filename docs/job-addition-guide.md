@@ -106,7 +106,7 @@ export const XXX_RESOURCES: ResourceDefinition[] = [
 | `critRate` / `dhRate` | クリ率／DH 率の加算 | |
 | `guaranteedCrit` / `guaranteedDh` | 次の WS で確定クリ／DH | |
 | `consumeOnGcd` | 対象 GCD で 1 スタック自動消費 | `sam-buffs.ts:88-91` |
-| `bypassCombo` | `appliesToSkillIds` の WS をコンボ成立扱い | `sam-buffs.ts:83-87`（明鏡止水） |
+| `bypassCombo` | `appliesToSkillIds` の WS をコンボ成立扱い（`comboFrom` / `comboFromBuff` のどちらも） | `sam-buffs.ts:98-102`（明鏡止水）、`mnk-buffs.ts:120, 137`（踏鳴・零の型） |
 | `applyBuffOnSkill` | 対象スキル使用時に `appliedBuffId` を追加付与 | `sam-buffs.ts:94-99`（明鏡止水中の月光→風月等） |
 | `resourceCostMultiplier` | 指定リソース消費の倍率 | BLM AF/UI |
 | `resourceGainOnSkill` | スキル使用時に追加リソース獲得 | |
@@ -166,6 +166,7 @@ export const XXX_BUFFS: BuffDefinition[] = [
 | バフ付与 | `buffApplications[]` | `whm-skills.ts:279, 292` |
 | バフ消費 | `buffConsumptions[]` | `whm-skills.ts:201-203` |
 | WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges` | `sam-skills.ts:98-101, 113-115` |
+| 付与バフで表すコンボ（型など。直前の GCD ではなく、前の段が付けたバフでつながる） | 前の段の `buffApplications` で次の段のバフを付け、次の段は `comboFromBuff`（発動条件なら `required: true`）。段のバフに同じ `exclusiveGroup` と `duration` を付ける。成立時の効果は WS コンボと同じ `nonComboPotency` / `comboResourceChanges` | `mnk-skills.ts:99-103, 274-276`（双掌打）、`mnk-buffs.ts:81-108`（型のバフ） |
 | 全消費＋集計獲得 | `consumeAllResources` + `resourceGainByConsumedCount` | `sam-skills.ts:647-652`（葉隠 = 雪/月/花を全消費し剣気獲得） |
 | チャージ式・共有CD | `maxCharges` + `cooldownGroup` | `sam-skills.ts:584-586, 599-601` |
 | バフ必須スキル | `requiredBuff` | `sam-skills.ts:447, 462, 633` |
