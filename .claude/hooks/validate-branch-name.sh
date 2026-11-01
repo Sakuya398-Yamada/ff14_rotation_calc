@@ -2,7 +2,7 @@
 # Pre-tool-use hook — branch name guardrail.
 #
 # Blocks branch creation when the new name violates the project convention:
-#   <feature|fix|refactor|docs>/#<issue>-<kebab-case-description>
+#   <feature|fix|refactor|docs>/<issue>-<kebab-case-description>
 #
 # Covered commands:
 #   git checkout -b|-B <name>        git checkout --orphan <name>
@@ -97,7 +97,7 @@ checkout_re="^checkout${opt}[[:space:]]+(-b|-B|--orphan)[[:space:]]+${name}"
 switch_re="^switch${opt}[[:space:]]+(-c|-C|--create|--force-create|--orphan)(=|[[:space:]]+)${name}"
 branch_re='^branch([[:space:]]+(-f|--force|-t|--track|--no-track|-q|--quiet))*[[:space:]]+'"${name}"
 worktree_re="^worktree[[:space:]]+add${opt}[[:space:]]+(-b|-B)[[:space:]]+${name}"
-convention_re='^(feature|fix|refactor|docs)/#[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$'
+convention_re='^(feature|fix|refactor|docs)/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$'
 
 candidates=()
 rest="$cmd"
@@ -123,10 +123,11 @@ for branch in "${candidates[@]}"; do
   if [[ ! "$branch" =~ $convention_re ]]; then
     deny "[hook:validate-branch-name] Branch name '$branch' violates the project convention.
 
-  Expected: <feature|fix|refactor|docs>/#<issue-number>-<kebab-case-description>
-  Example:  feature/#42-add-pictomancer-rotation
-            fix/#5-fix-damage-calculation
+  Expected: <feature|fix|refactor|docs>/<issue-number>-<kebab-case-description>
+  Example:  feature/42-add-pictomancer-rotation
+            fix/5-fix-damage-calculation
 
+  No '#' before the issue number: Workers Builds cannot create a preview for it.
   Description: lowercase letters, digits and single hyphens only.
   Exempt: claude/*, copilot/*, main, master, develop.
   See $DOC for details."

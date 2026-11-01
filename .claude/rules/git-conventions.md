@@ -5,7 +5,7 @@
 ## ブランチ命名
 
 ```
-<type>/#<issue番号>-<kebab-case説明>
+<type>/<issue番号>-<kebab-case説明>
 ```
 
 | type | 対応する Issue ラベル | 用途 |
@@ -15,10 +15,11 @@
 | `refactor` | `refactor` | リファクタリング |
 | `docs` | `docs` | ドキュメント |
 
-すべて `main` から派生し、`main` にマージする。例: `feature/#1-add-skill-data-model` / `fix/#5-fix-damage-calculation`
+すべて `main` から派生し、`main` にマージする。例: `feature/1-add-skill-data-model` / `fix/5-fix-damage-calculation`
 
 - `<kebab-case説明>` は **小文字英数字とハイフンのみ**（`add-user-model`）。大文字・アンダースコア・連続ハイフンは不可
-- `#<issue番号>` は対象 Issue の番号。ブランチは必ず Issue に紐づく
+- `<issue番号>` は対象 Issue の番号（`#` は付けない）。ブランチは必ず Issue に紐づく
+- `#` を入れないのは、Workers Builds がブランチ名をそのままプレビュー名にし、`#` を含む名前ではプレビューの作成が push 直後に失敗するため（#609）
 
 > **例外**: エージェントのセッションブランチ **`claude/*`**（Claude Code on the web / GitHub Actions）と **`copilot/*`**（Copilot cloud agent、旧 coding agent）は、ツール側が自動命名するためこの規約の対象外。クラウドセッションで割り当てられた作業ブランチも、名前が `claude/*` でなくても同じ扱い（`/issue-start` Phase 2「クラウドセッションの場合」）。`main` / `master` / `develop` もそのまま使う。
 
