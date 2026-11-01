@@ -82,7 +82,7 @@
 
 分ける／分けないの判定表、親Issue・sub-issue の扱い、要望からの分割・起票は `/issue-plan`（`.claude/skills/issue-plan/SKILL.md`「粒度の判定」）が正本。迷ったら **「このIssueのPRだけをマージしても、壊れず・単独で説明できるか」** で判定する。Yes なら粒度は適切。
 
-- 先に別 Issue の完了が必要な場合は、本文の「## 関連Issue」に `依存: #N` と書く。`/issue-start` Phase 1 で依存先が未完了なら、着手前にユーザーに確認する
+- 先に別 Issue の完了が必要な場合は、本文の「## 関連Issue」に `依存: #N` と書き、GitHub の依存関係（blocked by）にも付ける（手順は `.claude/skills/issue-start/dependencies.md`）。`/issue-start` Phase 1 で依存先が未完了なら、着手前にユーザーに確認する
 
 ### ラベル
 
