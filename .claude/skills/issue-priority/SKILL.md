@@ -17,7 +17,7 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 /issue-priority #475 #476
 ```
 
-- 入力が無ければ、Open Issue 全件（`meta` / `question` ラベルの Issue と #2 のテンプレート Issue を除く）を対象にする
+- 入力が無ければ、Open Issue 全件（`meta` / `question` ラベルの Issue と #2 のテンプレート Issue を除く。`meta` / `question` は、ほかのラベルと一緒に付いていても除く）を対象にする
 - Issue 番号を指定したら、順位表とラベル案はその Issue だけに絞る。後続を塞いでいるかは依存する側の本文でしか分からないので、手順 2 の読み込みは引数に関係なく全件で行う
 
 ## 手順
@@ -37,7 +37,7 @@ GitHub MCP が使えなければ、REST の `gh api` で同じ情報を取る。
 
 ### 2. 要約する
 
-本文とコメントは、引数に関係なく全 Open Issue（`meta` / `question` と #2 を除く）について読む（「依存: #N」は依存する側の本文に書かれるため）。**4 件以上** なら `general-purpose` エージェントに任せ、要約だけ受け取る（`code-explorer` は GitHub MCP を持たない）。3 件以下なら自分で `issue_read`（method: `get` / `get_comments`）を読む。委譲プロンプトの例：
+本文とコメントは、引数に関係なく全 Open Issue（「使い方」と同じく、`meta` / `question` ラベルの Issue と #2 を除く）について読む（「依存: #N」は依存する側の本文に書かれるため）。**4 件以上** なら `general-purpose` エージェントに任せ、要約だけ受け取る（`code-explorer` は GitHub MCP を持たない）。3 件以下なら自分で `issue_read`（method: `get` / `get_comments`）を読む。委譲プロンプトの例：
 
 ```
 目的: Open Issue の消化優先度の判定材料を集める。読み取りのみ（コメント・ラベル・本文の書き込みはしない）。
