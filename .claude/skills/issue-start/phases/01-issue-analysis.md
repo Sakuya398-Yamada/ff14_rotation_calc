@@ -18,7 +18,7 @@ git worktree list
 | `git rev-parse --show-toplevel` と一致し、`--git-dir` と `--git-common-dir` が同じ | **メインリポ作業**: 通常どおり |
 | `git rev-parse --show-toplevel` と一致し、`--git-dir` と `--git-common-dir` が違う（linked worktree。`git worktree list` にも出る） | **worktree 作業**: Edit / Write の `file_path` は、起動形態に関わらずこの worktree のパスを使う（隔離が掛かるかを試して確かめる必要はない）。`claude --worktree`・`EnterWorktree`・Claude Desktop の worktree セッション（サブエージェントの `isolation: worktree` も）では、組み込みの worktree 隔離がメインリポ側のパスへの Edit / Write を拒否する（`This session is isolated in the worktree ...`）。手動の `git worktree add` で作った worktree の中で `claude` を起動した場合は隔離が掛からず、メインリポ側のパスを指定すると編集はメインリポに入って bash の pwd と乖離し、「編集したはずなのに反映されない」事故が起きる（PR #241 で実例。起動形態ごとの挙動は #550） |
 | `.claude/worktrees/<name>/` 配下なのに **登録 worktree でない** | **亡霊 worktree モード**: 以降の Edit / Write / bash の相対パスをメインリポ絶対パス基準に切り替える |
-| 上のどれでもない（リポジトリの外で `git rev-parse` が失敗する、またはリポジトリのサブディレクトリ） | **settings.json 未読み込み**: プロジェクトの `.claude/settings.json` は起動ディレクトリのものしか読まれないので、hooks（ブランチ名・コミット件名・`pkill -f` の検証、SessionStart）と permissions の deny が黙って無効になっている。CLAUDE.md と rules はリポジトリ内のファイルに触れた時点で読み込まれるので、挙動からは気付きにくい。`.claude/rules/git-conventions.md` の規約と deny にある操作（force push・`git reset --hard` 等）の回避は手で守り、ユーザーに起動ディレクトリをリポジトリ直下に直すよう伝える。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）で `pwd -P` がリポジトリの親なら、リポジトリを複数付けて開始したのが原因で、作業ディレクトリは設定では直せない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションにリポジトリを複数付けて開始すると、settings.json が読まれない」）。このセッションでは同じく手で守り、次からはリポジトリを 1 つだけ付けて開始し、テンプレート元のような別のリポジトリは必要になったときに `add_repo` で足すよう伝える |
+| 上のどれでもない（リポジトリの外で `git rev-parse` が失敗する、またはリポジトリのサブディレクトリ） | **settings.json 未読み込み**: プロジェクトの `.claude/settings.json` は起動ディレクトリのものしか読まれないので、hooks（ブランチ名・コミット件名・`pkill -f` の検証、SessionStart）と permissions の deny が黙って無効になっている。CLAUDE.md と rules はリポジトリ内のファイルに触れた時点で読み込まれるので、挙動からは気付きにくい。`.claude/rules/git-conventions.md` の規約と deny にある操作（force push・`git reset --hard` 等）の回避は手で守り、ユーザーに起動ディレクトリをリポジトリ直下に直すよう伝える。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）で `pwd -P` がリポジトリの親なら、リポジトリを複数付けて開始したのが原因で、作業ディレクトリは設定では直せない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションにリポジトリを複数付けて開始すると、settings.json が読まれない」）。このセッションでは同じく手で守り、次からはリポジトリを 1 つだけ付けて開始し、テンプレート元のような別のリポジトリは必要になったときに `add_repo` で足すよう伝える |
 
 ### 亡霊 worktree モード
 
@@ -32,33 +32,19 @@ git worktree list
 
 ## 0.5 テンプレート更新チェック（セッションで一度だけ）
 
-更新の検知と更新用 Issue の起票の手順はこの節が正本（`.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」は判定だけ）。取り込み自体は `.claude/skills/template-update/SKILL.md`。
+更新の検知と更新用 Issue の起票の手順はこの節と `phases/01-template-update-check.md` が正本（`.claude/rules/workflow-feedback.md`「テンプレート更新の取り込み」は判定だけ）。取り込み自体は `.claude/skills/template-update/SKILL.md`。
 
-SessionStart hook 出力の `## Template version` を確認する。
+SessionStart hook 出力の `## Template version` を確認する。`Latest` に `(cached …)` が付くか、`## Repository status` の `Checkout:` がこのセッションの作業ディレクトリと違うときは、表で判断する前に `phases/01-template-update-check.md`「バナーを信じる前の確認」を行う。
 
 | バナーの状態 | 動作 |
 |---|---|
 | `up to date` | 何もしない（言及も不要） |
 | `Latest: unknown` | オフライン等で取得失敗。スキップする |
-| `⚠ Template update available` | **このセッションで一度だけ**、下記フォーマットで確認する |
+| `⚠ Template update available` | **このセッションで一度だけ**（同じセッションで `/template-update` から聞いて断られていれば聞かない）、`phases/01-template-update-check.md`「更新があるときの確認と起票」の手順で確認する |
 | `up to date on the default branch` | 既定ブランチでは取り込み済みで、作業ブランチが遅れているだけ。起票しない。`git merge origin/main`（Phase 2「古い main 派生の検知」）で追従する |
 | セクション自体が無い | `.claude/template-version` が無いか hook が動いていない。スキップする |
 
-```
-テンプレート元（<owner/repo>）に新しい版があります: <ローカル版> → <最新版>
-Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
-
-このプロジェクトに更新用 Issue を起票しますか？（今の Issue の作業はそのまま続けます）
- [Y] 起票する
- [N] 今回はスキップ（このセッション中は再度聞きません）
-```
-
-- 作業中の Issue のブランチでテンプレートを直接更新しない（1 Issue = 1 PR）。[Y] でも動作は「更新用 Issue の起票」までで、その後は手順 1 に進む
-- バナーの `Latest` は、hook がセッション開始時にテンプレート元から取得した版。取得に失敗したときだけ前回取得した版（キャッシュ）を使い、`(cached Nh ago; fetch failed, ...)` と付く。この表示があるときは最新リリースを反映していないことがあるので、版を前提に判断・回答する前に `git ls-remote --tags --refs --sort=-v:refname https://github.com/<owner/repo>.git 'v*' | head -n 1` で直接確認し、新しい方の版を正とする
-- バナーは hook が実行されたチェックアウトの状態で出る。`## Repository status` の `Checkout:` がこのセッションの作業ディレクトリ（`git rev-parse --show-toplevel`）と違えば、古いメインチェックアウトの hook と版で判定されている可能性がある。起票する前に、作業ツリーの `.claude/template-version` と既定ブランチの版（`MSYS_NO_PATHCONV=1 git show origin/main:.claude/template-version`。`MSYS_NO_PATHCONV=1` は Git Bash のパス変換を止めるためで他環境では無害）を見て、どちらかが最新版なら取り込み済みなので起票しない
-- [Y] の場合: `search_issues`（`owner` / `repo` にこのプロジェクト）で同じ版の更新 Issue（`テンプレートを <最新版> に更新`）が無いか確認し、無ければ `issue_write`（method: `create`）で起票する。タイトル `refactor: テンプレートを <最新版> に更新`、ラベル `refactor`。本文は現在の版 → 最新版、Release notes URL、差分 URL（`https://github.com/<owner/repo>/compare/<ローカル版>...<最新版>`）、`template/` 配下の変更ファイル一覧（compare URL の Files changed、またはテンプレート元のクローンで `git diff --name-only <ローカル版> <最新版> -- template/`。Release notes は Issue 単位で `template/` 外の変更と混ざるので、手で起こさず機械的に得た一覧を貼る。取り込み時の DoD「変更ファイルをすべて確認した」の照合元になる）、完了条件（`.claude/skills/template-update/SKILL.md`「取り込み手順」のチェックリスト）。本文でテンプレート元の Issue や PR に触れるとき（Release notes から主な中身を書き起こすときなど）は `<owner/repo>#N` の形で書く。Release notes の `#N` をそのまま写すと、このプロジェクトの同じ番号の Issue へのリンクになる
 - **スケジュール実行の無人セッション**（`weekday-issue-start` 等）では質問も起票もせず、実行報告に「テンプレート更新あり（<ローカル版> → <最新版>）」と記載するだけに留める
-- 起票した更新 Issue はあとで通常どおり `/issue-start` する。その Phase 5 の手順は `.claude/skills/template-update/SKILL.md`（`/template-update`）
 - いま `/issue-start` している Issue 自体が更新用 Issue なら、このチェックは不要
 
 ## 手順
@@ -67,37 +53,22 @@ Release notes: https://github.com/<owner/repo>/releases/tag/<最新版>
 2. **関連 PR の確認**: `closed_by_pull_requests` にマージ済み PR があるか、無ければ `search_pull_requests`（query は `"#<番号>" in:title`、`owner` / `repo` を指定、`perPage: 100`）で関連 PR の状態を確認する。この Issue の PR と数えるのは、`closed_by_pull_requests` の PR と、タイトル末尾の ` #N` の並びに `#<番号>` がある PR（`.claude/rules/git-conventions.md`「PR のタイトルと本文」。`refs` の PR もここで拾う）だけで、本文で触れただけの PR（スコープ外の起票の報告など）は数えない。検索は `#` を無視するので、タイトル中の同じ数字（版番号の一部など）にも当たる
    - マージ済み PR があれば、ユーザーに通知して追加作業の要否を確認する。不要なら処理を終了する
    - Issue が `OPEN` でも PR がマージ済みのことがあるので、Issue の state だけで判断しない
-   - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は後述「オープンな旧 PR／既存ブランチがある場合」
+   - **オープンな旧 PR（過去の試行の残り）があれば**、その PR とブランチを **再利用するか作り直すか** をユーザーに確認する。手順は `phases/01-existing-pr-branch.md`「オープンな旧 PR／既存ブランチがある場合」
    - **PR が無くても、コメントに「## 着手」の印があれば**、別のセッションが作業中かもしれない（`phases/02-branch-setup.md`「ブランチ作成」）。印のセッション URL がこのセッション自身のもの、または印のブランチがこのチェックアウトにある（今いるブランチか、`git branch` に `+` 無しで出る。`+` は別の worktree で使用中で、並行セッションかもしれない）なら、自分の印なので無視する。「## 着手（取り下げ）」に書き換わった印も、そのブランチはもう別の Issue に移っているので無視する。それ以外は、`git ls-remote --heads origin <ブランチ名>` の結果とセッション URL を添えて、続けて着手してよいかユーザーに確認する（ブランチが無くても、まだ push 前の作業中のことがあるので必ず確認する）
    - **PR が無くても、リモートに `*/#<番号>-*` のブランチがあれば**（`git ls-remote --heads origin '*/#<番号>-*'`。今いるブランチ（`git branch --show-current`）と同じ名前のものは、このセッションが切ったブランチなので除く）、続けて着手してよいかユーザーに確認する。確認に添えることと続けるときのブランチの切り方は `phases/01-routine-traces.md`「リモートに Issue ブランチがあるとき」に従う
-3. 本文中のリンクや関連ラベルから、関連する過去の Issue を参照する。親 Issue がある場合（`parent`）はその本文も読む
+3. 本文中のリンクや関連ラベルから、関連する過去の Issue を参照する。親 Issue がある場合（`parent`。無ければ本文末尾の `親Issue: #N`）はその本文も読む
    - **この Issue を参照している Issue・PR（申し送り）**: 本文のリンクと Phase 1.5 の意味検索だけでは、別の Issue が「この Issue を実装するときは〜も必要」と申し送っていても拾えないことがある。timeline の `cross-referenced` イベントで、この Issue に触れた Issue・PR を一覧する:
 
      ```bash
      gh api "repos/{owner}/{repo}/issues/<番号>/timeline?per_page=100" --jq '.[] | select(.event == "cross-referenced") | [.source.issue.html_url, .source.issue.state, .source.issue.title] | @tsv'
      ```
 
-     番号ではなく `html_url` を出すのは、別のリポジトリからの参照も混ざり、番号だけではどのリポジトリの Issue か PR かが分からないため。`--jq` で絞った出力からは元のイベントの件数が分からないので、件数は同じ URL を `--jq 'length'` で取って見る（100 件ちょうどなら次のページがある）。100 件を超える Issue では、`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す。参照元（別のリポジトリのものも）の本文やコメントにある申し送り（「〜で扱う」「実装するときは〜」）を読む。要件を足すことになる申し送りは、この Issue に含めるか別 Issue にするかを、Phase 1.5 の「補完結果の確認」で一緒に聞く。別のリポジトリの Issue を本文に書くときは `owner/repo#N` の形にする（`#N` だけだとこのリポジトリの番号として読まれる）
-   - **兄弟 Issue との重なり（親 Issue がある場合）**: 同じ親の sub-issue を、まず番号・タイトル・状態だけで一覧する（`gh api "repos/{owner}/{repo}/issues/<親番号>/sub_issues?per_page=100" --jq '.[] | [.number, .title, .state] | @tsv'`。sub-issue は親 1 件あたり 100 件までなので 1 回で全件取れる。`--paginate` はクラウドセッションで 2 ページ目に止まるので使わない。`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」）。`issue_read`（method: `get_sub_issues`）は sub-issue ごとに本文とメタデータを全部返すので、sub-issue の多い親ではツール出力の上限を超える。`gh` が無くて `get_sub_issues` を使うなら、出力が退避されたファイルを丸読みせず、番号・タイトル・状態だけを抜き出す。そのうえで、同じ型・関数・共通データ・共通ロジックに触れそうな兄弟 Issue だけを `issue_read`（method: `get`）で個別に読み、本文を照合する。重なる兄弟があれば `search_pull_requests`（query と PR の数え方は手順 2 と同じで、番号は兄弟 Issue のもの）と `git ls-remote --heads origin '*/#<兄弟の番号>-*'`、兄弟 Issue のコメントの「## 着手」の印（クラウドの割り当てブランチはブランチ名に番号が入らない。「## 着手（取り下げ）」と、セッション URL がこのセッション自身の印は除く。後者は前の Issue を中断して移ってきた残りで、`phases/02-branch-setup.md`「クラウドセッションの場合」手順 4 で取り下げる）で、その兄弟に作業ブランチやオープン PR が既にあるかを見る。重なりがあるときは、共通部分をどの Issue で実装し、他方はそのマージ後に取り込むのかを **着手前に** ユーザーへ確認する。並行セッションが同じ仕組みを二重に実装してコンフリクトするのを防ぐためで、Issue 本文に重なりが書かれていなくても確認する
+     番号ではなく `html_url` を出すのは、別のリポジトリからの参照も混ざり、番号だけではどのリポジトリの Issue か PR かが分からないため。`--jq` で絞った出力からは元のイベントの件数が分からないので、件数は同じ URL を `--jq 'length'` で取って見る（100 件ちょうどなら次のページがある）。100 件を超える Issue では、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す。参照元（別のリポジトリのものも）の本文やコメントにある申し送り（「〜で扱う」「実装するときは〜」）を読む。要件を足すことになる申し送りは、この Issue に含めるか別 Issue にするかを、Phase 1.5 の「補完結果の確認」で一緒に聞く。別のリポジトリの Issue を本文に書くときは `owner/repo#N` の形にする（`#N` だけだとこのリポジトリの番号として読まれる）
+   - **兄弟 Issue との重なり（親 Issue があるか、「## 関連Issue」に Open Issue がある場合）**: 同じ親の sub-issue を、まず番号・タイトル・状態だけで一覧する（`gh api "repos/{owner}/{repo}/issues/<親番号>/sub_issues?per_page=100" --jq '.[] | [.number, .title, .state] | @tsv'`。sub-issue は親 1 件あたり 100 件までなので 1 回で全件取れる。`--paginate` はクラウドセッションで 2 ページ目に止まるので使わない。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」）。`issue_read`（method: `get_sub_issues`）は sub-issue ごとに本文とメタデータを全部返すので、sub-issue の多い親ではツール出力の上限を超える。`gh` が無くて `get_sub_issues` を使うなら、出力が退避されたファイルを丸読みせず、番号・タイトル・状態だけを抜き出す。本文末尾の `親Issue: #N` だけで親を書いた兄弟（sub-issue の階層の上限で親を付けられなかったものなど）は、この一覧に出ない。Open Issue を本文ごと一覧で取り、同じ `親Issue: #<親番号>` を持つものも兄弟に入れる（番号のすぐ後ろに数字が続くもの、`#80` に対する `#800` などは除く。取り方は `.claude/skills/issue-start/SKILL.md`「起票フロー（共通）」手順 1）。本文の「## 関連Issue」に挙がった Open Issue も、兄弟と同じく扱う。そのうえで、同じファイル・型・関数・共通データ・共通ロジックに触れそうな兄弟 Issue だけを `issue_read`（method: `get`）で個別に読み、本文を照合する。重なる兄弟があれば `search_pull_requests`（query と PR の数え方は手順 2 と同じで、番号は兄弟 Issue のもの）と `git ls-remote --heads origin '*/#<兄弟の番号>-*'`、兄弟 Issue のコメントの「## 着手」の印（クラウドの割り当てブランチはブランチ名に番号が入らない。「## 着手（取り下げ）」と、セッション URL がこのセッション自身の印は除く。後者は前の Issue を中断して移ってきた残りで、`phases/02-branch-setup.md`「クラウドセッションの場合」手順 4 で取り下げる）で、その兄弟に作業ブランチやオープン PR が既にあるかを見る。印があれば、印のブランチがリモートにあるかも `git ls-remote --heads origin <ブランチ名>` で見て、その結果とセッション URL を確認に添える（ブランチが無くても、まだ push 前の作業中のことがある。手順 2 と同じ）。親 Issue が Open で、同じファイル・型・関数・共通データに触れそうなら、親も同じく作業中かを見る（PR の query・ブランチ名・印は親の番号のもの）。スコープ外の起票で作られた子は親の作業中に近くの箇所で見つかったものが多く、`依存:` を書かない子でも親の PR と同じファイルを触ることがある。重なりがあるときは、共通部分をどの Issue で実装し、他方はそのマージ後に取り込むのかを **着手前に** ユーザーへ確認する。並行セッションが同じ仕組みを二重に実装してコンフリクトするのを防ぐためで、Issue 本文に重なりが書かれていなくても確認する
    - 外部リポジトリの **特定タグのファイル** が参照元に指定されている場合は、`get_file_contents`（`owner` / `repo` / `path` に加えて `ref` にタグを指定）で版固定で読む。`gh` なら `gh api "repos/<owner/repo>/contents/<path>?ref=<tag>" -H "Accept: application/vnd.github.raw"`（`?` を含むのでクォートする）
    - 2 つの版の間の差分や特定ファイルの patch が要るときは、compare API の JSON を jq で漉すより、`git clone --no-checkout` したクローンで `git diff --name-only vOLD vNEW` / `git show vNEW:<path>` を使う（`.claude/skills/template-update/SKILL.md`「3-way マージの定型手順」と同じ形）。`gh api --jq` で正規表現を書くときの注意は `.claude/skills/issue-start/pitfalls.md`「`gh --jq` の正規表現にバックスラッシュが通らない」
 4. **【MCP: Brave Search】** IssueがFF14のスキルデータやゲーム仕様に関わる場合、`brave_web_search` で公式ジョブガイドや関連情報を検索し、実装に必要な数値・仕様を収集する。検索例・利用前の準備・未接続時のフォールバック・外部情報のクロスチェック・ジョブガイド数値の生 HTML 抽出・特性習得前の値（Lv100 未満で使う値）の出典と、パッチ追従の検証（定型）は `phases/01-external-data.md` に従う
 5. 以下のチェックリストで記載内容を検証する
-
-### オープンな旧 PR／既存ブランチがある場合
-
-同じ Issue に対して、過去の試行で作られたブランチやオープンな PR が残っていることがある。黙って同名ブランチを作ると衝突し、旧 PR への force-push は拒否されることもある（ブランチ保護・他人のブランチ）。**既定は作り直し**で、以下をユーザーに確認してから進める：
-
-```
-Issue #N には過去の PR #M（ブランチ `<type>/#N-xxx`、オープン）が残っています。
- [R] 旧ブランチを再利用する（チェックアウトして main を取り込み、PR #M を更新）
- [N] 作り直す（最新 main から `<type>/#N-xxx-v2` を切って新 PR、PR #M は置き換え先リンク付きでクローズ）
-```
-
-- **作り直す（既定）**: 最新 `main` から別名ブランチ（元の名前に `-v2`, `-v3` … を付ける）を切って Phase 2 以降を進める。Phase 7 で新 PR を作ったあと、旧 PR に「#<新 PR> で置き換え」とコメントしてクローズする（`update_pull_request`（`state: closed`）と `add_issue_comment`）。旧ブランチの削除はユーザーに任せる
-- **再利用する**: 旧ブランチをチェックアウトし `git merge origin/main` で最新化してから（止まったときは `phases/02-branch-setup.md`「遅れていた場合」）Phase 3 以降を進める。旧 PR はそのまま更新される
-- **force-push での上書きは既定にしない**。旧ブランチの履歴を捨ててよいとユーザーが明示した場合だけ行う
-- **クラウドセッション（`phases/02-branch-setup.md`「クラウドセッションの場合」に当たるとき）で、旧 PR のブランチが割り当てられたブランチ以外の場合**（命名は問わない）: セッションの指示で割り当てられたブランチ以外への push が止められていることが多いので（git のプロキシ自体は通す。`.claude/skills/issue-start/pitfalls.md`「クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない」）、[R] は提示せず、作り直す旨を伝えて、割り当てられたブランチで進める（`-v2` は付けない）。旧 PR のクローズは同じ
 
 ## チェックリスト
 

@@ -190,7 +190,7 @@ if [[ -f "$tv_file" ]]; then
       printf -- '- Local: `%s` (this branch) / `%s`: `%s` / Latest: `%s`%s — up to date on the default branch; this branch is behind it\n' "$tv_local" "$default_ref" "$tv_default" "$latest" "$cached_note"
       printf -- '- 更新用 Issue は起票済み。`git merge %s` でこのブランチに取り込めば、以降のセッションはテンプレートの最新の手順で動く\n' "$default_ref"
     else
-      printf -- '- ⚠ **Template update available**: local `%s` → latest `%s` (`%s`)%s\n' "$tv_local" "$latest" "$tv_repo" "$cached_note"
+      printf -- '- ⚠ **Template update available**: Local `%s` → Latest `%s` (`%s`)%s\n' "$tv_local" "$latest" "$tv_repo" "$cached_note"
       printf -- '- Release notes: https://github.com/%s/releases/tag/%s\n' "$tv_repo" "$latest"
       printf -- '- Diff: https://github.com/%s/compare/%s...%s\n' "$tv_repo" "$tv_local" "$latest"
       if [[ "$tv_known" != "$tv_local" ]]; then
