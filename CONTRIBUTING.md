@@ -152,7 +152,7 @@ npm run db:migrate                        # ローカルの D1 に適用
 
 品質チェック（CI）と配信（Cloudflare Workers）を分担しています：
 
-- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量の予算検査（`.claude/scripts/check-context-budget.py`）→ 依存インストール → `tsc --noEmit` → `npm test` → `npm run build` → `npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run` を実行（`npm run deploy` は本番 D1 へのマイグレーション適用を含むので、CI はデプロイの部分だけを dry-run する）
+- **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量と skill の md の大きさの予算検査（`.claude/scripts/check-context-budget.py`。CLAUDE.md と `paths:` なし rules の合計が 1000 行以内か、`.claude/skills/` の md がどれも 30,000 バイト未満か。外部の `skill-creator/` は除く）→ 依存インストール → `tsc --noEmit` → `npm test` → `npm run build` → `npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run` を実行（`npm run deploy` は本番 D1 へのマイグレーション適用を含むので、CI はデプロイの部分だけを dry-run する）
 - **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets は不要。本番 D1 にマイグレーションを当てるため、Cloudflare 側のビルド用 API トークンに D1 の編集権限が要る。後述「本番 D1 とビルド用トークン」）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
 - フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
 
@@ -249,7 +249,7 @@ PR のプレビューは本番の secret を引き継がず、今は D1 も付�
 ├── rules/       # 詳細規約（Claude Code が起動時に自動で読み込む。frontmatter に paths: があるものは該当ファイルを触ったときだけ）
 ├── routines/    # スケジュールタスク（定期ルーティン）の手順書（登録側の呼び出し文が実行のたびに読む）
 ├── hooks/       # PreToolUse / SessionStart 用シェルスクリプト
-├── scripts/     # 手で呼ぶ補助スクリプト（知見ボードの読み出し、常駐量の予算検査）
+├── scripts/     # 手で呼ぶ補助スクリプト（知見ボードの読み出し、常駐量と skill の md の大きさの予算検査）
 ├── settings.json # フック設定
 └── skills/      # スラッシュ起動可能なスキル（/issue-start, /issue-plan, /issue-priority, /template-update, /playwright-mcp, /dev-plan 等）
 ```
