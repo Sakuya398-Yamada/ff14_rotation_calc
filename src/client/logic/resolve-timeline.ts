@@ -1319,6 +1319,19 @@ export function resolveTimeline(
       }
     }
 
+    // 付与バフで表すコンボ: 前の段が付けたバフ（または bypassCombo バフ）があれば成立
+    if (skill.comboFromBuff) {
+      const { buffId, required } = skill.comboFromBuff;
+      const inCombo =
+        currentActiveBuffs.some((ab) => ab.buffId === buffId) ||
+        hasBypassComboBuff(currentActiveBuffs, buffDefMap, resolvedSkillId);
+      if (!inCombo) {
+        // 発動条件エラーはハードエラーで表示するので、警告（wsComboError）は重ねない
+        if (required) comboErrors.push({ buffId, kind: "missing" });
+        else wsComboError = true;
+      }
+    }
+
     // コンボ成否に基づく威力決定
     let resolvedPotency = anyOfPotencyOverride ?? conditionalPotencyOverride ?? skill.potency;
     if (wsComboError && skill.nonComboPotency !== undefined) {

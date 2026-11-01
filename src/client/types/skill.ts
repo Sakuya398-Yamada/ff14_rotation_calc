@@ -143,6 +143,18 @@ export interface Skill {
   replacesDots?: string[];
   /** コンボ元スキルIDリスト（いずれかの直後に使用するとコンボ成立） */
   comboFrom?: string[];
+  /**
+   * 付与バフで表すコンボ（comboFrom の代わりに使い、併用しない）。直前の GCD とコンボタイマーは見ず、
+   * buffId のバフが効果中か、bypassCombo バフ（appliesToSkillIds にこのスキル）が効果中ならコンボ成立。
+   * - 成立: comboFrom と同じく nonComboPotency を使わず、comboResourceChanges / comboBuffApplications / DoT を適用する
+   * - 不成立で required: true: 発動条件エラー（comboErrors の missing。威力を計上しない）
+   * - 不成立で required: false: 実行するが wsComboError（警告）にし、nonComboPotency を使い combo* は適用しない
+   * 書き方: 前の段のスキルが buffApplications で次の段のバフを付ける（成否を問わず付く）。
+   * 段のバフに同じ exclusiveGroup を付けると前の段のバフが外れ、持続はバフの duration で決まる。
+   * autoTransform の変化先は変化先の定義で判定するので、変化先にも同じように書く。
+   * 例: モンクの型 — 双掌打は comboFromBuff: { buffId: "raptor-form", required: true } と buffApplications: ["coeurl-form"]
+   */
+  comboFromBuff?: { buffId: string; required: boolean };
   /** 非コンボ時の威力（コンボ不成立時に適用。未設定の場合はpotencyを使用） */
   nonComboPotency?: number;
   /** コンボ成立時のみ付与するバフのIDリスト */
@@ -382,7 +394,7 @@ export interface BuffEffect {
    * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費。castTimeMultiplier で詠唱が 0 になる GCD では消費しない）
    * - resourceCostMultiplier: 指定リソースの消費量に乗じる倍率（2 = 2倍消費、0 = 消費なし）
    * - resourceGainOnSkill: スキル使用時に指定リソースを value 分追加で獲得する（appliesToSkillIds で対象限定可）
-   * - bypassCombo: バフアクティブ中、対象GCD WSのコンボ条件判定を強制成立扱いにする（値は未使用、appliesToSkillIds で対象限定）
+   * - bypassCombo: バフアクティブ中、対象GCD WSのコンボ条件判定（comboFrom / comboFromBuff）を強制成立扱いにする（値は未使用、appliesToSkillIds で対象限定）
    * - applyBuffOnSkill: バフアクティブ中、対象 GCD/oGCD 使用時に appliedBuffId のバフを追加付与する（値は未使用、明鏡止水中の月光→風月等）
    * - applyBuffOnDeplete: スタック式バフが消費により 0 スタックになった時点で appliedBuffId のバフを付与する（値は未使用、インスタレーション枯渇→レインボードリップ効果アップ等）
    * - recastOverride: 対象 GCD の基礎リキャスト（秒）を value で置き換える。スキルスピード補正・speed バフは置換後の値に適用される（appliesToSkillIds で対象限定、Ready 中のレインボードリップ等）
