@@ -61,7 +61,7 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
    - その Issue に紐づく Open PR が無く、リモートに `*/<番号>-*` のブランチも無い（別のセッションが着手済みの可能性があるため）
    - その Issue に紐づくマージ済み PR が無い（マージ後に行う DoD が残る Issue は、PR 本文を `refs #<番号>` にしてマージ後も Open のままにする。`/issue-start` Phase 7。残っているのはマージ後の作業で、実装し直すと同じ Issue に 2 本目の PR ができる。追加の実装が要るなら人が別の Issue に切る）
    - コメントに「## 着手」の印が無い（クラウドセッションの作業ブランチ `claude/*` 等は名前に Issue 番号が入らず、ローカルの `/issue-start` が切ったブランチは Phase 7 まで push されないので、上の条件では作業中と分からないため。印の書式は `.claude/skills/issue-start/phases/02-branch-setup.md`「クラウドセッションの場合」手順 4、ローカルで `routine-ok` の Issue に付ける場面は同じファイルの「ブランチ作成」）。「## 着手（取り下げ）」に書き換わった印は数えない。印が古くても除外し続け、作業していないと分かった印は人が「## 着手（取り下げ）」に書き換えて外す（#493）
-   - 本文の `依存: #M` と GitHub の依存関係（blocked by）に挙がった Issue がすべてクローズ済み（片方にしか無いものも依存とみなす。`.claude/skills/issue-start/dependencies.md`「読み方」）
+   - 本文の `依存: #M` と GitHub の依存関係（blocked by）に挙がった Issue がすべて `completed` でクローズ済み（片方にしか無いものも依存とみなす。`.claude/skills/issue-start/dependencies.md`「読み方」）。`not_planned` / `duplicate` で閉じた依存先は、依存した変更が入っていないので満たさない（そういう Issue には、下の「完了せずに閉じた依存先」の段落で `needs-decision` を付ける）
    - sub-issue を持つ親 Issue ではない。`sub_issues_summary.total` が 1 以上なら親で、子がすべて Closed でも除く（子が増えていく進捗管理用の親（#497）を実装しないため。親に残った実装は、人が片付けるか子 Issue に切る。#738）。子の本文に「親Issue: #N」と書かれているだけ（sub-issue になっていない）の #N は、親として扱わない（親かどうかは `total` だけで決める）
    - `## 未確定事項` に `[要確認]` の項目や、「ユーザー判断」のようにユーザーの決定待ちと明記された項目が無い（「`/issue-start` の探索で調べる」と書かれた項目は決定待ちではないので数えない）
 
@@ -71,9 +71,19 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 
    本文は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>" --jq '.body // ""'` で取る（GitHub MCP なら `issue_read` の `get` の `body`）。最初の一覧は本文を落としてあるので、`依存: #M` と `## 未確定事項` の条件はこの本文で確かめる
 
-   依存先が閉じているかは、本文の `依存: #M` と blocked by で分けて確かめる。本文の `依存: #M` は、番号ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<M>" --jq .state` が `closed` であることで確かめる（GitHub MCP なら `issue_read` の `get` の `state`）。最初の一覧に無いことでは閉じていると判定しない（一覧は `routine-ok` で絞ってあり、`routine-ok` の無い Open の Issue も出ないため）。blocked by は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/dependencies/blocked_by?per_page=100" --jq '[.[] | select(.state == "open")] | length'` が `0` であることで確かめる（GitHub MCP の `issue_read` は依存を返さない）
+   依存先が閉じているかは、本文の `依存: #M` と blocked by で分けて確かめる。本文の `依存: #M` は、番号ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<M>" --jq '[.state, (.state_reason // "")] | @tsv'` で取る（GitHub MCP なら `issue_read` の `get` の `state` と `state_reason`）。最初の一覧に無いことでは閉じていると判定しない（一覧は `routine-ok` で絞ってあり、`routine-ok` の無い Open の Issue も出ないため）。blocked by は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/dependencies/blocked_by?per_page=100" --jq '.[] | [.number, .state, (.state_reason // "")] | @tsv'` で取る（GitHub MCP の `issue_read` は依存を返さない）。どちらも、`closed` と `completed` の組なら満たす。`open` が 1 つでもあれば依存待ちなので、候補にしない。`open` が無く、`completed` 以外（`not_planned` / `duplicate`）で閉じたものがあれば、下の「完了せずに閉じた依存先」の段落に従う。`state_reason` が空のもの（理由を付けずに閉じたもの）も `completed` 以外に入れる（下の段落のコメントの `<state_reason>` には `理由なし` と書く）
 
    マージ済み PR は、候補ごとに、タイトルの末尾が ` #<番号>`（`.claude/rules/git-conventions.md`「PR のタイトルと本文」）のマージ済み PR が無いことで確かめる。GitHub MCP の `search_pull_requests`（`owner` / `repo` を指定、query `is:merged "#<番号>" in:title`）の結果をタイトルの末尾で絞る。使えなければ `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/timeline?per_page=100" --jq '[.[] | select(.event == "cross-referenced" and .source.issue.pull_request.merged_at != null and (.source.issue.title | endswith(" #<番号>")))] | length'` が `0` であることで確かめる（timeline は 100 件ずつ返るので、同じ URL を `--jq 'length'` で数えて 100 なら `&page=2` も同じく見る。`gh api search/issues` はクラウドでは使えない）。`issue_read` の `closed_by_pull_requests` は `closes` の PR しか含まず、`refs` の PR を拾わないので使わない。タイトルの末尾で絞るのは、本文でこの Issue に触れただけの PR（スコープ外の起票の報告など）を除くため
+
+   完了せずに閉じた依存先（依存先に `open` が無く、`completed` 以外で閉じたものがある）を持つ Issue は、依存のほかの候補条件をすべて満たしていれば、候補から外したうえで、Issue にコメントしてラベル `needs-decision` を付ける（対話セッションなら、着手してよいかをユーザーに確認する場面。`dependencies.md`「読み方」）。ほかの条件で外れる Issue には付けない（外れているあいだは、付けても選定は変わらない。その条件が解けた回に付く）。選定は残りの候補で続ける。コメントは GitHub MCP の `add_issue_comment`（使えなければ、本文を scratchpad に書いて `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments -F body=@<scratchpad>/needs-decision.md`）で付け、ラベルは手順 4 の表「Phase 1 の不足確認」と同じ `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/labels -f "labels[]=needs-decision"` で付ける。コメントの本文（依存先が複数あれば、最初の箇条書き（`- 依存先 #<M> が …`）を依存先ごとに書き、2 つ目の箇条書きの `#<M>` には当てはまる番号をすべて「、」でつないで書く）:
+
+   ```
+   ## 無人実行で判断できない点（weekday-issue-start）
+   - 依存先 #<M> が `<state_reason>` で閉じていて、依存した変更が入っていない。この Issue に着手してよいかは人が決める
+   - 着手してよければ、本文の `依存: #<M>` と blocked by から #<M> を外すか、代わりの Issue に差し替えてから `needs-decision` を外す。依存を残したままラベルだけ外すと、次の実行でまた付く
+
+   _スケジュール実行（weekday-issue-start）による無人実装_
+   ```
 2. 優先順位は `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無しの順。同じ順位なら番号の小さい順
 3. 候補が無ければ（`routine-ok` の付いた Issue が無い日も含む）何もせず、実行報告に「対象なし」と書いて終了する
 
@@ -122,6 +132,7 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 - Open PR 数: K 件（上限 5、draft 含む）
 - conflict 解消: PR #N を origin/main と同期（tsc / npm test 通過）／ conflict 未解消: PR #M（理由）／ mergeable 未判定: PR #L ／ なし
 - 取り残しブランチ: <ブランチ名>（#N、Open PR 無し）… ／ なし
+- 完了せずに閉じた依存先: #N に needs-decision を付けた（依存先 #M が not_planned）… ／ なし
 - 対象: #N タイトル（選定理由: 優先度・番号）／ または「対象なし」「対象なし（Open PR 上限 5 件に到達）」
 - PR: <URL>（draft かどうか）
 - 検証: tsc / npm test / UI 確認の結果（未検証の項目は明記）
