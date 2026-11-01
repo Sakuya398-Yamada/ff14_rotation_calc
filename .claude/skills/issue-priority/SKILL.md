@@ -26,7 +26,7 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 
 1. GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "labels"]`）で Open Issue を一覧する
 2. `list_pull_requests`（`state: open`、`fields: ["number", "title", "body", "draft", "head"]`）で Open PR を一覧し、タイトル末尾の `#N` と本文の `closes #N` で Issue に紐づける。一覧は `mergeable_state` を返さない（`fields` に入れても項目ごと落ちる）ので、紐づいた PR ごとに `pull_request_read`（method: `get`）で読む。あわせて、`weekday-issue-start` 自身の Open PR の件数を数える（手順 5 の注記に使う）。どの PR を自身の PR とみなすか（draft も含める）は `.claude/routines/weekday-issue-start.md`「1. 事前点検（安全弁）」手順 2 に従う（正本はルーティン側。ここに書き写さない）
-3. リモートのブランチから `*/#<番号>-*` に当たるものを Issue に紐づける。ブランチは百本を超えるので、全件を出さずに対象の番号で絞る: `git ls-remote --heads origin | grep -E '/#(475|476|...)-'`
+3. リモートのブランチから `*/<番号>-*` に当たるものを Issue に紐づける。ブランチは百本を超えるので、全件を出さずに対象の番号で絞る: `git ls-remote --heads origin | grep -E '/(475|476|...)-'`
 4. 対象の Issue ごとに、紐づくマージ済み PR があるかを見る。`refs #N` の PR はマージ後も Issue を Open のまま残し、head ブランチもマージ時に消えるので、手順 1-2・1-3 では見つからない。確かめ方は `.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」手順 1 の「マージ済み PR は、候補ごとに」で始まる段落に従う（正本はルーティン側。ここに書き写さない。GitHub MCP が使えないときの確かめ方も同じ段落にある）
 
 GitHub MCP が使えなければ、REST の `gh api` で同じ情報を取る。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので、クラウドセッションでは 403 になる。使わない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
@@ -62,7 +62,7 @@ GitHub MCP が使えなければ REST の gh api repos/{owner}/{repo}/issues/N�
 
 | 区分 | 条件 | 扱い |
 |------|------|------|
-| **進行中** | 紐づく Open PR、紐づくマージ済み PR（手順 1-4。マージ後の DoD が残っている）、`*/#<番号>-*` のリモートブランチ、コメントの「## 着手」の印のいずれかがある（このセッション自身の印も含む。「## 着手（取り下げ）」に書き換わった印は、ブランチがもう別の Issue に移っているので含めない） | ラベル案を出さない（変えない）。`routine-ok` が付いていても外す提案はしない（進行中に当たる Issue は、ルーティンの候補条件でも選ばれない）。次の行動は、Open PR があれば下の「Open PR の次の行動」、無くてマージ済み PR があれば「マージ後の DoD を済ませてクローズ」、どちらも無ければ（ブランチか着手の印だけ）「待つ」 |
+| **進行中** | 紐づく Open PR、紐づくマージ済み PR（手順 1-4。マージ後の DoD が残っている）、`*/<番号>-*` のリモートブランチ、コメントの「## 着手」の印のいずれかがある（このセッション自身の印も含む。「## 着手（取り下げ）」に書き換わった印は、ブランチがもう別の Issue に移っているので含めない） | ラベル案を出さない（変えない）。`routine-ok` が付いていても外す提案はしない（進行中に当たる Issue は、ルーティンの候補条件でも選ばれない）。次の行動は、Open PR があれば下の「Open PR の次の行動」、無くてマージ済み PR があれば「マージ後の DoD を済ませてクローズ」、どちらも無ければ（ブランチか着手の印だけ）「待つ」 |
 | **ルーティン向け** | `.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」手順 1 の候補条件をすべて満たす（条件の正本はルーティン側。ここに書き写さない） | 日次の無人実装（`weekday-issue-start`）に任せられる |
 | **人がいるセッション向け** | 上のどちらでもない | 区分の理由と注記を、手順 5 の表の「区分の理由・注記」列に書く（下の「区分の理由と注記」） |
 

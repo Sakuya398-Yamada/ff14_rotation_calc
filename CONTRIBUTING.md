@@ -229,6 +229,7 @@ PR のプレビューは本番の secret を引き継がず、今は D1 も付�
 - **ビルド失敗（Worker 名の不一致）**: ダッシュボードの Worker 名と `wrangler.jsonc` の `name`（`ff14-rotation-calc`）が一致しているか確認
 - **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`）にする
 - **PR のコメントにプレビュー URL が出ない（「Deploying with Cloudflare Workers」の表に URL の列が無い）**: Worker Previews に切り替わっていないか、Preview command が `wrangler preview` を直接呼んでいない（npm スクリプトで包んでいる等）。上記の注記のとおりに直す
+- **プレビューの作成失敗（`Preview creation failed: Invalid preview name`）**: ブランチ名に、プレビュー名に使えない文字（`#` など）が入っている。Workers Builds はビルドの前にブランチ名をそのままプレビュー名にするので、Preview command では直せない。`.claude/rules/git-conventions.md` の書式でブランチを切り直す（#609）
 - **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews": {}` が消えていないか確認する（#485）
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す

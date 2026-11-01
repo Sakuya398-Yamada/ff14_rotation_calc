@@ -60,7 +60,7 @@ Issue間の依存関係を以下の基準で判定する。データの流れや
 ## 実装指示
 
 ### Issue #1: スキルデータモデルの作成
-**ブランチ**: `feature/#1-add-skill-data-model`
+**ブランチ**: `feature/1-add-skill-data-model`
 **概要**: ...
 **実装ポイント**:
 - ...
