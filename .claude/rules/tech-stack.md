@@ -48,7 +48,7 @@
 | `npm run dev` | フロントと API（Worker）を同じオリジンで起動（port 5173） |
 | `npm run build` | フロントと Worker をビルド（`dist/`） |
 | `npm run deploy` | 本番 D1 にマイグレーションを当ててから、ビルド済みの `dist/` を本番にデプロイ（Workers Builds が実行）。`-- --dry-run` を付けてもマイグレーションは本番に当たるので、検証は `npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run` で行う |
-| `npm run deploy:preview` | ビルド済みの `dist/` をプレビューにデプロイ（ローカルから手で作るとき用。Workers Builds の Preview command は `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json` を直接書く。Worker Previews は Preview command が `npx wrangler preview` を呼ぶことを求めるため。#487） |
+| `npm run deploy:preview` | ビルド済みの `dist/` をプレビューにデプロイ（ローカルから手で作るとき用。Workers Builds の Preview command は `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json` を直接書く。Worker Previews は Preview command が `npx wrangler preview` を呼ぶことを求めるため。#487。`#` はプレビュー名に使えないので、`--name` でブランチ名から `#` を消して渡す。全文は `CONTRIBUTING.md`「Workers Builds の設定（初回のみ）」。#609） |
 | `npm run db:generate -- --name <名前>` | `schema.ts` の変更からマイグレーション SQL を生成（`migrations/`。生成物は手で編集しない） |
 | `npm run db:migrate` | ローカルの D1 にマイグレーションを適用（`db:migrate:remote` は本番 D1） |
 | `npm test` | Vitest 一括実行 |

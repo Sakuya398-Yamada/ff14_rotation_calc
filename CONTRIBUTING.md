@@ -165,7 +165,7 @@ npm run db:migrate                        # ローカルの D1 に適用
    - **Project name（Worker 名）**: `ff14-rotation-calc`（`wrangler.jsonc` の `name` と一致させる。違うとビルドが失敗する）
    - **Build command**: `npm run build`
    - **Deploy command**: `npm run deploy`（本番 D1 へのマイグレーション適用 → デプロイ）
-   - **Preview command**（本番ブランチ以外。**Enable Preview Builds** を有効にする）: `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`
+   - **Preview command**（本番ブランチ以外。**Enable Preview Builds** を有効にする）: `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json --name "$(printf '%s' "$WORKERS_CI_BRANCH" | tr -d '#')"`
    - **Root directory**: 空欄（`/`）のまま
 5. **Build variables and secrets** に `NODE_VERSION` = `22` を追加（Workers Builds の既定は Node.js 24。CI と揃える）
 6. **Deploy** で初回ビルドを開始
@@ -173,6 +173,8 @@ npm run db:migrate                        # ローカルの D1 に適用
 これで以後、`main` への push は本番（`https://ff14-rotation-calc.forestry-for.workers.dev`）に、PR はプレビュー URL に自動デプロイされます。
 
 > **Preview command では `wrangler preview` を直接呼ぶ**: PR にプレビュー URL をコメントするのは Worker Previews の機能で、Workers Builds は独自の Preview command にも `npx wrangler preview` を呼ぶことを求めています。以前は Worker Previews に切り替えないまま Preview command を `npm run deploy:preview`（npm スクリプト）にしていて、プレビュー自体は作られたのにコメントにプレビュー URL が出なかった（#487）。`package.json` の `deploy:preview` は、ローカルから手でプレビューを作るとき用です。
+>
+> **プレビュー名からブランチ名の `#` を消す**: プレビュー名は、指定しなければブランチ名（Workers Builds が渡す環境変数 `WORKERS_CI_BRANCH`）がそのまま使われます。`#` はプレビュー名に使えない文字なので、`<type>/#<番号>-<説明>` のブランチ（`.claude/rules/git-conventions.md`「ブランチ命名」）では `Preview creation failed: Invalid preview name` で失敗します。そのため Preview command は、`--name` に `#` を消した名前（`fix/#609-foo` なら `fix/609-foo`）を渡しています（#609）。ローカルの `npm run deploy:preview` も今いるブランチの名前を使うので、`#` を含むブランチでは `npm run deploy:preview -- --name <名前>` で名前を渡します。
 >
 > **Worker Previews 以前から Builds に繋いでいた Worker の場合**: **Settings** → **Builds** に **Set up Worker Previews** のバナーが出ていたら、**Set up** から一度だけ切り替える（元の方式には戻せない）。確認ダイアログで Previews 用の変数・シークレット・バインディングを聞かれるが、空のまま進めてよい（Previews は本番の設定を引き継がず、`wrangler.jsonc` の `previews` に書いたものだけが付く）。D1 の `DB` は今は本番だけで、プレビューには付かない。プレビューのビルドログに出る「These bindings are configured for your production Worker but not for Previews: DB」は想定どおり（プレビュー用の D1 は #581 で決める）。切り替えると Preview command が `npx wrangler preview` に置き換わるので、上の `--config` 付きのコマンドに直す（[Cloudflare のドキュメント](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/#existing-workers-connected-to-builds)）。
 
@@ -227,8 +229,9 @@ PR のプレビューは本番の secret を引き継がず、今は D1 も付�
 
 - **ビルド失敗（`npm ci`）**: Node のバージョンが合っていない可能性。ビルド用の環境変数 `NODE_VERSION=22` が設定されているか確認
 - **ビルド失敗（Worker 名の不一致）**: ダッシュボードの Worker 名と `wrangler.jsonc` の `name`（`ff14-rotation-calc`）が一致しているか確認
-- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`）にする
+- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは上記の Preview command）にする
 - **PR のコメントにプレビュー URL が出ない（「Deploying with Cloudflare Workers」の表に URL の列が無い）**: Worker Previews に切り替わっていないか、Preview command が `wrangler preview` を直接呼んでいない（npm スクリプトで包んでいる等）。上記の注記のとおりに直す
+- **プレビューの作成失敗（`Preview creation failed: Invalid preview name`）**: Preview command に `--name` が無く、ブランチ名の `#` がそのままプレビュー名になっている。上記の Preview command のとおりにする（#609）
 - **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews": {}` が消えていないか確認する（#485）
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す
