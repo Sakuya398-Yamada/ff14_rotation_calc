@@ -48,6 +48,12 @@ const UB3_FULL_HEARTS = {
   resourceConditions: [{ resourceId: "umbral-heart", minAmount: 3 }],
 };
 
+/** パラドックスゲージがあるとファイア・ブリザドはパラドックスに変化する（AF 中は paradox の autoTransform で paradox-af へ。#613） */
+const TO_PARADOX: AutoTransformEntry = {
+  resourceConditions: [{ resourceId: "paradox-gauge", minAmount: 1 }],
+  skillId: "paradox",
+};
+
 /** ファイアの追加効果（発動確率 40%）でファイアスターターを付与する確率 */
 const FIRESTARTER_FROM_FIRE = { firestarter: 0.4 };
 
@@ -62,7 +68,7 @@ function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEnt
 /**
  * 黒魔道士のスキル定義。
  * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）とは #519 で照合し、
- * 属性の解除・発動条件・ファイガ効果アップを合わせた。既知の差分は #613（AF/UB の完全解除時のパラドックスゲージ・アストラルソウル）
+ * 属性の解除・発動条件・ファイガ効果アップを合わせた。パラドックスへの変化と、AF/UB の完全解除時のアストラルソウルは #613 で合わせた
  *
  * ### MP 管理の方針（ユーザー指定）
  * - MP 自然回復は実装しない
@@ -88,7 +94,10 @@ function transformWhileAny(buffIds: string[], skillId: string): AutoTransformEnt
  * どちらも実行前の AF/UB の状態で付与内容が変わるため、変化元スキルの autoTransform で隠しスキル
  * （`*-in-af` / `*-in-ub` / `*-from-af3` / `*-from-ub3`。末尾の `deriveHidden` で生成）に切り替える。
  * ファイア／ブリザドは反転させず、UB 中のファイアは UB を、AF 中のブリザドは AF を解除するだけ（`fire-in-ub` / `blizzard-in-af`）。
- * この完全解除で「AF/UB の解除でパラドックスが消える」は未対応（#613）。
+ * パラドックスゲージがあるときは、ファイア／ブリザドは AF/UB に関わらずパラドックスに変化する（AF 中は `paradox-af`。#613）。
+ * そのためゲージがある間は完全解除が起きず、「AF/UB の解除でパラドックスが消える」をゲージを消す処理として持つ必要はない。
+ * パラドックスは変化先なのでパレットに出ない（ジョブガイドでもホットバーに登録できない）。
+ * 完全解除ではアストラルソウルを 0 にする（`consumeAllOfResource`。AF⇔UB の反転では残す。#215 / #613）。
  * `firestarter` はパラドックス使用時（AF 中）に確定で、ファイア使用時に発動確率 40% で付与する（`buffApplicationProcRates`）。
  * タイムライン上はどちらも付与し、確率付与だけで付いたファイアスターターをファイガが使うと警告を出す。
  */
@@ -113,9 +122,11 @@ const BLM_BASE_SKILLS: Skill[] = [
     // AF/UB が無いときに AF1 を付与。ファイアスターターは発動確率 40%（変化先も同じ）
     buffApplications: ["astral-fire-1", "thunderhead", "firestarter"],
     buffApplicationProcRates: FIRESTARTER_FROM_FIRE,
+    // パラドックスゲージがあれば AF/UB に関わらずパラドックスに変化する
     // AF 中は段階を進める（サンダーヘッドは付与しない）。AF3 中は維持
     // UB 中は UB を解除するだけ（AF・サンダーヘッド・パラドックスは付与しない）
     autoTransform: [
+      TO_PARADOX,
       { buffId: "astral-fire-3", skillId: "fire-stay-af3" },
       { buffId: "astral-fire-2", skillId: "fire-up-af3" },
       { buffId: "astral-fire-1", skillId: "fire-up-af2" },
@@ -290,7 +301,9 @@ const BLM_BASE_SKILLS: Skill[] = [
     buffApplications: ["umbral-ice-1", "thunderhead"],
     // UB 中は段階を進めつつヒット時 MP を回復する（隠しスキルに委譲、サンダーヘッドは付与しない）。UB3 中は維持＋全回復
     // AF 中は AF を解除するだけ（UB・サンダーヘッド・パラドックスは付与しない）
+    // パラドックスゲージがあれば AF/UB に関わらずパラドックスに変化する
     autoTransform: [
+      TO_PARADOX,
       { buffId: "umbral-ice-3", skillId: "blizzard-stay-ub3" },
       { buffId: "umbral-ice-2", skillId: "blizzard-up-ub3" },
       { buffId: "umbral-ice-1", skillId: "blizzard-up-ub2" },
@@ -851,7 +864,12 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   deriveHidden("fire-2", "fire-2-in-af", "ファイラ (AF 中)", ["astral-fire-3"]),
   deriveHidden("high-fire-2", "high-fire-2-in-af", "ハイファイラ (AF 中)", ["astral-fire-3"]),
   // UB 中のファイアは UB を解除するだけ（ファイアスターターの付与確率は変化元から引き継ぐ）
-  { ...deriveHidden("fire", "fire-in-ub", "ファイア (UB 解除)", ["firestarter"]), removesBuffs: UMBRAL_ICE_ANY },
+  // AF/UB が無くなるのでアストラルソウルも 0 にする（反転では残す。#215 / #613）
+  {
+    ...deriveHidden("fire", "fire-in-ub", "ファイア (UB 解除)", ["firestarter"]),
+    removesBuffs: UMBRAL_ICE_ANY,
+    consumeAllOfResource: "astral-soul",
+  },
   // UB3 かつアンブラルハート 3 から AF への反転: サンダーヘッド＋パラドックス
   deriveHidden("fire-3", "fire-3-from-ub3", "ファイガ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
   deriveHidden("fire-2", "fire-2-from-ub3", "ファイラ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
@@ -862,8 +880,12 @@ export const BLM_ATTACK_SKILLS: Skill[] = [
   deriveHidden("blizzard-3", "blizzard-3-in-ub", "ブリザガ (UB 中)", ["umbral-ice-3"]),
   deriveHidden("blizzard-2", "blizzard-2-in-ub", "ブリザラ (UB 中)", ["umbral-ice-3"]),
   deriveHidden("high-blizzard-2", "high-blizzard-2-in-ub", "ハイブリザラ (UB 中)", ["umbral-ice-3"]),
-  // AF 中のブリザドは AF を解除するだけ
-  { ...deriveHidden("blizzard", "blizzard-in-af", "ブリザド (AF 解除)", []), removesBuffs: ASTRAL_FIRE_ANY },
+  // AF 中のブリザドは AF を解除するだけ。AF/UB が無くなるのでアストラルソウルも 0 にする（反転では残す。#215 / #613）
+  {
+    ...deriveHidden("blizzard", "blizzard-in-af", "ブリザド (AF 解除)", []),
+    removesBuffs: ASTRAL_FIRE_ANY,
+    consumeAllOfResource: "astral-soul",
+  },
   // AF3 から UB への反転: サンダーヘッド＋パラドックス
   deriveHidden("blizzard-3", "blizzard-3-from-af3", "ブリザガ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
   deriveHidden("blizzard-2", "blizzard-2-from-af3", "ブリザラ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),

@@ -85,7 +85,10 @@ describe("BLM: UB 中のファイア・AF 中のブリザドは属性を解除�
 describe("BLM: ファイアのファイガ効果アップ（発動確率 40%）", () => {
   it("ファイアの変化先すべてが、ファイアスターターを確率 0.4 で付与する", () => {
     const fire = skillMap.get("fire");
-    const targetIds = new Set([fire?.autoTransform ?? []].flat().map((t) => t.skillId));
+    // パラドックス（ゲージがあるときの変化先、#613）は別のアクションで、AF 中に確定で付与するので除く
+    const targetIds = new Set(
+      [fire?.autoTransform ?? []].flat().map((t) => t.skillId).filter((id) => id !== "paradox")
+    );
     const targets = [fire, ...[...targetIds].map((id) => skillMap.get(id))];
     expect(targets.map((s) => s?.id).sort()).toEqual(
       ["fire", "fire-in-ub", "fire-stay-af3", "fire-up-af2", "fire-up-af3"].sort()
@@ -107,10 +110,15 @@ describe("BLM: ファイアのファイガ効果アップ（発動確率 40%）"
   });
 
   it.each([
-    ["ファイアのあとパラドックスで確定付与し直す", ["fire-3", "manafont", "fire", "paradox", "fire-3"]],
+    // ゲージがあるとファイアはパラドックスに変化する（#613）ので、ファイアはマナフォントでゲージを得る前に撃つ
+    ["ファイアのあとパラドックスで確定付与し直す", ["fire-3", "fire", "manafont", "paradox", "fire-3"]],
     ["パラドックスで確定付与したあとファイアが重なる", ["fire-3", "manafont", "paradox", "fire", "fire-3"]],
   ])("%s と、ファイガで警告は立たない", (_label, ids) => {
     const entries = resolve(ids).entries;
+    // ファイアとパラドックスがどちらも狙いどおり撃てている（パラドックスがゲージ不足になっていない）
+    expect(entries.map((e) => e.resourceErrors)).toEqual(entries.map(() => []));
+    expect(entries.map((e) => e.resolvedSkillId)).toContain("fire-stay-af3");
+    expect(entries.map((e) => e.resolvedSkillId)).toContain("paradox-af");
     const fire3 = entries[entries.length - 1];
     expect(fire3.comboErrors).toEqual([]);
     expect(fire3.castTime).toBe(0);

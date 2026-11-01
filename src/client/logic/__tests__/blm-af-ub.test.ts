@@ -224,18 +224,21 @@ describe("BLM: AF/UB 段階進行", () => {
 describe("BLM: UB 段階別 MP 回復", () => {
   // MP は最大値 10000 にキャップされるため、回復量を観測するには事前に MP を消費しておく必要がある。
   // 共通シーケンス: fire-3（AF3 で MP -2000）→ despair（MP 全消費）→ transpose（AF→UB1）以降で UB を進める。
+  // AF3 からのトランスでパラドックスゲージが付き、その間のブリザドはパラドックスに変化する（#613）。
+  // ブリザドで UB を進めるテストは、先にパラドックス（UB 中は MP 0）でゲージを使い切ってから測る。
   it("UB1 中の通常ブリザドは UB2 へ進めつつ MP を 2500 回復する", () => {
     const result = resolveTimeline(
-      [entry("fire-3"), entry("despair"), entry("transpose"), entry("blizzard")],
+      [entry("fire-3"), entry("despair"), entry("transpose"), entry("paradox"), entry("blizzard")],
       skillMap,
       BLM_RESOURCES,
       undefined,
       BLM_BUFFS,
     );
-    const before = result.entries[2].resourceSnapshot["mp"];
-    const after = result.entries[3].resourceSnapshot["mp"];
+    expect(result.entries[4].resolvedSkillId).toBe("blizzard-up-ub2");
+    const before = result.entries[3].resourceSnapshot["mp"];
+    const after = result.entries[4].resourceSnapshot["mp"];
     expect(after - before).toBe(2500);
-    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
+    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
   });
 
   it("UB2 中の通常ブリザドは UB3 へ進めつつ MP を 5000 回復する", () => {
@@ -244,6 +247,7 @@ describe("BLM: UB 段階別 MP 回復", () => {
         entry("fire-3"),
         entry("despair"),
         entry("transpose"),
+        entry("paradox"),
         entry("blizzard"),
         entry("blizzard"),
       ],
@@ -252,10 +256,11 @@ describe("BLM: UB 段階別 MP 回復", () => {
       undefined,
       BLM_BUFFS,
     );
-    const before = result.entries[3].resourceSnapshot["mp"];
-    const after = result.entries[4].resourceSnapshot["mp"];
+    expect(result.entries[5].resolvedSkillId).toBe("blizzard-up-ub3");
+    const before = result.entries[4].resourceSnapshot["mp"];
+    const after = result.entries[5].resourceSnapshot["mp"];
     expect(after - before).toBe(5000);
-    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(result.entries[5].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB3 中の通常ブリザドは UB3 を維持しつつ MP を全回復させる", () => {
@@ -375,12 +380,13 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
   });
 
   it("UB2 中のブリザラは UB バフの MP 回復 +5000 が発動する", () => {
-    // fire-3 → despair で MP を 0 にしてから transpose → blizzard で UB2 へ進める
+    // fire-3 → despair で MP を 0 にしてから transpose → paradox（ゲージを使う）→ blizzard で UB2 へ進める
     const result = resolveTimeline(
       [
         entry("fire-3"),
         entry("despair"),
         entry("transpose"),
+        entry("paradox"),
         entry("blizzard"),
         entry("blizzard-2"),
       ],
@@ -389,12 +395,13 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
       undefined,
       BLM_BUFFS,
     );
-    // entries[3] = blizzard で UB1→UB2、MP +2500（=2500）
-    // entries[4] = blizzard-2 で UB2 中→ UB3 直接付与、resourceGainOnSkill +5000
-    const before = result.entries[3].resourceSnapshot["mp"];
-    const after = result.entries[4].resourceSnapshot["mp"];
+    // entries[4] = blizzard で UB1→UB2、MP +2500（=2500）
+    // entries[5] = blizzard-2 で UB2 中→ UB3 直接付与、resourceGainOnSkill +5000
+    expect(result.entries[4].resolvedSkillId).toBe("blizzard-up-ub2");
+    const before = result.entries[4].resourceSnapshot["mp"];
+    const after = result.entries[5].resourceSnapshot["mp"];
     expect(after - before).toBe(5000);
-    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(result.entries[5].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB3 中のブリザラは UB バフの MP 回復 +10000 が発動する（上限キャップ）", () => {
@@ -434,6 +441,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
         entry("fire-3"),
         entry("despair"),
         entry("transpose"),
+        entry("paradox"),
         entry("blizzard"),
         entry("high-blizzard-2"),
       ],
@@ -442,10 +450,11 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
       undefined,
       BLM_BUFFS,
     );
-    const before = result.entries[3].resourceSnapshot["mp"];
-    const after = result.entries[4].resourceSnapshot["mp"];
+    expect(result.entries[4].resolvedSkillId).toBe("blizzard-up-ub2");
+    const before = result.entries[4].resourceSnapshot["mp"];
+    const after = result.entries[5].resourceSnapshot["mp"];
     expect(after - before).toBe(5000);
-    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(result.entries[5].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB3 中のハイブリザラは UB バフの MP 回復 +10000 が発動する（上限キャップ）", () => {
