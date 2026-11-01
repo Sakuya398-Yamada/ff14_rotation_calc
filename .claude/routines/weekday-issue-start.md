@@ -69,7 +69,9 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 
    着手の印は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments?per_page=100" --jq '[.[] | select(.body | startswith("## 着手\n"))] | length'` が `0` であることで確かめる（GitHub MCP なら `issue_read` の `get_comments`）。見出しの直後の改行まで含めて比べるので、「## 着手（取り下げ）」の印には当たらない
 
-   blocked by は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/dependencies/blocked_by?per_page=100" --jq '[.[] | select(.state == "open")] | length'` が `0` であることで確かめる（GitHub MCP の `issue_read` は依存を返さない）
+   本文は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>" --jq '.body // ""'` で取る（GitHub MCP なら `issue_read` の `get` の `body`）。最初の一覧は本文を落としてあるので、`依存: #M` と `## 未確定事項` の条件はこの本文で確かめる
+
+   依存先が閉じているかは、本文の `依存: #M` と blocked by で分けて確かめる。本文の `依存: #M` は、番号ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<M>" --jq .state` が `closed` であることで確かめる（GitHub MCP なら `issue_read` の `get` の `state`）。最初の一覧に無いことでは閉じていると判定しない（一覧は `routine-ok` で絞ってあり、`routine-ok` の無い Open の Issue も出ないため）。blocked by は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/dependencies/blocked_by?per_page=100" --jq '[.[] | select(.state == "open")] | length'` が `0` であることで確かめる（GitHub MCP の `issue_read` は依存を返さない）
 
    マージ済み PR は、候補ごとに、タイトルの末尾が ` #<番号>`（`.claude/rules/git-conventions.md`「PR のタイトルと本文」）のマージ済み PR が無いことで確かめる。GitHub MCP の `search_pull_requests`（`owner` / `repo` を指定、query `is:merged "#<番号>" in:title`）の結果をタイトルの末尾で絞る。使えなければ `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/timeline?per_page=100" --jq '[.[] | select(.event == "cross-referenced" and .source.issue.pull_request.merged_at != null and (.source.issue.title | endswith(" #<番号>")))] | length'` が `0` であることで確かめる（timeline は 100 件ずつ返るので、同じ URL を `--jq 'length'` で数えて 100 なら `&page=2` も同じく見る。`gh api search/issues` はクラウドでは使えない）。`issue_read` の `closed_by_pull_requests` は `closes` の PR しか含まず、`refs` の PR を拾わないので使わない。タイトルの末尾で絞るのは、本文でこの Issue に触れただけの PR（スコープ外の起票の報告など）を除くため
 2. 優先順位は `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無しの順。同じ順位なら番号の小さい順
