@@ -30,6 +30,8 @@ MP 等のリソースは定義上の上限（MP は 10000）にキャップさ�
 fire-3（AF3 で MP -2000）→ despair（MP 全消費）→ transpose（AF→UB1）→ 測定対象スキル
 ```
 
+AF3 からのトランスでパラドックスゲージが付き、ゲージがある間のファイア・ブリザドはパラドックスに変化する（#613）。測定対象がブリザド（または、その前にブリザドで UB を進める）なら、transpose の後に paradox（UB 中は MP 0）を挟んでゲージを使い切る。
+
 ```ts
 // before < 10000 を確認してから回復を観測する
 const before = result.entries[N].resourceSnapshot["mp"];
