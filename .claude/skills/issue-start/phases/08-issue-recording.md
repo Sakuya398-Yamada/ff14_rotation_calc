@@ -69,7 +69,7 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 
 1. Phase 5/6/7 で控えたメモを棚卸しする
 2. 気づきが無ければこのステップ全体をスキップしてよい（「特になし」コメントは不要）
-3. 気づきがあれば、提示する前に過去の知見と重なっていないかを `node .claude/scripts/knowledge-board.cjs grep <キーワード>` で確かめる（#195 を `issue_read` で丸読みしない。理由は `.claude/rules/workflow-feedback.md`「知見ボードの読み方」）。重なる知見があれば、そのコメント ID と回収状況（未回収／回収済み）を候補に書き添える
+3. 気づきがあれば、提示する前に過去の知見と重なっていないかを `bash .claude/scripts/knowledge-board.sh grep '<キーワード>'` で確かめる（#195 を `issue_read` で丸読みしない。理由は後述「知見ボードの読み方」）。重なる知見があれば、そのコメント ID と回収状況（未回収／回収済み）を候補に書き添える
 4. 以下のフォーマットで提示し、確認を得る。還元先を「テンプレート汎用」にする前に、気づきに関わるファイル（hook・skill・rules など）を、テンプレート元の取り込み済みの版の、`template/` 配下の同じパスのファイルと見比べる（`get_file_contents` で `path` に `template/<パス>`、`ref` に `.claude/template-version` の `version` を指定して読む。`gh` なら `gh api "repos/<テンプレート元>/contents/template/<パス>?ref=<version>" -H "Accept: application/vnd.github.raw"`）。プロジェクトでカスタマイズした部分が原因なら、別のプロジェクトでは起きないので「プロジェクト固有」にする。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、テンプレート元がセッションに付いていないと、この読み取りも、節 6 の重複チェック・起票も、MCP・gh のどちらでも拒まれる。付いていないと分かっているか、呼び出しが拒まれたら、テンプレート元をこのセッションに足してよいかをユーザーに聞き、承認を得てから `add_repo` ツールで足す（節 6 で起票もするので `access: push`。auto mode では、明示の承認が無いと権限の付与として止められる）。この確認を減らそうと、次からテンプレート元を最初から付けてセッションを開始することはしない。リポジトリを複数付けて開始すると、作業ディレクトリが各クローンの親になり、利用プロジェクトの settings.json の hooks と deny が読まれなくなる（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションにリポジトリを複数付けて開始すると、settings.json が読まれない」）。聞くのは、候補が複数あってもこのセッションで 1 回。ツールが無い・足せない・断られた・足しても拒まれるときは、見比べずに提示し、「還元先」にテンプレート元と見比べられなかったことを添えて、汎用かどうかも、その提示の Y/E/N で一緒にユーザーに決めてもらう
 
    ```
@@ -111,7 +111,7 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
    `**還元先**` は「還元する / しないの判定」（`.claude/rules/workflow-feedback.md`）の結果。テンプレート元へ Issue として還元したら、節 6「テンプレート元への還元」の手順で `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する
 6. 複数ある場合は候補ごとに確認し、承認されたものだけをそれぞれ独立したコメントにする（1 気づき = 1 コメント）
 
-無人書き込みはしない。知見ボード Issue は自動クローズしない。ユーザーが知見を改善 Issue に昇格させたら元コメント末尾に `✅ Issue #XXX で対応` が付く運用で、Claude Code 側の特別な扱いは不要。
+無人書き込みはしない。知見ボード Issue は自動クローズしない。ユーザーが知見を改善 Issue に昇格させたら元コメント末尾に `✅ Issue #XXX で対応` が付く運用。印は `knowledge-board.sh mark` で付けられる（後述「知見ボードの読み方」）。
 
 ## 6. テンプレート元への還元（upstream feedback）
 
@@ -172,3 +172,22 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 8. 複数ある場合は候補ごとに確認し、1 気づき = 1 Issue で起票する
 
 テンプレート元への無人起票はしない。`.claude/template-version` が無い・読めない場合は「テンプレート版 不明」と書いて進め、ファイルの復旧をユーザーに促す。
+
+## 知見ボードの読み方
+
+知見ボードのコメントは、GitHub MCP の `issue_read`（`get_comments`）で読まない。全コメントがメタデータごとセッションに入るため。`.claude/scripts/knowledge-board.sh` で要る分だけを読む。知見ボードの番号は `.claude/rules/workflow-feedback.md`「知見ボードIssue」から読むので、そこを埋めておく。要るのは bash と認証済みの `gh` だけ:
+
+```bash
+bash .claude/scripts/knowledge-board.sh open             # 未回収の知見を 1 件 1 行で（ID・日付・[作業 Issue]・重要度・還元先・気づき）
+bash .claude/scripts/knowledge-board.sh grep '<正規表現>'  # 当たった行だけ（大文字小文字を区別しない拡張正規表現。不正なら文字列として探す）
+bash .claude/scripts/knowledge-board.sh show <ID>        # 1 件の本文の全体
+bash .claude/scripts/knowledge-board.sh mark <ID> '✅ Issue #<番号> で対応'
+```
+
+- 回収済みと数えるのは、本文に `✅ Issue #N` か `✅ Issue <owner/repo>#N`（テンプレート元で直り、更新で取り込んだもの）があるコメント。`open` はこれを除く
+- 同じセッションで続けて読むときは `--cached` を付ける。直前に取ったコメント（git ディレクトリの `knowledge-board-<番号>.cache`）を使い、`gh` を呼ばない
+- `mark` は、知見を Issue に昇格させたときに、元のコメントの末尾に印を足す。知見ボードへの書き込みなので、ユーザーの確認を得てから行う
+  - 足したあと取り直して、送った本文と比べる。クラウドセッションで `gh api` の書き込みに付く署名フッター（`.claude/skills/issue-start/pitfalls-cloud.md`）は除いて比べる。食い違ったら、比べた 2 つのファイルを示して失敗する
+  - 同じ印が既にあれば何もしない（比べるところで失敗したあとの、やり直し）。別の印があれば書き込まずに失敗する（ID の取り違えか、二重の昇格）
+  - `open` が回収済みと読めない書式（`✅Issue #12` など）の印は受け付けない
+  - このリポジトリのどの Issue のコメントにも使える
