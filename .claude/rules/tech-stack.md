@@ -52,6 +52,7 @@
 | `npm run db:generate -- --name <名前>` | `schema.ts` の変更からマイグレーション SQL を生成（`migrations/`。生成物は手で編集しない） |
 | `npm run db:migrate` | ローカルの D1 にマイグレーションを適用（`db:migrate:remote` は本番 D1） |
 | `npm test` | Vitest 一括実行 |
+| `npx tsc --noEmit` | 型チェック（CI と同じ） |
 | `npm run test:watch` | Vitest watchモード |
 | `python3 .claude/scripts/check-context-budget.py` | CLAUDE.md と `paths:` なし rules の常駐量が予算（1000 行）以内か、`.claude/skills/` の md がどれも 30,000 バイト未満か（外部の `skill-creator/` は除く）を検査（CI でも実行。`--limit N` / `--max-bytes N` で閾値を上書き） |
 

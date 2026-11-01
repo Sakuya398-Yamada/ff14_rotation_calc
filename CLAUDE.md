@@ -29,7 +29,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 | `context-efficiency.md` | コンテキスト効率・ファイル読解・サブエージェント委譲 |
 | `mcp-setup.md` | MCP サーバー一覧・利用不可時のフォールバック・クラウドとの差分（セットアップ手順は `CONTRIBUTING.md`） |
 | `workflow-feedback.md` | 知見ボード運用、テンプレート元への還元・更新取り込みの判定（手順は phases と `/template-update`）、棚卸しの正本の場所 |
-| `routines.md` | 定期ルーティンの一覧・登録側の呼び出し文・実行ログ（`paths:` で `.claude/routines/` を触ったときだけ読み込む） |
+| `routines.md` | 定期ルーティンの一覧・呼び出し文・実行ログ・事前に承認した書き込み（`paths:` で `.claude/routines/` を触ったときだけ読み込む） |
 | `model-assignment.md` | agents・skills・セッション既定（`settings.json` の `modelSettings`）のモデルと effort の割り当て・書き方・検証のしかた（`paths:` で agents か `settings.json` を触ったときだけ読み込む） |
 | `documentation-policy.md` | CLAUDE.md と rules の書き分け方針 |
 
@@ -41,7 +41,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 4. **PR作成（Claude Code）**: `closes #<issue番号>`（マージ後に行う DoD が残るなら `refs`）を含めたPRを作成し、Issueに実装メモを記録
 5. **最終確認＆マージ（ユーザー）**: PRを承認・マージ。Issueが自動クローズされる
 
-`/issue-start` の各Phase詳細は `.claude/skills/issue-start/SKILL.md`、Issue の分割・起票（`/issue-plan`）は `.claude/skills/issue-plan/SKILL.md` を参照。1 セッションで扱う Issue は 1 件を基本とし、別の Issue に移るときは `/clear` してから始める。スコープ外問題の起票判定と起票フローは `.claude/skills/issue-start/SKILL.md`「スコープ外問題の起票提案」。
+`/issue-start` の各Phase詳細は `.claude/skills/issue-start/SKILL.md`、Issue の分割・起票（`/issue-plan`）は `.claude/skills/issue-plan/SKILL.md`、Open Issue の消化優先度の判定と `priority:*` ラベルの付与（`/issue-priority`）は `.claude/skills/issue-priority/SKILL.md` を参照。1 セッションで扱う Issue は 1 件を基本とし、別の Issue に移るときは `/clear` してから始める。スコープ外問題の起票判定と起票フローは `.claude/skills/issue-start/SKILL.md`「スコープ外問題の起票提案」。
 
 精度向上のためのチェック項目（Issue 本文乖離検出 / スコープ乖離判定 / 系統スキル網羅性 / 系統横断ユニットテスト）は対応する `.claude/skills/issue-start/phases/*.md` 内のチェック節を参照（Issue #231 で導入）。
 

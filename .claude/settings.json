@@ -48,7 +48,7 @@
       "Bash(echo *)",
       "Bash(which *)",
       "Bash(node --version)",
-      "Bash(node .claude/scripts/knowledge-board.cjs *)",
+      "Bash(bash .claude/scripts/knowledge-board.sh *)",
       "Bash(npm --version)",
       "Edit",
       "Write",
