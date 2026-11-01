@@ -19,7 +19,7 @@ argument-hint: "#<Issue番号>"
 | 1 | Issue分析・不足確認・補完（+ テンプレート更新チェック） | `phases/01-issue-analysis.md`（条件付きの手順は `phases/01-*.md` に分けてあり、本体から該当するときだけ読む） | 不可 |
 | 2 | ラベル付与・ブランチ作成 | `phases/02-branch-setup.md` | 不可 |
 | 3 | コード探索（code-explorer） | `phases/03-exploration.md` | 修正箇所が明確な bug / docs は可（利用者から見える挙動・上限・制約を変える Issue では、利用者向けドキュメントの Grep だけは行う。扱いは `phases/03-exploration.md`「スキップ条件」） |
-| 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可（手順書・規約から人の確認を外す・弱める変更と、無人ルーティンの書き込み・判断の手順（ルーティンが参照する skill の判定基準を含む。`weekday-issue-start` が従う `/issue-start` の手順は除く）を変える変更は不可） |
+| 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可（手順書・規約から人の確認を外す・弱める変更と、無人ルーティンの書き込み・判断の手順（ルーティンが参照する skill の判定基準と、ルーティンが書き込み（起票・コメント投稿・コメント編集など）に使うコマンド例（`pitfalls-cloud.md` のフォールバック）を含む。`weekday-issue-start` が従う `/issue-start` の手順は除く）を変える変更は不可） |
 | 5 | 実装・検証・コミット | `phases/05-implementation.md`（条件付きの手順は `phases/05-*.md` に分けてあり、本体から該当するときだけ読む） | 不可 |
 | 6 | コードレビュー（code-reviewer） | `phases/06-review.md` | 散文のみの docs は可（手順・コマンドを含むランブックは不可） |
 | 7 | PR作成 | `phases/07-pr-creation.md` | 不可 |

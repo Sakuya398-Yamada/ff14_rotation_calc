@@ -38,8 +38,11 @@ const DEFAULT_MUL = calcExpectedMultiplier(DEFAULT_STATS, 0, 0);
 /** 公式ジョブガイド準拠の MNK 範囲スキル定義（Issue #339） */
 const MNK_AOE_FALLOFF_SKILLS = [
   // 2体目以降35%減
+  { id: "tornado-kick", falloffRate: 0.35 },
   { id: "phantom-rush", falloffRate: 0.35 },
+  { id: "elixir-field", falloffRate: 0.35 },
   { id: "elixir-burst", falloffRate: 0.35 },
+  { id: "flint-strike", falloffRate: 0.35 },
   { id: "rising-phoenix", falloffRate: 0.35 },
   { id: "winds-reply", falloffRate: 0.35 },
   { id: "fires-reply", falloffRate: 0.35 },
