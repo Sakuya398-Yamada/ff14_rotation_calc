@@ -67,15 +67,6 @@ describe("MNK: 鉄山闘気／陰陽闘気の GCD リキャスト", () => {
     expect(e[3].wsComboError).toBe(false);
   });
 
-  it("Lv70 でも次の WS は 2.0 秒後になる", () => {
-    const e = setup(70)([
-      entry("the-forbidden-chakra"), entry("dragon-kick"), entry("forbidden-meditation"), entry("twin-snakes"),
-    ]).entries;
-    e.forEach(expectNoError);
-    expect(gap(e[1], e[2])).toBe(2);
-    expect(gap(e[2], e[3])).toBe(2);
-  });
-
   it("スキルスピードが乗る", () => {
     const stats: CharacterStats = { critical: 420, directHit: 420, determination: 440, speed: 2000 };
     const e = resolve([

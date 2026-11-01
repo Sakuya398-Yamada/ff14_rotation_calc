@@ -1,4 +1,4 @@
-import type { AutoTransformEntry, Skill } from "../types/skill";
+import type { AutoTransformEntry, Skill, TraitPotencyOverride } from "../types/skill";
 import twinSnakesIcon from "../assets/icons/mnk/Twin_Snakes.png";
 import demolishIcon from "../assets/icons/mnk/Demolish.png";
 import dragonKickIcon from "../assets/icons/mnk/Dragon_Kick.png";
@@ -34,9 +34,9 @@ import mantraIcon from "../assets/icons/mnk/Mantra.png";
 import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
 
 /**
- * モンク（MNK）の攻撃スキル定義（パッチ7.5系の公式ジョブガイド準拠、Lv100想定）。
+ * モンク（MNK）の攻撃スキル定義（パッチ7.5系の公式ジョブガイド準拠。収録スキルは Lv100 の実用キット）。
  * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）とは #521 で GCD の拘束・発動条件を揃えた。
- * 既知の差分は、型の発動条件（#610）と Lv100 未満の特性値（#517）
+ * 既知の差分は、型の発動条件（#610）と Lv92 未満の下位技（#769）
  *
  * ## 型（フォーム）のモデル化
  * 壱→弐→参の型は WS コンボ（comboFrom）で表現する。
@@ -68,11 +68,25 @@ import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
  * - Lv92 で上位技（猿舞連撃・竜頷正拳撃・虎襲崩拳）に変化する連撃・正拳突き・崩拳、
  *   空鳴闘気・万象闘気（瞑想の範囲版。効果は鉄山闘気・陰陽闘気と同一）は
  *   パレット簡潔化のため対象外（Lv100 の実用キットのみ収録）
- * - 特性による低レベル帯の威力変動（traitPotencyOverrides）は未投入（Lv100 の値のみ）
+ *
+ * ## 特性によるレベル別の値（#517）
+ * 基本値は特性修得前の値にし、修得レベル以降の値を traitPotencyOverrides で上書きする。
+ * - 疾風迅雷効果アップIII（Lv76）: GCD 2.125 → 2.0 秒（Lv76 未満で習得する GCD と鉄山闘気・陰陽闘気）
+ * - 抜重歩法効果アップ（Lv84）: 抜重歩法の最大チャージ数 2 → 3
+ * - アクション威力アップ（Lv84）/ II（Lv94）: 双掌打・破砕拳・双竜脚・陰陽闘気斬・六合星導脚・夢幻闘舞の威力
+ * - 桃園結義効果アップ（Lv88）: 桃園結義中の自身の WS による闘気獲得（Lv88 未満は確率なので付けない。mnk-buffs.ts）
+ * 修得後の値は公式ジョブガイドの特性の原文、修得前の値は consolegameswiki の Notes による。
+ * 踏鳴の最大チャージ数 2 は特性で変わらない。
  */
 
-// MNK の GCD は疾風迅雷（特性）込みで 2.0 秒
+// 疾風迅雷（特性）: GCD は Lv76 未満が 2.5 秒の 15% 短縮で 2.125 秒（calcGcd が 10ms 単位に切り捨てて 2.12 秒）、
+// 疾風迅雷効果アップIII（Lv76）からは 20% 短縮で 2.0 秒
 const GCD_RECAST = 2.0;
+const GCD_RECAST_BEFORE_LV76 = 2.125;
+/** Lv76 未満で習得する WS の GCD を Lv76 から 2.0 秒にする */
+const GCD_TRAIT_LV76: TraitPotencyOverride = { traitLevel: 76, recastTime: GCD_RECAST };
+/** 鉄山闘気・陰陽闘気が発生させる GCD を Lv76 から 2.0 秒にする */
+const MEDITATION_GCD_TRAIT_LV76: TraitPotencyOverride = { traitLevel: 76, gcdRecastTime: GCD_RECAST };
 const DEFAULT_ANIMATION_LOCK = 0.65;
 
 // 型を付与する WS（= 次の型の WS の comboFrom）。autoTransform の変化先も含める
@@ -162,15 +176,20 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   {
     id: "dragon-kick",
     name: "双竜脚",
-    potency: 320,
+    potency: 240,
     type: "gcd",
     target: "enemy",
     icon: dragonKickIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 50,
     comboFrom: GRANTS_OPO_FORM,
     comboResourceChanges: [{ resourceId: "opo-fury", amount: 1 }],
+    traitPotencyOverrides: [
+      GCD_TRAIT_LV76,
+      { traitLevel: 84, potency: 280 },
+      { traitLevel: 94, potency: 320 },
+    ],
   },
   // 猿舞連撃: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
   {
@@ -211,15 +230,20 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   {
     id: "twin-snakes",
     name: "双掌打",
-    potency: 420,
+    potency: 340,
     type: "gcd",
     target: "enemy",
     icon: twinSnakesIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 18,
     comboFrom: GRANTS_RAPTOR_FORM,
     comboResourceChanges: [{ resourceId: "raptor-fury", amount: 1 }],
+    traitPotencyOverrides: [
+      GCD_TRAIT_LV76,
+      { traitLevel: 84, potency: 380 },
+      { traitLevel: 94, potency: 420 },
+    ],
   },
   // 竜頷正拳撃
   {
@@ -254,19 +278,24 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   // GCD: 参の型（クァール）の WS
   // ============================================================
-  // 破砕拳: 威力360 + 背面ボーナス60 = 420（方向指定成功前提）。型成立時に参の功力を2付与
+  // 破砕拳: 威力 280 / 320（Lv84）/ 360（Lv94）+ 背面ボーナス60（方向指定成功前提）。型成立時に参の功力を2付与
   {
     id: "demolish",
     name: "破砕拳",
-    potency: 420,
+    potency: 340,
     type: "gcd",
     target: "enemy",
     icon: demolishIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 30,
     comboFrom: GRANTS_COEURL_FORM,
     comboResourceChanges: [{ resourceId: "coeurl-fury", amount: 2 }],
+    traitPotencyOverrides: [
+      GCD_TRAIT_LV76,
+      { traitLevel: 84, potency: 380 },
+      { traitLevel: 94, potency: 420 },
+    ],
   },
   // 虎襲崩拳: 威力310 + 側面ボーナス60 = 370（方向指定成功前提）
   {
@@ -311,11 +340,12 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: armOfTheDestroyerIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 26,
     comboFrom: GRANTS_OPO_FORM,
     maxTargets: Infinity,
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
   // 壊神脚（Lv82: 壊神衝から変化）: 壱の型ボーナスは確定クリティカル（型成立前提で常時適用）
   {
@@ -340,11 +370,12 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: fourPointFuryIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 45,
     comboFrom: GRANTS_RAPTOR_FORM,
     maxTargets: Infinity,
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
   {
     id: "rockbreaker",
@@ -353,11 +384,12 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: rockbreakerIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 30,
     comboFrom: GRANTS_COEURL_FORM,
     maxTargets: Infinity,
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
   // ============================================================
   // GCD: その他の WS
@@ -370,16 +402,17 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "self",
     icon: formShiftIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 52,
     buffApplications: ["formless-fist"],
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
-  // 六合星導脚: 780 + 闘気1つにつき80。闘気を全消費（リキャスト4秒）
+  // 六合星導脚: 710（Lv94 から 780）+ 闘気1つにつき80。闘気を全消費（リキャスト4秒）
   {
     id: "six-sided-star",
     name: "六合星導脚",
-    potency: 780,
+    potency: 710,
     type: "gcd",
     target: "enemy",
     icon: sixSidedStarIcon,
@@ -390,10 +423,17 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     potencyScaling: {
       resourceId: "chakra",
       minAmount: 0,
-      minPotency: 780,
+      minPotency: 710,
       maxAmount: 10,
-      maxPotency: 1580,
+      maxPotency: 1510,
     },
+    traitPotencyOverrides: [
+      {
+        traitLevel: 94,
+        potency: 780,
+        potencyScaling: { resourceId: "chakra", minAmount: 0, minPotency: 780, maxAmount: 10, maxPotency: 1580 },
+      },
+    ],
   },
   // ============================================================
   // GCD: 必殺技（ビーストチャクラ消費）
@@ -405,16 +445,17 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: masterfulBlitzIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 60,
     autoTransform: MASTERFUL_BLITZ_TRANSFORMS,
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
   // 夢幻闘舞: 陰陽の闘気 + チャクラ3つ。両闘気を消費
   {
     id: "phantom-rush",
     name: "夢幻闘舞",
-    potency: 1500,
+    potency: 1400,
     type: "gcd",
     target: "enemy",
     icon: phantomRushIcon,
@@ -430,6 +471,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     maxTargets: Infinity,
     falloffRate: 0.35,
     hidden: true,
+    traitPotencyOverrides: [{ traitLevel: 94, potency: 1500 }],
   },
   // 真空波（Lv92: 蒼気砲から変化）: 同種チャクラ3つ。陰の闘気を付与
   {
@@ -475,13 +517,14 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     type: "gcd",
     target: "enemy",
     icon: celestialRevolutionIcon,
-    recastTime: GCD_RECAST,
+    recastTime: GCD_RECAST_BEFORE_LV76,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 60,
     consumeAllResources: ["opo-chakra", "raptor-chakra", "coeurl-chakra"],
     resourceChanges: [{ resourceId: "lunar-nadi", amount: 1 }],
     buffApplications: ["formless-fist"],
     hidden: true,
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
   // ============================================================
   // GCD: 極意派生 WS
@@ -538,7 +581,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "chakra", amount: 1 }],
     resourceMaxConditions: [{ resourceId: "chakra", maxAmount: 4 }],
     triggersGcdRecast: true,
-    gcdRecastTime: GCD_RECAST,
+    gcdRecastTime: GCD_RECAST_BEFORE_LV76,
+    traitPotencyOverrides: [MEDITATION_GCD_TRAIT_LV76],
   },
   {
     id: "forbidden-meditation",
@@ -556,7 +600,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     resourceChanges: [{ resourceId: "chakra", amount: 1 }],
     resourceMaxConditions: [{ resourceId: "chakra", maxAmount: 4 }],
     triggersGcdRecast: true,
-    gcdRecastTime: GCD_RECAST,
+    gcdRecastTime: GCD_RECAST_BEFORE_LV76,
+    traitPotencyOverrides: [MEDITATION_GCD_TRAIT_LV76],
   },
   // 鉄山靠: 闘気5消費（Lv54で陰陽闘気斬に変化）
   {
@@ -576,7 +621,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   {
     id: "the-forbidden-chakra",
     name: "陰陽闘気斬",
-    potency: 400,
+    potency: 310,
     type: "ogcd",
     target: "enemy",
     icon: theForbiddenChakraIcon,
@@ -587,6 +632,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     cooldown: 1,
     cooldownGroup: "mnk-chakra-st",
     resourceChanges: [{ resourceId: "chakra", amount: -5 }],
+    traitPotencyOverrides: [{ traitLevel: 84, potency: 400 }],
   },
   // 空鳴拳: 闘気5消費・前方直線範囲（Lv74で万象闘気圏に変化。減衰なし）
   {
@@ -671,7 +717,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     cooldown: 90,
     buffApplications: ["riddle-of-wind", "wind-rumination"],
   },
-  // 桃園結義: 与ダメージ5%上昇 + WS使用時にチャクラ獲得
+  // 桃園結義: 与ダメージ5%上昇 + WS使用時に闘気獲得（自身の WS による獲得は桃園結義効果アップ（Lv88）から）
   {
     id: "brotherhood",
     name: "桃園結義",
@@ -683,7 +729,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 70,
     cooldown: 120,
-    buffApplications: ["brotherhood"],
+    buffApplications: ["brotherhood-no-chakra-gain"],
+    traitPotencyOverrides: [{ traitLevel: 88, buffApplications: ["brotherhood"] }],
   },
   // 金剛の極意: 被ダメージ軽減（防御アビリティ。リキャスト管理用）
   {
@@ -713,7 +760,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     cooldown: 90,
     buffApplications: ["mantra"],
   },
-  // 抜重歩法: 移動アビリティ（3チャージ）
+  // 抜重歩法: 移動アビリティ（2チャージ。抜重歩法効果アップ（Lv84）から3チャージ）
   {
     id: "thunderclap",
     name: "抜重歩法",
@@ -725,7 +772,8 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 35,
     cooldown: 30,
-    maxCharges: 3,
+    maxCharges: 2,
+    traitPotencyOverrides: [{ traitLevel: 84, maxCharges: 3 }],
   },
 
   // ============================================================

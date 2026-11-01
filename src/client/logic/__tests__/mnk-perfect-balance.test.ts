@@ -1,11 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
+import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
 import { MNK_ATTACK_SKILLS } from "../../data/mnk-skills";
 import { MNK_BUFFS } from "../../data/mnk-buffs";
 import { MNK_RESOURCES } from "../../data/mnk-resources";
 import type { TimelineEntry } from "../../types/skill";
 
-const skillMap = new Map(MNK_ATTACK_SKILLS.map((s) => [s.id, s]));
+// 特性の上書きを反映した Lv100 のスキル（基本値は特性修得前の値。#517）
+const buffIds = new Set(MNK_BUFFS.map((b) => b.id));
+const resourceIds = new Set(MNK_RESOURCES.map((r) => r.id));
+const skillMap = getAllSkillMapForLevel(
+  MNK_ATTACK_SKILLS,
+  getSkillsForLevel(MNK_ATTACK_SKILLS, 100, buffIds, resourceIds),
+  100,
+  buffIds,
+  resourceIds,
+);
 
 function entry(skillId: string, manualStartTime?: number): TimelineEntry {
   return { uid: `${skillId}-${Math.random()}`, skillId, manualStartTime };
