@@ -18,7 +18,7 @@ description: パッチ情報・コードスキャンから Issue を起票し、
 
 1. リポジトリの `CLAUDE.md` と `.claude/rules/*.md` に従う。Issue の様式・ラベル・粒度は `.claude/rules/git-conventions.md`
 2. 最初に `git fetch origin` する（git は起動したリポジトリ直下で、`-C` を付けずに打つ）。コードやデータは `origin/main` の内容を読む（`git show origin/main:<path>` / `git grep <pattern> origin/main -- <path>`）。**作業ツリーの変更・ブランチ作成・コミット・PR はしない**
-3. GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）
+3. GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）
 4. **起票前に必ず重複チェック**する（Open / Closed の両方を検索）。同じ目的の Issue があれば起票しない
 5. 起票する Issue の本文は `## 背景・目的` / `## 要件`（やること・やらないこと）/ `## 完了条件（DoD）` / `## 未確定事項`（あれば）/ `## 関連Issue` で構成し、末尾に次のフッターを付ける。ラベルは種別 1 つ＋ `priority:*` 1 つ
 

@@ -107,7 +107,7 @@ TAGS_V210=$'0123456789abcdef0123456789abcdef01234567\trefs/tags/v2.1.0'
 # 2. Online, upstream always wins over a fresh cache (issue-driven-dev-starter#61: a cache
 #    written before a new release reported `up to date` for up to 24h)
 run_hook "$repo" "$TAGS_V210" 0
-check "fresh cache, remote newer: warning shown" "$(contains '⚠ **Template update available**: local `v2.0.0` → latest `v2.1.0`')"
+check "fresh cache, remote newer: warning shown" "$(contains '⚠ **Template update available**: Local `v2.0.0` → Latest `v2.1.0`')"
 check "fresh cache, remote newer: queried upstream again" "$([[ $(ls_remote_calls) -eq 2 ]] && echo 1 || echo 0)"
 check "fresh cache, remote newer: cache refreshed" "$([[ "$(tr -d '[:space:]' <"$repo/.git/template-version-check")" == "v2.1.0" ]] && echo 1 || echo 0)"
 
@@ -123,7 +123,7 @@ rm -f "$TMP_ROOT/ls-remote.log"
 repo=$(make_repo outdated v1.0.0)
 run_hook "$repo" "$TAGS_V2" 0
 check "update: exit 0" "$([[ $rc -eq 0 ]] && echo 1 || echo 0)"
-check "update: warning shown" "$(contains '⚠ **Template update available**: local `v1.0.0` → latest `v2.0.0`')"
+check "update: warning shown" "$(contains '⚠ **Template update available**: Local `v1.0.0` → Latest `v2.0.0`')"
 check "update: release notes URL" "$(contains 'https://github.com/example-owner/example-template/releases/tag/v2.0.0')"
 check "update: compare URL" "$(contains 'https://github.com/example-owner/example-template/compare/v1.0.0...v2.0.0')"
 
@@ -173,7 +173,7 @@ rm -f "$TMP_ROOT/ls-remote.log"
 repo=$(make_repo newercache v1.0.0)
 printf 'v2.0.0\n' >"$repo/.git/template-version-check"
 run_hook "$repo" "" 128
-check "newer cache offline: warning shown" "$(contains '⚠ **Template update available**: local `v1.0.0` → latest `v2.0.0`')"
+check "newer cache offline: warning shown" "$(contains '⚠ **Template update available**: Local `v1.0.0` → Latest `v2.0.0`')"
 check "newer cache offline: cached mark" "$(contains '(cached ')"
 check "newer cache offline: upstream was still tried" "$([[ $(ls_remote_calls) -eq 1 ]] && echo 1 || echo 0)"
 
@@ -226,14 +226,14 @@ check "behind default (default == latest): cache written" "$(cache_is v2.0.3)"
 rm -f "$TMP_ROOT/ls-remote.log"
 repo=$(make_repo_with_default behind-default-outdated v2.0.2 v2.0.3)
 run_hook "$repo" "$TAGS_V210" 0
-check "behind default, latest newer: warning shown" "$(contains '⚠ **Template update available**: local `v2.0.2` → latest `v2.1.0`')"
+check "behind default, latest newer: warning shown" "$(contains '⚠ **Template update available**: Local `v2.0.2` → Latest `v2.1.0`')"
 check "behind default, latest newer: default branch version noted" "$(contains '`origin/main` is at `v2.0.3` (this branch is behind it)')"
 
 # 12. Branch == default branch, latest newer: warning as before, no "behind" note
 rm -f "$TMP_ROOT/ls-remote.log"
 repo=$(make_repo_with_default same-as-default v2.0.3 v2.0.3)
 run_hook "$repo" "$TAGS_V210" 0
-check "branch == default: warning shown" "$(contains '⚠ **Template update available**: local `v2.0.3` → latest `v2.1.0`')"
+check "branch == default: warning shown" "$(contains '⚠ **Template update available**: Local `v2.0.3` → Latest `v2.1.0`')"
 check "branch == default: no behind note" "$(lacks 'this branch is behind it')"
 
 # 13. Cache older than the default branch's version, online: fetched from upstream

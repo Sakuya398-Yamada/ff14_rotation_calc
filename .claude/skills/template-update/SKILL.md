@@ -13,7 +13,7 @@ argument-hint: "[vNEW]"
 - `<repo>` は `.claude/template-version` の `repo`、`vOLD` は同ファイルの `version`、`vNEW` は更新用 Issue の版（引数で指定されていればそれ）
 - テンプレートのファイルはこのプロジェクト側でカスタマイズ済みなので、**機械的に上書きしない**
 - 作業は未コミットの変更が無い状態で始める（後述「3-way マージの定型手順」5 の理由）
-- 更新用 Issue の `/issue-start` の外から直接呼ばれたら、取り込みに入らない。版は引数、無ければ `.claude/skills/issue-start/phases/01-issue-analysis.md` 手順 0.5 の表と注記に沿って SessionStart バナーから決める（バナーが `⚠ Template update available` でなければ、表の動作に従い、取り込まずにその旨を伝えて終える）。そのうえで手順 0.5 の [Y] と同じ手順で同じ版の更新用 Issue を探し、無ければ起票を提案する。見つけた Issue か起票した Issue は、この流れのまま `/issue-start <番号>` を呼んで進める（その Phase 5 でこの手順に戻る）。起票を断られたら取り込まない（1 Issue = 1 PR）
+- 更新用 Issue の `/issue-start` の外から直接呼ばれたら、取り込みに入らない。版は引数、無ければ `.claude/skills/issue-start/phases/01-issue-analysis.md` 手順 0.5 の表と `.claude/skills/issue-start/phases/01-template-update-check.md`「バナーを信じる前の確認」に沿って SessionStart バナーから決める（バナーが `⚠ Template update available` でなければ、表の動作に従い、取り込まずにその旨を伝えて終える）。そのうえで同ファイル「更新があるときの確認と起票」の [Y] と同じ手順で同じ版の更新用 Issue を探し、無ければ起票を提案する（確認の形式は同じものを使うが、`/issue-start` の途中ではないので「（今の Issue の作業はそのまま続けます）」は省き、[Y] ならこの流れのまま `/issue-start` に進むと添える。断られたら、同じセッションの手順 0.5 でも聞き直さない）。見つけた Issue か起票した Issue は、この流れのまま `/issue-start <番号>` を呼んで進める（その Phase 5 でこの手順に戻る）。起票を断られたら取り込まない（1 Issue = 1 PR）
 
 ## 取り込み手順
 
@@ -55,9 +55,11 @@ git -C "$SRC" diff --name-only vOLD vNEW -- template/ | while read -r t; do
   git -C "$SRC" show "vOLD:$t"     >"$W/$p.base"   2>/dev/null || { echo "vNEW で追加:    $p"; continue; }
   git -C "$SRC" show "vNEW:$t"     >"$W/$p.theirs" 2>/dev/null || { echo "vNEW で削除:    $p"; continue; }
   git merge-file -p -L ours -L vOLD -L vNEW "$W/$p.ours" "$W/$p.base" "$W/$p.theirs" >"$W/$p.merged"
-  echo "conflicts=$?  $p"  # 0 ならそのまま使える
+  echo "conflicts=$?  bytes=$(wc -c <"$W/$p.merged" | tr -d ' ')  $p"  # conflicts は 0 ならそのまま使える
 done
 ```
+
+`bytes` は書き戻したときの大きさ（コンフリクトがあれば印の分も入る）。`.claude/skills/` の md で 30,000 以上のものは、テンプレート版では上限内でもプロジェクト固有の節と合わさって超えている。書き戻す前に、切り出す Issue を起票するかをユーザーに聞く（Phase 5 の末尾のスコープ外の提案にまとめず、ここで聞く。断られたら、完了条件の大きさの項目は満たせないので、その旨を PR 本文に書く。`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）。完了条件の大きさの確認で後から気付くと、取り込みの途中で確認が増える
 
 1. `conflicts=0` のファイルは `$W/<path>.merged` の内容をそのままプロジェクト側に書き戻す。書き戻しは Edit ツールで、`diff "$W/<path>.ours" "$W/<path>.merged"` に出た変更箇所を当てる（ほとんどの行が変わるなら、Read してから Write で置き換える）。`cp` やリダイレクトでまとめて上書きしない。書き戻し先の `CLAUDE.md` と `.claude/` 配下は、auto mode の分類器が `[Self-Modification]` の対象にするエージェント自身の設定・指示ファイルで、シェルからの上書きは書き込む中身が分類器に見えないので止められる。当てたら `cmp "$W/<path>.merged" <(tr -d '\r' < <path>)` で一致を確かめる（`tr` は作業ツリーが CRLF のときの改行コードの差を除くため。手順 5。macOS の `sed` は `\r` を CR として扱わないので使わない）
    - `settings.json` の `allow` や hooks の登録、`.claude/hooks/` のスクリプトのように権限やガードを変える差分は、Edit で当てても止められることがある（この分類器の規則は、ユーザーが明示的に求めていない権限・ガードの変更を対象にしている）。止められたら差分をユーザーに示し、その変更を取り込むことをユーザー自身のメッセージで伝えてもらってから当て直す
@@ -108,4 +110,4 @@ done
    gh api "repos/{owner}/{repo}/issues/comments?sort=created&direction=desc&per_page=100" --jq '.[] | select(.body | contains("<旧形式の印>")) | [.id, .html_url] | @tsv'
    ```
 
-   取り込み時点の既存コメントはすべて古い規約のもとで書かれているので、直近 100 件で打ち切らない。100 件ちょうど返ったら、空のページが返るまで、または返ったコメントの最も古い `created_at` がその印を使い始めた時期より前になるまでページを進める。クラウドセッションでは `--paginate` が 2 ページ目で止まるので、`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す（URL を上のものに替え、中身は `jq -s 'add | .[] | ...'` で漉す）。クラウドセッション以外なら `--paginate` でよい。見つかったら一覧をユーザーに示し、確認を得てから新形式に書き換える（`gh api -X PATCH repos/{owner}/{repo}/issues/comments/<id> -F body=@<file>`）
+   取り込み時点の既存コメントはすべて古い規約のもとで書かれているので、直近 100 件で打ち切らない。100 件ちょうど返ったら、空のページが返るまで、または返ったコメントの最も古い `created_at` がその印を使い始めた時期より前になるまでページを進める。クラウドセッションでは `--paginate` が 2 ページ目で止まるので、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す（URL を上のものに替え、中身は `jq -s 'add | .[] | ...'` で漉す）。クラウドセッション以外なら `--paginate` でよい。見つかったら一覧をユーザーに示し、確認を得てから新形式に書き換える（`gh api -X PATCH repos/{owner}/{repo}/issues/comments/<id> -F body=@<file>`）

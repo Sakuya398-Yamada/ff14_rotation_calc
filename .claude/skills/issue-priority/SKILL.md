@@ -29,11 +29,11 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 3. リモートのブランチから `*/#<番号>-*` に当たるものを Issue に紐づける。ブランチは百本を超えるので、全件を出さずに対象の番号で絞る: `git ls-remote --heads origin | grep -E '/#(475|476|...)-'`
 4. 対象の Issue ごとに、紐づくマージ済み PR があるかを見る。`refs #N` の PR はマージ後も Issue を Open のまま残し、head ブランチもマージ時に消えるので、手順 1-2・1-3 では見つからない。確かめ方は `.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」手順 1 の「マージ済み PR は、候補ごとに」で始まる段落に従う（正本はルーティン側。ここに書き写さない。GitHub MCP が使えないときの確かめ方も同じ段落にある）
 
-GitHub MCP が使えなければ、REST の `gh api` で同じ情報を取る。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので、クラウドセッションでは 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
+GitHub MCP が使えなければ、REST の `gh api` で同じ情報を取る。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので、クラウドセッションでは 403 になる。使わない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
 
 - Open Issue: `gh api "repos/{owner}/{repo}/issues?state=open&per_page=100" --jq '.[] | select(.pull_request | not) | [.number, .title, ([.labels[].name] | join(","))] | @tsv'`。issues API は PR も返すので、`pull_request` のあるものを除く
 - Open PR: `gh api "repos/{owner}/{repo}/pulls?state=open&per_page=100" --jq '.[] | {number, title, body, draft, head: .head.ref}'`。一覧には `mergeable` が無いので、紐づいた PR ごとに `gh api repos/{owner}/{repo}/pulls/<PR番号> --jq '{number, mergeable, mergeable_state}'` で読む
-- どちらも 1 回で取れるのは 100 件まで。超えたら `--paginate` を使わずに `page=N` を進める（pitfalls.md「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」）
+- どちらも 1 回で取れるのは 100 件まで。超えたら `--paginate` を使わずに `page=N` を進める（pitfalls-cloud.md「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」）
 
 ### 2. 要約する
 

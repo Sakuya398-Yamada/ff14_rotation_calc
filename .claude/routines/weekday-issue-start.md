@@ -13,7 +13,7 @@ description: routine-ok の付いた Open Issue を 1 件選び、/issue-start �
 - 実行環境: クラウドのスケジュールタスク。実行のたびにリポジトリを clone し、その直下から、`main` から切った `claude/*` の作業ブランチで起動する。以降の作業はすべてこのリポジトリ直下（以下 `<work>`）で行い、git は `-C` を付けずに打つ
 - **push 先**: 手順 1-3 では自分の PR の head ブランチに、手順 3 以降は手順 3-1 で作る Issue ブランチ（`<type>/#<番号>-<kebab-desc>`）に push する。起動時に割り当てられた `claude/*` の作業ブランチには push しない（Issue 番号がブランチ名に入らず、手順 1-4・2-1 で作業中と分からなくなるため）
 - 自分（このルーティン）が作った PR と Issue コメントは、末尾のフッター `_スケジュール実行（weekday-issue-start）による無人実装_` で識別する
-- GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。ただし手順 1-2 の Open PR の取得は `gh api` を先に使う（理由は手順 1-2）
+- GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/...` にフォールバックする。`gh issue` / `gh pr` などのサブコマンドは GraphQL を使うので 403 になる。使わない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。ただし手順 1-2 の Open PR の取得は `gh api` を先に使う（理由は手順 1-2）
 
 ## 1. 事前点検（安全弁）
 

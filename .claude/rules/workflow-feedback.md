@@ -89,7 +89,7 @@ node .claude/scripts/knowledge-board.cjs mark <id> "<印>"  # コメントの末
 テンプレート元で改善がリリースされると、SessionStart hook（`.claude/hooks/session-start-info.sh`）が `.claude/template-version` の `version` と最新リリースタグを比較し、差があれば `## Template version` バナーに `⚠ Template update available` を出す。最新タグはセッション開始のたびに `git ls-remote` で取得し、取得に失敗したときだけ前回の結果（`$(git rev-parse --git-common-dir)/template-version-check`、worktree 共有）を使ってバナーに `(cached Nh ago; ...)` と付ける。
 
 - **作業中の Issue のブランチでテンプレートを直接更新しない**（1 Issue = 1 PR）。更新は `refactor: テンプレートを vX.Y.Z に更新` Issue を起票し、独立した PR で取り込む
-- 検知と更新用 Issue の起票の正本: `phases/01-issue-analysis.md` 手順 0.5（セッションで一度だけ聞く。Issue 本文に含める項目と、スケジュール実行の無人セッションでの扱いもここ）
+- 検知と更新用 Issue の起票の正本: `phases/01-issue-analysis.md` 手順 0.5（セッションで一度だけ聞く。スケジュール実行の無人セッションでの扱いもここ）と、そこから読む `phases/01-template-update-check.md`（Issue 本文に含める項目）
 - 取り込み（更新用 Issue の Phase 5）の正本: `.claude/skills/template-update/SKILL.md`（`/template-update`。3-way マージの定型手順と DoD を含む）
 
 ## 定期ルーティン（`.claude/routines/`）
