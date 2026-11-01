@@ -112,6 +112,11 @@ function adjustSkillForLevel(
     }
   }
 
+  // 全消費: レベル未満のリソースを除外（resourceState は習得済みのリソースだけで初期化されるので、0 を書き込ませない）
+  if (adjusted.consumeAllOfResource && !availableResourceIds.has(adjusted.consumeAllOfResource)) {
+    adjusted = { ...adjusted, consumeAllOfResource: undefined };
+  }
+
   return adjusted;
 }
 

@@ -82,4 +82,17 @@ describe("getSkillsForLevel", () => {
       expect(ids).not.toContain("full-thrust");
     });
   });
+
+  describe("consumeAllOfResource のレベル調整（#613）", () => {
+    it.each([
+      { label: "未習得なら外す", available: [], expected: undefined },
+      { label: "習得済みなら残す", available: ["astral-soul"], expected: "astral-soul" },
+    ])("全消費するリソースが $label", ({ available, expected }) => {
+      const skills: Skill[] = [makeSkill({ id: "blizzard-in-af", consumeAllOfResource: "astral-soul" })];
+
+      const [result] = getSkillsForLevel(skills, 90 as PlayerLevel, new Set(), new Set(available));
+
+      expect(result.consumeAllOfResource).toBe(expected);
+    });
+  });
 });
