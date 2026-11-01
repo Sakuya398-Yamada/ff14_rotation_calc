@@ -61,13 +61,15 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
    - その Issue に紐づく Open PR が無く、リモートに `*/#<番号>-*` のブランチも無い（別のセッションが着手済みの可能性があるため）
    - その Issue に紐づくマージ済み PR が無い（マージ後に行う DoD が残る Issue は、PR 本文を `refs #<番号>` にしてマージ後も Open のままにする。`/issue-start` Phase 7。残っているのはマージ後の作業で、実装し直すと同じ Issue に 2 本目の PR ができる。追加の実装が要るなら人が別の Issue に切る）
    - コメントに「## 着手」の印が無い（クラウドセッションの作業ブランチ `claude/*` 等は名前に Issue 番号が入らず、ローカルの `/issue-start` が切ったブランチは Phase 7 まで push されないので、上の条件では作業中と分からないため。印の書式は `.claude/skills/issue-start/phases/02-branch-setup.md`「クラウドセッションの場合」手順 4、ローカルで `routine-ok` の Issue に付ける場面は同じファイルの「ブランチ作成」）。「## 着手（取り下げ）」に書き換わった印は数えない。印が古くても除外し続け、作業していないと分かった印は人が「## 着手（取り下げ）」に書き換えて外す（#493）
-   - 本文の `依存: #M` がすべてクローズ済み
+   - 本文の `依存: #M` と GitHub の依存関係（blocked by）に挙がった Issue がすべてクローズ済み（片方にしか無いものも依存とみなす。`.claude/skills/issue-start/dependencies.md`「読み方」）
    - sub-issue を持つ親 Issue ではない。`sub_issues_summary.total` が 1 以上なら親で、子がすべて Closed でも除く（子が増えていく進捗管理用の親（#497）を実装しないため。親に残った実装は、人が片付けるか子 Issue に切る。#738）。子の本文に「親Issue: #N」と書かれているだけ（sub-issue になっていない）の #N は、親として扱わない（親かどうかは `total` だけで決める）
    - `## 未確定事項` に `[要確認]` の項目や、「ユーザー判断」のようにユーザーの決定待ちと明記された項目が無い（「`/issue-start` の探索で調べる」と書かれた項目は決定待ちではないので数えない）
 
    確かめるときは、最初に `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues?state=open&labels=routine-ok&per_page=100" --jq '[.[] | select(.pull_request | not) | {number, title, labels: [.labels[].name], sub_issues: .sub_issues_summary.total}]'` で `routine-ok` の付いた Issue に絞る（この API は PR も返すので `pull_request` の有無で除く。`sub_issues` は親 Issue の条件に使う）。0 件なら残りの条件は確かめずに手順 2-3 へ進む
 
    着手の印は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments?per_page=100" --jq '[.[] | select(.body | startswith("## 着手\n"))] | length'` が `0` であることで確かめる（GitHub MCP なら `issue_read` の `get_comments`）。見出しの直後の改行まで含めて比べるので、「## 着手（取り下げ）」の印には当たらない
+
+   blocked by は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/dependencies/blocked_by?per_page=100" --jq '[.[] | select(.state == "open")] | length'` が `0` であることで確かめる（GitHub MCP の `issue_read` は依存を返さない）
 
    マージ済み PR は、候補ごとに、タイトルの末尾が ` #<番号>`（`.claude/rules/git-conventions.md`「PR のタイトルと本文」）のマージ済み PR が無いことで確かめる。GitHub MCP の `search_pull_requests`（`owner` / `repo` を指定、query `is:merged "#<番号>" in:title`）の結果をタイトルの末尾で絞る。使えなければ `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/timeline?per_page=100" --jq '[.[] | select(.event == "cross-referenced" and .source.issue.pull_request.merged_at != null and (.source.issue.title | endswith(" #<番号>")))] | length'` が `0` であることで確かめる（timeline は 100 件ずつ返るので、同じ URL を `--jq 'length'` で数えて 100 なら `&page=2` も同じく見る。`gh api search/issues` はクラウドでは使えない）。`issue_read` の `closed_by_pull_requests` は `closes` の PR しか含まず、`refs` の PR を拾わないので使わない。タイトルの末尾で絞るのは、本文でこの Issue に触れただけの PR（スコープ外の起票の報告など）を除くため
 2. 優先順位は `priority:high` → `priority:medium` → `priority:low` → `priority:*` 無しの順。同じ順位なら番号の小さい順
