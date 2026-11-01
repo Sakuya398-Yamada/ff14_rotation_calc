@@ -13,7 +13,7 @@
 | DB | Cloudflare D1（SQLite） | Worker のバインディング `DB`（`wrangler.jsonc` の `d1_databases`）。ローカルは `.wrangler/state` の D1 |
 | ORM | Drizzle ORM 0.45（drizzle-kit 0.31） | スキーマ `src/server/db/schema.ts`、マイグレーション `migrations/`（drizzle-kit が生成し、wrangler が適用） |
 | テスト | Vitest | `npm test` で実行。DB のテストは better-sqlite3 のメモリ上の DB に同じマイグレーションを当てる（workerd を起動しない。#475） |
-| CI | GitHub Actions | `.github/workflows/ci.yml`（常駐量の予算検査・型チェック・テスト・ビルド・`wrangler deploy --dry-run`） |
+| CI | GitHub Actions | `.github/workflows/ci.yml`（常駐量と skill の md の大きさの予算検査・型チェック・テスト・ビルド・`wrangler deploy --dry-run`） |
 | 配信 | Cloudflare Workers + Static Assets（Workers Builds の Git 連携） | `main` を本番に、PR をプレビュー URL にデプロイ（Worker 名: `ff14-rotation-calc`）。本番のデプロイは D1 へのマイグレーション適用を含むので、ビルド用 API トークンに D1 Edit が要る。手順は `CONTRIBUTING.md`「CI / Cloudflare Workers 配信」 |
 | ローカル実行 | `@cloudflare/vite-plugin` | `npm run dev` で Vite のフロントと Worker（API）を同じオリジンで動かす |
 | UI視覚検証 | Playwright MCP (`@playwright/mcp`) | Claude Code セッション (Claude Desktop) から `browser_navigate` 等でフロントエンド操作・スクリーンショット取得。ローカルは Windows 標準の Microsoft Edge、クラウドセッションはイメージの Chromium を使用（リポジトリ直下 `.mcp.json` に `--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}` で登録） |
@@ -53,6 +53,6 @@
 | `npm run db:migrate` | ローカルの D1 にマイグレーションを適用（`db:migrate:remote` は本番 D1） |
 | `npm test` | Vitest 一括実行 |
 | `npm run test:watch` | Vitest watchモード |
-| `python3 .claude/scripts/check-context-budget.py` | CLAUDE.md と `paths:` なし rules の常駐量が予算（1000 行）以内か検査（CI でも実行。`--limit N` で閾値を上書き） |
+| `python3 .claude/scripts/check-context-budget.py` | CLAUDE.md と `paths:` なし rules の常駐量が予算（1000 行）以内か、`.claude/skills/` の md がどれも 30,000 バイト未満か（外部の `skill-creator/` は除く）を検査（CI でも実行。`--limit N` / `--max-bytes N` で閾値を上書き） |
 
 > `npm run dev` 1 つでフロントと `/api/*` が同じオリジンから応答する（Vite の中で Worker を workerd 上で動かす）。

@@ -67,20 +67,22 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 
    確かめるときは、最初に `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues?state=open&labels=routine-ok&per_page=100" --jq '[.[] | select(.pull_request | not) | {number, title, labels: [.labels[].name], sub_issues: .sub_issues_summary.total}]'` で `routine-ok` の付いた Issue に絞る（この API は PR も返すので `pull_request` の有無で除く。`sub_issues` は親 Issue の条件に使う）。0 件なら残りの条件は確かめずに手順 2-3 へ進む
 
-   着手の印は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments?per_page=100" --jq '[.[] | select(.body | startswith("## 着手\n"))] | length'` が `0` であることで確かめる（GitHub MCP なら `issue_read` の `get_comments`）。見出しの直後の改行まで含めて比べるので、「## 着手（取り下げ）」の印には当たらない
+   紐づく Open PR とリモートブランチは、候補ごとに確かめる。紐づく Open PR は、タイトルの末尾が ` #<番号>`（`.claude/rules/git-conventions.md`「PR のタイトルと本文」）、本文に `closes #<番号>` がある、head ブランチが `*/<番号>-*` のどれかに当たる Open PR とみなす（`/issue-priority` 手順 1-2 の紐づけに head ブランチを足した範囲）。手順 1-2 で取った Open PR 全件に `jq -r --arg n <番号> '.[] | select((.title | endswith(" #" + $n)) or ((.body // "") | test("closes #" + $n + "([^0-9]|$)"; "i")) or (.head.ref | test("(^|/)" + $n + "-"))) | .number' <scratchpad>/open-prs.json` を当て、出力が空なら無い（手順 1-2 で GitHub MCP の `list_pull_requests` を使ったなら、その結果の `title` / `body` / `head.ref` を同じ規則で見る）。リモートブランチは `git ls-remote --heads origin '*/<番号>-*'` の出力が空なら無い（`/issue-start` Phase 1 手順 2 と同じ形）。手順 1-4 の `git ls-remote` の出力は流用しない（`feature` / `fix` / `refactor` / `docs` の直下のブランチに絞ってあり、`claude/<番号>-…` のように条件の `*/<番号>-*` に当たるブランチを落とす）
+
+   着手の印は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments?per_page=100&page=<N>" --jq '[length, ([.[] | select(.body | startswith("## 着手\n"))] | length)] | @tsv'` で数える。1 列目がそのページのコメント数、2 列目が印の数。`<N>` は 1 から始め、1 列目が 100 なら次のページも同じく数え、100 未満のページで止める（`--paginate` はクラウドでは 2 ページ目で止まるので使わない。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」）。2 列目の合計が `0` なら印は無い。GitHub MCP なら `issue_read` の `get_comments` を `perPage: 100` で読み、100 件返ったら `page` を進める。見出しの直後の改行まで含めて比べるので、「## 着手（取り下げ）」の印には当たらない
 
    本文は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>" --jq '.body // ""'` で取る（GitHub MCP なら `issue_read` の `get` の `body`）。最初の一覧は本文を落としてあるので、`依存: #M` と `## 未確定事項` の条件はこの本文で確かめる
 
-   依存先が閉じているかは、本文の `依存: #M` と blocked by で分けて確かめる。本文の `依存: #M` は、番号ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<M>" --jq '[.state, (.state_reason // "")] | @tsv'` で取る（GitHub MCP なら `issue_read` の `get` の `state` と `state_reason`）。最初の一覧に無いことでは閉じていると判定しない（一覧は `routine-ok` で絞ってあり、`routine-ok` の無い Open の Issue も出ないため）。blocked by は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/dependencies/blocked_by?per_page=100" --jq '.[] | [.number, .state, (.state_reason // "")] | @tsv'` で取る（GitHub MCP の `issue_read` は依存を返さない）。どちらも、`closed` と `completed` の組なら満たす。`open` が 1 つでもあれば依存待ちなので、候補にしない。`open` が無く、`completed` 以外（`not_planned` / `duplicate`）で閉じたものがあれば、下の「完了せずに閉じた依存先」の段落に従う。`state_reason` が空のもの（理由を付けずに閉じたもの）も `completed` 以外に入れる（下の段落のコメントの `<state_reason>` には `理由なし` と書く）
+   依存先が閉じているかは、本文の `依存: #M` と blocked by で分けて確かめる。本文の `依存: #M` として読むのは、行頭が `依存:` の行（全角の `依存：` も、前に空白や箇条書きの `- ` / `* ` を付けたものも含む）の、コロンの直後に続く `#M` の並び（`#477, #478` のように `,`・`、`・空白で区切ったもの）だけで、どの節にあっても読む。並びの後ろの括弧の注記などに出る `#N`（`→ PR #704 でマージ済み` のような依存先でない番号）と、文中で別の Issue の依存を説明した書き方（「— 依存: #382」など）は読まない。`owner/repo#N` も読まない（このリポジトリの番号として引くと別の Issue を見る。別のリポジトリの依存は blocked by で拾う）。番号は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>" --jq '[(.body // "") | split("\n")[] | capture("^[[:blank:]]*([-*][[:blank:]]+)?依存[:：][[:blank:]]*(?<l>#[0-9]+([[:blank:]]*[,、]?[[:blank:]]*#[0-9]+)*)") | .l | scan("[0-9]+") | tonumber] | unique | .[]'` で 1 行に 1 つ出せる（GitHub MCP で本文を取ったなら、同じ規則で読む）。行の判定は `.claude/scripts/issue-ready.sh` と同じで、読む番号の範囲だけが違う（スクリプトは行の中の `#N` をすべて読む）。本文の `依存: #M` の状態は、番号ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<M>" --jq '[.state, (.state_reason // "")] | @tsv'` で取る（GitHub MCP なら `issue_read` の `get` の `state` と `state_reason`）。最初の一覧に無いことでは閉じていると判定しない（一覧は `routine-ok` で絞ってあり、`routine-ok` の無い Open の Issue も出ないため）。blocked by は、候補ごとに `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/dependencies/blocked_by?per_page=100" --jq '.[] | [(((.repository_url | sub(".*/repos/"; "")) as $r | if $r == "Sakuya398-Yamada/ff14_rotation_calc" then "" else $r end) + "#" + (.number | tostring)), .state, (.state_reason // "")] | @tsv'` で取る（GitHub MCP の `issue_read` は依存を返さない）。1 列目は依存先で、このリポジトリなら `#<M>`、別のリポジトリなら `owner/repo#<M>` と出る（blocked by には別のリポジトリの Issue も付けられる）。どちらも、`closed` と `completed` の組なら満たす。`open` が 1 つでもあれば依存待ちなので、候補にしない。`open` が無く、`completed` 以外（`not_planned` / `duplicate`）で閉じたものがあれば、下の「完了せずに閉じた依存先」の段落に従う。`state_reason` が空のもの（理由を付けずに閉じたもの）も `completed` 以外に入れる（下の段落のコメントの `<state_reason>` には `理由なし` と書く）
 
    マージ済み PR は、候補ごとに、タイトルの末尾が ` #<番号>`（`.claude/rules/git-conventions.md`「PR のタイトルと本文」）のマージ済み PR が無いことで確かめる。GitHub MCP の `search_pull_requests`（`owner` / `repo` を指定、query `is:merged "#<番号>" in:title`）の結果をタイトルの末尾で絞る。使えなければ `gh api "repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/timeline?per_page=100" --jq '[.[] | select(.event == "cross-referenced" and .source.issue.pull_request.merged_at != null and (.source.issue.title | endswith(" #<番号>")))] | length'` が `0` であることで確かめる（timeline は 100 件ずつ返るので、同じ URL を `--jq 'length'` で数えて 100 なら `&page=2` も同じく見る。`gh api search/issues` はクラウドでは使えない）。`issue_read` の `closed_by_pull_requests` は `closes` の PR しか含まず、`refs` の PR を拾わないので使わない。タイトルの末尾で絞るのは、本文でこの Issue に触れただけの PR（スコープ外の起票の報告など）を除くため
 
-   完了せずに閉じた依存先（依存先に `open` が無く、`completed` 以外で閉じたものがある）を持つ Issue は、依存のほかの候補条件をすべて満たしていれば、候補から外したうえで、Issue にコメントしてラベル `needs-decision` を付ける（対話セッションなら、着手してよいかをユーザーに確認する場面。`dependencies.md`「読み方」）。ほかの条件で外れる Issue には付けない（外れているあいだは、付けても選定は変わらない。その条件が解けた回に付く）。選定は残りの候補で続ける。コメントは GitHub MCP の `add_issue_comment`（使えなければ、本文を scratchpad に書いて `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments -F body=@<scratchpad>/needs-decision.md`）で付け、ラベルは手順 4 の表「Phase 1 の不足確認」と同じ `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/labels -f "labels[]=needs-decision"` で付ける。コメントの本文（依存先が複数あれば、最初の箇条書き（`- 依存先 #<M> が …`）を依存先ごとに書き、2 つ目の箇条書きの `#<M>` には当てはまる番号をすべて「、」でつないで書く）:
+   完了せずに閉じた依存先（依存先に `open` が無く、`completed` 以外で閉じたものがある）を持つ Issue は、依存のほかの候補条件をすべて満たしていれば、候補から外したうえで、Issue にコメントしてラベル `needs-decision` を付ける（対話セッションなら、着手してよいかをユーザーに確認する場面。`dependencies.md`「読み方」）。ほかの条件で外れる Issue には付けない（外れているあいだは、付けても選定は変わらない。その条件が解けた回に付く）。選定は残りの候補で続ける。コメントは GitHub MCP の `add_issue_comment`（使えなければ、本文を scratchpad に書いて `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/comments -F body=@<scratchpad>/needs-decision.md`）で付け、ラベルは手順 4 の表「Phase 1 の不足確認」と同じ `gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/labels -f "labels[]=needs-decision"` で付ける。コメントの本文（`<依存先>` には、本文の `依存: #M` から来た依存先は `#<M>`、blocked by から来た依存先は上の出力の 1 列目をそのまま書く。別のリポジトリの依存先を `#<M>` だけで書くと、このリポジトリの別の Issue へのリンクになるため。依存先が複数あれば、最初の箇条書き（`- 依存先 <依存先> が …`）を依存先ごとに書き、2 つ目の箇条書きの `<依存先>` には当てはまるものをすべて「、」でつないで書く）:
 
    ```
    ## 無人実行で判断できない点（weekday-issue-start）
-   - 依存先 #<M> が `<state_reason>` で閉じていて、依存した変更が入っていない。この Issue に着手してよいかは人が決める
-   - 着手してよければ、本文の `依存: #<M>` と blocked by から #<M> を外すか、代わりの Issue に差し替えてから `needs-decision` を外す。依存を残したままラベルだけ外すと、次の実行でまた付く
+   - 依存先 <依存先> が `<state_reason>` で閉じていて、依存した変更が入っていない。この Issue に着手してよいかは人が決める
+   - 着手してよければ、本文の `依存: <依存先>` と blocked by から <依存先> を外すか、代わりの Issue に差し替えてから `needs-decision` を外す。依存を残したままラベルだけ外すと、次の実行でまた付く
 
    _スケジュール実行（weekday-issue-start）による無人実装_
    ```
@@ -109,12 +111,25 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 |------|-----------------|
 | Phase 1 の不足確認 | 質問せず、Issue 本文と既存コードから判断する。要件の分岐をどうしても決められない場合は、Issue にその旨をコメントし、ラベル `needs-decision` を付けて（`gh api repos/Sakuya398-Yamada/ff14_rotation_calc/issues/<番号>/labels -f "labels[]=needs-decision"`）終了する（PR は作らない）。ラベルが付いている間は手順 2 で選ばれないので、翌日以降に同じ Issue へ同じコメントを積まない |
 | Phase 1 手順 0.5（テンプレート更新） | 起票しない。実行報告に「テンプレート更新あり（vOLD → vNEW）」と書くだけ |
+| Phase 1「リポジトリへの変更が出ない Issue」（`phases/01-no-repo-change.md`） | 調査と dry-run の作成までを行い、適用もクローズもしない。調査だけの Issue では結論（調べ方・結果・判断とその根拠）を、GitHub 上の操作だけで終わる Issue では dry-run（対象と変更内容。Issue 本文なら新旧の差分）を、表の下のコメントで Issue に書き、ラベル `needs-decision` を「Phase 1 の不足確認」と同じコマンドで付けて終了する（PR は作らない）。Phase 8 の結論・操作の記録は、このコメントで代える。別の Issue で直すべき問題が見つかったら、起票せずにコメントと実行報告に「起票候補」として書く。対話セッションでユーザーが確認する適用とクローズを、通常の Issue で人が PR をマージするのと同じく人の最終判断に残すため（#783）。調べた結果リポジトリへの変更が要ると分かったら、通常どおり Phase 2 から進める |
 | Phase 2 のブランチ作成 | 手順 3 で作った Issue ブランチを使い、ここで `git push -u origin HEAD` で先に push する。ローカルの `/issue-start` は Phase 1 手順 2 でリモートの `*/<番号>-*` ブランチを見て作業中と判定するので、Phase 7 まで push しないと、PR を作るまでのあいだに人が同じ Issue に着手することがある。手順 3 で push しないのは、Phase 1 で `needs-decision` を付けて終える実行や、Phase 2〜7 を省く Issue でブランチを残さないため（残ると手順 2-1 の条件で、ラベルを外しても選ばれなくなる）。「クラウドセッションの場合」の割り当てブランチでの作業と「## 着手」の印は行わない（ブランチ名に Issue 番号が入り、ここで push するので、手順 1-4・2-1 と `/issue-start` Phase 1 手順 2 の検知はそれで足りる） |
 | Phase 4 の設計承認 | 自分で承認して進める。設計の要点と判断の根拠を、PR 本文の `## 実装判断（無人実行）` に書く |
 | Phase 1/3/5/6 のスコープ外問題 | 起票しない。PR 本文と実行報告に「起票候補」として列挙する |
 | Phase 6 のレビュー | `code-reviewer` で実施し、指摘は修正する |
 | Phase 7 の PR 作成 | push 前に `origin/main` を取り込む。PR 本文の末尾にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` を付ける（手順 1 で自分の PR を識別するため）。PR は作成までで、マージ・auto-merge はしない。force push しない |
 | Phase 8 の記録 | Issue への実装メモは記録する。知見ボード #195 への投稿とテンプレート元への還元はしない。気づきは実行報告に「知見ボード候補」として列挙する |
+
+リポジトリへの変更が出ない Issue に書くコメントの本文（`<A／B>` は、調査だけの Issue なら A、GitHub 上の操作だけで終わる Issue なら B を書く）:
+
+```
+## 無人実行で判断できない点（weekday-issue-start）
+- リポジトリへの変更が出ない Issue なので、<クローズ／適用とクローズ>をするかは人が決める
+- <結論（調べ方・結果・判断とその根拠）／dry-run（対象と変更内容）>
+- 起票候補: <別の Issue で直すべき問題。無ければこの行を省く>
+- 同意するなら、人が<クローズ／適用してクローズ>する。対話セッションで `/issue-start` し直すと、対象の取り直しから確認つきで進む。直すところがあれば Issue に書いてから `needs-decision` を外す。ラベルだけ外すと、次の実行で同じ<調査／dry-run>をやり直してまた止まる
+
+_スケジュール実行（weekday-issue-start）による無人実装_
+```
 
 その他のルール:
 
@@ -132,9 +147,9 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 - Open PR 数: K 件（上限 5、draft 含む）
 - conflict 解消: PR #N を origin/main と同期（tsc / npm test 通過）／ conflict 未解消: PR #M（理由）／ mergeable 未判定: PR #L ／ なし
 - 取り残しブランチ: <ブランチ名>（#N、Open PR 無し）… ／ なし
-- 完了せずに閉じた依存先: #N に needs-decision を付けた（依存先 #M が not_planned）… ／ なし
+- 完了せずに閉じた依存先: #N に needs-decision を付けた（依存先 #M（別のリポジトリなら owner/repo#M）が not_planned）… ／ なし
 - 対象: #N タイトル（選定理由: 優先度・番号）／ または「対象なし」「対象なし（Open PR 上限 5 件に到達）」
-- PR: <URL>（draft かどうか）
+- PR: <URL>（draft かどうか）／ なし（needs-decision を付けた: <理由>）
 - 検証: tsc / npm test / UI 確認の結果（未検証の項目は明記）
 - 実装判断: 無人で決めた設計判断の要約
 - 起票候補（スコープ外問題）: …

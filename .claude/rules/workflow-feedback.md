@@ -122,7 +122,7 @@ node .claude/scripts/knowledge-board.cjs mark <id> "<印>"  # コメントの末
 - **無人コメント投稿はしない**: Phase 8 での知見ボードへの新規コメント投稿はユーザー確認（Y/E/N）を挟む
   - **例外**: 日次ルーティン（`daily-triage`）による #195 / #305 の既存コメントへの ✅ マーカー**追記編集**は事前承認済みで、無人実行してよい（#502 で週次 `weekly` から移した）
   - **例外**: 各ルーティン（`weekly` / `daily-triage` / `weekday-issue-start`）が実行報告を実行ログ Issue #448 に**新規コメントとして投稿する**のは事前承認済み（#447、`daily-triage` は #501。1 実行 1 コメント）
-  - **例外**: 日次 `weekday-issue-start` が候補の Issue 自身に**新規コメントとして書く**、`needs-decision` を付けるときの理由（Phase 1 の不足確認と、完了せずに閉じた依存先）と Phase 8 の記録（実装メモ）は事前承認済み（#776）。書く場面と書式の正本は `.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」と「4. 実装」
+  - **例外**: 日次 `weekday-issue-start` が候補の Issue 自身に**新規コメントとして書く**、`needs-decision` を付けるときの理由と Phase 8 の記録（実装メモ）は事前承認済み（#776）。理由を書くのは、Phase 1 の不足確認・完了せずに閉じた依存先・リポジトリへの変更が出ない Issue の結論と dry-run（#783。適用もクローズもしないので、操作の記録は書かない）の 3 場面。書く場面と書式の正本は `.claude/routines/weekday-issue-start.md`「2. 対象 Issue の選定」と「4. 実装」
   - ここに挙げた例外のほかの無人の新規コメント投稿は引き続き禁止
 - **priority ラベルを無人で付け替えない**: 例外として、日次 `daily-triage` が `priority:*` の無い Open Issue（進行中を除く）に付けるのは事前承認済み（#501）。付いている priority を変えるのは、週次 `weekly` 系統5 の案を読んだ人が `/issue-priority` で行う。手順の正本は `.claude/routines/daily-triage.md`
 - **テンプレート元への無人起票はしない**: ローカル知見ボードへの承認とは別に、還元用に抽象化した本文で改めて確認（Y/E/N）を取る。ルーティン（`weekly` / `daily-triage`）にも還元処理は組み込まない
