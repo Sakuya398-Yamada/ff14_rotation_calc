@@ -323,7 +323,12 @@ export const styles: Record<string, React.CSSProperties> = {
     fontSize: "8px",
     fontWeight: "bold",
     color: "var(--color-on-strong)",
-    textShadow: "0 0 2px rgba(0,0,0,0.8)",
+    // 数字は塗りと空きの境目をまたぎ、塗りには明るい色（ソウルボイスの黄色など）もあるので、ぼかしではなく 8 方向の縁取りで背景から切り離す
+    textShadow: [
+      "-1px -1px", "0 -1px", "1px -1px",
+      "-1px 0", "1px 0",
+      "-1px 1px", "0 1px", "1px 1px",
+    ].map((offset) => `${offset} 0 rgba(0,0,0,0.55)`).join(", "),
   },
   resourceDot: {
     width: RESOURCE_DOT_SIZE,

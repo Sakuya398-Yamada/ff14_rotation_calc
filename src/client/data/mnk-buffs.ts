@@ -9,13 +9,17 @@ import riddleOfEarthIcon from "../assets/icons/mnk/Riddle_of_Earth.png";
 import brotherhoodIcon from "../assets/icons/mnk/Brotherhood.png";
 import mantraIcon from "../assets/icons/mnk/Mantra.png";
 import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
+// 型のアイコンは無いので、その型で使う基本の WS のアイコンを流用する（BLM の AF/UB と同じ扱い）
+import bootshineIcon from "../assets/icons/mnk/Bootshine.png";
+import trueStrikeIcon from "../assets/icons/mnk/True_Strike.png";
+import snapPunchIcon from "../assets/icons/mnk/Snap_Punch.png";
 
 /**
  * モンク（MNK）のバフ定義（パッチ7.5系の公式ジョブガイド準拠）。
  *
- * 型（壱／弐／参の型）は WS コンボ（comboFrom）として表現しているため、
- * バフとしては定義しない。踏鳴・零の型は「型を無視して WS を成立させる」
- * bypassCombo バフとして表現する（SAM の明鏡止水と同じパターン）。
+ * 型（壱／弐／参の型）は、付与バフで表すコンボ（Skill.comboFromBuff）の段のバフとして表現する。
+ * 型の WS が buffApplications で次の型を付け、同じ exclusiveGroup で前の型が外れる（効果時間 30 秒）。
+ * 踏鳴・零の型は「型を無視して WS を成立させる」bypassCombo バフとして表現する（SAM の明鏡止水と同じパターン）。
  */
 
 /** 壱の型（壱ノ型）で使う WS（型ボーナス対象）。autoTransform の変化先も含める */
@@ -68,7 +72,41 @@ const ALL_WS = [
   "fires-reply",
 ];
 
+/** 型のバフの排他グループ（壱・弐・参の型は同時に 1 つだけ） */
+const FORM_GROUP = "mnk-form";
+
 export const MNK_BUFFS: BuffDefinition[] = [
+  // 型: 壱の型の WS が弐の型を、弐が参を、参が壱を付ける（mnk-skills.ts の comboFromBuff）
+  {
+    id: "opo-form",
+    name: "壱の型",
+    shortName: "壱型",
+    icon: bootshineIcon,
+    duration: 30,
+    effects: [],
+    color: "#fff176",
+    exclusiveGroup: FORM_GROUP,
+  },
+  {
+    id: "raptor-form",
+    name: "弐の型",
+    shortName: "弐型",
+    icon: trueStrikeIcon,
+    duration: 30,
+    effects: [],
+    color: "#aed581",
+    exclusiveGroup: FORM_GROUP,
+  },
+  {
+    id: "coeurl-form",
+    name: "参の型",
+    shortName: "参型",
+    icon: snapPunchIcon,
+    duration: 30,
+    effects: [],
+    color: "#90caf9",
+    exclusiveGroup: FORM_GROUP,
+  },
   // 踏鳴: 3スタック。型を無視して WS を成立させ（bypassCombo）、
   // 使用した WS の型に応じたビーストチャクラを獲得する
   {
