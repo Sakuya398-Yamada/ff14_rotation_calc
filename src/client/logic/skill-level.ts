@@ -13,6 +13,9 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   let dotPotency = skill.dotPotency;
   let maxCharges = skill.maxCharges;
   let cooldown = skill.cooldown;
+  let recastTime = skill.recastTime;
+  let gcdRecastTime = skill.gcdRecastTime;
+  let potencyScaling = skill.potencyScaling;
   let buffApplications = skill.buffApplications;
   let buffConsumptionAnyOf = skill.buffConsumptionAnyOf;
   let conditionalPotencyBuffs = skill.conditionalPotencyBuffs;
@@ -26,6 +29,9 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
       if (override.dotPotency !== undefined) dotPotency = override.dotPotency;
       if (override.maxCharges !== undefined) maxCharges = override.maxCharges;
       if (override.cooldown !== undefined) cooldown = override.cooldown;
+      if (override.recastTime !== undefined) recastTime = override.recastTime;
+      if (override.gcdRecastTime !== undefined) gcdRecastTime = override.gcdRecastTime;
+      if (override.potencyScaling !== undefined) potencyScaling = override.potencyScaling;
       if (override.buffApplications !== undefined) buffApplications = override.buffApplications;
       if (override.buffConsumptionAnyOf !== undefined) buffConsumptionAnyOf = override.buffConsumptionAnyOf;
       if (override.conditionalPotencyBuffs !== undefined) conditionalPotencyBuffs = override.conditionalPotencyBuffs;
@@ -38,6 +44,9 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     dotPotency === skill.dotPotency &&
     maxCharges === skill.maxCharges &&
     cooldown === skill.cooldown &&
+    recastTime === skill.recastTime &&
+    gcdRecastTime === skill.gcdRecastTime &&
+    potencyScaling === skill.potencyScaling &&
     buffApplications === skill.buffApplications &&
     buffConsumptionAnyOf === skill.buffConsumptionAnyOf &&
     conditionalPotencyBuffs === skill.conditionalPotencyBuffs
@@ -52,6 +61,9 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     dotPotency,
     maxCharges,
     cooldown,
+    recastTime,
+    gcdRecastTime,
+    potencyScaling,
     buffApplications,
     buffConsumptionAnyOf,
     conditionalPotencyBuffs,
