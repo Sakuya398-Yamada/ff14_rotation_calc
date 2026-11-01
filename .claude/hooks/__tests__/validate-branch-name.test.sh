@@ -43,11 +43,16 @@ printf -- '--- validate-branch-name.sh tests ---\n'
 
 # 1) Convention-compliant branch name — allow
 run_case "compliant feature branch (allow)" 0 \
-  'git checkout -b feature/#42-add-pictomancer-rotation'
+  'git checkout -b feature/42-add-pictomancer-rotation'
 
 # 2) Convention-compliant fix branch via `git switch -c` — allow
 run_case "compliant fix branch via switch -c (allow)" 0 \
-  'git switch -c fix/#5-fix-damage-calculation'
+  'git switch -c fix/5-fix-damage-calculation'
+
+# 2b) Old convention with `#` before the issue number — must block (#609).
+#     Workers Builds cannot create a preview for a branch name containing `#`.
+run_case "old convention with '#' (must block)" 2 \
+  'git checkout -b feature/#42-add-pictomancer-rotation'
 
 # 3) Convention violation — must block
 run_case "non-conforming name (must block)" 2 \
@@ -108,13 +113,13 @@ run_case "REGRESSION: HEREDOC contains broken branch-creation example (allow)" 0
   "$heredoc_bad"
 
 # 11) [REGRESSION] Quoted compliant branch names — must allow (issue #290).
-#     Shell-experienced users reflexively quote values containing `#`; the
-#     extraction regex captures the quote characters, which used to fail the
-#     convention check.
+#     Users reflexively quoted branch names while they still contained `#`
+#     (dropped in #609); the extraction regex captures the quote characters,
+#     which used to fail the convention check.
 run_case "REGRESSION: double-quoted compliant name (allow)" 0 \
-  'git checkout -b "feature/#260-add-something"'
+  'git checkout -b "feature/260-add-something"'
 run_case "REGRESSION: single-quoted compliant name (allow)" 0 \
-  "git switch -c 'fix/#216-fix-something'"
+  "git switch -c 'fix/216-fix-something'"
 
 # 12) Quoted exempt branch — allow
 run_case "double-quoted claude/* exempt (allow)" 0 \
@@ -126,11 +131,11 @@ run_case "double-quoted non-conforming name (must block)" 2 \
 
 # 14) v2: description part is machine-checked as kebab-case (#359)
 run_case "uppercase in description (must block)" 2 \
-  'git checkout -b feature/#1-Add-Skill'
+  'git checkout -b feature/1-Add-Skill'
 run_case "underscore in description (must block)" 2 \
-  'git checkout -b feature/#1-add_skill'
+  'git checkout -b feature/1-add_skill'
 run_case "double hyphen in description (must block)" 2 \
-  'git checkout -b feature/#1-add--skill'
+  'git checkout -b feature/1-add--skill'
 run_case "git branch creation is also checked (must block)" 2 \
   'git branch test-branch'
 
