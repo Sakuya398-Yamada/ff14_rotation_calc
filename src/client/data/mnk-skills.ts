@@ -1,4 +1,7 @@
 import type { AutoTransformEntry, Skill, TraitPotencyOverride } from "../types/skill";
+import bootshineIcon from "../assets/icons/mnk/Bootshine.png";
+import trueStrikeIcon from "../assets/icons/mnk/True_Strike.png";
+import snapPunchIcon from "../assets/icons/mnk/Snap_Punch.png";
 import twinSnakesIcon from "../assets/icons/mnk/Twin_Snakes.png";
 import demolishIcon from "../assets/icons/mnk/Demolish.png";
 import dragonKickIcon from "../assets/icons/mnk/Dragon_Kick.png";
@@ -12,8 +15,11 @@ import fourPointFuryIcon from "../assets/icons/mnk/Four-point_Fury.png";
 import formShiftIcon from "../assets/icons/mnk/Form_Shift.png";
 import sixSidedStarIcon from "../assets/icons/mnk/Six-sided_Star.png";
 import masterfulBlitzIcon from "../assets/icons/mnk/Masterful_Blitz.png";
+import tornadoKickIcon from "../assets/icons/mnk/Tornado_Kick.png";
 import phantomRushIcon from "../assets/icons/mnk/Phantom_Rush.png";
+import elixirFieldIcon from "../assets/icons/mnk/Elixir_Field.png";
 import elixirBurstIcon from "../assets/icons/mnk/Elixir_Burst.png";
+import flintStrikeIcon from "../assets/icons/mnk/Flint_Strike.png";
 import risingPhoenixIcon from "../assets/icons/mnk/Rising_Phoenix.png";
 import celestialRevolutionIcon from "../assets/icons/mnk/Celestial_Revolution.png";
 import windsReplyIcon from "../assets/icons/mnk/Wind's_Reply.png";
@@ -34,9 +40,9 @@ import mantraIcon from "../assets/icons/mnk/Mantra.png";
 import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
 
 /**
- * モンク（MNK）の攻撃スキル定義（パッチ7.5系の公式ジョブガイド準拠。収録スキルは Lv100 の実用キット）。
+ * モンク（MNK）の攻撃スキル定義（パッチ7.5系の公式ジョブガイド準拠。収録スキルは Lv70〜100 の実用キット）。
  * パッチノートの PvE ジョブ調整は 7.57 まで反映済み（#515 で照合）。公式ジョブガイド（Patch 7.5、7.55 表記）とは #521 で GCD の拘束・発動条件を揃えた。
- * 既知の差分は、型の発動条件（#610）と Lv92 未満の下位技（#769）
+ * 既知の差分は、型の発動条件（#610）
  *
  * ## 型（フォーム）のモデル化
  * 壱→弐→参の型は WS コンボ（comboFrom）で表現する。
@@ -56,26 +62,25 @@ import trueNorthIcon from "../assets/icons/mnk/role_actions/True_North.png";
  *
  * ## 必殺技のモデル化
  * 必殺技（masterful-blitz）はビーストチャクラの組み合わせに応じて
- * autoTransform で 4 種の hidden スキルに変化する。
- * - 夢幻闘舞: 陰陽の闘気 + チャクラ3つ（組み合わせ不問）
- * - 真空波: 同種チャクラ3つ / 鳳凰の舞: 3種チャクラ / 天宙脚: 上記以外（2+1）
- * - Lv90 未満の下位技（蒼気砲・爆裂脚・闘魂旋風脚）は対象外（Lv100 想定）
+ * autoTransform で Lv60 の hidden スキルに変化し、上位技を修得済みならその autoTransform で続けて上位技に変化する。
+ * - 闘魂旋風脚（Lv90 から夢幻闘舞）: 陰陽の闘気 + チャクラ3つ（組み合わせ不問）
+ * - 蒼気砲（Lv92 から真空波）: 同種チャクラ3つ / 爆裂脚（Lv86 から鳳凰の舞）: 3種チャクラ / 天宙脚: 上記以外（2+1）
  * - 天宙脚の闘気は「陰優先、陰保有時は陽」だが、条件分岐を表現できないため
  *   常に陰の闘気を付与する近似とする（回しでの使用頻度が低いため影響軽微）
  *
  * ## その他の簡略化
  * - クリティカル時の確率チャクラ獲得（特性）は乱数のため対象外
- * - Lv92 で上位技（猿舞連撃・竜頷正拳撃・虎襲崩拳）に変化する連撃・正拳突き・崩拳、
- *   空鳴闘気・万象闘気（瞑想の範囲版。効果は鉄山闘気・陰陽闘気と同一）は
- *   パレット簡潔化のため対象外（Lv100 の実用キットのみ収録）
+ * - 空鳴闘気・万象闘気（瞑想の範囲版。効果は鉄山闘気・陰陽闘気と同一）はパレット簡潔化のため対象外
  *
- * ## 特性によるレベル別の値（#517）
+ * ## 特性によるレベル別の値（#517・#769）
  * 基本値は特性修得前の値にし、修得レベル以降の値を traitPotencyOverrides で上書きする。
  * - 疾風迅雷効果アップIII（Lv76）: GCD 2.125 → 2.0 秒（Lv76 未満で習得する GCD と鉄山闘気・陰陽闘気）
  * - 抜重歩法効果アップ（Lv84）: 抜重歩法の最大チャージ数 2 → 3
- * - アクション威力アップ（Lv84）/ II（Lv94）: 双掌打・破砕拳・双竜脚・陰陽闘気斬・六合星導脚・夢幻闘舞の威力
+ * - アクション威力アップ（Lv84）/ II（Lv94）: 連撃・正拳突き・崩拳・双掌打・破砕拳・双竜脚・陰陽闘気斬・六合星導脚・夢幻闘舞の威力
  * - 桃園結義効果アップ（Lv88）: 桃園結義中の自身の WS による闘気獲得（Lv88 未満は確率なので付けない。mnk-buffs.ts）
- * 修得後の値は公式ジョブガイドの特性の原文、修得前の値は consolegameswiki の Notes による。
+ * - 象形拳（Lv92）: 連撃・正拳突き・崩拳が猿舞連撃・竜頷正拳撃・虎襲崩拳に置き換わる（replacesSkillId）
+ * 修得後の値は公式ジョブガイドの特性の原文、修得前の値は consolegameswiki の Notes による
+ * （連撃・正拳突き・崩拳はクラス版の説明文とも一致。功力時の威力も特性で同じだけ上がる）。
  * 踏鳴の最大チャージ数 2 は特性で変わらない。
  */
 
@@ -92,6 +97,8 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 // 型を付与する WS（= 次の型の WS の comboFrom）。autoTransform の変化先も含める
 /** 壱の型を付与する WS（参の型の WS 群） */
 const GRANTS_OPO_FORM = [
+  "snap-punch",
+  "snap-punch-fury",
   "pouncing-coeurl",
   "pouncing-coeurl-fury",
   "demolish",
@@ -99,6 +106,8 @@ const GRANTS_OPO_FORM = [
 ];
 /** 弐の型を付与する WS（壱の型の WS 群） */
 const GRANTS_RAPTOR_FORM = [
+  "bootshine",
+  "bootshine-fury",
   "leaping-opo",
   "leaping-opo-fury",
   "dragon-kick",
@@ -107,6 +116,8 @@ const GRANTS_RAPTOR_FORM = [
 ];
 /** 参の型を付与する WS（弐の型の WS 群） */
 const GRANTS_COEURL_FORM = [
+  "true-strike",
+  "true-strike-fury",
   "rising-raptor",
   "rising-raptor-fury",
   "twin-snakes",
@@ -143,24 +154,29 @@ const MIXED_CHAKRA_COMBOS: [number, number, number][] = [
   [2, 1, 0], [2, 0, 1], [1, 2, 0], [0, 2, 1], [1, 0, 2], [0, 1, 2],
 ];
 
+/** 陰陽の闘気が両方ある（闘魂旋風脚・夢幻闘舞の条件） */
+const BOTH_NADI_CONDITIONS = [
+  { resourceId: "lunar-nadi", minAmount: 1 },
+  { resourceId: "solar-nadi", minAmount: 1 },
+];
+
 // 必殺技の変化テーブル。先頭から優先評価されるため、
-// 夢幻闘舞（陰陽+3チャクラ）→ 真空波（同種3）→ 鳳凰の舞（3種）→ 天宙脚（2+1）の順に並べる
+// 闘魂旋風脚（陰陽+3チャクラ）→ 蒼気砲（同種3）→ 爆裂脚（3種）→ 天宙脚（2+1）の順に並べる。
+// 変化先を Lv60 の下位技にし、上位技へは下位技の autoTransform で続けて変化させる。
+// autoTransform は条件の合った先頭の変化先が未習得（スキルマップに無い）だとそこで止まり後続を見ないので、
+// 上位技を先頭に並べると上位技を修得するまで必殺技が変化しなくなる
 const MASTERFUL_BLITZ_TRANSFORMS: AutoTransformEntry[] = [
   ...THREE_CHAKRA_COMBOS.map(([o, r, c]) => ({
-    resourceConditions: [
-      ...beastChakraConditions(o, r, c),
-      { resourceId: "lunar-nadi", minAmount: 1 },
-      { resourceId: "solar-nadi", minAmount: 1 },
-    ],
-    skillId: "phantom-rush",
+    resourceConditions: [...beastChakraConditions(o, r, c), ...BOTH_NADI_CONDITIONS],
+    skillId: "tornado-kick",
   })),
   ...SAME_CHAKRA_COMBOS.map(([o, r, c]) => ({
     resourceConditions: beastChakraConditions(o, r, c),
-    skillId: "elixir-burst",
+    skillId: "elixir-field",
   })),
   {
     resourceConditions: beastChakraConditions(1, 1, 1),
-    skillId: "rising-phoenix",
+    skillId: "flint-strike",
   },
   ...MIXED_CHAKRA_COMBOS.map(([o, r, c]) => ({
     resourceConditions: beastChakraConditions(o, r, c),
@@ -191,7 +207,41 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 94, potency: 320 },
     ],
   },
-  // 猿舞連撃: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
+  // 連撃: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
+  {
+    id: "bootshine",
+    name: "連撃",
+    potency: 180,
+    type: "gcd",
+    target: "enemy",
+    icon: bootshineIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 1,
+    comboFrom: GRANTS_OPO_FORM,
+    guaranteedCrit: true,
+    autoTransform: [
+      { resourceConditions: [{ resourceId: "opo-fury", minAmount: 1 }], skillId: "bootshine-fury" },
+    ],
+    traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 220 }],
+  },
+  {
+    id: "bootshine-fury",
+    name: "連撃（功力）",
+    potency: 380,
+    type: "gcd",
+    target: "enemy",
+    icon: bootshineIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 1,
+    comboFrom: GRANTS_OPO_FORM,
+    guaranteedCrit: true,
+    resourceChanges: [{ resourceId: "opo-fury", amount: -1 }],
+    hidden: true,
+    traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 420 }],
+  },
+  // 猿舞連撃（Lv92: 連撃から変化）: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
   {
     id: "leaping-opo",
     name: "猿舞連撃",
@@ -202,6 +252,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
+    replacesSkillId: "bootshine",
     comboFrom: GRANTS_OPO_FORM,
     guaranteedCrit: true,
     autoTransform: [
@@ -245,7 +296,38 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 94, potency: 420 },
     ],
   },
-  // 竜頷正拳撃
+  {
+    id: "true-strike",
+    name: "正拳突き",
+    potency: 260,
+    type: "gcd",
+    target: "enemy",
+    icon: trueStrikeIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 4,
+    comboFrom: GRANTS_RAPTOR_FORM,
+    autoTransform: [
+      { resourceConditions: [{ resourceId: "raptor-fury", minAmount: 1 }], skillId: "true-strike-fury" },
+    ],
+    traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 300 }],
+  },
+  {
+    id: "true-strike-fury",
+    name: "正拳突き（功力）",
+    potency: 460,
+    type: "gcd",
+    target: "enemy",
+    icon: trueStrikeIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 4,
+    comboFrom: GRANTS_RAPTOR_FORM,
+    resourceChanges: [{ resourceId: "raptor-fury", amount: -1 }],
+    hidden: true,
+    traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 500 }],
+  },
+  // 竜頷正拳撃（Lv92: 正拳突きから変化）
   {
     id: "rising-raptor",
     name: "竜頷正拳撃",
@@ -256,6 +338,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
+    replacesSkillId: "true-strike",
     comboFrom: GRANTS_RAPTOR_FORM,
     autoTransform: [
       { resourceConditions: [{ resourceId: "raptor-fury", minAmount: 1 }], skillId: "rising-raptor-fury" },
@@ -297,7 +380,40 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
       { traitLevel: 94, potency: 420 },
     ],
   },
-  // 虎襲崩拳: 威力310 + 側面ボーナス60 = 370（方向指定成功前提）
+  // 崩拳: 威力 230 / 270（Lv84）+ 側面ボーナス60（方向指定成功前提）
+  {
+    id: "snap-punch",
+    name: "崩拳",
+    potency: 290,
+    type: "gcd",
+    target: "enemy",
+    icon: snapPunchIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 6,
+    comboFrom: GRANTS_COEURL_FORM,
+    autoTransform: [
+      { resourceConditions: [{ resourceId: "coeurl-fury", minAmount: 1 }], skillId: "snap-punch-fury" },
+    ],
+    traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 330 }],
+  },
+  // 崩拳（功力）: 威力 380 / 420（Lv84）+ 側面ボーナス60（方向指定成功前提）
+  {
+    id: "snap-punch-fury",
+    name: "崩拳（功力）",
+    potency: 440,
+    type: "gcd",
+    target: "enemy",
+    icon: snapPunchIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 6,
+    comboFrom: GRANTS_COEURL_FORM,
+    resourceChanges: [{ resourceId: "coeurl-fury", amount: -1 }],
+    hidden: true,
+    traitPotencyOverrides: [GCD_TRAIT_LV76, { traitLevel: 84, potency: 480 }],
+  },
+  // 虎襲崩拳（Lv92: 崩拳から変化）: 威力310 + 側面ボーナス60 = 370（方向指定成功前提）
   {
     id: "pouncing-coeurl",
     name: "虎襲崩拳",
@@ -308,6 +424,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     recastTime: GCD_RECAST,
     animationLock: DEFAULT_ANIMATION_LOCK,
     acquiredLevel: 92,
+    replacesSkillId: "snap-punch",
     comboFrom: GRANTS_COEURL_FORM,
     autoTransform: [
       { resourceConditions: [{ resourceId: "coeurl-fury", minAmount: 1 }], skillId: "pouncing-coeurl-fury" },
@@ -451,7 +568,30 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     autoTransform: MASTERFUL_BLITZ_TRANSFORMS,
     traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
-  // 夢幻闘舞: 陰陽の闘気 + チャクラ3つ。両闘気を消費
+  // 闘魂旋風脚: 陰陽の闘気 + チャクラ3つ。両闘気を消費（夢幻闘舞と同じ扱い）。Lv90 から夢幻闘舞に変化
+  {
+    id: "tornado-kick",
+    name: "闘魂旋風脚",
+    potency: 1200,
+    type: "gcd",
+    target: "enemy",
+    icon: tornadoKickIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 60,
+    consumeAllResources: ["opo-chakra", "raptor-chakra", "coeurl-chakra"],
+    resourceChanges: [
+      { resourceId: "lunar-nadi", amount: -1 },
+      { resourceId: "solar-nadi", amount: -1 },
+    ],
+    buffApplications: ["formless-fist"],
+    maxTargets: Infinity,
+    falloffRate: 0.35,
+    hidden: true,
+    autoTransform: [{ resourceConditions: BOTH_NADI_CONDITIONS, skillId: "phantom-rush" }],
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
+  },
+  // 夢幻闘舞（Lv90: 闘魂旋風脚から変化）: 陰陽の闘気 + チャクラ3つ。両闘気を消費
   {
     id: "phantom-rush",
     name: "夢幻闘舞",
@@ -473,6 +613,29 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     hidden: true,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 1500 }],
   },
+  // 蒼気砲: 同種チャクラ3つ。陰の闘気を付与。Lv92 から真空波に変化
+  {
+    id: "elixir-field",
+    name: "蒼気砲",
+    potency: 800,
+    type: "gcd",
+    target: "enemy",
+    icon: elixirFieldIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 60,
+    consumeAllResources: ["opo-chakra", "raptor-chakra", "coeurl-chakra"],
+    resourceChanges: [{ resourceId: "lunar-nadi", amount: 1 }],
+    buffApplications: ["formless-fist"],
+    maxTargets: Infinity,
+    falloffRate: 0.35,
+    hidden: true,
+    autoTransform: SAME_CHAKRA_COMBOS.map(([o, r, c]) => ({
+      resourceConditions: beastChakraConditions(o, r, c),
+      skillId: "elixir-burst",
+    })),
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
+  },
   // 真空波（Lv92: 蒼気砲から変化）: 同種チャクラ3つ。陰の闘気を付与
   {
     id: "elixir-burst",
@@ -490,6 +653,26 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
     maxTargets: Infinity,
     falloffRate: 0.35,
     hidden: true,
+  },
+  // 爆裂脚: 3種チャクラ。陽の闘気を付与。Lv86 から鳳凰の舞に変化
+  {
+    id: "flint-strike",
+    name: "爆裂脚",
+    potency: 800,
+    type: "gcd",
+    target: "enemy",
+    icon: flintStrikeIcon,
+    recastTime: GCD_RECAST_BEFORE_LV76,
+    animationLock: DEFAULT_ANIMATION_LOCK,
+    acquiredLevel: 60,
+    consumeAllResources: ["opo-chakra", "raptor-chakra", "coeurl-chakra"],
+    resourceChanges: [{ resourceId: "solar-nadi", amount: 1 }],
+    buffApplications: ["formless-fist"],
+    maxTargets: Infinity,
+    falloffRate: 0.35,
+    hidden: true,
+    autoTransform: [{ resourceConditions: beastChakraConditions(1, 1, 1), skillId: "rising-phoenix" }],
+    traitPotencyOverrides: [GCD_TRAIT_LV76],
   },
   // 鳳凰の舞（Lv86: 爆裂脚から変化）: 3種チャクラ。陽の闘気を付与
   {
