@@ -112,3 +112,10 @@
   ```
 
 - **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#192（還元元と、このテンプレート元のトランスクリプトで取り出せることを確かめた）
+
+## クラウドセッションでは、セッションに付いていないリポジトリの Release を `gh api` で読めない
+
+- **条件**: Claude Code のクラウドセッション（`CLAUDE_CODE_REMOTE=true`）で、テンプレート元のように、セッションに付いていないリポジトリの Release notes を読むとき（`gh api repos/<owner>/<repo>/releases/tags/<版>`）
+- **症状**: `gh: GitHub access to this repository is not enabled for this session. Use add_repo to request access. ...（HTTP 403）` で失敗する。公開リポジトリでも同じ。一方、git の clone はプロキシを通るので、テンプレート元のクローンは作れる
+- **回避**: テンプレート元のクローン（`/template-update`「3-way マージの定型手順」の `git clone --no-checkout`）から読む。Release notes の自動生成の部分は、`git -C <scratchpad>/template-src show HEAD:CHANGELOG.md` の該当版の節（release-please が版ごとに書く、Release notes と同じ一覧）で代える。Release notes に後から足す「手動対応」は `CHANGELOG.md` には入っていないので、`git -C <scratchpad>/template-src show HEAD:docs/upgrade-notes.md` で読む。クローンで両方読めるので、`add_repo` でテンプレート元を足さなくてよい（足すなら、ユーザーの確認が要る）
+- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-11 / issue-driven-dev-starter#225
