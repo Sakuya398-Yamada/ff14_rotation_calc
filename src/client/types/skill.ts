@@ -46,6 +46,12 @@ export interface TraitPotencyOverride {
   maxCharges?: number;
   /** 変更後の個別リキャストタイム（秒）（undefinedの場合は変更なし） */
   cooldown?: number;
+  /** 変更後のリキャストタイム（秒）。GCD の基礎リキャストに使う（undefinedの場合は変更なし） */
+  recastTime?: number;
+  /** 変更後の、GCD を発生させるアビリティの GCD の基礎リキャスト（秒）（undefinedの場合は変更なし） */
+  gcdRecastTime?: number;
+  /** 変更後のリソース量に応じた威力スケーリング（undefinedの場合は変更なし） */
+  potencyScaling?: Skill["potencyScaling"];
   /** 変更後の付与バフIDリスト（undefinedの場合は変更なし） */
   buffApplications?: string[];
   /** 変更後のバフ消費のOR条件（配列ごと置き換える。undefinedの場合は変更なし） */

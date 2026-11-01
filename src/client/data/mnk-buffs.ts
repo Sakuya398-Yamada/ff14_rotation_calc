@@ -137,7 +137,20 @@ export const MNK_BUFFS: BuffDefinition[] = [
     color: "#80deea",
     acquiredLevel: 96,
   },
-  // 桃園結義: 与ダメージ5%上昇 + 攻撃する WS の使用時に闘気獲得（Meditative Brotherhood）。
+  // 桃園結義（Lv88 未満）: 与ダメージ5%上昇のみ。
+  // 自身の WS による闘気獲得が確定になるのは桃園結義効果アップ（Lv88）からで、それまでは確率なので対象外とする（#517）。
+  // スキルの付与バフは traitPotencyOverrides で Lv88 から下の brotherhood に切り替わる（mnk-skills.ts）
+  {
+    id: "brotherhood-no-chakra-gain",
+    name: "桃園結義",
+    shortName: "桃園",
+    icon: brotherhoodIcon,
+    duration: 20,
+    effects: [{ type: "potency", value: 1.05 }],
+    color: "#ff7043",
+    acquiredLevel: 70,
+  },
+  // 桃園結義（桃園結義効果アップ（Lv88）以降）: 与ダメージ5%上昇 + 攻撃する WS の使用時に闘気獲得（Meditative Brotherhood）。
   // パーティメンバーのWSによる確率獲得（20%）は乱数のため対象外とし、
   // 自身のWSによる獲得（確定）のみをモデル化する
   {
@@ -151,7 +164,7 @@ export const MNK_BUFFS: BuffDefinition[] = [
       { type: "resourceGainOnSkill", value: 1, resourceId: "chakra", appliesToSkillIds: ALL_WS },
     ],
     color: "#ff7043",
-    acquiredLevel: 70,
+    acquiredLevel: 88,
   },
   // 金剛の極意: 被ダメージ軽減（防御バフのため effects は空。リキャスト管理用）
   {
