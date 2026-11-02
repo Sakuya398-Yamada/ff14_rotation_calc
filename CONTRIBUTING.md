@@ -209,7 +209,7 @@ PR のプレビューは本番の D1 を使わず、全 PR で共有するプレ
 
    「設定ファイルに追加するか」を聞かれたら `n` で断る（前節の手順 1 と同じ理由）
 2. 出力された `database_id` を、`wrangler.jsonc` の `previews.d1_databases`（binding `DB`）と `wrangler.preview-migrations.jsonc`（binding `PREVIEW_DB`）の両方に書いてコミットする。2 つが違うと、マイグレーションを当てた D1 とプレビューが使う D1 がずれる
-3. Worker の **Settings** → **Build** で、Preview command を上の「Workers Builds の設定」の手順 4 のコマンドにする
+3. Worker の **Settings** → **Build** で、Preview command を上の「Workers Builds の設定」の手順 4 のコマンドにする。ここで変えた値は、これから作るプレビューにだけ付く。すでにあるプレビューはプレビューごとにビルドの設定を持っているので、画面上部のブランチの切り替えでそのプレビューを選び、**設定**（Settings）→ **ビルド**（Build）→ **ビルド構成**（Build configuration）の **プレビューコマンド** も同じコマンドに直す（#581）
 4. PR のプレビューのビルドログで、マイグレーションの適用（`✅`）と、「These bindings are configured for your production Worker but not for Previews」の警告が出ないことを確かめる
 
 - **データは使い捨て**: PR 同士の保存が同じ D1 に混ざります。バックアップ（`docs/d1-backup.md`）も本番の D1 だけで、プレビュー用は取りません
@@ -251,6 +251,7 @@ PR のプレビューは手順 2・3 の値を使いません（#581）。プレ
 - **PR のコメントにプレビュー URL が出ない（「Deploying with Cloudflare Workers」の表に URL の列が無い）**: Worker Previews に切り替わっていないか、Preview command が `wrangler preview` を直接呼んでいない（npm スクリプトで包んでいる等）。上記の注記のとおりに直す
 - **プレビューの作成失敗（`Preview creation failed: Invalid preview name`）**: ブランチ名に、プレビュー名に使えない文字（`#` など）が入っている。Workers Builds はビルドの前にブランチ名をそのままプレビュー名にするので、Preview command では直せない。`.claude/rules/git-conventions.md` の書式でブランチを切り直す（#609）
 - **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews"` ブロックが消えていないか確認する（#485）
+- **プレビューのビルドでマイグレーションが当たらない（ログの `Executing user deploy command:` に `db:migrate:preview` が無く、プレビューの API が 500 になる）**: そのプレビューが、Worker の Preview command を変える前に作られている。プレビューごとのビルドの設定を直し、push し直す（上記「プレビュー用 D1」の手順 3）
 - **プレビューのビルド失敗（`Missing script: "db:migrate:preview"`）**: Preview command にマイグレーションの適用を足した（#581）より前の `main` から切ったブランチ。`main` を取り込んで push し直す
 - **プレビューのビルド失敗（`wrangler d1 migrations apply PREVIEW_DB --remote` のエラー）**: 認証・権限のエラーならビルド用トークンの D1 の編集権限（「本番 D1 とビルド用トークン」の手順 3）、D1 が見つからないなら `wrangler.preview-migrations.jsonc` の `database_id`、SQL のエラーなら共有の D1 の中身のずれ（「プレビュー用 D1」の作り直し）を確かめる
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
