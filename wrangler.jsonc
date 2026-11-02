@@ -19,6 +19,9 @@
 				"database_id": "e91d42e7-1d5f-45cc-868f-ffe4a309211a"
 			}
 		],
+		// プレビューのビルドには VITE_TURNSTILE_SITE_KEY が渡らず、フロントはテスト用の sitekey（必ず成功）で動く。
+		// それと対になる公開のテスト用 secret を置く（本番の secret は wrangler secret put のまま。#581）
+		"vars": { "TURNSTILE_SECRET_KEY": "1x0000000000000000000000000000000AA" },
 		// namespace_id を本番と分け、プレビューの通信を本番のカウンタに数えない
 		"ratelimits": [
 			{
