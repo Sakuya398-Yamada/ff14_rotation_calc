@@ -653,7 +653,7 @@ export interface ResolvedTimelineEntry {
   consumedProc?: { buffId: string; procRate: number; fallbackSkillName?: string };
   /**
    * 確率付与（buffApplicationProcRates）が、すでに付いているバフに重なって無駄になる確率（付与時点の P × 付与確率）。
-   * 0 のときは無い（#842）
+   * 効いているバフに重ねたときだけ持つ（#842）
    */
   wastedProc?: { buffId: string; rate: number };
   /**
