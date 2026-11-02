@@ -1,4 +1,4 @@
-import type { ActiveBuff, BuffDefinition, BuffEffect, ResolvedTimelineEntry } from "../types/skill";
+import type { ActiveBuff, BuffDefinition, BuffEffect, ResolvedTimelineEntry, Skill } from "../types/skill";
 
 function formatRate(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
@@ -67,4 +67,22 @@ export function formatConsumedProc(
 ): string {
   const name = buffDefMap.get(consumedProc.buffId)?.name ?? consumedProc.buffId;
   return `${name}発動確率 ${formatProcRate(consumedProc.procRate)}`;
+}
+
+/** 発生の有無を指定できる確率付与のバフ。ほかのジョブの確率付与は対象外 (#838) */
+export const PROC_OUTCOME_BUFF_ID = "hawks-eye";
+
+/**
+ * スキルが PROC_OUTCOME_BUFF_ID を 1 未満の確率で付与するか。
+ * 確率はレベルに関係なく持つので、レベル調整後の buffApplications に入っているかも見る（Lv76 未満のバイト系は付与しない）
+ */
+export function isProcOutcomeSource(skill: Skill): boolean {
+  const rate = skill.buffApplicationProcRates?.[PROC_OUTCOME_BUFF_ID];
+  return rate !== undefined && rate < 1 && (skill.buffApplications?.includes(PROC_OUTCOME_BUFF_ID) ?? false);
+}
+
+/** TimelineEntry.procOccurred の表示名。例: "ホークアイ: 発生" */
+export function formatProcOccurred(procOccurred: boolean, buffDefMap: Map<string, BuffDefinition>): string {
+  const name = buffDefMap.get(PROC_OUTCOME_BUFF_ID)?.name ?? PROC_OUTCOME_BUFF_ID;
+  return `${name}: ${procOccurred ? "発生" : "不発"}`;
 }

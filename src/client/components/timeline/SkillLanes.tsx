@@ -2,11 +2,12 @@ import { useDraggable } from "@dnd-kit/core";
 import type { Skill, ResolvedTimelineEntry, CharacterStats, BuffDefinition } from "../../types/skill";
 import type { DisplayEntry } from "./types";
 import { calcEntryPotencyBreakdown } from "../../logic/expected-potency";
-import { formatConsumedProc } from "../../logic/buff-format";
+import { formatConsumedProc, formatProcOccurred, isProcOutcomeSource } from "../../logic/buff-format";
 import { formatResourceErrorWarnings } from "../../logic/resource-error-format";
 import { formatComboErrorWarnings } from "../../logic/combo-error-format";
 import { formatTargetBreakdown } from "./helpers";
 import { ManualStartTimeBadge } from "./ManualStartTimeBadge";
+import { ProcOutcomeBadge } from "./ProcOutcomeBadge";
 import { styles } from "./styles";
 import { PX_PER_SEC } from "./constants";
 import type { TimelineEntryDragData } from "./dnd-types";
@@ -93,6 +94,10 @@ export function SkillLanes({
             const consumedProcLabel = entry.consumedProc
               ? ` / ${formatConsumedProc(entry.consumedProc, buffDefMap)}`
               : "";
+            // 付与元でなくなった指定（レベルを下げたバイト系など）は解決で無視されるので出さない
+            const procOccurredLabel = entry.procOccurred !== undefined && isProcOutcomeSource(entry.displaySkill)
+              ? formatProcOccurred(entry.procOccurred, buffDefMap)
+              : null;
             const isAutoTransformed = entry.resolvedSkillId !== entry.skillId;
             // castTime > recast の場合は次 GCD が打てるのは castTime 後（resolve-timeline.ts と整合）。
             // skillBlock の幅を max(castTime, recast) に拡張し、各バーを blockDuration 基準で割合計算する。
@@ -149,7 +154,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}${consumedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.unconfirmedProcBuffs ? " ⚠ 確率付与のバフを消費" : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}${consumedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.unconfirmedProcBuffs ? " ⚠ 確率付与のバフを消費" : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
@@ -160,6 +165,9 @@ export function SkillLanes({
                   />
                   {entry.manualStartTime !== undefined && (
                     <ManualStartTimeBadge />
+                  )}
+                  {entry.procOccurred !== undefined && procOccurredLabel !== null && (
+                    <ProcOutcomeBadge procOccurred={entry.procOccurred} title={procOccurredLabel} />
                   )}
                 </DraggableEntryIcon>
                 <div style={{

@@ -293,6 +293,45 @@ describe("Timeline: ホークアイの発動確率 (#615)", () => {
   });
 });
 
+describe("Timeline: ホークアイの発生の有無の指定 (#838)", () => {
+  function renderBrdEntries(entries: TimelineEntry[]) {
+    const resolvedEntries = resolveTimeline(entries, brdSkillMap, BRD_RESOURCES, defaultStats, BRD_BUFFS).entries;
+    renderTimeline({
+      skills: brdSkills,
+      allSkillMap: brdSkillMap,
+      resolvedEntries,
+      resources: BRD_RESOURCES,
+      buffs: BRD_BUFFS,
+    });
+  }
+
+  it.each([
+    [true, "ホークアイ: 発生"],
+    [false, "ホークアイ: 不発"],
+  ])("procOccurred = %s の付与元は、ツールチップとバッジに「%s」が出る", (procOccurred, label) => {
+    renderBrdEntries([{ ...makeEntry("burst-shot"), procOccurred }]);
+
+    expect(screen.getByTitle(/^バーストショット \(威力: /)).toHaveAttribute("title", expect.stringContaining(` ${label}`));
+    expect(screen.getByTitle(label)).toBeInTheDocument();
+  });
+
+  it("指定の無い付与元には、ツールチップにもバッジにも出ない", () => {
+    renderBrdEntries([makeEntry("burst-shot")]);
+
+    expect(screen.getByTitle(/^バーストショット \(威力: /)).not.toHaveAttribute(
+      "title",
+      expect.stringContaining("ホークアイ: ")
+    );
+    expect(screen.queryByTitle(/^ホークアイ: /)).not.toBeInTheDocument();
+  });
+
+  it("付与元でない GCD に指定が残っていても出さない", () => {
+    renderBrdEntries([makeEntry("barrage"), { ...makeEntry("refulgent-arrow"), procOccurred: false }]);
+
+    expect(screen.queryByTitle(/^ホークアイ: /)).not.toBeInTheDocument();
+  });
+});
+
 describe("Timeline: リソースのゲージ表示 (#632)", () => {
   const burstShots = (count: number) => Array.from({ length: count }, () => "burst-shot");
   const SONGS_ROTATION = [
