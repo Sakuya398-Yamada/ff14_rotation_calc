@@ -141,8 +141,10 @@ export interface Skill {
   refreshesDots?: string[];
   /** このスキルの DoT 付与時に、列挙した他スキルの DoT をその時点で打ち切る（同時に1種類だけの DoT 用。自スキルIDは無視） */
   replacesDots?: string[];
-  /** コンボ元スキルIDリスト（いずれかの直後に使用するとコンボ成立） */
+  /** コンボ元スキルIDリスト（直前に使ったコンボ対象の GCD がいずれかならコンボ成立。keepsCombo の GCD は挟んでもよい） */
   comboFrom?: string[];
+  /** 実行してもコンボ状態を更新しない GCD（挟んでも WS コンボが途切れない）。comboFrom を使うジョブで、コンボの起点・継続でない GCD に付ける */
+  keepsCombo?: boolean;
   /**
    * 付与バフで表すコンボ（comboFrom の代わりに使い、併用しない）。直前の GCD とコンボタイマーは見ず、
    * buffId のバフが効果中か、bypassCombo バフ（appliesToSkillIds にこのスキル）が効果中ならコンボ成立。

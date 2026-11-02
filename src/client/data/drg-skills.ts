@@ -219,6 +219,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
     name: "ピアシングタロン",
     potency: 150,
     type: "gcd",
+    keepsCombo: true,
     target: "enemy",
     icon: piercingTalonIcon,
     recastTime: GCD_RECAST,
