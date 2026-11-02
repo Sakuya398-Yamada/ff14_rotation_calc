@@ -18,6 +18,7 @@ function savedState(): PersistedAppState {
     entries: [
       { uid: "entry-1", skillId: "fire-3" },
       { uid: "entry-7", skillId: "fire-4", manualStartTime: 2.5 },
+      { uid: "entry-8", skillId: "fire", procOccurred: true },
     ],
     stats: { critical: 3000, directHit: 2000, determination: 2500, speed: 528 },
     untargetableWindows: [{ startTime: 30, endTime: 45 }],

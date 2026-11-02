@@ -103,6 +103,28 @@ describe("serializeAppState / deserializeAppState", () => {
     expect(restored?.entries).toEqual([]);
   });
 
+  it("procOccurred は true / false とも往復し、boolean 以外はキーを落とし、未設定ならキーは無い (#838)", () => {
+    const json = JSON.stringify({
+      version: SCHEMA_VERSION,
+      ...makeSnapshot({ selectedJob: "brd" }),
+      entries: [
+        { uid: "entry-1", skillId: "burst-shot", procOccurred: true },
+        { uid: "entry-2", skillId: "heavy-shot", procOccurred: false },
+        { uid: "entry-3", skillId: "iron-jaws", procOccurred: "true" },
+        { uid: "entry-4", skillId: "refulgent-arrow" },
+      ],
+    });
+    const restored = deserializeAppState(json);
+    expect(restored?.entries).toEqual([
+      { uid: "entry-1", skillId: "burst-shot", procOccurred: true },
+      { uid: "entry-2", skillId: "heavy-shot", procOccurred: false },
+      { uid: "entry-3", skillId: "iron-jaws" },
+      { uid: "entry-4", skillId: "refulgent-arrow" },
+    ]);
+    expect(restored?.entries[2]).not.toHaveProperty("procOccurred");
+    expect(restored?.entries[3]).not.toHaveProperty("procOccurred");
+  });
+
   it("manualStartTime が非数値のエントリはキーを落として復元する", () => {
     const json = JSON.stringify({
       version: SCHEMA_VERSION,

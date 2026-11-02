@@ -286,6 +286,11 @@ export interface TimelineEntry {
    * （リキャスト中等の制約違反時は recastError として警告のみ表示し、配置は尊重する）。
    */
   manualStartTime?: number;
+  /**
+   * 確率付与（buffApplicationProcRates が 1 未満）のバフが発生したか。
+   * true なら確率 1 で付与し、false なら付与しない（効いているバフの延長もしない）。未設定なら確率を期待値に使う
+   */
+  procOccurred?: boolean;
 }
 
 /** 指定バフの効果中だけ変わるリソースの性質 */
@@ -616,6 +621,8 @@ export interface ResolvedTimelineEntry {
   autoStartTime: number;
   /** 元のタイムラインエントリにマニュアル開始時刻が設定されているか */
   manualStartTime?: number;
+  /** 元のタイムラインエントリの TimelineEntry.procOccurred */
+  procOccurred?: boolean;
   /** スキル実行後のリソース状態（消費・獲得・バフ由来の自動消費すべて反映済み） */
   resourceSnapshot: ResourceSnapshot;
   /** 発動条件を満たさなかったリソースとその種類 */

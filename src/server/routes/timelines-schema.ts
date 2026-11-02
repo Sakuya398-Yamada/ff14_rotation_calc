@@ -20,7 +20,14 @@ export const persistedAppStateSchema = z
     selectedJob: z.enum(JOB_IDS),
     level: z.literal([70, 80, 90, 100]),
     entries: z
-      .array(z.object({ uid: z.string(), skillId: z.string(), manualStartTime: z.number().optional() }))
+      .array(
+        z.object({
+          uid: z.string(),
+          skillId: z.string(),
+          manualStartTime: z.number().optional(),
+          procOccurred: z.boolean().optional(),
+        }),
+      )
       .max(MAX_ENTRIES),
     stats: z.object({
       critical: z.number(),

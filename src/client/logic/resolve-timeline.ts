@@ -1665,6 +1665,12 @@ export function resolveTimeline(
           const buffDef = buffDefMap.get(buffId);
           if (!buffDef) continue;
 
+          const procRate = skill.buffApplicationProcRates?.[buffId];
+          const isUncertainProc = procRate !== undefined && procRate < 1;
+          // 確率付与を「発生しなかった」と指定した付与元は、付与も延長も付与元の蓄積もしない (#838)
+          if (isUncertainProc && entry.procOccurred === false) continue;
+          const rate = isUncertainProc && entry.procOccurred === true ? 1 : procRate;
+
           // 排他グループのバフを解除
           removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
           // 同じバフが既にアクティブなら上書き（リフレッシュ）
@@ -1681,7 +1687,6 @@ export function resolveTimeline(
             currentActiveBuffs.push(newBuff);
           }
 
-          const rate = skill.buffApplicationProcRates?.[buffId];
           if (rate !== undefined) {
             // 効いていないバフの付与元は、消費・解除・失効で使い終わっているので数えない
             // （ファイアスターターのような無期限のバフは、時間では付与元が外れない。#615）
@@ -1904,6 +1909,7 @@ export function resolveTimeline(
       startTime,
       autoStartTime,
       manualStartTime: entry.manualStartTime,
+      procOccurred: entry.procOccurred,
       resourceSnapshot: snapshotAfter,
       resourceErrors,
       comboErrors,

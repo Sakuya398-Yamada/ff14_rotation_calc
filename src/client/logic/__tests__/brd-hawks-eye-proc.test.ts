@@ -281,3 +281,91 @@ describe("BRD: ホークアイの発動確率 P を解決結果に持たせる (
     expect(refulgent.consumedProc).toBeUndefined();
   });
 });
+
+// 付与元ごとに「発生した（true）／しなかった（false）」を指定する (#838)
+describe("BRD: ホークアイの発生の有無を付与元ごとに指定する (#838)", () => {
+  function procEntry(skillId: string, procOccurred: boolean, manualStartTime?: number): TimelineEntry {
+    return { ...entry(skillId, manualStartTime), procOccurred };
+  }
+
+  function hasHawksEye(e: ResolvedTimelineEntry): boolean {
+    return e.activeBuffs.some((ab) => ab.buffId === "hawks-eye");
+  }
+
+  const SOURCES = ["heavy-shot", "burst-shot", "iron-jaws", "caustic-bite", "stormbite", "quick-nock", "ladonsbite"];
+
+  it.each(SOURCES)("%s を「発生した」にすると、リフルジェントアローは確定の威力 280（P = 1）になる", (sourceId) => {
+    const result = resolve([procEntry(sourceId, true), entry("refulgent-arrow")]);
+
+    const refulgent = result.entries[1];
+    expect(refulgent.recastError).toBeFalsy();
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.resolvedPotency).toBe(280);
+    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 1 });
+  });
+
+  it.each(SOURCES)("%s を「しなかった」にするとホークアイが付かず、リフルジェントアローは発動条件エラーになる", (sourceId) => {
+    const result = resolve([procEntry(sourceId, false), entry("refulgent-arrow")]);
+
+    expect(hasHawksEye(result.entries[0])).toBe(false);
+    expect(result.entries[1].comboErrors).toContainEqual({
+      buffId: "barrage",
+      kind: "missing",
+      anyOf: ["barrage", "hawks-eye"],
+    });
+  });
+
+  it("ラドンバイトを「発生した」にすると、シャドウバイトは確定の威力 200 になる", () => {
+    const result = resolve([procEntry("ladonsbite", true), entry("shadowbite")]);
+
+    const shadowbite = result.entries[1];
+    expect(shadowbite.comboErrors).toEqual([]);
+    expect(shadowbite.resolvedPotency).toBe(200);
+  });
+
+  it.each([
+    // 「しなかった」の付与元は確率の合成から外れ、未指定の 1 本だけで floor(220 + 60 × 0.35) = 241
+    ["未指定 → しなかった", 241, [entry("burst-shot"), procEntry("burst-shot", false)]],
+    ["しなかった → 未指定", 241, [procEntry("burst-shot", false), entry("burst-shot")]],
+    // 「発生した」の付与元が効いていれば、ほかが未指定でも P = 1
+    ["発生した → 未指定", 280, [procEntry("burst-shot", true), entry("burst-shot")]],
+    ["未指定 → 発生した", 280, [entry("burst-shot"), procEntry("burst-shot", true)]],
+  ] as const)("付与元が %s のリフルジェントアローは威力 %i", (_label, expected, sources) => {
+    const result = resolve([...sources, entry("refulgent-arrow")]);
+
+    const refulgent = result.entries[2];
+    expect(refulgent.recastError).toBeFalsy();
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.resolvedPotency).toBe(expected);
+  });
+
+  // t=0 の付与は 30 秒で切れる。t=20 の付与元が「しなかった」なら延長されない
+  it("「しなかった」の付与元は、効いているホークアイを延長しない", () => {
+    const result = resolve([entry("burst-shot"), procEntry("burst-shot", false, 20), entry("refulgent-arrow", 30)]);
+
+    expect(result.entries[1].recastError).toBeFalsy();
+    expect(result.entries[1].activeBuffs.find((ab) => ab.buffId === "hawks-eye")?.endTime).toBe(30);
+    expect(result.entries[2].recastError).toBeFalsy();
+    expect(result.entries[2].comboErrors.map((e) => e.buffId)).toContain("barrage");
+  });
+
+  it("確率付与でないバフは「しなかった」を指定しても付く（乱れ撃ちは 840 のまま）", () => {
+    const result = resolve([procEntry("barrage", false), entry("refulgent-arrow")]);
+
+    const refulgent = result.entries[1];
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.resolvedPotency).toBe(840);
+  });
+
+  // 既知の制限: バフレーンの P は付与した時点の値（#615）。「発生した」の効果が切れた後の消費は、残りの付与元だけで計算する
+  it("「発生した」の後に未指定で延長すると、延長したバフは P を持たず、t=30 の消費は残りの付与元だけで P = 0.35", () => {
+    const result = resolve([procEntry("burst-shot", true), entry("burst-shot", 20), entry("refulgent-arrow", 30)]);
+
+    expect(result.entries[1].activeBuffs.find((ab) => ab.buffId === "hawks-eye")).not.toHaveProperty("procRate");
+    const refulgent = result.entries[2];
+    expect(refulgent.recastError).toBeFalsy();
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.consumedProc?.procRate).toBeCloseTo(0.35, 10);
+    expect(refulgent.resolvedPotency).toBe(241);
+  });
+});
