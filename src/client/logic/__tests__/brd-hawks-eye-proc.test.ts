@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
-import type { ResolvedTimelineEntry, Skill, TimelineEntry } from "../../types/skill";
+import type { PlayerLevel, ResolvedTimelineEntry, Skill, TimelineEntry } from "../../types/skill";
 import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
 import { BRD_BUFFS } from "../../data/brd-buffs";
 import { BRD_RESOURCES } from "../../data/brd-resources";
-import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
+import { getAllSkillMapForLevel, getBuffsForLevel, getResourcesForLevel, getSkillsForLevel } from "../skill-level";
 
 // fallbackPotency は Lv76 / Lv82 の上書きで決まるので、App と同じくレベル調整したスキルで解決する (#600)
 const buffIds = new Set(BRD_BUFFS.map((b) => b.id));
@@ -39,7 +39,7 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     expect(refulgent!.potency).toBe(280);
     expect(refulgent!.buffConsumptionAnyOf).toEqual([
       { buffId: "barrage", stacks: 1, potency: 840 },
-      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 220 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 220, fallbackSkillId: "burst-shot" },
     ]);
   });
 
@@ -88,7 +88,11 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "hawks-eye")).toBe(
       false,
     );
-    expect(result.entries[1].comboErrors.length).toBeGreaterThan(0);
+    // 付与元が無い（P = 0）ストレートショットは、エラーにせずヘヴィショットを撃つフィラー枠になる (#842)
+    const straight = result.entries[1];
+    expect(straight.comboErrors).toEqual([]);
+    expect(straight.consumedProc?.procRate).toBe(0);
+    expect(straight.resolvedPotency).toBe(160);
   });
 
   it("ホークアイ消費時のリフルジェントアローは期待値威力 241 になる", () => {
@@ -100,28 +104,35 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     expect(refulgent.resolvedPotency).toBe(241);
   });
 
-  it("消費されたホークアイは後続エントリに残らない", () => {
+  // 消費したホークアイは消えるが、出なかった分岐（1 − P）で撃つバーストショットが 0.35 で付け直すので、
+  // 次の消費は P = 0.65 × 0.35 = 0.2275 になる（#842 までは「残らない」でエラーにしていた）
+  it("消費したホークアイは、出なかった分岐のバーストショットの付与確率 (1 − P) × 0.35 で付け直される", () => {
     const result = resolve([
       entry("burst-shot"),
       entry("refulgent-arrow"),
       entry("refulgent-arrow"),
     ]);
 
-    // 2発目のリフルジェントアローはホークアイ枯渇でエラーになる
+    const first = result.entries[1];
+    const reapplied = first.activeBuffs.find((ab) => ab.buffId === "hawks-eye");
+    expect(reapplied?.startTime).toBe(first.startTime);
+    expect(reapplied?.procRate).toBeCloseTo(0.65 * 0.35, 10);
     const second = result.entries[2];
-    expect(second.activeBuffs.some((ab) => ab.buffId === "hawks-eye")).toBe(false);
-    expect(second.comboErrors.length).toBeGreaterThan(0);
+    expect(second.comboErrors).toEqual([]);
+    expect(second.consumedProc?.procRate).toBeCloseTo(0.65 * 0.35, 10);
+    // floor(220 + 60 × 0.2275)
+    expect(second.resolvedPotency).toBe(233);
   });
 
-  it("ホークアイなし・乱れ撃ちなしではリフルジェントアローは使用できない", () => {
+  // #842 までは発動条件エラーにしていた。P = 0 の枠はバーストショットを撃つフィラー枠として扱う
+  it("ホークアイなし・乱れ撃ちなしのリフルジェントアローは、エラーにせず威力 220 のフィラー枠になり、0.35 の付与元を残す", () => {
     const result = resolve([entry("refulgent-arrow")]);
 
-    // buffConsumptionAnyOf 不成立時は候補（乱れ撃ち・ホークアイ）をすべて持つエラーが記録される (#679)
-    expect(result.entries[0].comboErrors).toContainEqual({
-      buffId: "barrage",
-      kind: "missing",
-      anyOf: ["barrage", "hawks-eye"],
-    });
+    const refulgent = result.entries[0];
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.resolvedPotency).toBe(220);
+    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 0, fallbackSkillName: "バーストショット" });
+    expect(refulgent.activeBuffs.find((ab) => ab.buffId === "hawks-eye")?.procRate).toBeCloseTo(0.35, 10);
   });
 
   it("乱れ撃ち中はホークアイ不要で使用でき、威力 840 固定（proc 期待値は適用されない）", () => {
@@ -174,7 +185,9 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     expect(refulgent.resolvedPotency).toBe(expected);
   });
 
-  it("ホークアイを消費すると蓄積がリセットされ、次の消費は新たな付与元だけで計算される", () => {
+  // 消費前の付与元は消え、出なかった分岐のバーストショット (1 − 0.5775) × 0.35 = 0.147875 と新たな付与元 0.35 で
+  // P = 1 − 0.852125 × 0.65 になる（#842 までは新たな付与元だけの 0.35 で 241 だった）
+  it("ホークアイを消費すると蓄積がリセットされ、次の消費は出なかった分岐の付与元と新たな付与元で計算される", () => {
     const result = resolve([
       entry("burst-shot"),
       entry("burst-shot"),
@@ -187,7 +200,9 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     const second = result.entries[4];
     expect(second.recastError).toBeFalsy();
     expect(second.comboErrors).toEqual([]);
-    expect(second.resolvedPotency).toBe(241);
+    expect(second.consumedProc?.procRate).toBeCloseTo(1 - (1 - 0.4225 * 0.35) * 0.65, 10);
+    // floor(220 + 60 × 0.44611875)
+    expect(second.resolvedPotency).toBe(246);
   });
 
   // t=0 の付与元は 30 秒で切れる。t=20 の付与元でホークアイ自体は残っている
@@ -258,7 +273,9 @@ describe("BRD: ホークアイの発動確率 P を解決結果に持たせる (
     expect(hawksEyeOf(result.entries[1])?.procRate).toBeCloseTo(expected, 10);
   });
 
-  it("ホークアイを消費した後の付与は、新たな付与元だけで P = 0.35 になる", () => {
+  // 消費後に残るのは出なかった分岐のバーストショット (1 − 0.5775) × 0.35 だけで、新たな付与元と合成する
+  // （#842 までは新たな付与元だけの 0.35 だった）
+  it("ホークアイを消費した後の付与は、出なかった分岐の付与元と新たな付与元から P = 1 − (1 − 0.147875) × 0.65 になる", () => {
     const result = resolve([
       entry("burst-shot"),
       entry("burst-shot"),
@@ -266,7 +283,8 @@ describe("BRD: ホークアイの発動確率 P を解決結果に持たせる (
       entry("burst-shot"),
     ]);
 
-    expect(hawksEyeOf(result.entries[3])?.procRate).toBeCloseTo(0.35, 10);
+    expect(hawksEyeOf(result.entries[2])?.procRate).toBeCloseTo(0.4225 * 0.35, 10);
+    expect(hawksEyeOf(result.entries[3])?.procRate).toBeCloseTo(1 - (1 - 0.4225 * 0.35) * 0.65, 10);
   });
 
   it("乱れ撃ちを優先消費したリフルジェントアローは P を持たず、乱れ撃ちのバフにも P は無い", () => {
@@ -301,18 +319,21 @@ describe("BRD: ホークアイの発生の有無を付与元ごとに指定す�
     expect(refulgent.recastError).toBeFalsy();
     expect(refulgent.comboErrors).toEqual([]);
     expect(refulgent.resolvedPotency).toBe(280);
-    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 1 });
+    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 1, fallbackSkillName: "バーストショット" });
+    // 出なかった分岐が無い（1 − P = 0）ので、ホークアイは付け直さない (#842)
+    expect(hasHawksEye(refulgent)).toBe(false);
   });
 
-  it.each(SOURCES)("%s を「しなかった」にするとホークアイが付かず、リフルジェントアローは発動条件エラーになる", (sourceId) => {
+  // #842 までは発動条件エラーにしていた。P = 0 の枠はバーストショットを撃つフィラー枠として扱う
+  it.each(SOURCES)("%s を「しなかった」にするとホークアイが付かず、リフルジェントアローは威力 220 のフィラー枠になる", (sourceId) => {
     const result = resolve([procEntry(sourceId, false), entry("refulgent-arrow")]);
 
     expect(hasHawksEye(result.entries[0])).toBe(false);
-    expect(result.entries[1].comboErrors).toContainEqual({
-      buffId: "barrage",
-      kind: "missing",
-      anyOf: ["barrage", "hawks-eye"],
-    });
+    const refulgent = result.entries[1];
+    expect(refulgent.recastError).toBeFalsy();
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.consumedProc?.procRate).toBe(0);
+    expect(refulgent.resolvedPotency).toBe(220);
   });
 
   it("ラドンバイトを「発生した」にすると、シャドウバイトは確定の威力 200 になる", () => {
@@ -345,8 +366,12 @@ describe("BRD: ホークアイの発生の有無を付与元ごとに指定す�
 
     expect(result.entries[1].recastError).toBeFalsy();
     expect(result.entries[1].activeBuffs.find((ab) => ab.buffId === "hawks-eye")?.endTime).toBe(30);
-    expect(result.entries[2].recastError).toBeFalsy();
-    expect(result.entries[2].comboErrors.map((e) => e.buffId)).toContain("barrage");
+    // t=30 には付与元が無く（P = 0）、フィラー枠になる（#842 までは発動条件エラー）
+    const refulgent = result.entries[2];
+    expect(refulgent.recastError).toBeFalsy();
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.consumedProc?.procRate).toBe(0);
+    expect(refulgent.resolvedPotency).toBe(220);
   });
 
   it("確率付与でないバフは「しなかった」を指定しても付く（乱れ撃ちは 840 のまま）", () => {
@@ -367,5 +392,118 @@ describe("BRD: ホークアイの発生の有無を付与元ごとに指定す�
     expect(refulgent.comboErrors).toEqual([]);
     expect(refulgent.consumedProc?.procRate).toBeCloseTo(0.35, 10);
     expect(refulgent.resolvedPotency).toBe(241);
+  });
+});
+
+// 消費側の枠をフィラー枠として扱い、出なかった分岐で撃つ fallback の GCD の付与確率 (1 − P) × p を次の枠に伝える (#842)
+describe("BRD: 消費側の出なかった分岐の付与確率を伝える (#842)", () => {
+  function setupLevel(level: PlayerLevel) {
+    const buffs = getBuffsForLevel(BRD_BUFFS, level);
+    const resources = getResourcesForLevel(BRD_RESOURCES, level);
+    const levelBuffIds = new Set(buffs.map((b) => b.id));
+    const levelResourceIds = new Set(resources.map((r) => r.id));
+    const skills = getSkillsForLevel(BRD_ATTACK_SKILLS, level, levelBuffIds, levelResourceIds);
+    const levelSkillMap = getAllSkillMapForLevel(BRD_ATTACK_SKILLS, skills, level, levelBuffIds, levelResourceIds);
+    return { buffs, resources, skillMap: levelSkillMap };
+  }
+
+  function resolveAtLevel(entries: TimelineEntry[], level: PlayerLevel) {
+    const { buffs, resources, skillMap: levelSkillMap } = setupLevel(level);
+    return resolveTimeline(entries, levelSkillMap, resources, undefined, buffs);
+  }
+
+  // q₁ = 1 − 0.65²、qₙ₊₁ = (1 − qₙ) × 0.35。威力は floor(220 + 60 × P)
+  it("ストームバイト → コースティックバイト → リフルジェントアロー ×4 の P と威力", () => {
+    const result = resolve([
+      entry("stormbite"),
+      entry("caustic-bite"),
+      ...Array.from({ length: 4 }, () => entry("refulgent-arrow")),
+    ]);
+
+    const refulgents = result.entries.slice(2);
+    for (const e of refulgents) {
+      expect(e.recastError).toBeFalsy();
+      expect(e.comboErrors).toEqual([]);
+    }
+    const procRates = refulgents.map((e) => e.consumedProc?.procRate);
+    [0.5775, 0.147875, 0.298244, 0.245615].forEach((expected, i) => expect(procRates[i]).toBeCloseTo(expected, 6));
+    expect(refulgents.map((e) => e.resolvedPotency)).toEqual([254, 228, 237, 234]);
+    // バフレーンの P（付け直したホークアイ）も、次の消費の P と同じ値になる
+    expect(refulgents[0].activeBuffs.find((ab) => ab.buffId === "hawks-eye")?.procRate).toBeCloseTo(0.147875, 10);
+  });
+
+  // 1 本目は付与元が無い（P = 0）フィラー枠なので、fallback の付与確率がそのまま 2 本目の P になる
+  it.each([
+    [70, "refulgent-arrow", "ヘヴィショット", 160, 0.2],
+    [80, "shadowbite", "クイックノック", 110, 0.2],
+    [100, "shadowbite", "ラドンバイト", 140, 0.35],
+  ] as const)("Lv%s の %s は、出なかった分岐で %s（威力 %i・付与確率 %s）を撃つ", (level, skillId, fallbackName, fallbackPotency, rate) => {
+    const result = resolveAtLevel([entry(skillId), entry(skillId)], level);
+
+    const [first, second] = result.entries;
+    expect(first.resolvedSkillId).toBe(skillId);
+    expect(first.comboErrors).toEqual([]);
+    expect(first.resolvedPotency).toBe(fallbackPotency);
+    expect(first.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 0, fallbackSkillName: fallbackName });
+    expect(second.recastError).toBeFalsy();
+    expect(second.comboErrors).toEqual([]);
+    expect(second.consumedProc?.procRate).toBeCloseTo(rate, 10);
+  });
+
+  // 消費側の 4 系統すべてで、fallback のスキルが引けてホークアイを付与し、威力が fallbackPotency と一致する
+  // Lv70: ヘヴィショット・クイックノック、Lv80 / 90: バーストショット・クイックノック、Lv100: バーストショット・ラドンバイト
+  it.each([70, 80, 90, 100] as const)("Lv%s: ホークアイの消費側の fallbackSkillId は修得済みの付与元で、威力が fallbackPotency と一致する", (level) => {
+    const { skillMap: levelSkillMap } = setupLevel(level);
+    const consumers = [...levelSkillMap.values()].flatMap((s) =>
+      (s.buffConsumptionAnyOf ?? []).filter((o) => o.buffId === "hawks-eye").map((o) => [s.id, o] as const),
+    );
+
+    expect(consumers.length).toBeGreaterThan(0);
+    for (const [skillId, option] of consumers) {
+      const fallback = levelSkillMap.get(option.fallbackSkillId ?? "");
+      expect(fallback, skillId).toBeDefined();
+      expect(fallback!.buffApplications, skillId).toContain("hawks-eye");
+      expect(fallback!.potency, skillId).toBe(option.fallbackPotency);
+    }
+  });
+
+  // バーストショット（t=0）→ リフルジェントアロー（t=2.5、P = 0.35）が残す付与元 0.65 × 0.35 は t=32.5 で切れる
+  it.each([
+    [32.4, "0.65 × 0.35", 0.65 * 0.35, 233],
+    [32.5, "0", 0, 220],
+  ] as const)("t=%s のリフルジェントアローは、出なかった分岐の付与元を 30 秒だけ数えて P = %s・威力 %i になる", (time, _label, expectedP, expectedPotency) => {
+    const result = resolve([entry("burst-shot"), entry("refulgent-arrow"), entry("refulgent-arrow", time)]);
+
+    expect(result.entries[1].startTime).toBe(2.5);
+    const refulgent = result.entries[2];
+    expect(refulgent.startTime).toBe(time);
+    expect(refulgent.recastError).toBeFalsy();
+    expect(refulgent.comboErrors).toEqual([]);
+    expect(refulgent.consumedProc?.procRate).toBeCloseTo(expectedP, 10);
+    expect(refulgent.resolvedPotency).toBe(expectedPotency);
+  });
+
+  it("上書きで無駄になるプロックの期待値は、ストームバイトで 0、効果中に重ねたコースティックバイトで 0.35 × 0.35", () => {
+    const result = resolve([entry("stormbite"), entry("caustic-bite")]);
+
+    expect(result.entries[0].wastedProc).toBeUndefined();
+    expect(result.entries[1].wastedProc?.buffId).toBe("hawks-eye");
+    expect(result.entries[1].wastedProc?.rate).toBeCloseTo(0.1225, 10);
+  });
+
+  // 「発生した」は P × 1、「しなかった」は付与しないので 0 (#838)
+  it.each([
+    ["発生した", true, 0.35],
+    ["しなかった", false, undefined],
+  ] as const)("効いているホークアイに「%s」の付与元を重ねると、上書きの期待値は %s", (_label, procOccurred, expected) => {
+    const result = resolve([entry("burst-shot"), { ...entry("burst-shot"), procOccurred }]);
+
+    const second = result.entries[1];
+    expect(second.recastError).toBeFalsy();
+    if (expected === undefined) {
+      expect(second.wastedProc).toBeUndefined();
+    } else {
+      expect(second.wastedProc?.rate).toBeCloseTo(expected, 10);
+    }
   });
 });
