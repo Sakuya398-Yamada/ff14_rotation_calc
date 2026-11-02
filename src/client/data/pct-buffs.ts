@@ -10,9 +10,12 @@ import rainbowDripIcon from "../assets/icons/pct/Rainbow_Drip.png";
 import mogOfTheAgesIcon from "../assets/icons/pct/Mog_of_the_Ages.png";
 import swiftcastIcon from "../assets/icons/pct/role_actions/Swiftcast.png";
 
+/** エーテルヒューの排他グループ（色魔法2・3実行可は同時に 1 つだけ） */
+const AETHERHUES_GROUP = "pct-aetherhues";
+
 export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
-  // コンボ進行用バフ
+  // コンボ進行用バフ: 1 段目が色魔法2を、2 段目が色魔法3を付ける（pct-skills.ts の comboFromBuff）
   // ============================================================
   {
     id: "aetherhues-2",
@@ -22,6 +25,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     duration: 30,
     effects: [],
     color: "#66bb6a",
+    exclusiveGroup: AETHERHUES_GROUP,
   },
   {
     id: "aetherhues-3",
@@ -31,6 +35,7 @@ export const PCT_BUFFS: BuffDefinition[] = [
     duration: 30,
     effects: [],
     color: "#42a5f5",
+    exclusiveGroup: AETHERHUES_GROUP,
   },
 
   // ============================================================

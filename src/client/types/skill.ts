@@ -151,6 +151,7 @@ export interface Skill {
    * - 不成立で required: false: 実行するが wsComboError（警告）にし、nonComboPotency を使い combo* は適用しない
    * 書き方: 前の段のスキルが buffApplications で次の段のバフを付ける（成否を問わず付く）。
    * 段のバフに同じ exclusiveGroup を付けると前の段のバフが外れ、持続はバフの duration で決まる。
+   * 次の段を付けない最終段は removesBuffs で段のバフを外す（例: PCT のブルーウォータ）。
    * autoTransform の変化先は変化先の定義で判定するので、変化先にも同じように書く。
    * 例: モンクの型 — 双掌打は comboFromBuff: { buffId: "raptor-form", required: true } と buffApplications: ["coeurl-form"]
    */
