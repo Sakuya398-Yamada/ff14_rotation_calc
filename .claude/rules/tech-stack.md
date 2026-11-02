@@ -10,7 +10,7 @@
 | フロントエンド | React + Vite | SPA構成 |
 | バックエンド | Hono (Cloudflare Workers) | 軽量・Web標準準拠。フロントと同じ Worker で動かす（エントリ: `src/server/index.ts`、設定: `wrangler.jsonc`）。レート制限は Rate Limiting バインディング `TIMELINE_RATE_LIMITER`（`wrangler.jsonc` の `ratelimits`）。保存のボット対策は Cloudflare Turnstile（sitekey はビルド時の `VITE_TURNSTILE_SITE_KEY`、secret は Worker の secret `TURNSTILE_SECRET_KEY`。ローカルは `.dev.vars`。#479） |
 | API 入力検証 | zod 4 + `@hono/zod-validator` | スキーマは `src/server/routes/*-schema.ts`。Worker の型は `@cloudflare/workers-types` を入れず `src/server/env.ts` に使う分だけ書く（client と共用の tsconfig の DOM 型とぶつかるため） |
-| DB | Cloudflare D1（SQLite） | Worker のバインディング `DB`（`wrangler.jsonc` の `d1_databases`）。ローカルは `.wrangler/state` の D1 |
+| DB | Cloudflare D1（SQLite） | Worker のバインディング `DB`（`wrangler.jsonc` の `d1_databases`）。PR のプレビューは全 PR で共有するプレビュー用の D1（同じファイルの `previews`。マイグレーションは `wrangler.preview-migrations.jsonc`。#581）。ローカルは `.wrangler/state` の D1 |
 | ORM | Drizzle ORM 0.45（drizzle-kit 0.31） | スキーマ `src/server/db/schema.ts`、マイグレーション `migrations/`（drizzle-kit が生成し、wrangler が適用） |
 | テスト | Vitest | `npm test` で実行。DB のテストは better-sqlite3 のメモリ上の DB に同じマイグレーションを当てる（workerd を起動しない。#475） |
 | CI | GitHub Actions | `.github/workflows/ci.yml`（常駐量と skill の md の大きさの予算検査・型チェック・テスト・ビルド・`wrangler deploy --dry-run`） |
@@ -48,9 +48,9 @@
 | `npm run dev` | フロントと API（Worker）を同じオリジンで起動（port 5173） |
 | `npm run build` | フロントと Worker をビルド（`dist/`） |
 | `npm run deploy` | 本番 D1 にマイグレーションを当ててから、ビルド済みの `dist/` を本番にデプロイ（Workers Builds が実行）。`-- --dry-run` を付けてもマイグレーションは本番に当たるので、検証は `npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run` で行う |
-| `npm run deploy:preview` | ビルド済みの `dist/` をプレビューにデプロイ（ローカルから手で作るとき用。Workers Builds の Preview command は `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json` を直接書く。Worker Previews は Preview command が `npx wrangler preview` を呼ぶことを求めるため。#487） |
+| `npm run deploy:preview` | ビルド済みの `dist/` をプレビューにデプロイ（ローカルから手で作るとき用。Workers Builds の Preview command は `npm run db:migrate:preview && npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json` で、`wrangler preview` は npm スクリプトで包まずに直接書く。Worker Previews は Preview command が `npx wrangler preview` を呼ぶことを求めるため。#487・#581） |
 | `npm run db:generate -- --name <名前>` | `schema.ts` の変更からマイグレーション SQL を生成（`migrations/`。生成物は手で編集しない） |
-| `npm run db:migrate` | ローカルの D1 にマイグレーションを適用（`db:migrate:remote` は本番 D1） |
+| `npm run db:migrate` | ローカルの D1 にマイグレーションを適用（`db:migrate:remote` は本番 D1、`db:migrate:preview` はプレビュー用 D1） |
 | `npm test` | Vitest 一括実行 |
 | `npx tsc --noEmit` | 型チェック（CI と同じ） |
 | `npm run test:watch` | Vitest watchモード |

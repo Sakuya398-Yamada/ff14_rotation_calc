@@ -9,7 +9,7 @@ export type Bindings = {
   // drizzle-orm/d1 の drizzle() に渡すだけなので型は付けない
   DB: unknown;
   TIMELINE_RATE_LIMITER: RateLimiter;
-  // Worker の secret。ローカルは .dev.vars から読む。PR プレビューには無い
+  // Worker の secret。ローカルは .dev.vars から読む。PR プレビューは本番の secret を引き継がず、プレビュー用に入れたものを読む（CONTRIBUTING.md「Turnstile」）
   TURNSTILE_SECRET_KEY?: string;
 };
 
