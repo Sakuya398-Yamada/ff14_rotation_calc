@@ -15,21 +15,24 @@
 # Issues labelled `meta` are left out. Issues with sub-issues are listed as parents. A dependency
 # counts when either source has it; an Issue is blocked while any of its dependencies is open.
 # A body line counts only when it starts with "依存:" (optionally as a list item; a full-width
-# colon also counts), so prose that quotes 「依存: #N」 is not read as a dependency, and owner/repo#N
-# on such a line is skipped. Differences between the two sources, and dependencies closed as
-# not_planned / duplicate or not found, are reported as notes.
+# colon also counts), so prose that quotes 「依存: #N」 is not read as a dependency. Only the run of
+# #N right after the colon (separated by ",", "、" or blanks) is read, so numbers in a note after
+# it are not, and owner/repo#N in the run is skipped. Differences between the two sources, and
+# dependencies closed as not_planned / duplicate or not found, are reported as notes.
 
 set -euo pipefail
 set -f
 
+# A wrong command line exits 2, so callers can tell it from a failure at run time (exit 1).
+misuse() { echo "issue-ready: $*" >&2; exit 2; }
 json=0 repo='{owner}/{repo}'
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --json) json=1 ;;
-    --repo) repo="${2:?--repo needs OWNER/REPO}"; shift ;;
-    --repo=*) repo="${1#--repo=}" ;;
+    --repo) [[ -n "${2:-}" ]] || misuse "--repo needs OWNER/REPO"; repo=$2; shift ;;
+    --repo=*) repo="${1#--repo=}"; [[ -n "$repo" ]] || misuse "--repo needs OWNER/REPO" ;;
     -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) echo "issue-ready: unknown option: $1" >&2; exit 2 ;;
+    *) misuse "unknown option: $1" ;;
   esac
   shift
 done
@@ -43,14 +46,17 @@ full=$(gh api "repos/$repo" --jq .full_name)
 nums=() title=() tjson=() labels=() meta=() sub_total=() sub_done=() rel_known=() rel_total=() body_deps=() is_open=()
 
 # 1. Open Issues, 100 per page. Pull requests come back as "PR" lines so the page size still counts.
+# Whitespace is `[\s\p{Zs}]`: gh's jq (gojq) matches only ASCII with `\s` and `[[:blank:]]`, and a
+# full-width space typed after "依存：" with a Japanese IME would otherwise end the run.
 issue_jq='.[] | if .pull_request then "PR" else [
   (.number | tostring), .title, (.title | tojson), ([.labels[].name] | tojson),
   (any(.labels[]; .name == "meta") | tostring),
   ((.sub_issues_summary.total // 0) | tostring), ((.sub_issues_summary.completed // 0) | tostring),
   (.issue_dependencies_summary != null | tostring),
   ((.issue_dependencies_summary.total_blocked_by // 0) | tostring),
-  ([(.body // "") | split("\n")[] | select(test("^[ \\t]*([-*][ \\t]+)?依存[:：]"))
-    | sub("^[ \\t]*([-*][ \\t]+)?依存[:：]"; "") | scan("(?:^|[^A-Za-z0-9_/])#([0-9]+)") | .[0]]
+  ([(.body // "") | split("\n")[]
+    | capture("^[\\s\\p{Zs}]*([-*][\\s\\p{Zs}]+)?依存[:：][\\s\\p{Zs}]*(?<l>([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+([\\s\\p{Zs}]*[,、]?[\\s\\p{Zs}]*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+)*)")
+    | .l | scan("(?:^|[\\s\\p{Zs},、])#([0-9]+)") | .[0]]
     | map(tonumber) | unique | map(tostring) | join(" "))
 ] | join("\u001f") end'
 page=1
