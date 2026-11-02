@@ -484,7 +484,10 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "0 10px",
     fontSize: "12px",
     background: "transparent",
-    border: "1px solid var(--color-field)",
+    // 選択時に borderColor だけ上書きするので、shorthand の border は使わない（React が混在を警告する）
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: "var(--color-field)",
     borderRadius: "var(--radius-md)",
     color: "var(--color-text)",
     cursor: "pointer",
