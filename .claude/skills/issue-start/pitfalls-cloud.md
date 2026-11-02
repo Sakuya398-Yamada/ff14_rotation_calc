@@ -5,7 +5,7 @@
 ## クラウドセッションでは gh の GraphQL 系が使えない
 
 - **条件**: Claude Code のクラウドセッション（`CLAUDE_CODE_REMOTE=true`）で GitHub MCP が使えず、`gh` CLI にフォールバックするとき
-- **症状**: `gh issue` / `gh pr` / `gh search` / `gh label` のサブコマンドの大半（`gh issue view` / `gh issue comment` / `gh pr create` / `gh pr list` / `gh pr checks` 等）が GraphQL を使うため `HTTP 403: GitHub GraphQL is not available from Claude Code sessions` で失敗する。リポジトリをまたぐ REST（`gh api search/issues` 等）も `sessions are bound to their configured repositories` で拒否される
+- **症状**: `gh issue` / `gh pr` / `gh search` / `gh label` のサブコマンドの大半（`gh issue view` / `gh issue comment` / `gh pr create` / `gh pr list` / `gh pr checks` 等）が GraphQL を使うため `HTTP 403: GitHub GraphQL is not available from Claude Code sessions` で失敗する。リポジトリをまたぐ REST（`gh api search/issues` 等）は、`sessions are bound to their configured repositories` で拒まれるセッション（2026-10）と、通るセッション（2026-11。下の「Issue の重複検索」）がある。GitHub MCP の `search_issues` / `search_pull_requests` がツール一覧に無いセッションもある
 - **回避**: リポジトリを指定した REST（`gh api repos/{owner}/{repo}/...`）に書き換える。`{owner}` / `{repo}` / `{branch}` は `gh` が現在のリポジトリとブランチで置き換える（テンプレート元など別のリポジトリは明示する。セッションに付いていないリポジトリは REST でも拒まれるので、先に足す。`phases/08-issue-recording.md`「5. ワークフロー改善余地の知見ボードへの記録」の手順 4）。本文は `-F body=@<file>` でファイルから渡す
   - Issue の取得: `gh api repos/{owner}/{repo}/issues/N`（コメントは `.../issues/N/comments`、sub-issue は `.../issues/N/sub_issues`）。一覧は既定で 1 ページ 30 件で、`--paginate` は 2 ページ目で止まる（次節）
   - ラベル付与: `gh api repos/{owner}/{repo}/issues/N/labels -f "labels[]=bug"`
@@ -14,11 +14,11 @@
   - Issue のクローズ: `gh api -X PATCH repos/{owner}/{repo}/issues/N -f state=closed -f state_reason=completed`
   - PR 作成: `gh api repos/{owner}/{repo}/pulls -f title=... -f head=<ブランチ> -f base=main -F body=@<file>`
   - ブランチの PR の有無（Phase 7 の再実行前の確認）: `gh api "repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=all"`
-  - Issue の重複検索（`search_issues` の代わり）: `gh api "repos/{owner}/{repo}/issues?state=all&per_page=100" --jq '.[] | select(.pull_request == null) | select(.title | test("<キーワード>")) | [.number, .state, .title] | @tsv'`。検索 API（`search/issues`）は `repo:` で絞っても `sessions are bound to their configured repositories` で拒まれる。タイトルの語でしか絞れないので、言い換えた語でも引く。100 件を超えるなら次節のループで回す
+  - Issue の重複検索（`search_issues` の代わり）: まず検索 API を試す。`full=$(gh api "repos/{owner}/{repo}" --jq .full_name)` のあと `gh api -X GET search/issues -f q="repo:$full is:issue <キーワード>" -f per_page=20 --jq '.items[] | [.number, .state, .title] | @tsv'`。`is:issue`（PR なら `is:pull-request`）を付けないと `Query must include 'is:issue' or 'is:pull-request' (HTTP 422)` で失敗する（GitHub API 自体の要件）。`{owner}` / `{repo}` は `-f` の値の中では置き換わらないので、`full` で渡す。`sessions are bound to their configured repositories` で拒まれたら、Issue の一覧をタイトルの語で絞る: `gh api "repos/{owner}/{repo}/issues?state=all&per_page=100" --jq '.[] | select(.pull_request == null) | select(.title | test("<キーワード>")) | [.number, .state, .title] | @tsv'`。タイトルの語でしか絞れないので、言い換えた語でも引く。100 件を超えるなら次節のループで回す
   - Issue に関連する PR（検索 API の代わり）: `gh api "repos/{owner}/{repo}/issues/N/timeline?per_page=100" --jq '.[] | select(.event == "cross-referenced" and .source.issue.pull_request) | [.source.issue.html_url, .source.issue.state, (.source.issue.pull_request.merged_at // "-"), .source.issue.title] | @tsv'`。タイトルや本文でこの Issue に触れた PR だけが、マージ日時（未マージは `-`）付きで返る。別のリポジトリからこの Issue に触れた PR も混ざるので、番号ではなく URL を出し、このリポジトリの PR かどうかは URL で見分ける（番号だけだと、別リポジトリのマージ済み PR をこの Issue の PR と取り違える）。リポジトリの PR を新しい順に一定数だけ見る形と違い、古い PR も取りこぼさない。イベント（コメントを含む）が 100 件を超える Issue は次節のループで回す。超えているかは、同じ URL を `--jq 'length'` で取って見る（100 件ちょうどなら次のページがある。絞った出力の件数では分からない）
   - CI の確認: `gh api repos/{owner}/{repo}/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
   - draft の ready 化・レビュースレッドの resolve・auto-merge のように GraphQL にしかない操作は、403 のメッセージに載る代替ルート（`repos/{owner}/{repo}/pulls/N/ccr/...`）を使う
-- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#83（issue-driven-dev-starter#81 も同内容）
+- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#83（issue-driven-dev-starter#81 も同内容）。`search/issues` が `is:issue` 付きで通ること、GitHub MCP の `search_*` が無いセッション: 2026-11 / issue-driven-dev-starter#229（スケジュール実行のセッションでは確かめていない）
 
 ## クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる
 
@@ -113,9 +113,9 @@
 
 - **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#192（還元元と、このテンプレート元のトランスクリプトで取り出せることを確かめた）
 
-## クラウドセッションでは、セッションに付いていないリポジトリの Release を `gh api` で読めない
+## クラウドセッションでは、セッションに付いていないリポジトリの Release やファイルを API で読めない
 
-- **条件**: Claude Code のクラウドセッション（`CLAUDE_CODE_REMOTE=true`）で、テンプレート元のように、セッションに付いていないリポジトリの Release notes を読むとき（`gh api repos/<owner>/<repo>/releases/tags/<版>`）
-- **症状**: `gh: GitHub access to this repository is not enabled for this session. Use add_repo to request access. ...（HTTP 403）` で失敗する。公開リポジトリでも同じ。一方、git の clone はプロキシを通るので、テンプレート元のクローンは作れる
-- **回避**: テンプレート元のクローン（`/template-update`「3-way マージの定型手順」の `git clone --no-checkout`）から読む。Release notes の自動生成の部分は、`git -C <scratchpad>/template-src show HEAD:CHANGELOG.md` の該当版の節（release-please が版ごとに書く、Release notes と同じ一覧）で代える。Release notes に後から足す「手動対応」は `CHANGELOG.md` には入っていないので、`git -C <scratchpad>/template-src show HEAD:docs/upgrade-notes.md` で読む。クローンで両方読めるので、`add_repo` でテンプレート元を足さなくてよい（足すなら、ユーザーの確認が要る）
-- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-11 / issue-driven-dev-starter#225
+- **条件**: Claude Code のクラウドセッション（`CLAUDE_CODE_REMOTE=true`）で、テンプレート元のように、セッションに付いていないリポジトリの Release notes（`gh api repos/<owner>/<repo>/releases/tags/<版>`）や、特定のタグのファイル（`gh api "repos/<owner>/<repo>/contents/<path>?ref=<タグ>"`、GitHub MCP の `get_file_contents` に `ref` を渡すもの）を読むとき
+- **症状**: `gh` は `gh: GitHub access to this repository is not enabled for this session. Use add_repo to request access. ...（HTTP 403）`、`get_file_contents` は `Access denied: repository "<owner>/<repo>" is not configured for this session. ...` で失敗する。公開リポジトリでも同じ。一方、git の clone はプロキシを通るので、公開リポジトリのクローンは作れる（公開リポジトリへの読み取りの `add_repo` は、何も付けずに匿名の clone を案内してくる）
+- **回避**: クローンから読む。版の決まったファイルは `git clone -q --depth 1 --branch <タグ> https://github.com/<owner>/<repo>.git <scratchpad>/<名前>` で取り、そのファイルを読む。テンプレート元の Release notes と手動対応は、テンプレート元のクローン（`/template-update`「3-way マージの定型手順」の `git clone --no-checkout`）から、vNEW のタグで読む。Release notes の自動生成の部分は、`git -C <scratchpad>/template-src show vNEW:CHANGELOG.md` の該当版の節（release-please が版ごとに書く、Release notes と同じ一覧）で代える。Release notes に後から足す「手動対応」は `CHANGELOG.md` には入っていないので、`git -C <scratchpad>/template-src show vNEW:docs/upgrade-notes.md` で読む。`HEAD` で読まないのは、`--no-checkout` のクローンの `HEAD` は clone した時点の既定ブランチのままで、あとから `git fetch --tags` しても進まず、使い回したクローンでは古い版を黙って読み（`upgrade-notes.md` がまだ無い版では `fatal: path 'docs/upgrade-notes.md' does not exist in 'HEAD'`）、新しいクローンでもまだリリースされていない記述が入りうるため。クローンで読めるので、`add_repo` でテンプレート元を足さなくてよい（push の権限で足すなら、ユーザーの確認が要る）
+- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-11 / issue-driven-dev-starter#225（ファイルの読み取り: issue-driven-dev-starter#235、タグで読む: issue-driven-dev-starter#228）

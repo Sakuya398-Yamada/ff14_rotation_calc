@@ -75,7 +75,8 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 1. **未回収の知見を一覧する**: `knowledge-board.sh open` を実行する。回収済みの判定（`✅ Issue #<番号>` と `✅ Issue <owner>/<repo>#<番号>` の 2 形式）はスクリプトが行う。振り分けや起票に本文が要るものだけ `show <ID>` で読む
 2. 未回収の知見を `**還元先**` の行で振り分ける
    - **`テンプレート汎用（↗ 還元済み: <URL>）`**: このプロジェクトでは昇格しない（テンプレート更新で戻ってくるので、昇格すると二重に対応することになる）
-     - その還元先の Issue の修正を含む版を、テンプレート元の `CHANGELOG.md` で探す。テンプレート元（`.claude/template-version` の `repo`）を `git clone -q --no-checkout https://github.com/<repo>.git <scratchpad>/template-src` で取り、`git -C <scratchpad>/template-src show HEAD:CHANGELOG.md` の版の節のうち、`#<還元先の番号>` を含む節が、その修正を含む版（Release notes はセッションに付いていないリポジトリだと読めないので、クローンで読む。`.claude/skills/template-update/SKILL.md` と同じ）
+     - 還元先 URL のリポジトリ（`https://github.com/<owner>/<repo>/issues/<番号>` の `<owner>/<repo>`）が `.claude/template-version` の `repo` と違えば（大文字と小文字は区別しない。別のテンプレートやフォークに還元した）、テンプレート元の番号とは対応しないので版は探さず、実行報告の「取り込み待ち」に「還元先が template-version の repo と違う」と添えて挙げる（印を付けるかは人が決める）
+     - その還元先の Issue の修正を含む版を、テンプレート元の `CHANGELOG.md` で探す。テンプレート元（`.claude/template-version` の `repo`）を `git clone -q --no-checkout https://github.com/<repo>.git <scratchpad>/template-src` で取り、`git -C <scratchpad>/template-src show HEAD:CHANGELOG.md` の版の節のうち、`#<還元先の番号>` を含む節が、その修正を含む版。すぐ後ろに数字が続くもの（`#42` に対する `#420`）は、別の番号なので数えない（Release notes はセッションに付いていないリポジトリだと読めないので、クローンで読む。`.claude/skills/template-update/SKILL.md` と同じ）
      - このプロジェクトに、その版以上の版の更新用 Issue（`refactor: テンプレートを vX.Y.Z に更新`）があれば、元のコメントに `✅ Issue #<更新用 Issue の番号> で対応` を `mark` で追記する（共通ルール 5）。まだ無ければ、または版を確かめられなければ（クローンに失敗した、など）、実行報告の「取り込み待ち」に挙げる
    - **`テンプレート汎用（未還元）`**: このプロジェクトでは昇格しない。テンプレート元で直してテンプレート更新で取り込むので、ここで直すと二重に対応することになる。実行報告の「要還元（ユーザー）」に挙げる（還元は人が `/issue-start` Phase 8 手順 6 の形で行い、`還元先` を `テンプレート汎用（↗ 還元済み: <URL>）` に書き換える。ルーティンは還元しない）
    - **上記以外**（プロジェクト固有／記入なし）: **重要度を問わず**（Low も含めて）独立した Issue へ昇格して起票する。同じ対象ファイル・同じ目的の知見は 1 件にまとめてよい。起票したら元のコメントに `✅ Issue #<番号> で対応` を `mark` で追記する（共通ルール 5）。バックログが上限に達した日は起票しない（手順 1-2）

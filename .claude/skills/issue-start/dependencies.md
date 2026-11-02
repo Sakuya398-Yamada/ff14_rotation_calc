@@ -25,8 +25,13 @@ gh api -X POST "repos/{owner}/{repo}/issues/<B>/dependencies/blocked_by" -F issu
 
 B の依存は、本文の `依存: #N` と blocked by の両方から集める。
 
+- 本文から読むのは、行頭が `依存:` の行（全角の `依存：` も、前に空白や箇条書きの `- ` / `* ` を付けたものも含む）の、コロンの直後に続く `#N` の並び（`#12, #13` のように `,`・`、`・空白で区切ったもの）だけ。並びの後ろの注記に出る `#N` と、並びの中の `owner/repo#N` は読まない（`.claude/scripts/issue-ready.sh` と同じ）。注記は番号の並びの後ろに書く（`依存: #12（#12 で足す節を触るため）`）。別のリポジトリへの依存は blocked by に付ける
+- blocked by は次で読む。1 列目は依存先で、このリポジトリなら `#<M>`、別のリポジトリなら `owner/repo#<M>` と出る（blocked by には別のリポジトリの Issue も付けられる）。別のリポジトリの依存先は、本文の `依存: #M` と番号が同じでも同じ依存先とみなさない
+
 ```bash
-gh api "repos/{owner}/{repo}/issues/<B>/dependencies/blocked_by?per_page=100" --jq '.[] | [.number, .state, .state_reason, .title] | @tsv'
+full=$(gh api "repos/{owner}/{repo}" --jq .full_name)
+gh api "repos/{owner}/{repo}/issues/<B>/dependencies/blocked_by?per_page=100" \
+  --jq '.[] | [(((.repository_url | sub(".*/repos/"; "")) as $r | if $r == "'"$full"'" then "" else $r end) + "#" + (.number | tostring)), .state, (.state_reason // ""), .title] | @tsv'
 ```
 
 - 完了しているかは、その Issue の状態で見る。blocked by に出た番号は上の出力の `state` / `state_reason`、本文にしか無い番号は `issue_read`（method: `get`）で見る。`closed` でも `state_reason` が `not_planned` / `duplicate` なら、依存した変更は入っていないので、着手してよいかをユーザーに確認する

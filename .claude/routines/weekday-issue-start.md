@@ -57,12 +57,12 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 1. 候補条件と確かめ方は、`origin/main` の `.claude/skills/issue-priority/routine-candidates.md`（`git show` で読む）の「候補条件」と「確かめ方」に従う（正本はそちら。ここに書き写さない）。`routine-ok` の付いた Issue が 0 件なら、手順 2-3 へ進む
 2. **完了せずに閉じた依存先**: 依存先に `open` が無く、`completed` 以外（`not_planned` / `duplicate`、理由の無いもの）で閉じた依存先がある Issue は、ほかの候補条件をすべて満たしていれば、候補から外したうえで、Issue にコメントしてラベル `needs-decision` を付ける（対話セッションなら、着手してよいかをユーザーに確かめる場面。`.claude/skills/issue-start/dependencies.md`「読み方」）。ほかの条件で外れる Issue には付けない（外れているあいだは、付けても選定は変わらない）。選定は残りの候補で続ける
    - コメントは GitHub MCP の `add_issue_comment`（使えなければ、本文を scratchpad に書いて `gh api repos/{owner}/{repo}/issues/<番号>/comments -F body=@- < <scratchpad>/needs-decision.md`）で付ける。ラベルは `gh api repos/{owner}/{repo}/issues/<番号>/labels -f "labels[]=needs-decision"` で付ける（追加だけなので、ほかのラベルを落とさない）
-   - コメントの本文（`<依存先>` は、本文の `依存: #M` から来た依存先なら `#<M>`、blocked by から来た依存先なら `routine-candidates.md`「確かめ方」手順 4 の出力の 1 列目をそのまま書く。別のリポジトリの依存先を `#<M>` だけで書くと、このリポジトリの別の Issue へのリンクになるため。依存先が複数あれば、最初の箇条書きを依存先ごとに書き、2 つ目の箇条書きの `<依存先>` には、当てはまるものをすべて「、」でつないで書く）:
+   - コメントの本文（`<依存先>` は、本文の `依存: #M` から来た依存先なら `#<M>`、blocked by から来た依存先なら `routine-candidates.md`「確かめ方」手順 4 の出力の 1 列目をそのまま書く。別のリポジトリの依存先を `#<M>` だけで書くと、このリポジトリの別の Issue へのリンクになるため。`<外す依存>` は、依存先が実際にある場所だけを、場所ごとにまとめて書く。本文にある依存先は「本文の `依存: <依存先を , でつなぐ>`」、blocked by にある依存先は「blocked by の <依存先を「、」でつなぐ>」とし、両方の場所にあれば「と」でつなぐ（例: #12 が本文と blocked by の両方、#13 が本文だけ、x/y#3 が blocked by だけなら「本文の `依存: #12, #13` と blocked by の #12、x/y#3」）。完了せずに閉じた依存先が複数あれば、最初の箇条書きを依存先ごとに書く）:
 
      ```
      ## 無人実行で判断できない点（weekday-issue-start）
      - 依存先 <依存先> が `<state_reason。無ければ「理由なし」>` で閉じていて、依存した変更が入っていない。この Issue に着手してよいかは人が決める
-     - 着手してよければ、本文の `依存: <依存先>` と blocked by から <依存先> を外すか、代わりの Issue に差し替えてから `needs-decision` を外す。依存を残したままラベルだけ外すと、次の実行でまた付く
+     - 着手してよければ、<外す依存> を外すか、代わりの Issue に差し替えてから `needs-decision` を外す。依存を残したままラベルだけ外すと、次の実行でまた付く
 
      _スケジュール実行（weekday-issue-start）による無人実装_
      ```
