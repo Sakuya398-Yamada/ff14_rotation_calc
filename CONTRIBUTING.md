@@ -153,7 +153,7 @@ npm run db:migrate                        # ローカルの D1 に適用
 品質チェック（CI）と配信（Cloudflare Workers）を分担しています：
 
 - **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量と skill の md の大きさの予算検査（`.claude/scripts/check-context-budget.py`。CLAUDE.md と `paths:` なし rules の合計が 1000 行以内か、`.claude/skills/` の md がどれも 30,000 バイト未満か。外部の `skill-creator/` は除く）→ 依存インストール → `tsc --noEmit` → `npm test` → `npm run build` → `npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run` を実行（`npm run deploy` は本番 D1 へのマイグレーション適用を含むので、CI はデプロイの部分だけを dry-run する）
-- **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets は不要。本番 D1 にマイグレーションを当てるため、Cloudflare 側のビルド用 API トークンに D1 の編集権限が要る。後述「本番 D1 とビルド用トークン」）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
+- **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets は不要。本番 D1 とプレビュー用 D1 にマイグレーションを当てるため、Cloudflare 側のビルド用 API トークンに D1 の編集権限が要る。後述「本番 D1 とビルド用トークン」）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
 - フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
 
 ### Workers Builds の設定（初回のみ）
@@ -165,16 +165,16 @@ npm run db:migrate                        # ローカルの D1 に適用
    - **Project name（Worker 名）**: `ff14-rotation-calc`（`wrangler.jsonc` の `name` と一致させる。違うとビルドが失敗する）
    - **Build command**: `npm run build`
    - **Deploy command**: `npm run deploy`（本番 D1 へのマイグレーション適用 → デプロイ）
-   - **Preview command**（本番ブランチ以外。**Enable Preview Builds** を有効にする）: `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`
+   - **Preview command**（本番ブランチ以外。**Enable Preview Builds** を有効にする）: `npm run db:migrate:preview && npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`（プレビュー用 D1 にマイグレーションを当ててからプレビューを作る。後述「プレビュー用 D1」）
    - **Root directory**: 空欄（`/`）のまま
 5. **Build variables and secrets** に `NODE_VERSION` = `22` を追加（Workers Builds の既定は Node.js 24。CI と揃える）
 6. **Deploy** で初回ビルドを開始
 
 これで以後、`main` への push は本番（`https://ff14-rotation-calc.forestry-for.workers.dev`）に、PR はプレビュー URL に自動デプロイされます。
 
-> **Preview command では `wrangler preview` を直接呼ぶ**: PR にプレビュー URL をコメントするのは Worker Previews の機能で、Workers Builds は独自の Preview command にも `npx wrangler preview` を呼ぶことを求めています。以前は Worker Previews に切り替えないまま Preview command を `npm run deploy:preview`（npm スクリプト）にしていて、プレビュー自体は作られたのにコメントにプレビュー URL が出なかった（#487）。`package.json` の `deploy:preview` は、ローカルから手でプレビューを作るとき用です。
+> **Preview command では `wrangler preview` を直接呼ぶ**: PR にプレビュー URL をコメントするのは Worker Previews の機能で、Workers Builds は独自の Preview command にも `npx wrangler preview` を呼ぶことを求めています。以前は Worker Previews に切り替えないまま Preview command を `npm run deploy:preview`（npm スクリプト）にしていて、プレビュー自体は作られたのにコメントにプレビュー URL が出なかった（#487）。`package.json` の `deploy:preview` は、ローカルから手でプレビューを作るとき用です。前に `npm run db:migrate:preview &&` を付けるのはよいが、`wrangler preview` 自体は npm スクリプトで包まない。
 >
-> **Worker Previews 以前から Builds に繋いでいた Worker の場合**: **Settings** → **Builds** に **Set up Worker Previews** のバナーが出ていたら、**Set up** から一度だけ切り替える（元の方式には戻せない）。確認ダイアログで Previews 用の変数・シークレット・バインディングを聞かれるが、空のまま進めてよい（Previews は本番の設定を引き継がず、`wrangler.jsonc` の `previews` に書いたものだけが付く）。D1 の `DB` は今は本番だけで、プレビューには付かない。プレビューのビルドログに出る「These bindings are configured for your production Worker but not for Previews: DB」は想定どおり（プレビュー用の D1 は #581 で決める）。切り替えると Preview command が `npx wrangler preview` に置き換わるので、上の `--config` 付きのコマンドに直す（[Cloudflare のドキュメント](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/#existing-workers-connected-to-builds)）。
+> **Worker Previews 以前から Builds に繋いでいた Worker の場合**: **Settings** → **Builds** に **Set up Worker Previews** のバナーが出ていたら、**Set up** から一度だけ切り替える（元の方式には戻せない）。確認ダイアログで Previews 用の変数・シークレット・バインディングを聞かれるが、空のまま進めてよい（Previews は本番の設定を引き継がず、`wrangler.jsonc` の `previews` に書いたもの（D1 の `DB`、レート制限、Turnstile のテスト用 secret）だけが付く）。切り替えると Preview command が `npx wrangler preview` に置き換わるので、上のコマンドに直す（[Cloudflare のドキュメント](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/#existing-workers-connected-to-builds)）。
 
 > **デプロイコマンドを既定の `npx wrangler deploy` のままにしない**: Vite の `root` が `src/client` のため、`vite build` が作るデプロイ用の設定（`dist/ff14_rotation_calc/wrangler.json`）をリポジトリ直下の `wrangler` は自動で見つけられず、`assets` に `directory` が無いというエラーで失敗します。`npm run deploy` と上の Preview command は、`--config` でこの生成設定を指定しています。
 
@@ -197,13 +197,31 @@ npm run db:migrate                        # ローカルの D1 に適用
    npx wrangler d1 migrations list DB --remote   # 「No migrations to apply」なら適用済み
    ```
 
+### プレビュー用 D1（初回のみ）
+
+PR のプレビューは本番の D1 を使わず、全 PR で共有するプレビュー用の D1（`ff14-rotation-calc-preview`）を使います（#581。作成済みで、ID は 2 つの設定ファイルに書いてある）。Preview command の `npm run db:migrate:preview` が、プレビューを作る前にこの D1 にマイグレーションを当てます。前節の手順 3 で足した D1 の編集権限はアカウントの D1 すべてに効くので、トークンに足すものはありません。
+
+1. 手元で `npx wrangler login` してから、プレビュー用の D1 を作る:
+
+   ```powershell
+   npx wrangler d1 create ff14-rotation-calc-preview --location apac
+   ```
+
+   「設定ファイルに追加するか」を聞かれたら `n` で断る（前節の手順 1 と同じ理由）
+2. 出力された `database_id` を、`wrangler.jsonc` の `previews.d1_databases`（binding `DB`）と `wrangler.preview-migrations.jsonc`（binding `PREVIEW_DB`）の両方に書いてコミットする。2 つが違うと、マイグレーションを当てた D1 とプレビューが使う D1 がずれる
+3. Worker の **Settings** → **Build** で、Preview command を上の「Workers Builds の設定」の手順 4 のコマンドにする。ここで変えた値は、これから作るプレビューにだけ付く。すでにあるプレビューはプレビューごとにビルドの設定を持っているので、画面上部のブランチの切り替えでそのプレビューを選び、**設定**（Settings）→ **ビルド**（Build）→ **ビルド構成**（Build configuration）の **プレビューコマンド** も同じコマンドに直す（#581）
+4. PR のプレビューのビルドログで、マイグレーションの適用（`✅`）と、「These bindings are configured for your production Worker but not for Previews」の警告が出ないことを確かめる
+
+- **データは使い捨て**: PR 同士の保存が同じ D1 に混ざります。バックアップ（`docs/d1-backup.md`）も本番の D1 だけで、プレビュー用は取りません
+- **マージ前の PR のマイグレーションも当たる**: その PR を閉じたり、マイグレーションを作り直したりすると、`main` の `migrations/` と D1 の中身がずれます。ずれたら `npx wrangler d1 delete ff14-rotation-calc-preview` で消し、手順 1・2 で作り直す。作り直すと ID が変わるので、開いている PR は `main` を取り込んで push し直す（古い ID のままだと、マイグレーションの適用が D1 を見つけられずに失敗する）
+
 ### Turnstile（初回のみ・#479 のマージ前に）
 
 保存 API は Turnstile の検証に通らない保存を拒否します。本番の sitekey と secret を入れずにマージすると、本番の保存がすべて失敗する（sitekey が無いと 403、secret が無いと 500）ので、マージの前に次を済ませます。
 
 1. ダッシュボードの **Turnstile** で **Add widget** を選び、次を入れて **Create**:
    - **Widget name**: 任意（例: `ff14-rotation-calc`）
-   - **Hostname management**: `ff14-rotation-calc.forestry-for.workers.dev`。PR のプレビュー（`<名前>-ff14-rotation-calc.forestry-for.workers.dev`）でも使うなら、代わりに `forestry-for.workers.dev` を入れる（登録したホスト名はサブドメインも通す）。`localhost` は入れない（ローカルはテスト用キーを使う）
+   - **Hostname management**: `ff14-rotation-calc.forestry-for.workers.dev`。`localhost` と PR のプレビューのホスト名は入れない（どちらもテスト用キーを使う。後述）
    - **Widget mode**: Managed
 2. 表示された sitekey を、Worker の **Settings** → **Build** → **Build variables and secrets** に `VITE_TURNSTILE_SITE_KEY` として足す（ビルド時にフロントに埋め込む値で、ページから誰でも見られる公開値）
 3. secret key を Worker の secret に入れる（どちらか）:
@@ -215,7 +233,9 @@ npm run db:migrate                        # ローカルの D1 に適用
    ダッシュボードなら Worker の **Settings** → **Variables and Secrets** → **Add**（Type: **Secret**）。`wrangler secret put` は今のコードのまま新しい版をデプロイするが、マージ前の版は secret を使わないので影響しない
 4. マージ後、本番の保存ダイアログで、ウィジェットにテスト用の表示が出ず、保存できることを確かめる
 
-PR のプレビューは本番の secret を引き継がず、今は D1 も付かないので保存できません（プレビュー用の設定は #581 で決める）。
+PR のプレビューは手順 2・3 の値を使いません（#581）。プレビューのビルドには `VITE_TURNSTILE_SITE_KEY` が渡らず、フロントはテスト用の sitekey（必ず成功）で動きます。secret も本番のものを引き継がないので、対になる公開のテスト用 secret（`1x0000000000000000000000000000000AA`）を `wrangler.jsonc` の `previews.vars` に書いてあります。プレビューで保存するのに、ダッシュボードで入れるものはありません（プレビューにはボット対策が効かないが、保存先はプレビュー用 D1 で、レート制限は効く）。
+
+- プレビューのビルドにも `VITE_TURNSTILE_SITE_KEY` が渡るように変えると、本番の sitekey のトークンをテスト用 secret が拒否し、プレビューの保存が 403 になります。その場合は、`previews.vars` の値を本番の secret にせず（設定ファイルに書くと公開される）、`previews.vars` から外して `npx wrangler preview base-config secret put TURNSTILE_SECRET_KEY` で入れ、手順 1 のホスト名にプレビューも通る `forestry-for.workers.dev` を入れる。Previews Base の secret は入れた後に新しく作るプレビューにだけ付くので、すでにあるプレビューには `npx wrangler preview secret put TURNSTILE_SECRET_KEY --name <プレビュー名>`（プレビュー URL の `-ff14-rotation-calc.` より前）で入れる
 
 ### 動作確認手順
 
@@ -227,10 +247,13 @@ PR のプレビューは本番の secret を引き継がず、今は D1 も付�
 
 - **ビルド失敗（`npm ci`）**: Node のバージョンが合っていない可能性。ビルド用の環境変数 `NODE_VERSION=22` が設定されているか確認
 - **ビルド失敗（Worker 名の不一致）**: ダッシュボードの Worker 名と `wrangler.jsonc` の `name`（`ff14-rotation-calc`）が一致しているか確認
-- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`）にする
+- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは上の「Workers Builds の設定」の手順 4 の Preview command）にする
 - **PR のコメントにプレビュー URL が出ない（「Deploying with Cloudflare Workers」の表に URL の列が無い）**: Worker Previews に切り替わっていないか、Preview command が `wrangler preview` を直接呼んでいない（npm スクリプトで包んでいる等）。上記の注記のとおりに直す
 - **プレビューの作成失敗（`Preview creation failed: Invalid preview name`）**: ブランチ名に、プレビュー名に使えない文字（`#` など）が入っている。Workers Builds はビルドの前にブランチ名をそのままプレビュー名にするので、Preview command では直せない。`.claude/rules/git-conventions.md` の書式でブランチを切り直す（#609）
-- **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews": {}` が消えていないか確認する（#485）
+- **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews"` ブロックが消えていないか確認する（#485）
+- **プレビューのビルドでマイグレーションが当たらない（ログの `Executing user deploy command:` に `db:migrate:preview` が無く、プレビューの API が 500 になる）**: そのプレビューが、Worker の Preview command を変える前に作られている。プレビューごとのビルドの設定を直し、push し直す（上記「プレビュー用 D1」の手順 3）
+- **プレビューのビルド失敗（`Missing script: "db:migrate:preview"`）**: Preview command にマイグレーションの適用を足した（#581）より前の `main` から切ったブランチ。`main` を取り込んで push し直す
+- **プレビューのビルド失敗（`wrangler d1 migrations apply PREVIEW_DB --remote` のエラー）**: 認証・権限のエラーならビルド用トークンの D1 の編集権限（「本番 D1 とビルド用トークン」の手順 3）、D1 が見つからないなら `wrangler.preview-migrations.jsonc` の `database_id`、SQL のエラーなら共有の D1 の中身のずれ（「プレビュー用 D1」の作り直し）を確かめる
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す
 - **本番の保存がいつも「ボット対策の確認ができませんでした」（403）になる**: ビルド変数 `VITE_TURNSTILE_SITE_KEY` が無いと、フロントはテスト用の sitekey で動き（ウィジェットにテスト用の表示が出る）、そのダミートークンを本番の secret が拒否する。上記「Turnstile」の手順 2 のとおり足して、ビルドし直す（ビルド変数は次のビルドから効く）。テスト用の表示が出ていなければ、sitekey と secret が別のウィジェットのものになっていないか確かめる

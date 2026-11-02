@@ -1,0 +1,14 @@
+// プレビュー用の D1 にマイグレーションを当てるためだけの設定（npm run db:migrate:preview）。デプロイには使わない
+// wrangler.jsonc の previews.d1_databases は wrangler d1 migrations apply から見えないので、同じ D1 をトップレベルに書く
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"d1_databases": [
+		{
+			// wrangler.jsonc に無い名前にして、--config を付け忘れても本番の D1 に当たらないようにする
+			"binding": "PREVIEW_DB",
+			"database_name": "ff14-rotation-calc-preview",
+			"database_id": "e91d42e7-1d5f-45cc-868f-ffe4a309211a",
+			"migrations_dir": "migrations"
+		}
+	]
+}
