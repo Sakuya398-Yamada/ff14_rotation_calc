@@ -1886,9 +1886,8 @@ export function resolveTimeline(
       }
     }
 
-    // コンボ状態更新: GCDスキルを使用した場合、コンボ状態を更新
-    // comboFromを持つスキルまたはコンボ系スキルの起点となるスキルはコンボ状態を更新する
-    if (skill.type === "gcd" && !hasError) {
+    // コンボ状態更新: keepsCombo の付いていない GCD を使用した場合、コンボ状態を更新する
+    if (skill.type === "gcd" && !hasError && !skill.keepsCombo) {
       lastComboSkillId = resolvedSkillId;
       lastComboTime = startTime;
     }

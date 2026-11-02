@@ -165,8 +165,8 @@ export const XXX_BUFFS: BuffDefinition[] = [
 | リソース増減 | `resourceChanges[]` | `whm-skills.ts:217-220`, `sam-skills.ts:72` |
 | バフ付与 | `buffApplications[]` | `whm-skills.ts:279, 292` |
 | バフ消費 | `buffConsumptions[]` | `whm-skills.ts:201-203` |
-| WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges` | `sam-skills.ts:98-101, 113-115` |
-| 付与バフで表すコンボ（型など。直前の GCD ではなく、前の段が付けたバフでつながる） | 前の段の `buffApplications` で次の段のバフを付け、次の段は `comboFromBuff`（発動条件なら `required: true`）。段のバフに同じ `exclusiveGroup` と `duration` を付ける。成立時の効果は WS コンボと同じ `nonComboPotency` / `comboResourceChanges`。次の段を付けない最終段は `removesBuffs` で段のバフを外す | `mnk-skills.ts:99-103, 274-276`（双掌打）、`mnk-buffs.ts:81-108`（型のバフ）、`pct-skills.ts:110-111`（ブルーウォータ。最終段） |
+| WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges`。コンボの起点・継続でない GCD には `keepsCombo: true` を付ける（付けないと、その GCD を挟んだときにコンボが途切れる。`ws-combo-keeps-combo.test.ts` が付け忘れを検出する） | `sam-skills.ts:98-101, 113-115`、`sam-skills.ts:700`（燕飛。`keepsCombo`） |
+| 付与バフで表すコンボ（型など。直前の GCD ではなく、前の段が付けたバフでつながる） | 前の段の `buffApplications` で次の段のバフを付け、次の段は `comboFromBuff`（発動条件なら `required: true`）。段のバフに同じ `exclusiveGroup` と `duration` を付ける。成立時の効果は WS コンボと同じ `nonComboPotency` / `comboResourceChanges`。次の段を付けない最終段は `removesBuffs` で段のバフを外す | `mnk-skills.ts:99-103, 274-276`（双掌打）、`mnk-buffs.ts:81-108`（型のバフ）、`pct-skills.ts:113-114`（ブルーウォータ。最終段） |
 | 全消費＋集計獲得 | `consumeAllResources` + `resourceGainByConsumedCount` | `sam-skills.ts:647-652`（葉隠 = 雪/月/花を全消費し剣気獲得） |
 | チャージ式・共有CD | `maxCharges` + `cooldownGroup` | `sam-skills.ts:584-586, 599-601` |
 | バフ必須スキル | `requiredBuff` | `sam-skills.ts:447, 462, 633` |
