@@ -116,3 +116,35 @@ describe("確率付与だけで付いたバフの自動消費の警告（unconfi
     expect(entries[1].unconfirmedProcBuffs).toBeUndefined();
   });
 });
+
+// 付与元の確率が無い確定のバフは出ている（P = 1）ので、重ねた確率付与はその確率だけ無駄になる (#842)
+describe("確率付与が効いているバフに重なって無駄になる確率（wastedProc）", () => {
+  const procBuff: BuffDefinition = {
+    id: "proc-buff",
+    name: "確率で付くバフ",
+    shortName: "proc",
+    icon: "",
+    duration: 30,
+    maxStacks: 1,
+    effects: [],
+    color: "#ff7043",
+  };
+  const procGrant = makeSkill({
+    id: "proc-grant",
+    buffApplications: ["proc-buff"],
+    buffApplicationProcRates: { "proc-buff": 0.4 },
+  });
+  const sureGrant = makeSkill({ id: "sure-grant", buffApplications: ["proc-buff"] });
+  const skillMap = new Map([procGrant, sureGrant].map((s) => [s.id, s]));
+
+  it.each([
+    ["確定で付いたバフ", "sure-grant", 0.4],
+    ["確率で付いたバフ", "proc-grant", 0.4 * 0.4],
+  ])("%s（%s）に確率付与を重ねると、上書きで無駄になる確率は %s", (_label, firstId, expected) => {
+    const entries = resolveTimeline([makeEntry(firstId), makeEntry("proc-grant")], skillMap, [], undefined, [procBuff]).entries;
+
+    expect(entries[0].wastedProc).toBeUndefined();
+    expect(entries[1].wastedProc?.buffId).toBe("proc-buff");
+    expect(entries[1].wastedProc?.rate).toBeCloseTo(expected, 10);
+  });
+});

@@ -60,13 +60,23 @@ export function formatProcRateShort(rate: number): string {
   return formatPercentRounded(rate, 0);
 }
 
-/** 期待値の補正に使った発動確率。例: "ホークアイ発動確率 35.0%" */
+/** 期待値の補正に使った発動確率。例: "ホークアイ発動確率 35.0%（不発時はバーストショット）" */
 export function formatConsumedProc(
   consumedProc: NonNullable<ResolvedTimelineEntry["consumedProc"]>,
   buffDefMap: Map<string, BuffDefinition>,
 ): string {
   const name = buffDefMap.get(consumedProc.buffId)?.name ?? consumedProc.buffId;
-  return `${name}発動確率 ${formatProcRate(consumedProc.procRate)}`;
+  const fallback = consumedProc.fallbackSkillName ? `（不発時は${consumedProc.fallbackSkillName}）` : "";
+  return `${name}発動確率 ${formatProcRate(consumedProc.procRate)}${fallback}`;
+}
+
+/** 効いているバフに重ねて無駄になる確率付与。例: "ホークアイ上書き確率 12.3%" (#842) */
+export function formatWastedProc(
+  wastedProc: NonNullable<ResolvedTimelineEntry["wastedProc"]>,
+  buffDefMap: Map<string, BuffDefinition>,
+): string {
+  const name = buffDefMap.get(wastedProc.buffId)?.name ?? wastedProc.buffId;
+  return `${name}上書き確率 ${formatProcRate(wastedProc.rate)}`;
 }
 
 /** 発生の有無を指定できる確率付与のバフ。ほかのジョブの確率付与は対象外 (#838) */

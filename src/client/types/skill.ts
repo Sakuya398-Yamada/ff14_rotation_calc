@@ -207,10 +207,18 @@ export interface Skill {
   };
   /**
    * バフ消費のOR条件（いずれか1つを消費。potency指定時は威力を上書き）。
-   * fallbackPotency指定時は、前回の消費以降に撃った付与元の付与確率 p_i（buffApplicationProcRates）から
-   * 発動確率 P = 1 − Π(1 − p_i) を求めて期待値を計算する。確率付きの付与元が無ければ確定付与として補正しない
+   * fallbackPotency指定時は、効果時間内の付与元の付与確率 p_i（buffApplicationProcRates）から
+   * 発動確率 P = 1 − Π(1 − p_i) を求めて期待値を計算する。確率付きの付与元が無ければ確定付与として補正しない。
+   * fallbackPotency を持つ選択肢があれば、どのバフも無い枠でもエラーにせず、P = 0 として fallback の威力で撃つ（フィラー枠。#842）。
+   * fallbackSkillId は出なかったときに撃つ GCD。消費時、その付与確率 p から (1 − P) × p の付与元を残してバフを付け直す
    */
-  buffConsumptionAnyOf?: { buffId: string; stacks: number; potency?: number; fallbackPotency?: number }[];
+  buffConsumptionAnyOf?: {
+    buffId: string;
+    stacks: number;
+    potency?: number;
+    fallbackPotency?: number;
+    fallbackSkillId?: string;
+  }[];
   /** 指定バフがアクティブな場合、resourceChangesの特定リソース消費をスキップしバフを1スタック消費する（バフ優先消費） */
   buffSkippableResource?: { buffId: string; resourceId: string };
   /** 指定バフがアクティブなら威力を上書きしバフを消費する。バフ未付与時は通常威力で実行（エラーにならない） */
@@ -639,9 +647,15 @@ export interface ResolvedTimelineEntry {
   unconfirmedProcBuffs?: string[];
   /**
    * buffConsumptionAnyOf の fallbackPotency で威力を期待値に補正したときの、消費したバフと発動確率 P。
+   * 付与元が無いフィラー枠は P = 0。fallbackSkillName は出なかったときに撃つ GCD の名前（#842）。
    * 乱れ撃ちのような確定のバフを消費したときは無い
    */
-  consumedProc?: { buffId: string; procRate: number };
+  consumedProc?: { buffId: string; procRate: number; fallbackSkillName?: string };
+  /**
+   * 確率付与（buffApplicationProcRates）が、すでに付いているバフに重なって無駄になる確率（付与時点の P × 付与確率）。
+   * 効いているバフに重ねたときだけ持つ（#842）
+   */
+  wastedProc?: { buffId: string; rate: number };
   /**
    * このエントリ実行**後**にアクティブなバフ一覧（guaranteedCrit/Dh・consumeOnGcd 等の
    * 自動消費を反映済み）。次エントリの speed 計算 / バフレーン終端検出に使用される。

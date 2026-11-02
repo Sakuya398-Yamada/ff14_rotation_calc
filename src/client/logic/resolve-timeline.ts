@@ -1272,7 +1272,10 @@ export function resolveTimeline(
     // buffConsumptionAnyOf: いずれか1つのバフを消費（見つからなければエラー）
     let anyOfPotencyOverride: number | undefined;
     let anyOfFallbackPotency: number | undefined;
+    let anyOfFallbackSkillId: string | undefined;
     let anyOfMatchedBuffId: string | undefined;
+    // どのバフも無く、出ていなければ fallback の GCD を撃つ枠（P = 0 のフィラー枠。#842）
+    let anyOfIsFiller = false;
     if (skill.buffConsumptionAnyOf) {
       for (const option of skill.buffConsumptionAnyOf) {
         const activeBuff = currentActiveBuffs.find((ab) => ab.buffId === option.buffId);
@@ -1280,16 +1283,26 @@ export function resolveTimeline(
           anyOfMatchedBuffId = option.buffId;
           anyOfPotencyOverride = option.potency;
           anyOfFallbackPotency = option.fallbackPotency;
+          anyOfFallbackSkillId = option.fallbackSkillId;
           break;
         }
       }
       if (!anyOfMatchedBuffId) {
-        // いずれのバフも見つからない → エラー
-        comboErrors.push({
-          buffId: skill.buffConsumptionAnyOf[0].buffId,
-          kind: "missing",
-          anyOf: skill.buffConsumptionAnyOf.map((o) => o.buffId),
-        });
+        const fillerOption = skill.buffConsumptionAnyOf.find((o) => o.fallbackPotency !== undefined);
+        if (fillerOption) {
+          anyOfMatchedBuffId = fillerOption.buffId;
+          anyOfPotencyOverride = fillerOption.potency;
+          anyOfFallbackPotency = fillerOption.fallbackPotency;
+          anyOfFallbackSkillId = fillerOption.fallbackSkillId;
+          anyOfIsFiller = true;
+        } else {
+          // いずれのバフも見つからない → エラー
+          comboErrors.push({
+            buffId: skill.buffConsumptionAnyOf[0].buffId,
+            kind: "missing",
+            anyOf: skill.buffConsumptionAnyOf.map((o) => o.buffId),
+          });
+        }
       }
     }
 
@@ -1339,13 +1352,23 @@ export function resolveTimeline(
     }
     // proc確率を期待値として威力に適用: fallbackPotency + (potency - fallbackPotency) * P
     let consumedProc: ResolvedTimelineEntry["consumedProc"];
+    // 出なかったときに撃つ GCD の付与確率（消費時に (1 − P) × これの付与元を残す。#842）
+    let anyOfFallbackProcRate: number | undefined;
     if (anyOfMatchedBuffId && anyOfFallbackPotency !== undefined) {
-      const procRate = calcLiveProcRate(procSources.get(anyOfMatchedBuffId), startTime);
+      const procRate = anyOfIsFiller ? 0 : calcLiveProcRate(procSources.get(anyOfMatchedBuffId), startTime);
       if (procRate !== undefined) {
         resolvedPotency = Math.floor(anyOfFallbackPotency + (resolvedPotency - anyOfFallbackPotency) * procRate);
-        consumedProc = { buffId: anyOfMatchedBuffId, procRate };
+        const fallbackSkill = anyOfFallbackSkillId ? skillMap.get(anyOfFallbackSkillId) : undefined;
+        anyOfFallbackProcRate = fallbackSkill?.buffApplicationProcRates?.[anyOfMatchedBuffId];
+        consumedProc = {
+          buffId: anyOfMatchedBuffId,
+          procRate,
+          ...(fallbackSkill ? { fallbackSkillName: fallbackSkill.name } : {}),
+        };
       }
     }
+    // 確率付与が、効いているバフに重なって無駄になる確率（バフ適用で求める。#842）
+    let wastedProc: ResolvedTimelineEntry["wastedProc"];
 
     // potencyScaling: リソース量に応じた威力スケーリング（線形補間）
     if (skill.potencyScaling) {
@@ -1577,6 +1600,19 @@ export function resolveTimeline(
           if (idx >= 0) currentActiveBuffs.splice(idx, 1);
         }
         procSources.delete(anyOfMatchedBuffId);
+
+        // 出なかった分岐（1 − P）で撃つ fallback の GCD の付与を、1 つの付与元として残して付け直す (#842)。
+        // ホークアイはスタックせず付与元ごとの当否は独立なので、以降の 1 − Π(1 − p_i) がそのまま成り立つ
+        const buffDef = buffDefMap.get(anyOfMatchedBuffId);
+        const rate = consumedProc && anyOfFallbackProcRate !== undefined
+          ? (1 - consumedProc.procRate) * anyOfFallbackProcRate
+          : 0;
+        if (buffDef && rate > 0) {
+          const endTime = computeBuffEndTime(startTime, buffDef.duration);
+          currentActiveBuffs.push({ buffId: anyOfMatchedBuffId, startTime, endTime, stacks: buffDef.maxStacks, procRate: rate });
+          procSources.set(anyOfMatchedBuffId, [{ endTime, rate }]);
+          unconfirmedProcBuffs.add(anyOfMatchedBuffId);
+        }
       }
 
       // conditionalPotencyBuffs: マッチしたバフを消費
@@ -1691,6 +1727,10 @@ export function resolveTimeline(
             // 効いていないバフの付与元は、消費・解除・失効で使い終わっているので数えない
             // （ファイアスターターのような無期限のバフは、時間では付与元が外れない。#615）
             const sources = existingIdx >= 0 ? procSources.get(buffId) ?? [] : [];
+            // 効いているバフに重ねた付与は、すでに出ていれば無駄になる。付与元が無ければ確定で付いている (#842)
+            if (existingIdx >= 0) {
+              wastedProc = { buffId, rate: (calcLiveProcRate(sources, startTime) ?? 1) * rate };
+            }
             sources.push({ endTime: newBuff.endTime, rate });
             procSources.set(buffId, sources);
           }
@@ -1917,6 +1957,7 @@ export function resolveTimeline(
       recastError,
       wsComboError,
       consumedProc,
+      wastedProc,
       ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),

@@ -5,6 +5,7 @@ import {
   formatConsumedProc,
   formatProcRate,
   formatProcRateShort,
+  formatWastedProc,
   isProcOutcomeSource,
 } from "../buff-format";
 import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
@@ -106,6 +107,22 @@ describe("formatConsumedProc", () => {
 
   it("バフ定義が無いときは buffId を名前の代わりに使う", () => {
     expect(formatConsumedProc({ buffId: "b", procRate: 0.35 }, new Map())).toBe("b発動確率 35.0%");
+  });
+
+  // 出なかった分岐で撃つ GCD を添えて、フィラー枠であることを示す (#842)
+  it("fallback のスキル名があれば「（不発時は<スキル名>）」を添える", () => {
+    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "ホークアイ" }]]);
+    expect(formatConsumedProc({ buffId: "b", procRate: 0.5775, fallbackSkillName: "バーストショット" }, buffDefMap)).toBe(
+      "ホークアイ発動確率 57.8%（不発時はバーストショット）",
+    );
+  });
+});
+
+describe("formatWastedProc", () => {
+  it("バフ名を引いて「<バフ名>上書き確率 xx.x%」にする", () => {
+    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "ホークアイ" }]]);
+    // 0.35 × 0.35 = 0.12249999999999998 を 12.2 にしない
+    expect(formatWastedProc({ buffId: "b", rate: 0.35 * 0.35 }, buffDefMap)).toBe("ホークアイ上書き確率 12.3%");
   });
 });
 

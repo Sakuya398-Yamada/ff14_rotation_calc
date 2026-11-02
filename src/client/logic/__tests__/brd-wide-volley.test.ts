@@ -62,9 +62,13 @@ describe("BRD: ワイドボレー (#513)", () => {
     expect(wideVolley.resolvedPotency).toBe(220);
   });
 
-  it("ホークアイも乱れ撃ちも無ければワイドボレーは使用できない", () => {
+  // #842 までは発動条件エラーにしていた。付与元が無い（P = 0）枠はクイックノックを撃つフィラー枠として扱う
+  it("ホークアイも乱れ撃ちも無ければ、ワイドボレーはクイックノックの威力 110 のフィラー枠になる", () => {
     const wideVolley = resolveAtLevel(["wide-volley"], 70).entries[0];
 
-    expect(wideVolley.comboErrors).toContainEqual({ buffId: "barrage", kind: "missing", anyOf: ["barrage", "hawks-eye"] });
+    expect(wideVolley.recastError).toBeFalsy();
+    expect(wideVolley.comboErrors).toEqual([]);
+    expect(wideVolley.consumedProc?.procRate).toBe(0);
+    expect(wideVolley.resolvedPotency).toBe(110);
   });
 });

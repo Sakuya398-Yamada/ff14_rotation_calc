@@ -260,22 +260,31 @@ describe("Timeline: ホークアイの発動確率 (#615)", () => {
     renderBrd(["burst-shot", "refulgent-arrow"]);
 
     expect(
-      screen.getByTitle(/^リフルジェントアロー \(威力: .* \/ ホークアイ発動確率 35\.0%\)/)
+      screen.getByTitle(/^リフルジェントアロー \(威力: .* \/ ホークアイ発動確率 35\.0%（不発時はバーストショット）\)/)
     ).toBeInTheDocument();
   });
 
-  it("バーストショット ×2 は、リフルジェントアローが 57.8%、ホークアイのバーが付与時点の 35.0% と 57.8% になる", () => {
+  // 消費後は、出なかった分岐のバーストショットが (1 − 0.5775) × 0.35 で付け直したバーが続く (#842)
+  it("バーストショット ×2 は、リフルジェントアローが 57.8%、ホークアイのバーが付与時点の 35.0%・57.8% と消費後の 14.8% になる", () => {
     renderBrd(["burst-shot", "burst-shot", "refulgent-arrow"]);
 
     expect(
-      screen.getByTitle(/^リフルジェントアロー \(威力: .* \/ ホークアイ発動確率 57\.8%\)/)
+      screen.getByTitle(/^リフルジェントアロー \(威力: .* \/ ホークアイ発動確率 57\.8%（不発時はバーストショット）\)/)
     ).toBeInTheDocument();
     const bars = screen.getAllByTitle(/^ホークアイ x1 /);
     expect(bars.map((bar) => bar.getAttribute("title"))).toEqual([
       expect.stringMatching(/\) 発動確率 35\.0%（付与時点）$/),
       expect.stringMatching(/\) 発動確率 57\.8%（付与時点）$/),
+      expect.stringMatching(/\) 発動確率 14\.8%（付与時点）$/),
     ]);
-    expect(bars.map((bar) => bar.textContent)).toEqual(["x1 (35%)", "x1 (58%)"]);
+    expect(bars.map((bar) => bar.textContent)).toEqual(["x1 (35%)", "x1 (58%)", "x1 (15%)"]);
+  });
+
+  it("ストームバイト → コースティックバイトは、コースティックバイトのツールチップに上書き確率 12.3% が出る", () => {
+    renderBrd(["stormbite", "caustic-bite"]);
+
+    expect(screen.getByTitle(/^コースティックバイト \(威力: .* \/ ホークアイ上書き確率 12\.3%\)/)).toBeInTheDocument();
+    expect(screen.getByTitle(/^ストームバイト \(/)).not.toHaveAttribute("title", expect.stringMatching(/上書き確率/));
   });
 
   it("乱れ撃ちを優先消費したリフルジェントアローと、乱れ撃ちのバーには発動確率が出ない", () => {

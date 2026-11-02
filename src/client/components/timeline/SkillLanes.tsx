@@ -2,7 +2,13 @@ import { useDraggable } from "@dnd-kit/core";
 import type { Skill, ResolvedTimelineEntry, CharacterStats, BuffDefinition } from "../../types/skill";
 import type { DisplayEntry } from "./types";
 import { calcEntryPotencyBreakdown } from "../../logic/expected-potency";
-import { formatConsumedProc, formatProcOccurred, isProcOutcomeSource } from "../../logic/buff-format";
+import {
+  formatConsumedProc,
+  formatProcOccurred,
+  formatWastedProc,
+  isProcOutcomeSource,
+  PROC_OUTCOME_BUFF_ID,
+} from "../../logic/buff-format";
 import { formatResourceErrorWarnings } from "../../logic/resource-error-format";
 import { formatComboErrorWarnings } from "../../logic/combo-error-format";
 import { formatTargetBreakdown } from "./helpers";
@@ -94,6 +100,10 @@ export function SkillLanes({
             const consumedProcLabel = entry.consumedProc
               ? ` / ${formatConsumedProc(entry.consumedProc, buffDefMap)}`
               : "";
+            // 上書きの表示はホークアイだけ（ほかのジョブの確率付与は対象外。#842）
+            const wastedProcLabel = entry.wastedProc?.buffId === PROC_OUTCOME_BUFF_ID
+              ? ` / ${formatWastedProc(entry.wastedProc, buffDefMap)}`
+              : "";
             // 付与元でなくなった指定（レベルを下げたバイト系など）は解決で無視されるので出さない
             const procOccurredLabel = entry.procOccurred !== undefined && isProcOutcomeSource(entry.displaySkill)
               ? formatProcOccurred(entry.procOccurred, buffDefMap)
@@ -154,7 +164,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}${consumedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.unconfirmedProcBuffs ? " ⚠ 確率付与のバフを消費" : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.unconfirmedProcBuffs ? " ⚠ 確率付与のバフを消費" : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img

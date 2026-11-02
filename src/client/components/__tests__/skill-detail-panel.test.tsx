@@ -139,13 +139,30 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
 });
 
 describe("SkillDetailPanel: ホークアイの発動確率 (#615)", () => {
+  // 出なかったときに撃つ GCD を添える。付与元が無い枠は P = 0 のフィラー枠 (#842)
   it.each([
-    [["burst-shot", "refulgent-arrow"], "ホークアイ発動確率 35.0%"],
-    [["burst-shot", "burst-shot", "refulgent-arrow"], "ホークアイ発動確率 57.8%"],
+    [["burst-shot", "refulgent-arrow"], "ホークアイ発動確率 35.0%（不発時はバーストショット）"],
+    [["burst-shot", "burst-shot", "refulgent-arrow"], "ホークアイ発動確率 57.8%（不発時はバーストショット）"],
+    [["refulgent-arrow"], "ホークアイ発動確率 0.0%（不発時はバーストショット）"],
   ])("%j のリフルジェントアローに「%s」と出る", (skillIds, expected) => {
     renderLastEntry(skillIds);
 
     expect(screen.getByText(expected)).toBeInTheDocument();
+    expect(screen.queryByText(/バフ条件未達成/)).not.toBeInTheDocument();
+  });
+
+  // 効いているホークアイに重ねた付与元に、上書きで無駄になる確率を出す (#842)
+  it("ストームバイト → コースティックバイトのコースティックバイトに「ホークアイ上書き確率 12.3%」と出る", () => {
+    renderLastEntry(["stormbite", "caustic-bite"]);
+
+    expect(screen.getByText("ホークアイ上書き確率 12.3%")).toBeInTheDocument();
+  });
+
+  it("ホークアイが付いていない枠のストームバイトには上書き確率が出ない", () => {
+    renderLastEntry(["stormbite"]);
+
+    expect(screen.getByRole("group", { name: "ホークアイの発生" })).toBeInTheDocument();
+    expect(screen.queryByText(/上書き確率/)).not.toBeInTheDocument();
   });
 
   it("乱れ撃ちを優先消費したリフルジェントアローには発動確率が出ない", () => {
@@ -205,9 +222,12 @@ describe("SkillDetailPanel: OR 条件のバフが未達のとき、候補をす�
     ).toBeInTheDocument();
   });
 
-  it("ホークアイも乱れ撃ちも無いリフルジェントアローは、どちらか一方でよいことが分かる形で出る", () => {
-    renderLastEntry(["refulgent-arrow"]);
+  // ホークアイも乱れ撃ちも無いリフルジェントアローは、#842 からエラーにしないフィラー枠なので、詩人は光神のアンコールで見る
+  it("光神のアンコールレディの無い光神のアンコールは、どの段階でもよいことが分かる形で出る", () => {
+    renderLastEntry(["radiant-encore"]);
 
-    expect(screen.getByText(/バフ条件未達成: 乱れ撃ち・ホークアイ のいずれか/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/バフ条件未達成: 光神のアンコールレディ（3種）・光神のアンコールレディ（2種）・光神のアンコールレディ（1種） のいずれか/)
+    ).toBeInTheDocument();
   });
 });

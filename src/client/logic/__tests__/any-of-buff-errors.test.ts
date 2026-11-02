@@ -18,6 +18,8 @@ const cases = Object.entries(JOB_DATA).flatMap(([jobId, job]) => {
   const skills = getSkillsForLevel(job.skills, 100, buffIds, resourceIds);
   const skillMap = getAllSkillMapForLevel(job.skills, skills, 100, buffIds, resourceIds);
   return [...skillMap.values()].flatMap((s) => {
+    // fallbackPotency を持つ消費側（詩人のホークアイ）は、条件のバフが無くてもエラーにせずフィラー枠にする (#842。brd-hawks-eye-proc.test.ts)
+    if (s.buffConsumptionAnyOf?.some((o) => o.fallbackPotency !== undefined)) return [];
     const anyOf = s.requiredBuffAnyOf ?? s.buffConsumptionAnyOf?.map((o) => o.buffId);
     return anyOf && anyOf.length > 0 ? [{ jobId, skillId: s.id, anyOf, skillMap, buffs, resources }] : [];
   });

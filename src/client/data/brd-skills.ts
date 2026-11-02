@@ -83,7 +83,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     acquiredLevel: 2,
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 600 },
-      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 160 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 160, fallbackSkillId: "heavy-shot" },
     ],
   },
   {
@@ -179,14 +179,14 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     // fallback は proc しなかったときに撃つ GCD の威力。Lv76 でバーストショットを修得するまではヘヴィショット (#600)
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 840 },
-      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 160 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 160, fallbackSkillId: "heavy-shot" },
     ],
     traitPotencyOverrides: [
       {
         traitLevel: 76,
         buffConsumptionAnyOf: [
           { buffId: "barrage", stacks: 1, potency: 840 },
-          { buffId: "hawks-eye", stacks: 1, fallbackPotency: 220 },
+          { buffId: "hawks-eye", stacks: 1, fallbackPotency: 220, fallbackSkillId: "burst-shot" },
         ],
       },
     ],
@@ -237,7 +237,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     // fallback は Lv70 で proc しなかったときに撃つクイックノックの威力 (#513)
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 220 },
-      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 110 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 110, fallbackSkillId: "quick-nock" },
     ],
     // 対象とその周囲にヒット。減衰なし（対象数上限なし）
     maxTargets: Infinity,
@@ -256,14 +256,14 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
     // fallback は proc しなかったときに撃つ GCD の威力。Lv82 でラドンバイトを修得するまではクイックノック (#600)
     buffConsumptionAnyOf: [
       { buffId: "barrage", stacks: 1, potency: 300 },
-      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 110 },
+      { buffId: "hawks-eye", stacks: 1, fallbackPotency: 110, fallbackSkillId: "quick-nock" },
     ],
     traitPotencyOverrides: [
       {
         traitLevel: 82,
         buffConsumptionAnyOf: [
           { buffId: "barrage", stacks: 1, potency: 300 },
-          { buffId: "hawks-eye", stacks: 1, fallbackPotency: 140 },
+          { buffId: "hawks-eye", stacks: 1, fallbackPotency: 140, fallbackSkillId: "ladonsbite" },
         ],
       },
     ],
