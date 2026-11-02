@@ -227,12 +227,13 @@ export function SkillDetailPanel({
                 </button>
               );
             })}
-            {entry.wastedProc?.buffId === PROC_OUTCOME_BUFF_ID && (
-              <span className="num" style={styles.headerAutoHint}>
-                {formatWastedProc(entry.wastedProc, buffDefMap)}
-              </span>
-            )}
           </div>
+        )}
+        {/* 発生指定の行の外に置く。行の中だと、狭い画面で行ごと縮んでボタンの文字が折り返す */}
+        {entry.wastedProc?.buffId === PROC_OUTCOME_BUFF_ID && (
+          <span className="num" style={styles.headerAutoHint}>
+            {formatWastedProc(entry.wastedProc, buffDefMap)}
+          </span>
         )}
         <button type="button" onClick={onClose} style={styles.closeButton} aria-label="閉じる">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">

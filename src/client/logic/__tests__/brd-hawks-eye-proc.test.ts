@@ -325,8 +325,8 @@ describe("BRD: ホークアイの発生の有無を付与元ごとに指定す�
   });
 
   // #842 までは発動条件エラーにしていた。P = 0 の枠はバーストショットを撃つフィラー枠として扱う
-  it.each(SOURCES)("%s を「しなかった」にするとホークアイが付かず、リフルジェントアローは威力 220 のフィラー枠になる", (sourceId) => {
-    const result = resolve([procEntry(sourceId, false), entry("refulgent-arrow")]);
+  it.each(SOURCES)("%s を「しなかった」にするとホークアイが付かず、リフルジェントアローは威力 220 のフィラー枠になり、次の P は 0.35", (sourceId) => {
+    const result = resolve([procEntry(sourceId, false), entry("refulgent-arrow"), entry("refulgent-arrow")]);
 
     expect(hasHawksEye(result.entries[0])).toBe(false);
     const refulgent = result.entries[1];
@@ -334,6 +334,11 @@ describe("BRD: ホークアイの発生の有無を付与元ごとに指定す�
     expect(refulgent.comboErrors).toEqual([]);
     expect(refulgent.consumedProc?.procRate).toBe(0);
     expect(refulgent.resolvedPotency).toBe(220);
+    // フィラー枠で撃ったバーストショットの付与確率 0.35 が、そのまま次の P になる (#842)
+    const next = result.entries[2];
+    expect(next.recastError).toBeFalsy();
+    expect(next.comboErrors).toEqual([]);
+    expect(next.consumedProc?.procRate).toBeCloseTo(0.35, 10);
   });
 
   it("ラドンバイトを「発生した」にすると、シャドウバイトは確定の威力 200 になる", () => {
@@ -451,7 +456,7 @@ describe("BRD: 消費側の出なかった分岐の付与確率を伝える (#84
   });
 
   // 消費側の 4 系統すべてで、fallback のスキルが引けてホークアイを付与し、威力が fallbackPotency と一致する
-  // Lv70: ヘヴィショット・クイックノック、Lv80 / 90: バーストショット・クイックノック、Lv100: バーストショット・ラドンバイト
+  // Lv70: ヘヴィショット・クイックノック、Lv80: バーストショット・クイックノック、Lv90 / 100: バーストショット・ラドンバイト
   it.each([70, 80, 90, 100] as const)("Lv%s: ホークアイの消費側の fallbackSkillId は修得済みの付与元で、威力が fallbackPotency と一致する", (level) => {
     const { skillMap: levelSkillMap } = setupLevel(level);
     const consumers = [...levelSkillMap.values()].flatMap((s) =>
