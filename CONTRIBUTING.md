@@ -213,7 +213,7 @@ PR のプレビューは本番の D1 を使わず、全 PR で共有するプレ
 4. PR のプレビューのビルドログで、マイグレーションの適用（`✅`）と、「These bindings are configured for your production Worker but not for Previews」の警告が出ないことを確かめる
 
 - **データは使い捨て**: PR 同士の保存が同じ D1 に混ざります。バックアップ（`docs/d1-backup.md`）も本番の D1 だけで、プレビュー用は取りません
-- **マージ前の PR のマイグレーションも当たる**: その PR を閉じたり、マイグレーションを作り直したりすると、`main` の `migrations/` と D1 の中身がずれます。ずれたら `npx wrangler d1 delete ff14-rotation-calc-preview` で消し、手順 1・2 で作り直す
+- **マージ前の PR のマイグレーションも当たる**: その PR を閉じたり、マイグレーションを作り直したりすると、`main` の `migrations/` と D1 の中身がずれます。ずれたら `npx wrangler d1 delete ff14-rotation-calc-preview` で消し、手順 1・2 で作り直す。作り直すと ID が変わるので、開いている PR は `main` を取り込んで push し直す（古い ID のままだと、マイグレーションの適用が D1 を見つけられずに失敗する）
 
 ### Turnstile（初回のみ・#479 のマージ前に）
 
@@ -235,7 +235,7 @@ PR のプレビューは本番の D1 を使わず、全 PR で共有するプレ
 
 PR のプレビューは手順 2・3 の値を使いません（#581）。プレビューのビルドには `VITE_TURNSTILE_SITE_KEY` が渡らず、フロントはテスト用の sitekey（必ず成功）で動きます。secret も本番のものを引き継がないので、対になる公開のテスト用 secret（`1x0000000000000000000000000000000AA`）を `wrangler.jsonc` の `previews.vars` に書いてあります。プレビューで保存するのに、ダッシュボードで入れるものはありません（プレビューにはボット対策が効かないが、保存先はプレビュー用 D1 で、レート制限は効く）。
 
-- プレビューのビルドにも `VITE_TURNSTILE_SITE_KEY` が渡るように変えると、本番の sitekey のトークンをテスト用 secret が拒否し、プレビューの保存が 403 になります。その場合は、`previews.vars` の値を本番の secret にせず（設定ファイルに書くと公開される）、`previews.vars` から外して `npx wrangler preview base-config secret put TURNSTILE_SECRET_KEY` で入れ、手順 1 のホスト名にプレビューも通る `forestry-for.workers.dev` を入れる
+- プレビューのビルドにも `VITE_TURNSTILE_SITE_KEY` が渡るように変えると、本番の sitekey のトークンをテスト用 secret が拒否し、プレビューの保存が 403 になります。その場合は、`previews.vars` の値を本番の secret にせず（設定ファイルに書くと公開される）、`previews.vars` から外して `npx wrangler preview base-config secret put TURNSTILE_SECRET_KEY` で入れ、手順 1 のホスト名にプレビューも通る `forestry-for.workers.dev` を入れる。Previews Base の secret は入れた後に新しく作るプレビューにだけ付くので、すでにあるプレビューには `npx wrangler preview secret put TURNSTILE_SECRET_KEY --name <プレビュー名>`（プレビュー URL の `-ff14-rotation-calc.` より前）で入れる
 
 ### 動作確認手順
 
@@ -247,7 +247,7 @@ PR のプレビューは手順 2・3 の値を使いません（#581）。プレ
 
 - **ビルド失敗（`npm ci`）**: Node のバージョンが合っていない可能性。ビルド用の環境変数 `NODE_VERSION=22` が設定されているか確認
 - **ビルド失敗（Worker 名の不一致）**: ダッシュボードの Worker 名と `wrangler.jsonc` の `name`（`ff14-rotation-calc`）が一致しているか確認
-- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは `npx wrangler preview --config dist/ff14_rotation_calc/wrangler.json`）にする
+- **デプロイ失敗（`The assets property ... is missing the required directory property`）**: デプロイコマンドが `npx wrangler deploy` のままになっている。上記のとおり `npm run deploy`（プレビューは上の「Workers Builds の設定」の手順 4 の Preview command）にする
 - **PR のコメントにプレビュー URL が出ない（「Deploying with Cloudflare Workers」の表に URL の列が無い）**: Worker Previews に切り替わっていないか、Preview command が `wrangler preview` を直接呼んでいない（npm スクリプトで包んでいる等）。上記の注記のとおりに直す
 - **プレビューの作成失敗（`Preview creation failed: Invalid preview name`）**: ブランチ名に、プレビュー名に使えない文字（`#` など）が入っている。Workers Builds はビルドの前にブランチ名をそのままプレビュー名にするので、Preview command では直せない。`.claude/rules/git-conventions.md` の書式でブランチを切り直す（#609）
 - **プレビューのデプロイ失敗（`Your Wrangler configuration is missing a previews block`）**: `wrangler.jsonc` の `"previews"` ブロックが消えていないか確認する（#485）
