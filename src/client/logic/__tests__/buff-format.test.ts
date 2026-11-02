@@ -5,8 +5,13 @@ import {
   formatConsumedProc,
   formatProcRate,
   formatProcRateShort,
+  isProcOutcomeSource,
 } from "../buff-format";
-import type { BuffDefinition } from "../../types/skill";
+import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
+import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
+import { BRD_BUFFS } from "../../data/brd-buffs";
+import { BRD_RESOURCES } from "../../data/brd-resources";
+import type { BuffDefinition, PlayerLevel } from "../../types/skill";
 
 function makeBuff(effects: BuffDefinition["effects"]): BuffDefinition {
   return { id: "b", name: "b", shortName: "b", icon: "", duration: 10, effects, color: "#ffffff" };
@@ -101,5 +106,29 @@ describe("formatConsumedProc", () => {
 
   it("バフ定義が無いときは buffId を名前の代わりに使う", () => {
     expect(formatConsumedProc({ buffId: "b", procRate: 0.35 }, new Map())).toBe("b発動確率 35.0%");
+  });
+});
+
+// 付与元かはレベル調整後のスキルで決まる。バイト系のホークアイ付与は Lv76 の特性から (#426 / #838)
+describe("isProcOutcomeSource", () => {
+  function brdSkillAt(level: PlayerLevel, skillId: string) {
+    const buffIds = new Set(BRD_BUFFS.map((b) => b.id));
+    const resourceIds = new Set(BRD_RESOURCES.map((r) => r.id));
+    const skills = getSkillsForLevel(BRD_ATTACK_SKILLS, level, buffIds, resourceIds);
+    return getAllSkillMapForLevel(BRD_ATTACK_SKILLS, skills, level, buffIds, resourceIds).get(skillId)!;
+  }
+
+  it.each([
+    [100, "iron-jaws", true],
+    [70, "iron-jaws", false],
+    [70, "heavy-shot", true],
+    [100, "refulgent-arrow", false],
+  ] as const)("Lv%i の %s は %s", (level, skillId, expected) => {
+    expect(isProcOutcomeSource(brdSkillAt(level, skillId))).toBe(expected);
+  });
+
+  it("確率 1 の付与は確定なので付与元に数えない", () => {
+    const skill = { ...brdSkillAt(100, "burst-shot"), buffApplicationProcRates: { "hawks-eye": 1 } };
+    expect(isProcOutcomeSource(skill)).toBe(false);
   });
 });

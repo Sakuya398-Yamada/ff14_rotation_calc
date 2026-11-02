@@ -3,7 +3,13 @@ import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats, Reso
 import { calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
-import { describeBuffEffects, formatBuffRemaining, formatConsumedProc } from "../logic/buff-format";
+import {
+  describeBuffEffects,
+  formatBuffRemaining,
+  formatConsumedProc,
+  isProcOutcomeSource,
+  PROC_OUTCOME_BUFF_ID,
+} from "../logic/buff-format";
 import { formatResourceErrors } from "../logic/resource-error-format";
 import { formatComboErrors } from "../logic/combo-error-format";
 
@@ -17,7 +23,15 @@ interface SkillDetailPanelProps {
   onClose: () => void;
   /** 開始時刻のマニュアル設定/解除ハンドラ。undefined を渡すと自動計算に戻る */
   onManualStartTimeChange: (uid: string, manualStartTime: number | undefined) => void;
+  /** 確率付与の発生の有無の指定/解除ハンドラ。undefined を渡すと未指定（期待値）に戻る (#838) */
+  onProcOccurredChange: (uid: string, procOccurred: boolean | undefined) => void;
 }
+
+const PROC_OUTCOME_OPTIONS: { value: boolean | undefined; label: string }[] = [
+  { value: undefined, label: "期待値" },
+  { value: true, label: "発生" },
+  { value: false, label: "不発" },
+];
 
 export function SkillDetailPanel({
   entry,
@@ -27,6 +41,7 @@ export function SkillDetailPanel({
   stats,
   onClose,
   onManualStartTimeChange,
+  onProcOccurredChange,
 }: SkillDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +90,7 @@ export function SkillDetailPanel({
   };
 
   const isManual = entry.manualStartTime !== undefined;
+  const procBuffName = buffDefMap.get(PROC_OUTCOME_BUFF_ID)?.name ?? PROC_OUTCOME_BUFF_ID;
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -193,6 +209,25 @@ export function SkillDetailPanel({
             </span>
           )}
         </div>
+        {isProcOutcomeSource(resolvedSkill) && (
+          <div role="group" aria-label={`${procBuffName}の発生`} style={styles.procOutcomeRow}>
+            <span style={styles.headerStartTimeLabel}>{procBuffName}</span>
+            {PROC_OUTCOME_OPTIONS.map(({ value, label }) => {
+              const selected = entry.procOccurred === value;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onProcOccurredChange(entry.uid, value)}
+                  style={selected ? { ...styles.procOutcomeButton, ...styles.procOutcomeButtonSelected } : styles.procOutcomeButton}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <button type="button" onClick={onClose} style={styles.closeButton} aria-label="閉じる">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <path d="M3 3l10 10M13 3L3 13" />
@@ -438,6 +473,29 @@ const styles: Record<string, React.CSSProperties> = {
   headerAutoHint: {
     fontSize: "11px",
     color: "var(--color-muted)",
+  },
+  procOutcomeRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  },
+  procOutcomeButton: {
+    minHeight: "32px",
+    padding: "0 10px",
+    fontSize: "12px",
+    background: "transparent",
+    // 選択時に borderColor だけ上書きするので、shorthand の border は使わない（React が混在を警告する）
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: "var(--color-field)",
+    borderRadius: "var(--radius-md)",
+    color: "var(--color-text)",
+    cursor: "pointer",
+  },
+  procOutcomeButtonSelected: {
+    borderColor: "var(--color-accent)",
+    color: "var(--color-accent)",
+    fontWeight: 700,
   },
   closeButton: {
     marginLeft: "auto",

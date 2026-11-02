@@ -65,11 +65,78 @@ function renderLastEntry(skillIds: string[], job = BRD) {
       stats={stats}
       onClose={vi.fn()}
       onManualStartTimeChange={vi.fn()}
+      onProcOccurredChange={vi.fn()}
     />
   );
 }
 
 afterEach(cleanup);
+
+describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", () => {
+  function renderEntry(skillId: string, procOccurred?: boolean, job = BRD) {
+    const onProcOccurredChange = vi.fn();
+    const [entry] = resolveTimeline(
+      [{ uid: "e-1", skillId, ...(procOccurred !== undefined ? { procOccurred } : {}) }],
+      job.skillMap,
+      job.resources,
+      stats,
+      job.buffs
+    ).entries;
+    render(
+      <SkillDetailPanel
+        entry={entry}
+        resolvedSkill={job.skillMap.get(entry.resolvedSkillId)!}
+        buffDefMap={job.buffDefMap}
+        resourceDefMap={job.resourceDefMap}
+        stats={stats}
+        onClose={vi.fn()}
+        onManualStartTimeChange={vi.fn()}
+        onProcOccurredChange={onProcOccurredChange}
+      />
+    );
+    return onProcOccurredChange;
+  }
+
+  it.each(["burst-shot", "iron-jaws", "ladonsbite"])("付与元の %s には指定のボタンが出る", (skillId) => {
+    renderEntry(skillId);
+
+    expect(screen.getByRole("group", { name: "ホークアイの発生" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["消費側のリフルジェントアロー", "refulgent-arrow", BRD],
+    ["確定付与の乱れ撃ち", "barrage", BRD],
+    ["ほかのジョブの確率付与（ファイア）", "fire", BLM],
+  ])("%s には指定のボタンが出ない", (_label, skillId, job) => {
+    renderEntry(skillId, undefined, job);
+
+    expect(screen.queryByRole("group", { name: "ホークアイの発生" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["期待値", undefined],
+    ["発生", true],
+    ["不発", false],
+  ])("「%s」を押すと procOccurred = %s で呼ぶ", (label, expected) => {
+    const onProcOccurredChange = renderEntry("burst-shot", true);
+
+    screen.getByRole("button", { name: label }).click();
+
+    expect(onProcOccurredChange).toHaveBeenCalledWith("e-1", expected);
+  });
+
+  it.each([
+    [undefined, "期待値"],
+    [true, "発生"],
+    [false, "不発"],
+  ])("procOccurred = %s なら「%s」だけが押された状態になる", (procOccurred, selectedLabel) => {
+    renderEntry("burst-shot", procOccurred);
+
+    for (const label of ["期待値", "発生", "不発"]) {
+      expect(screen.getByRole("button", { name: label })).toHaveAttribute("aria-pressed", String(label === selectedLabel));
+    }
+  });
+});
 
 describe("SkillDetailPanel: ホークアイの発動確率 (#615)", () => {
   it.each([

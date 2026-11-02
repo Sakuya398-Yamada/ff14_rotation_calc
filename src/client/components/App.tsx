@@ -286,6 +286,23 @@ export function App() {
     []
   );
 
+  const handleProcOccurredChange = useCallback(
+    (uid: string, procOccurred: boolean | undefined) => {
+      setEntries((prev) =>
+        prev.map((e) => {
+          if (e.uid !== uid) return e;
+          if (procOccurred === undefined) {
+            const { procOccurred: _drop, ...rest } = e;
+            void _drop;
+            return rest;
+          }
+          return { ...e, procOccurred };
+        })
+      );
+    },
+    []
+  );
+
   // per-entryのクリティカル率ボーナスを考慮した合計期待威力（複数体ヒット合算込み）
   const { totalExpectedPotency, dotExpectedPotency } = useMemo(() => {
     const directExpected = resolvedEntries.reduce((sum, entry) => {
@@ -498,6 +515,7 @@ export function App() {
               stats={stats}
               onClose={() => setSelectedEntryUid(null)}
               onManualStartTimeChange={handleManualStartTimeChange}
+              onProcOccurredChange={handleProcOccurredChange}
             />
           )}
         </div>

@@ -41,6 +41,7 @@ function validData(overrides: Partial<PersistedAppState> = {}): PersistedAppStat
     entries: [
       { uid: "entry-1", skillId: "fire-3" },
       { uid: "entry-2", skillId: "fire-4", manualStartTime: 2.5 },
+      { uid: "entry-3", skillId: "fire", procOccurred: false },
     ],
     stats: { critical: 3000, directHit: 2000, determination: 2500, speed: 528 },
     untargetableWindows: [{ startTime: 30, endTime: 45 }],
@@ -231,6 +232,10 @@ describe("POST /api/timelines: 不正な入力", () => {
       },
     ],
     ["エントリが 2001 件", { data: validData({ entries: entries2001 }) }],
+    [
+      "エントリの procOccurred が boolean でない",
+      { data: { ...validData(), entries: [{ uid: "entry-1", skillId: "fire", procOccurred: "true" }] } },
+    ],
     ["stats が文字列", { data: { ...validData(), stats: { ...validData().stats, critical: "3000" } } }],
     ["ウィンドウの endTime が無い", { data: { ...validData(), untargetableWindows: [{ startTime: 1 }] } }],
     ["targetCount が 1", { data: validData({ multiTargetWindows: [{ startTime: 0, endTime: 1, targetCount: 1 }] }) }],

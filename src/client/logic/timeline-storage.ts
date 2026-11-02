@@ -71,7 +71,9 @@ function isMultiTargetWindow(value: unknown): value is MultiTargetWindow {
   );
 }
 
-function hasEntryShape(value: unknown): value is { uid: string; skillId: string; manualStartTime?: unknown } {
+function hasEntryShape(
+  value: unknown,
+): value is { uid: string; skillId: string; manualStartTime?: unknown; procOccurred?: unknown } {
   if (typeof value !== "object" || value === null) return false;
   const obj = value as Record<string, unknown>;
   return typeof obj.uid === "string" && typeof obj.skillId === "string";
@@ -114,6 +116,9 @@ export function deserializeAppState(json: string | null): PersistedAppState | nu
     const entry: TimelineEntry = { uid: item.uid, skillId: item.skillId };
     if (isFiniteNumber(item.manualStartTime)) {
       entry.manualStartTime = item.manualStartTime;
+    }
+    if (typeof item.procOccurred === "boolean") {
+      entry.procOccurred = item.procOccurred;
     }
     entries.push(entry);
   }
