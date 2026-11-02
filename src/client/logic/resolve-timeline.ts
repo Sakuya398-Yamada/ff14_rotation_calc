@@ -25,7 +25,7 @@ import { calcEntryExpectedPotency } from "./expected-potency";
 const DOT_TICK_INTERVAL = 3;
 
 /** コンボタイマー（秒）。この時間以上経過するとコンボがリセットされる */
-const COMBO_TIMER = 15;
+const COMBO_TIMER = 30;
 
 /** triggersGcdRecast の oGCD が gcdRecastTime を持たないときに発生させる GCD の基礎リキャスト（秒。黙想） */
 const BASE_GCD_RECAST = 2.5;
