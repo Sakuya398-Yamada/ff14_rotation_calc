@@ -25,7 +25,8 @@ export interface BuffContribution {
  * 指定スキルに対する各 ActiveBuff の寄与を抽出する。
  * potency / critRate / dhRate / guaranteedCrit / guaranteedDh のいずれかに寄与するバフだけ返す。
  *
- * potency の appliesToSkillIds フィルタは resolve-timeline.ts:getPotencyMultiplier と同じロジック。
+ * potency の appliesToSkillIds フィルタは resolve-timeline.ts:getPotencyMultiplier と、
+ * guaranteedCrit / guaranteedDh のフィルタは resolve-timeline.ts:hasGuaranteedHit と同じロジック。
  */
 export function getBuffContributions(
   activeBuffs: ActiveBuff[],
@@ -62,9 +63,11 @@ export function getBuffContributions(
           hasDh = true;
           break;
         case "guaranteedCrit":
+          if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(targetSkillId)) continue;
           guaranteedCrit = true;
           break;
         case "guaranteedDh":
+          if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(targetSkillId)) continue;
           guaranteedDh = true;
           break;
       }

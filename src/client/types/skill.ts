@@ -407,8 +407,8 @@ export interface BuffEffect {
    * - potency: 威力乗算倍率（1.1 = 威力×1.1）
    * - critRate: クリティカル発生率加算値（0.1 = +10%）
    * - dhRate: ダイレクトヒット発生率加算値（0.1 = +10%）
-   * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
-   * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用）
+   * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用、appliesToSkillIds で対象限定。確定になった WS でスタックを 1 消費）
+   * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用、appliesToSkillIds で対象限定。guaranteedCrit と併せ持っても消費は 1 スタック。consumeOnGcd も持つバフはそちらでだけ消費）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
    * - consumeOnAction: 付与した後の次のアクション（GCD/oGCD を問わない）の実行で消える（値は未使用、黙想等）
    * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費。castTimeMultiplier で詠唱が 0 になる GCD では消費しない）
