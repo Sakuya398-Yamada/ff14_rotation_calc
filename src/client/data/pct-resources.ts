@@ -6,8 +6,6 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
   // ============================================================
   {
     id: "palette-gauge",
-    name: "パレットゲージ",
-    shortName: "ﾊﾟﾚｯﾄ",
     maxStacks: 100,
     color: "#7e57c2",
     displayAsGauge: true,
@@ -19,8 +17,6 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
   // ============================================================
   {
     id: "white-paint",
-    name: "ホワイトペイント",
-    shortName: "WP",
     maxStacks: 5,
     color: "#ffffff",
     acquiredLevel: 80,
@@ -31,8 +27,6 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "black-paint",
-    name: "ブラックペイント",
-    shortName: "BP",
     // 色調反転で黒く変化するペイントは 1 つだけ（公式ジョブガイド「ホワイトペイントが1スタックのみブラックペイントに変化する」）
     maxStacks: 1,
     // 「黒」よりも紫として認識される方が直感的なため、濃い紫にする
@@ -48,8 +42,6 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
   // ============================================================
   {
     id: "animal-canvas",
-    name: "アニマルキャンバス",
-    shortName: "ｱﾆﾏﾙ",
     maxStacks: 1,
     initialStacks: 1,
     color: "#ef5350",
@@ -58,8 +50,6 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "weapon-canvas",
-    name: "ウェポンキャンバス",
-    shortName: "ｳｪﾎﾟﾝ",
     maxStacks: 1,
     initialStacks: 1,
     color: "#42a5f5",
@@ -68,8 +58,6 @@ export const PCT_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "scape-canvas",
-    name: "スケープキャンバス",
-    shortName: "ｽｹｰﾌﾟ",
     maxStacks: 1,
     initialStacks: 1,
     color: "#66bb6a",

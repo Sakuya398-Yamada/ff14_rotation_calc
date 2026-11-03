@@ -6,7 +6,6 @@ import type { Skill, TimelineEntry } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",

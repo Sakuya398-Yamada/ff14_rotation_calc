@@ -11,8 +11,6 @@ export const SGE_BUFFS: BuffDefinition[] = [
     // 効果中はドシス・ディスクラシアII・ディアグノシスがエウクラシア系の魔法に変わる（変化元の autoTransform）。
     // 時間では切れず、変化した魔法の buffConsumptions で外れる
     id: "eukrasia",
-    name: "エウクラシア",
-    shortName: "ｴｳｸﾗ\nｼｱ",
     icon: eukrasiaIcon,
     duration: null,
     effects: [],
@@ -21,8 +19,6 @@ export const SGE_BUFFS: BuffDefinition[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
-    shortName: "迅速魔",
     icon: swiftcastIcon,
     duration: 10,
     effects: [{ type: "instantCast", value: 0 }],

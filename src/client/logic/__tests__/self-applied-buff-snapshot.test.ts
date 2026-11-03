@@ -9,7 +9,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -27,8 +26,6 @@ function makeEntry(skillId: string): TimelineEntry {
 
 const powerSurgeLike: BuffDefinition = {
   id: "power-surge",
-  name: "竜槍",
-  shortName: "竜槍",
   icon: "",
   duration: 30,
   effects: [{ type: "potency", value: 1.1 }],

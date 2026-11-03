@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import i18next from "i18next";
 import { formatComboErrors, formatComboErrorWarnings } from "../combo-error-format";
-import { BLM_BUFFS } from "../../data/blm-buffs";
 import type { ComboError } from "../../types/skill";
-
-const buffDefMap = new Map(BLM_BUFFS.map((b) => [b.id, b]));
 
 describe("formatComboErrors (#666)", () => {
   it("種類ごとに 1 行にまとめ、未達成 → 効果中の順に並べる", () => {
@@ -14,26 +11,26 @@ describe("formatComboErrors (#666)", () => {
       { buffId: "firestarter", kind: "missing" },
     ];
 
-    expect(formatComboErrors(errors, buffDefMap)).toEqual([
+    expect(formatComboErrors(errors, "blm")).toEqual([
       "バフ条件未達成: サンダーヘッド, ファイアスターター",
       "バフ効果中: 黒魔紋",
     ]);
   });
 
-  it("定義の無いバフは ID のまま出す", () => {
-    expect(formatComboErrors([{ buffId: "unknown-buff", kind: "missing" }], buffDefMap)).toEqual([
+  it("辞書に無いバフは ID のまま出す", () => {
+    expect(formatComboErrors([{ buffId: "unknown-buff", kind: "missing" }], "blm")).toEqual([
       "バフ条件未達成: unknown-buff",
     ]);
   });
 
   it("エラーが無ければ空配列", () => {
-    expect(formatComboErrors([], buffDefMap)).toEqual([]);
+    expect(formatComboErrors([], "blm")).toEqual([]);
   });
 
   it("OR 条件のエラーは、候補をすべてバフ名にして「・」でつなぎ「のいずれか」を付ける (#679)", () => {
     const anyOf = ["astral-fire-1", "astral-fire-2", "astral-fire-3"];
 
-    expect(formatComboErrors([{ buffId: anyOf[0], kind: "missing", anyOf }], buffDefMap)).toEqual([
+    expect(formatComboErrors([{ buffId: anyOf[0], kind: "missing", anyOf }], "blm")).toEqual([
       "バフ条件未達成: アストラルファイア I・アストラルファイア II・アストラルファイア III のいずれか",
     ]);
   });
@@ -42,7 +39,7 @@ describe("formatComboErrors (#666)", () => {
     // アンプリファイアは AF と UB の 6 段階のどれでもよい
     const anyOf = ["astral-fire-1", "astral-fire-2", "astral-fire-3", "umbral-ice-1", "umbral-ice-2", "umbral-ice-3"];
 
-    expect(formatComboErrors([{ buffId: anyOf[0], kind: "missing", anyOf }], buffDefMap)).toEqual([
+    expect(formatComboErrors([{ buffId: anyOf[0], kind: "missing", anyOf }], "blm")).toEqual([
       "バフ条件未達成: アストラルファイア I・アストラルファイア II・アストラルファイア III・アンブラルブリザード I・アンブラルブリザード II・アンブラルブリザード III のいずれか",
     ]);
   });
@@ -79,9 +76,9 @@ describe("combo-error-format（英語）", () => {
       { buffId: "ley-lines", kind: "forbidden" },
     ];
 
-    expect(formatComboErrors(errors, buffDefMap)).toEqual([
-      "Buff condition not met: アストラルファイア I or アストラルファイア II, サンダーヘッド",
-      "Buff active: 黒魔紋",
+    expect(formatComboErrors(errors, "blm")).toEqual([
+      "Buff condition not met: Astral Fire I or Astral Fire II, Thunderhead",
+      "Buff active: Ley Lines",
     ]);
     expect(formatComboErrorWarnings(errors)).toBe(" ⚠ Buff condition not met ⚠ Buff active");
   });

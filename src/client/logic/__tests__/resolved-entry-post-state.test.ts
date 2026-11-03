@@ -11,7 +11,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",

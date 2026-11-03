@@ -1,0 +1,87 @@
+{
+  "skills": {
+    "sch-ruin": {
+      "name": "Ruin"
+    },
+    "broil": {
+      "name": "Broil"
+    },
+    "broil2": {
+      "name": "Broil II"
+    },
+    "broil3": {
+      "name": "Broil III"
+    },
+    "broil4": {
+      "name": "Broil IV"
+    },
+    "sch-ruin2": {
+      "name": "Ruin II"
+    },
+    "sch-bio": {
+      "name": "Bio"
+    },
+    "sch-bio2": {
+      "name": "Bio II"
+    },
+    "biolysis": {
+      "name": "Biolysis"
+    },
+    "art-of-war": {
+      "name": "Art of War"
+    },
+    "art-of-war2": {
+      "name": "Art of War II"
+    },
+    "energy-drain": {
+      "name": "Energy Drain"
+    },
+    "aetherflow": {
+      "name": "Aetherflow"
+    },
+    "dissipation": {
+      "name": "Dissipation"
+    },
+    "lustrate": {
+      "name": "Lustrate"
+    },
+    "sacred-soil": {
+      "name": "Sacred Soil"
+    },
+    "indomitability": {
+      "name": "Indomitability"
+    },
+    "excogitation": {
+      "name": "Excogitation"
+    },
+    "chain-stratagem": {
+      "name": "Chain Stratagem"
+    },
+    "baneful-impaction": {
+      "name": "Baneful Impaction"
+    },
+    "swiftcast": {
+      "name": "Swiftcast"
+    }
+  },
+  "buffs": {
+    "chain-stratagem": {
+      "name": "Chain Stratagem",
+      "shortName": "Chain"
+    },
+    "impact-imminent": {
+      "name": "Impact Imminent",
+      "shortName": "Impact\nImmin."
+    },
+    "swiftcast": {
+      "name": "Swiftcast",
+      "shortName": "Swift-\ncast"
+    }
+  },
+  "resources": {
+    "aetherflow": {
+      "name": "Aetherflow",
+      "shortName": "Aether-\nflow"
+    }
+  }
+}

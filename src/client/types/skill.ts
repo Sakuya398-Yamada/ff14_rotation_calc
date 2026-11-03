@@ -82,10 +82,8 @@ export type AutoTransformEntry =
 
 /** スキルの定義データ */
 export interface Skill {
-  /** スキルの一意識別子 */
+  /** スキルの一意識別子。名前は辞書の job-<ジョブ ID> の `skills.<id>.name` にある（#846） */
   id: string;
-  /** スキル名（日本語） */
-  name: string;
   /** 威力（基本値。特性適用前） */
   potency: number;
   /** GCD or oGCD */
@@ -319,12 +317,8 @@ export interface ResourceBuffModifier {
 
 /** リソースの定義データ */
 export interface ResourceDefinition {
-  /** リソースの一意識別子 */
+  /** リソースの一意識別子。名前とレーンラベル用の短縮名は辞書の job-<ジョブ ID> の `resources.<id>` にある（#846） */
   id: string;
-  /** リソース名（日本語） */
-  name: string;
-  /** 短縮名（レーンラベル用） */
-  shortName: string;
   /** 最大スタック数 */
   maxStacks: number;
   /** 戦闘開始時の初期スタック数（デフォルト0） */
@@ -440,12 +434,8 @@ export interface BuffEffect {
 
 /** バフ・デバフの定義 */
 export interface BuffDefinition {
-  /** バフの一意識別子 */
+  /** バフの一意識別子。名前とレーンラベル用の短縮名は辞書の job-<ジョブ ID> の `buffs.<id>` にある（#846） */
   id: string;
-  /** バフ名 */
-  name: string;
-  /** 短縮名（レーンラベル用） */
-  shortName: string;
   /** アイコン画像のパス */
   icon: string;
   /** 効果時間（秒）。null は永続（特定スキルで消費されるまで持続） */
@@ -647,10 +637,10 @@ export interface ResolvedTimelineEntry {
   unconfirmedProcBuffs?: string[];
   /**
    * buffConsumptionAnyOf の fallbackPotency で威力を期待値に補正したときの、消費したバフと発動確率 P。
-   * 付与元が無いフィラー枠は P = 0。fallbackSkillName は出なかったときに撃つ GCD の名前（#842）。
+   * 付与元が無いフィラー枠は P = 0。fallbackSkillId は出なかったときに撃つ GCD の ID（#842。名前は表示するときに引く。#846）。
    * 乱れ撃ちのような確定のバフを消費したときは無い
    */
-  consumedProc?: { buffId: string; procRate: number; fallbackSkillName?: string };
+  consumedProc?: { buffId: string; procRate: number; fallbackSkillId?: string };
   /**
    * 確率付与（buffApplicationProcRates）が、すでに付いているバフに重なって無駄になる確率（付与時点の P × 付与確率）。
    * 効いているバフに重ねたときだけ持つ（#842）

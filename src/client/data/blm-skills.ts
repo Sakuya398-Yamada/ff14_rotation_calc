@@ -107,7 +107,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire",
-    name: "ファイア",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -135,7 +134,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-3",
-    name: "ファイガ",
     potency: 290,
     type: "gcd",
     target: "enemy",
@@ -156,7 +154,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-4",
-    name: "ファイジャ",
     potency: 300,
     type: "gcd",
     target: "enemy",
@@ -174,7 +171,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "despair",
-    name: "デスペア",
     potency: 350,
     type: "gcd",
     target: "enemy",
@@ -190,7 +186,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "flare-star",
-    name: "フレアスター",
     potency: 500,
     type: "gcd",
     target: "enemy",
@@ -213,7 +208,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire-2",
-    name: "ファイラ",
     potency: 80,
     type: "gcd",
     target: "enemy",
@@ -235,7 +229,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "high-fire-2",
-    name: "ハイファイラ",
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -258,7 +251,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "flare",
-    name: "フレア",
     potency: 240,
     type: "gcd",
     target: "enemy",
@@ -287,7 +279,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "blizzard",
-    name: "ブリザド",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -312,7 +303,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-3",
-    name: "ブリザガ",
     potency: 290,
     type: "gcd",
     target: "enemy",
@@ -332,7 +322,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-4",
-    name: "ブリザジャ",
     potency: 300,
     type: "gcd",
     target: "enemy",
@@ -355,7 +344,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "blizzard-2",
-    name: "ブリザラ",
     potency: 80,
     type: "gcd",
     target: "enemy",
@@ -375,7 +363,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "high-blizzard-2",
-    name: "ハイブリザラ",
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -396,7 +383,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "freeze",
-    name: "フリーズ",
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -420,7 +406,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "paradox",
-    name: "パラドックス",
     potency: 540,
     type: "gcd",
     target: "enemy",
@@ -448,7 +433,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // Lv92 の特性でハイサンダーに置き換わる。ツールではハイサンダーに集約する。
   {
     id: "high-thunder",
-    name: "ハイサンダー",
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -465,7 +449,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "thunder-3",
-    name: "サンダガ",
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -482,7 +465,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "high-thunder-2",
-    name: "ハイサンダラ",
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -501,7 +483,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "thunder-4",
-    name: "サンダジャ",
     potency: 80,
     type: "gcd",
     target: "enemy",
@@ -523,7 +504,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "xenoglossy",
-    name: "ゼノグロシー",
     potency: 890,
     type: "gcd",
     target: "enemy",
@@ -537,7 +517,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "foul",
-    name: "ファウル",
     potency: 600,
     type: "gcd",
     target: "enemy",
@@ -558,7 +537,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "manafont",
-    name: "マナフォント",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -579,7 +557,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "triplecast",
-    name: "三連魔",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -593,7 +570,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "ley-lines",
-    name: "黒魔紋",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -609,7 +585,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "transpose",
-    name: "トランス",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -634,7 +609,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "amplifier",
-    name: "アンプリファイア",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -651,7 +625,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -668,7 +641,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ここで即時 `resourceChanges` は付けない（回復はバフ中の 3 秒ごとのティックだけにするため）
   {
     id: "lucid-dreaming",
-    name: "ルーシッドドリーム",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -687,7 +659,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire-up-af2",
-    name: "ファイア (AF1→AF2)",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -703,7 +674,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-up-af3",
-    name: "ファイア (AF2→AF3)",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -719,7 +689,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-stay-af3",
-    name: "ファイア (AF3 維持)",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -737,7 +706,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   // UB バフの `resourceGainOnSkill` 効果で自動発動するため、隠しスキル側に MP 回復を持たせない。
   {
     id: "blizzard-up-ub2",
-    name: "ブリザド (UB1→UB2)",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -752,7 +720,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-up-ub3",
-    name: "ブリザド (UB2→UB3)",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -767,7 +734,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-stay-ub3",
-    name: "ブリザド (UB3 維持)",
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -782,7 +748,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "paradox-af",
-    name: "パラドックス (AF)",
     potency: 540,
     type: "gcd",
     target: "enemy",
@@ -799,7 +764,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "transpose-to-ub1",
-    name: "トランス (AF→UB1)",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -813,7 +777,6 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "transpose-to-af1",
-    name: "トランス (UB→AF1)",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -836,7 +799,6 @@ const BLM_BASE_SKILLS: Skill[] = [
 function deriveHidden(
   baseId: string,
   id: string,
-  name: string,
   buffApplications: string[],
   addsParadox = false,
 ): Skill {
@@ -848,7 +810,6 @@ function deriveHidden(
   return {
     ...base,
     id,
-    name,
     hidden: true,
     replacesSkillId: undefined,
     autoTransform: undefined,
@@ -860,38 +821,38 @@ function deriveHidden(
 export const BLM_ATTACK_SKILLS: Skill[] = [
   ...BLM_BASE_SKILLS,
   // AF 中のファイア系（AF3 付与）: 反転ではないのでサンダーヘッドは付かない
-  deriveHidden("fire-3", "fire-3-in-af", "ファイガ (AF 中)", ["astral-fire-3"]),
-  deriveHidden("fire-2", "fire-2-in-af", "ファイラ (AF 中)", ["astral-fire-3"]),
-  deriveHidden("high-fire-2", "high-fire-2-in-af", "ハイファイラ (AF 中)", ["astral-fire-3"]),
+  deriveHidden("fire-3", "fire-3-in-af", ["astral-fire-3"]),
+  deriveHidden("fire-2", "fire-2-in-af", ["astral-fire-3"]),
+  deriveHidden("high-fire-2", "high-fire-2-in-af", ["astral-fire-3"]),
   // UB 中のファイアは UB を解除するだけ（ファイアスターターの付与確率は変化元から引き継ぐ）
   // AF/UB が無くなるのでアストラルソウルも 0 にする（反転では残す。#215 / #613）
   {
-    ...deriveHidden("fire", "fire-in-ub", "ファイア (UB 解除)", ["firestarter"]),
+    ...deriveHidden("fire", "fire-in-ub", ["firestarter"]),
     removesBuffs: UMBRAL_ICE_ANY,
     consumeAllOfResource: "astral-soul",
   },
   // UB3 かつアンブラルハート 3 から AF への反転: サンダーヘッド＋パラドックス
-  deriveHidden("fire-3", "fire-3-from-ub3", "ファイガ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
-  deriveHidden("fire-2", "fire-2-from-ub3", "ファイラ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
-  deriveHidden("high-fire-2", "high-fire-2-from-ub3", "ハイファイラ (UB3→AF3)", ["astral-fire-3", "thunderhead"], true),
+  deriveHidden("fire-3", "fire-3-from-ub3", ["astral-fire-3", "thunderhead"], true),
+  deriveHidden("fire-2", "fire-2-from-ub3", ["astral-fire-3", "thunderhead"], true),
+  deriveHidden("high-fire-2", "high-fire-2-from-ub3", ["astral-fire-3", "thunderhead"], true),
   // トランスはパラドックスのみ（サンダーヘッドは付与しない。#219）
-  deriveHidden("transpose", "transpose-to-af1-from-ub3", "トランス (UB3→AF1)", ["astral-fire-1"], true),
+  deriveHidden("transpose", "transpose-to-af1-from-ub3", ["astral-fire-1"], true),
   // UB 中のブリザド系（UB3 付与）: 反転ではないのでサンダーヘッドは付かない
-  deriveHidden("blizzard-3", "blizzard-3-in-ub", "ブリザガ (UB 中)", ["umbral-ice-3"]),
-  deriveHidden("blizzard-2", "blizzard-2-in-ub", "ブリザラ (UB 中)", ["umbral-ice-3"]),
-  deriveHidden("high-blizzard-2", "high-blizzard-2-in-ub", "ハイブリザラ (UB 中)", ["umbral-ice-3"]),
+  deriveHidden("blizzard-3", "blizzard-3-in-ub", ["umbral-ice-3"]),
+  deriveHidden("blizzard-2", "blizzard-2-in-ub", ["umbral-ice-3"]),
+  deriveHidden("high-blizzard-2", "high-blizzard-2-in-ub", ["umbral-ice-3"]),
   // AF 中のブリザドは AF を解除するだけ。AF/UB が無くなるのでアストラルソウルも 0 にする（反転では残す。#215 / #613）
   {
-    ...deriveHidden("blizzard", "blizzard-in-af", "ブリザド (AF 解除)", []),
+    ...deriveHidden("blizzard", "blizzard-in-af", []),
     removesBuffs: ASTRAL_FIRE_ANY,
     consumeAllOfResource: "astral-soul",
   },
   // AF3 から UB への反転: サンダーヘッド＋パラドックス
-  deriveHidden("blizzard-3", "blizzard-3-from-af3", "ブリザガ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
-  deriveHidden("blizzard-2", "blizzard-2-from-af3", "ブリザラ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
-  deriveHidden("high-blizzard-2", "high-blizzard-2-from-af3", "ハイブリザラ (AF3→UB3)", ["umbral-ice-3", "thunderhead"], true),
+  deriveHidden("blizzard-3", "blizzard-3-from-af3", ["umbral-ice-3", "thunderhead"], true),
+  deriveHidden("blizzard-2", "blizzard-2-from-af3", ["umbral-ice-3", "thunderhead"], true),
+  deriveHidden("high-blizzard-2", "high-blizzard-2-from-af3", ["umbral-ice-3", "thunderhead"], true),
   // トランスはパラドックスのみ（サンダーヘッドは付与しない。#219）
-  deriveHidden("transpose", "transpose-to-ub1-from-af3", "トランス (AF3→UB1)", ["umbral-ice-1"], true),
+  deriveHidden("transpose", "transpose-to-ub1-from-af3", ["umbral-ice-1"], true),
 ];
 
 // ============================================================

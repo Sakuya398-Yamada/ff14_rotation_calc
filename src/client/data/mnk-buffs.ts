@@ -79,8 +79,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 型: 壱の型の WS が弐の型を、弐が参を、参が壱を付ける（mnk-skills.ts の comboFromBuff）
   {
     id: "opo-form",
-    name: "壱の型",
-    shortName: "壱型",
     icon: bootshineIcon,
     duration: 30,
     effects: [],
@@ -89,8 +87,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   },
   {
     id: "raptor-form",
-    name: "弐の型",
-    shortName: "弐型",
     icon: trueStrikeIcon,
     duration: 30,
     effects: [],
@@ -99,8 +95,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   },
   {
     id: "coeurl-form",
-    name: "参の型",
-    shortName: "参型",
     icon: snapPunchIcon,
     duration: 30,
     effects: [],
@@ -111,8 +105,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 使用した WS の型に応じたビーストチャクラを獲得する
   {
     id: "perfect-balance",
-    name: "踏鳴",
-    shortName: "踏鳴",
     icon: perfectBalanceIcon,
     duration: 20,
     maxStacks: 3,
@@ -129,8 +121,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 零の型: 次の WS 1回を型不問で成立させる（演武・必殺技・乾坤闘気弾で付与）
   {
     id: "formless-fist",
-    name: "零の型",
-    shortName: "零型",
     icon: formShiftIcon,
     duration: 30,
     effects: [
@@ -143,8 +133,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 紅蓮の極意: 与ダメージ15%上昇
   {
     id: "riddle-of-fire",
-    name: "紅蓮の極意",
-    shortName: "紅蓮",
     icon: riddleOfFireIcon,
     duration: 20,
     effects: [{ type: "potency", value: 1.15 }],
@@ -154,8 +142,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 乾坤闘気弾実行可
   {
     id: "fire-rumination",
-    name: "乾坤闘気弾実行可",
-    shortName: "乾坤\nﾚﾃﾞｨ",
     icon: firesReplyIcon,
     duration: 20,
     effects: [],
@@ -165,8 +151,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 疾風の極意: オートアタック間隔50%短縮（本ツールはオートアタック未実装のため effects は空）
   {
     id: "riddle-of-wind",
-    name: "疾風の極意",
-    shortName: "疾風",
     icon: riddleOfWindIcon,
     duration: 15,
     effects: [],
@@ -176,8 +160,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 絶空拳実行可
   {
     id: "wind-rumination",
-    name: "絶空拳実行可",
-    shortName: "絶空\nﾚﾃﾞｨ",
     icon: windsReplyIcon,
     duration: 15,
     effects: [],
@@ -189,8 +171,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // スキルの付与バフは traitPotencyOverrides で Lv88 から下の brotherhood に切り替わる（mnk-skills.ts）
   {
     id: "brotherhood-no-chakra-gain",
-    name: "桃園結義",
-    shortName: "桃園",
     icon: brotherhoodIcon,
     duration: 20,
     effects: [{ type: "potency", value: 1.05 }],
@@ -202,8 +182,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 自身のWSによる獲得（確定）のみをモデル化する
   {
     id: "brotherhood",
-    name: "桃園結義",
-    shortName: "桃園",
     icon: brotherhoodIcon,
     duration: 20,
     effects: [
@@ -216,8 +194,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // 金剛の極意: 被ダメージ軽減（防御バフのため effects は空。リキャスト管理用）
   {
     id: "riddle-of-earth",
-    name: "金剛の極意",
-    shortName: "金剛",
     icon: riddleOfEarthIcon,
     duration: 10,
     effects: [],
@@ -227,8 +203,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // マントラ: HP回復効果上昇（回復バフのため effects は空）
   {
     id: "mantra",
-    name: "マントラ",
-    shortName: "ﾏﾝﾄﾗ",
     icon: mantraIcon,
     duration: 15,
     effects: [],
@@ -239,8 +213,6 @@ export const MNK_BUFFS: BuffDefinition[] = [
   // effects は空（方向指定ボーナス計算が本ツール未実装のため）
   {
     id: "true-north",
-    name: "トゥルーノース",
-    shortName: "ﾄｩﾙｰ\nﾉｰｽ",
     icon: trueNorthIcon,
     duration: 10,
     effects: [],

@@ -1,19 +1,21 @@
 import { useTranslation } from "react-i18next";
-import type { Skill, CharacterStats, DoTTick, ActiveDoT } from "../../types/skill";
+import type { CharacterStats, DoTTick, ActiveDoT } from "../../types/skill";
+import type { JobId } from "../../data/job-registry";
+import { skillName } from "../../logic/display-names";
 import { calcExpectedMultiplier } from "../../logic/stat-calc";
 import { styles } from "./styles";
 import { PX_PER_SEC } from "./constants";
 
 interface DotLanesProps {
+  jobId: JobId;
   activeDoTs: ActiveDoT[];
   dotTicks: DoTTick[];
-  skillMap: Map<string, Skill>;
   stats: CharacterStats;
   labelBg: string;
 }
 
 /** DoTレーン（スキルIDごとに1行、DoTバーとティックマーカーを描画） */
-export function DotLanes({ activeDoTs, dotTicks, skillMap, stats, labelBg }: DotLanesProps) {
+export function DotLanes({ jobId, activeDoTs, dotTicks, stats, labelBg }: DotLanesProps) {
   const { t } = useTranslation();
   // スキルIDごとにDoTをグループ化
   const dotBySkill = new Map<string, ActiveDoT[]>();
@@ -27,8 +29,7 @@ export function DotLanes({ activeDoTs, dotTicks, skillMap, stats, labelBg }: Dot
   return (
     <>
       {Array.from(dotBySkill.entries()).map(([skillId, dots]) => {
-        const skill = skillMap.get(skillId);
-        const label = skill?.name ?? skillId;
+        const label = skillName(t, jobId, skillId);
         const ticksForSkill = dotTicks.filter((tick) => tick.skillId === skillId);
 
         return (

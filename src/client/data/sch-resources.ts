@@ -10,8 +10,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const SCH_RESOURCES: ResourceDefinition[] = [
   {
     id: "aetherflow",
-    name: "エーテルフロー",
-    shortName: "ｴｰﾃﾙ\nﾌﾛｰ",
     maxStacks: 3,
     color: "#26a69a",
     acquiredLevel: 45,

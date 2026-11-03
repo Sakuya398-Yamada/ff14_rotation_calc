@@ -4,7 +4,6 @@ import type { BuffDefinition, CharacterStats, ResolvedTimelineEntry, Skill, Time
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -33,8 +32,6 @@ function expectNoError(e: ResolvedTimelineEntry) {
 
 const speedBuff: BuffDefinition = {
   id: "speed-test",
-  name: "speed",
-  shortName: "speed",
   icon: "",
   duration: 30,
   effects: [{ type: "speed", value: 0.8 }],

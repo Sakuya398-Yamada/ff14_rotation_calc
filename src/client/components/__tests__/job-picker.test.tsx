@@ -71,6 +71,15 @@ describe("JobPicker", () => {
     expect(within(dialog).getByText("該当するジョブがありません")).toBeInTheDocument();
   });
 
+  // 表示している言語にかかわらず、日英どちらの名前でも絞り込める（#846）
+  it("日本語の表示中でも英語名で絞り込める", () => {
+    renderPicker();
+    const dialog = openPicker();
+    fireEvent.change(within(dialog).getByRole("searchbox"), { target: { value: "black" } });
+    expect(within(dialog).getByRole("button", { name: /黒魔道士/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /白魔道士/ })).not.toBeInTheDocument();
+  });
+
   it("レベルを切り替えると onLevelChange が数値で呼ばれる", () => {
     const { props } = renderPicker();
     const dialog = openPicker();
@@ -112,13 +121,32 @@ describe("JobPicker（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
 
-  it("ボタン・パネル・警告・案内を英語で出す（ジョブ名は日本語のまま）", () => {
+  it("ボタン・パネル・警告・案内とジョブ・ロールの名前を英語で出す", () => {
     renderPicker({ level: 90 });
-    fireEvent.click(screen.getByRole("button", { name: "Select job and level (current: 白魔道士 Lv90)" }));
+    const button = screen.getByRole("button", { name: "Select job and level (current: White Mage Lv90)" });
+    expect(button).toHaveTextContent("White Mage");
+    expect(button).toHaveTextContent("Healer · Lv90");
+    fireEvent.click(button);
     const dialog = screen.getByRole("dialog", { name: "Select job and level" });
 
     expect(within(dialog).getByText("Potencies at Lv90 may not be accurate")).toBeInTheDocument();
+    expect(within(dialog).getByText("Magical Ranged DPS")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /^[A-Z]{3}\s?Black Mage$/ })).toBeEnabled();
+    expect(within(dialog).getByRole("button", { name: /Paladin/ })).toBeDisabled();
+    expect(within(dialog).getByRole("searchbox", { name: "Search jobs" })).toHaveAttribute(
+      "placeholder",
+      "Filter by job name or abbreviation (e.g. Black Mage, BLM)"
+    );
     fireEvent.change(within(dialog).getByRole("searchbox", { name: "Search jobs" }), { target: { value: "zzz" } });
     expect(within(dialog).getByText("No matching jobs")).toBeInTheDocument();
+  });
+
+  it("英語の表示中でも日本語名で絞り込める", () => {
+    renderPicker();
+    fireEvent.click(screen.getByRole("button", { name: /Select job and level/ }));
+    const dialog = screen.getByRole("dialog", { name: "Select job and level" });
+    fireEvent.change(within(dialog).getByRole("searchbox", { name: "Search jobs" }), { target: { value: "黒" } });
+    expect(within(dialog).getByRole("button", { name: /Black Mage/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /White Mage/ })).not.toBeInTheDocument();
   });
 });

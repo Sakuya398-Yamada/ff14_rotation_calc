@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import { CONTENT_CATALOG, CONTENT_CATEGORIES } from "../data/content-catalog";
+import { contentCategoryName, contentName } from "../logic/display-names";
 import { useLanguage } from "../i18n";
 import {
   MAX_TITLE_LENGTH,
@@ -176,10 +177,10 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
               >
                 <option value="">{t("saveTimelineDialog.noContent")}</option>
                 {CONTENT_CATEGORIES.map((category) => (
-                  <optgroup key={category.id} label={category.label}>
-                    {CONTENT_CATALOG.filter((c) => c.category === category.id).map((c) => (
+                  <optgroup key={category} label={contentCategoryName(t, category)}>
+                    {CONTENT_CATALOG.filter((c) => c.category === category).map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name}
+                        {contentName(t, c.id)}
                       </option>
                     ))}
                   </optgroup>

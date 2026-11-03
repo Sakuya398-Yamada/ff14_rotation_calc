@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -23,8 +22,6 @@ function makeEntry(skillId: string): TimelineEntry {
 // インスタレーション相当の speed バフ（対象スキル限定）
 const installationBuff: BuffDefinition = {
   id: "installation-test",
-  name: "インスタレーション",
-  shortName: "ｲﾝｽﾀ",
   icon: "",
   duration: 30,
   maxStacks: 5,
@@ -51,8 +48,6 @@ const installationBuff: BuffDefinition = {
 // 黒魔紋相当の speed バフ（全GCD対象、appliesToSkillIds なし）
 const leyLinesBuff: BuffDefinition = {
   id: "ley-lines-test",
-  name: "黒魔紋",
-  shortName: "黒魔紋",
   icon: "",
   duration: 20,
   effects: [{ type: "speed", value: 0.85 }],

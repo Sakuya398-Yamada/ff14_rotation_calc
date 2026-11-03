@@ -1,0 +1,166 @@
+{
+  "skills": {
+    "true-thrust": {
+      "name": "True Thrust"
+    },
+    "vorpal-thrust": {
+      "name": "Vorpal Thrust"
+    },
+    "full-thrust": {
+      "name": "Full Thrust"
+    },
+    "fang-and-claw": {
+      "name": "Fang and Claw"
+    },
+    "disembowel": {
+      "name": "Disembowel"
+    },
+    "chaos-thrust": {
+      "name": "Chaos Thrust"
+    },
+    "wheeling-thrust": {
+      "name": "Wheeling Thrust"
+    },
+    "drakesbane": {
+      "name": "Drakesbane"
+    },
+    "raiden-thrust": {
+      "name": "Raiden Thrust"
+    },
+    "piercing-talon": {
+      "name": "Piercing Talon"
+    },
+    "doom-spike": {
+      "name": "Doom Spike"
+    },
+    "sonic-thrust": {
+      "name": "Sonic Thrust"
+    },
+    "coerthan-torment": {
+      "name": "Coerthan Torment"
+    },
+    "draconian-fury": {
+      "name": "Draconian Fury"
+    },
+    "heavens-thrust": {
+      "name": "Heavens' Thrust"
+    },
+    "chaotic-spring": {
+      "name": "Chaotic Spring"
+    },
+    "lance-barrage": {
+      "name": "Lance Barrage"
+    },
+    "spiral-blow": {
+      "name": "Spiral Blow"
+    },
+    "life-surge": {
+      "name": "Life Surge"
+    },
+    "lance-charge": {
+      "name": "Lance Charge"
+    },
+    "battle-litany": {
+      "name": "Battle Litany"
+    },
+    "jump": {
+      "name": "Jump"
+    },
+    "high-jump": {
+      "name": "High Jump"
+    },
+    "mirage-dive": {
+      "name": "Mirage Dive"
+    },
+    "dragonfire-dive": {
+      "name": "Dragonfire Dive"
+    },
+    "rise-of-the-dragon": {
+      "name": "Rise of the Dragon"
+    },
+    "stardiver": {
+      "name": "Stardiver"
+    },
+    "starcross": {
+      "name": "Starcross"
+    },
+    "geirskogul": {
+      "name": "Geirskogul"
+    },
+    "nastrond": {
+      "name": "Nastrond"
+    },
+    "wyrmwind-thrust": {
+      "name": "Wyrmwind Thrust"
+    },
+    "elusive-jump": {
+      "name": "Elusive Jump"
+    },
+    "winged-glide": {
+      "name": "Winged Glide"
+    },
+    "true-north": {
+      "name": "True North"
+    }
+  },
+  "buffs": {
+    "lance-charge": {
+      "name": "Lance Charge",
+      "shortName": "Lance\nCharge"
+    },
+    "battle-litany": {
+      "name": "Battle Litany",
+      "shortName": "Battle\nLitany"
+    },
+    "life-surge": {
+      "name": "Life Surge",
+      "shortName": "Life\nSurge"
+    },
+    "dragons-eye": {
+      "name": "Draconian Fire",
+      "shortName": "Draco.\nFire"
+    },
+    "power-surge": {
+      "name": "Power Surge",
+      "shortName": "Power\nSurge"
+    },
+    "life-of-the-dragon": {
+      "name": "Life of the Dragon",
+      "shortName": "LotD"
+    },
+    "dive-ready": {
+      "name": "Dive Ready",
+      "shortName": "Dive\nReady"
+    },
+    "dragons-flight": {
+      "name": "Dragon's Flight",
+      "shortName": "Dragon's\nFlight"
+    },
+    "nastrond-ready": {
+      "name": "Nastrond Ready",
+      "shortName": "Nast.\nReady"
+    },
+    "starcross-ready": {
+      "name": "Starcross Ready",
+      "shortName": "Star.\nReady"
+    },
+    "drakesbane-ready": {
+      "name": "Drakesbane Ready",
+      "shortName": "Drakes.\nReady"
+    },
+    "enhanced-piercing-talon": {
+      "name": "Enhanced Piercing Talon",
+      "shortName": "PT\nUp"
+    },
+    "true-north": {
+      "name": "True North",
+      "shortName": "True\nNorth"
+    }
+  },
+  "resources": {
+    "firstminds-focus": {
+      "name": "Firstminds' Focus",
+      "shortName": "Focus"
+    }
+  }
+}

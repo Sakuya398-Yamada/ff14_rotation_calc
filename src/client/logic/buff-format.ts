@@ -1,5 +1,7 @@
 import i18next from "i18next";
+import type { JobId } from "../data/job-registry";
 import type { ActiveBuff, BuffDefinition, BuffEffect, ResolvedTimelineEntry, Skill } from "../types/skill";
+import { buffName, skillName } from "./display-names";
 
 function formatRate(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
@@ -64,21 +66,25 @@ export function formatProcRateShort(rate: number): string {
 /** 期待値の補正に使った発動確率。例: "ホークアイ発動確率 35.0%（不発時はバーストショット）" */
 export function formatConsumedProc(
   consumedProc: NonNullable<ResolvedTimelineEntry["consumedProc"]>,
-  buffDefMap: Map<string, BuffDefinition>,
+  jobId: JobId,
 ): string {
-  const name = buffDefMap.get(consumedProc.buffId)?.name ?? consumedProc.buffId;
+  const name = buffName(i18next.t, jobId, consumedProc.buffId);
   const rate = formatProcRate(consumedProc.procRate);
-  return consumedProc.fallbackSkillName
-    ? i18next.t("buffFormat.consumedProcWithFallback", { name, rate, skill: consumedProc.fallbackSkillName })
+  return consumedProc.fallbackSkillId
+    ? i18next.t("buffFormat.consumedProcWithFallback", {
+        name,
+        rate,
+        skill: skillName(i18next.t, jobId, consumedProc.fallbackSkillId),
+      })
     : i18next.t("buffFormat.consumedProc", { name, rate });
 }
 
 /** 効いているバフに重ねて無駄になる確率付与。例: "ホークアイ上書き確率 12.3%" (#842) */
 export function formatWastedProc(
   wastedProc: NonNullable<ResolvedTimelineEntry["wastedProc"]>,
-  buffDefMap: Map<string, BuffDefinition>,
+  jobId: JobId,
 ): string {
-  const name = buffDefMap.get(wastedProc.buffId)?.name ?? wastedProc.buffId;
+  const name = buffName(i18next.t, jobId, wastedProc.buffId);
   return i18next.t("buffFormat.wastedProc", { name, rate: formatProcRate(wastedProc.rate) });
 }
 
@@ -95,7 +101,7 @@ export function isProcOutcomeSource(skill: Skill): boolean {
 }
 
 /** TimelineEntry.procOccurred の表示名。例: "ホークアイ: 発生" */
-export function formatProcOccurred(procOccurred: boolean, buffDefMap: Map<string, BuffDefinition>): string {
-  const name = buffDefMap.get(PROC_OUTCOME_BUFF_ID)?.name ?? PROC_OUTCOME_BUFF_ID;
+export function formatProcOccurred(procOccurred: boolean, jobId: JobId): string {
+  const name = buffName(i18next.t, jobId, PROC_OUTCOME_BUFF_ID);
   return i18next.t(procOccurred ? "buffFormat.procOccurred" : "buffFormat.procNotOccurred", { name });
 }

@@ -1,0 +1,100 @@
+{
+  "skills": {
+    "malefic": {
+      "name": "Malefic"
+    },
+    "malefic2": {
+      "name": "Malefic II"
+    },
+    "malefic3": {
+      "name": "Malefic III"
+    },
+    "malefic4": {
+      "name": "Malefic IV"
+    },
+    "fall-malefic": {
+      "name": "Fall Malefic"
+    },
+    "combust": {
+      "name": "Combust"
+    },
+    "combust2": {
+      "name": "Combust II"
+    },
+    "combust3": {
+      "name": "Combust III"
+    },
+    "gravity": {
+      "name": "Gravity"
+    },
+    "gravity2": {
+      "name": "Gravity II"
+    },
+    "macrocosmos": {
+      "name": "Macrocosmos"
+    },
+    "divination": {
+      "name": "Divination"
+    },
+    "oracle": {
+      "name": "Oracle"
+    },
+    "lightspeed": {
+      "name": "Lightspeed"
+    },
+    "astral-draw": {
+      "name": "Astral Draw"
+    },
+    "umbral-draw": {
+      "name": "Umbral Draw"
+    },
+    "lord-of-crowns": {
+      "name": "Lord of Crowns"
+    },
+    "earthly-star": {
+      "name": "Earthly Star"
+    },
+    "stellar-detonation": {
+      "name": "Stellar Detonation"
+    },
+    "swiftcast": {
+      "name": "Swiftcast"
+    }
+  },
+  "buffs": {
+    "divination": {
+      "name": "Divination",
+      "shortName": "Divina-\ntion"
+    },
+    "divining": {
+      "name": "Divining",
+      "shortName": "Divining"
+    },
+    "lightspeed": {
+      "name": "Lightspeed",
+      "shortName": "Light-\nspeed"
+    },
+    "earthly-star": {
+      "name": "Earthly Star",
+      "shortName": "Earthly\nStar"
+    },
+    "earthly-dominance": {
+      "name": "Earthly Dominance",
+      "shortName": "Earthly\nDomin."
+    },
+    "swiftcast": {
+      "name": "Swiftcast",
+      "shortName": "Swift-\ncast"
+    }
+  },
+  "resources": {
+    "lord-of-crowns": {
+      "name": "Lord of Crowns Ready",
+      "shortName": "Crowns\nReady"
+    },
+    "umbral-draw-next": {
+      "name": "Umbral Draw Next",
+      "shortName": "Umbral\nNext"
+    }
+  }
+}

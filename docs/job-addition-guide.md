@@ -12,18 +12,20 @@ FF14 Rotation Calculator に新しいジョブを追加するときの手順書�
 
 ## 全体像
 
-新規ジョブを追加するために触る場所は **3 ファイル新規作成 + 1 ファイル追記 + アイコン配置** に集約されている。
+新規ジョブを追加するために触る場所は **5 ファイル新規作成（データ 3・名前の辞書 2）+ 2 ファイル追記 + アイコン配置** に集約されている。
 
 | 区分 | パス | 操作 |
 |------|------|------|
 | データ | `src/client/data/<job>-skills.ts` | 新規作成（攻撃スキル定義） |
 | データ | `src/client/data/<job>-buffs.ts` | 新規作成（バフ定義） |
 | データ | `src/client/data/<job>-resources.ts` | 新規作成（リソース／ゲージ定義） |
+| 名前の辞書 | `src/client/locales/{ja,en}/job-<job>.json` | 新規作成（スキル・バフ・リソースの日英の名前） |
+| 登録 | `src/client/i18n.ts` | 名前の辞書を `resources` に追記 |
 | 登録 | `src/client/data/job-registry.ts` | `JobId` Union と `JOB_DATA` レコードに追記 |
 | アイコン | `src/client/assets/icons/<job>/*.png` | スキルアイコン配置 |
 | テスト（推奨） | `src/client/logic/__tests__/<job>-*.test.ts` | 新規作成 |
 
-> 型は `src/client/types/skill.ts` に単一ソースとして集約されているので、データを書きながら適宜参照する。
+> 型は `src/client/types/skill.ts` に単一ソースとして集約されているので、データを書きながら適宜参照する。名前（`name` / `shortName`）はデータに持たず、ステップ 5 の辞書に書く。
 
 ---
 
@@ -51,7 +53,7 @@ FF14 Rotation Calculator に新しいジョブを追加するときの手順書�
 
 ### 必須フィールド
 
-`id`, `name`, `shortName`, `maxStacks`, `color`
+`id`, `maxStacks`, `color`（名前はステップ 5 の辞書に書く）
 
 ### 主要な任意フィールド
 
@@ -74,8 +76,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const XXX_RESOURCES: ResourceDefinition[] = [
   {
     id: "xxx-gauge",
-    name: "○○ゲージ",
-    shortName: "○ゲ",
     maxStacks: 100,
     color: "#7AC0FF",
     displayAsGauge: true,
@@ -94,7 +94,7 @@ export const XXX_RESOURCES: ResourceDefinition[] = [
 
 ### 必須フィールド
 
-`id`, `name`, `shortName`（レーン用、`\n` 改行可）, `icon`, `duration`（秒、または `null` = 永続/消費まで）, `effects: BuffEffect[]`, `color`
+`id`, `icon`, `duration`（秒、または `null` = 永続/消費まで）, `effects: BuffEffect[]`, `color`（名前とレーン用の略称はステップ 5 の辞書に書く）
 
 ### `BuffEffect.type` の代表パターン
 
@@ -131,8 +131,6 @@ import xxxIcon from "../assets/icons/<job>/XXX_Buff.png";
 export const XXX_BUFFS: BuffDefinition[] = [
   {
     id: "xxx-power",
-    name: "○○の力",
-    shortName: "○力",
     icon: xxxIcon,
     duration: 20,
     effects: [{ type: "potency", value: 1.15 }],
@@ -148,7 +146,7 @@ export const XXX_BUFFS: BuffDefinition[] = [
 
 ### 必須フィールド（全スキル共通）
 
-`id`, `name`, `potency`, `type`（`"gcd"` or `"ogcd"`）, `target`（`"enemy"` / `"party"` / `"self"`）, `icon`, `recastTime`, `animationLock`, `acquiredLevel`
+`id`, `potency`, `type`（`"gcd"` or `"ogcd"`）, `target`（`"enemy"` / `"party"` / `"self"`）, `icon`, `recastTime`, `animationLock`, `acquiredLevel`
 
 - GCD は `recastTime: 2.5`
 - oGCD は `recastTime: DEFAULT_ANIMATION_LOCK`（`const DEFAULT_ANIMATION_LOCK = 0.65` をファイル冒頭に定義）で全ジョブ統一する。oGCD の `recastTime` は計算に使われず、タイムライン上のブロック表示幅（`Timeline.tsx` の `getRecastTime`）にのみ使われるため、ジョブ固有値にするとアビリティの見た目がジョブ間で揃わなくなる（#350。`ogcd-recast-time.test.ts` が検証）。実際の再使用間隔は `cooldown` で表し、**必ず**指定する（`whm-skills.ts:265, 277`）
@@ -193,7 +191,6 @@ const DEFAULT_ANIMATION_LOCK = 0.65;
 export const XXX_ATTACK_SKILLS: Skill[] = [
   {
     id: "skill-a",
-    name: "スキルA",
     potency: 200,
     type: "gcd",
     target: "enemy",
@@ -211,11 +208,46 @@ export const XXX_ATTACK_SKILLS: Skill[] = [
 
 ### ID 命名
 
-`Skill.id` / `BuffDefinition.id` / `ResourceDefinition.id` は**グローバルな文字列**として扱われる。ジョブ間衝突を避けるため、原則ジョブ名をプレフィックスに付ける（例: `sam-hakaze`）か、ジョブ固有名で衝突しないことを確認する。
+`Skill.id` / `BuffDefinition.id` / `ResourceDefinition.id` は**グローバルな文字列**として扱われる。ジョブ間衝突を避けるため、原則ジョブ名をプレフィックスに付ける（例: `sam-hakaze`）か、ジョブ固有名で衝突しないことを確認する。ID は名前の辞書のキーにもなるので、`.` と `:` を使わない（キーと名前空間の区切りとぶつかる）。
 
 ---
 
-## ステップ 5: `job-registry.ts` に登録
+## ステップ 5: 名前の辞書（`locales/{ja,en}/job-<job>.json`）を書く
+
+スキル・バフ・リソースの名前はデータに持たず、i18n の辞書に日英で置く（#846。規約は `.claude/rules/coding-standards.md`「多言語化（i18n）」）。表示する側は `src/client/logic/display-names.ts` の関数で ID から引く。
+
+1. `src/client/locales/ja/job-<job>.json` と `src/client/locales/en/job-<job>.json` を作る。キーはデータの ID で、並びはデータの定義順にする
+
+   ```json
+   {
+     "skills": {
+       "skill-a": { "name": "スキルA" }
+     },
+     "buffs": {
+       "xxx-power": { "name": "○○の力", "shortName": "○力" }
+     },
+     "resources": {
+       "xxx-gauge": { "name": "○○ゲージ", "shortName": "○ゲ" }
+     }
+   }
+   ```
+
+   - `skills` には全スキル（`hidden: true` の変化先・状態違いの定義も含む）を書く。`buffs` と `resources` には `name`（ツールチップ・詳細パネル）と `shortName`（レーンのラベル）の両方を書く
+   - `shortName` は `\n` で 2 行に分けられる。レーンのラベルは幅 52px（文字の幅は 44px）・11px で、はみ出した分は黙って切れるので、画面で確かめる
+   - ロールアクション（迅速魔・トゥルーノースなど）も、ジョブごとに書く
+   - en の値を空にしない（空文字は ja に戻らず空欄で出る）
+2. 英語名は次の出典から取る
+   - スキル: 公式英語版ジョブガイド（`https://na.finalfantasyxiv.com/jobguide/<job>/`）。日本語版（`https://jp.finalfantasyxiv.com/jobguide/<job>/`）と同じアンカー ID（`pve_action__NN`。ロールアクションはロールの欄の `mrange_action__NN` など）とアイコンの URL を使っているので、それで対応付ける。ジョブガイドの表に無いスキル（居合術・燕返しの変化先など）は、XIVAPI v2 の `Action` シートで日本語名から引く
+   - バフ: ジョブガイドに欄が無いので、XIVAPI v2 の `Status` シート（`https://v2.xivapi.com/api/search?sheets=Status&query=Name="<日本語名>"&language=ja&fields=Name,Name@lang(en)`。`query` は URL エンコードする）で引く。同じ名前の行が複数返ることがあるので、英語版ジョブガイドの説明文に出てくる名前と照らす。データ独自の名前（「〜実行可」「〜レディ」など）は、英語名を `language=en` で `Name` に入れて引き、実在を確かめる
+   - データ独自の派生名（「ファイガ (AF 中)」のような状態違いの定義）: 元のスキルの英語名に、同じ括弧書きを英語にして付ける（`Fire III (in AF)`）
+   - 英語の `shortName`: 2 行に収まる英語名はそのまま改行して入れ、収まらないものだけ英語圏で通じる略語にする（`LotD`・`PoM` など）
+3. `src/client/i18n.ts` で 2 つの JSON を import し、`resources` の `ja` と `en` に `"job-<job>"` として登録する（en には `satisfies typeof jaJob<Job>` を付ける。ja のキーが en に欠けていると型エラーになる。en にしか無いキーは検出しない）
+
+抜けは `src/client/logic/__tests__/display-names.test.ts` が検出する（全ジョブのデータにある ID のすべてに、ja と en の空でない名前があるか）。
+
+---
+
+## ステップ 6: `job-registry.ts` に登録
 
 `src/client/data/job-registry.ts` の冒頭で 3 ファイルを import し、`JobId` Union と `JOB_DATA` レコードに追記する。
 
@@ -231,19 +263,19 @@ export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch
 // 3. JOB_DATA に追加
 export const JOB_DATA: Record<JobId, JobData> = {
   // ...
-  "<job>": { name: "○○○", abbreviation: "XXX", skills: XXX_ATTACK_SKILLS, buffs: XXX_BUFFS, resources: XXX_RESOURCES },
+  "<job>": { abbreviation: "XXX", skills: XXX_ATTACK_SKILLS, buffs: XXX_BUFFS, resources: XXX_RESOURCES },
 };
 ```
 
 > `JOB_DATA` は `Record<JobId, JobData>` 型のため、`JobId` に追加したジョブをここに登録し忘れると **コンパイル時に検出される**。
 
-ジョブピッカーの表示順とロールは `src/client/data/job-catalog.ts` の `JOB_CATALOG` で決まる（`JOB_DATA` のキー順は表示に使われない）。`JOB_CATALOG` には未実装ジョブも含めて全 21 ジョブが載っているので、追加時に書き換える必要は無い。`JobId` には `JOB_CATALOG` の `id`（例: 占星術師なら `ast`）を使い、`JOB_DATA` の `name` / `abbreviation` を `JOB_CATALOG` の値と揃える。食い違うと `src/client/data/__tests__/job-catalog.test.ts` が赤になる。`JobPicker.tsx` 側への追記は不要（`JOB_DATA` にあるジョブが選べるようになる）。
+ジョブピッカーの表示順とロールは `src/client/data/job-catalog.ts` の `JOB_CATALOG` で決まる（`JOB_DATA` のキー順は表示に使われない）。`JOB_CATALOG` には未実装ジョブも含めて全 21 ジョブが載っているので、追加時に書き換える必要は無い。`JobId` には `JOB_CATALOG` の `id`（例: 占星術師なら `ast`）を使い、`JOB_DATA` の `abbreviation` を `JOB_CATALOG` の値と揃える。食い違うと `src/client/data/__tests__/job-catalog.test.ts` が赤になる。ジョブ名は辞書の catalog（`src/client/locales/{ja,en}/catalog.json` の `jobs.<id>.name`）に 21 ジョブとも登録済みなので、足す必要は無い。`JobPicker.tsx` 側への追記は不要（`JOB_DATA` にあるジョブが選べるようになる）。
 
 `src/client/components/__tests__/job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」は、選べることを確かめるジョブの表示名を**固定配列で列挙している**ため、新ジョブの表示名を配列に追記し、テスト名の N も合わせて更新する。このテストは列挙したジョブだけを確かめるので、追記を忘れても `npm test` は赤にならない（チェックリストで確かめる）。未実装ジョブの例にナイトを使っているので、ナイトを追加するときは別の未実装ジョブに差し替える。
 
 ---
 
-## ステップ 6: テストを書く（推奨）
+## ステップ 7: テストを書く（推奨）
 
 `src/client/logic/__tests__/<job>-*.test.ts` を新規作成し、ジョブ固有のロジックを検証する。
 
@@ -270,7 +302,8 @@ SAM の以下が雛形として参考になる：
 - [ ] `src/client/data/<job>-buffs.ts` が存在し、`<JOB>_BUFFS` を export している
 - [ ] `src/client/data/<job>-resources.ts` が存在し、`<JOB>_RESOURCES` を export している
 - [ ] `src/client/assets/icons/<job>/` 配下に全スキル分のアイコンがある
-- [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（`JobId` は `JOB_CATALOG` の `id`、名前・略称は `JOB_CATALOG` と一致。ピッカーの表示順は `JOB_CATALOG` で決まる）
+- [ ] `src/client/locales/{ja,en}/job-<job>.json` に全スキル・バフ・リソースの名前があり、`src/client/i18n.ts` の `resources` に登録されている（`display-names.test.ts` が抜けを検出する）。英語の `shortName` がレーンのラベルに収まることを `/en/` の画面で確かめた
+- [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（`JobId` は `JOB_CATALOG` の `id`、略称は `JOB_CATALOG` と一致。ピッカーの表示順は `JOB_CATALOG` で決まる）
 - [ ] `job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」の期待値（固定配列）に新ジョブの表示名が追記され、テスト名の N が更新されている
 - [ ] `README.md` の「対応ジョブ」表と FAQ「使いたいジョブが未対応」のジョブ一覧・ジョブ数に新ジョブが追記されている（並び順は `JOB_DATA` のキー順）
 - [ ] `npm run build` / `npm test` が GREEN

@@ -4,8 +4,6 @@ import type { ActiveBuff, BuffDefinition } from "../../types/skill";
 
 function makeBuff(overrides: Partial<BuffDefinition> & { id: string }): BuffDefinition {
   return {
-    name: overrides.id,
-    shortName: overrides.id,
     icon: "",
     duration: 30,
     effects: [],

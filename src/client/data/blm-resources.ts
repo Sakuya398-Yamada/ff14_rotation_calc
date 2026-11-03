@@ -18,8 +18,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const BLM_RESOURCES: ResourceDefinition[] = [
   {
     id: "mp",
-    name: "MP",
-    shortName: "MP",
     maxStacks: 10000,
     initialStacks: 10000,
     color: "#5b9bd5",
@@ -32,24 +30,18 @@ export const BLM_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "umbral-heart",
-    name: "アンブラルハート",
-    shortName: "ﾊｰﾄ",
     maxStacks: 3,
     color: "#81d4fa",
     acquiredLevel: 58,
   },
   {
     id: "paradox-gauge",
-    name: "パラドックスゲージ",
-    shortName: "ﾊﾟﾗﾄﾞ",
     maxStacks: 1,
     color: "#ba68c8",
     acquiredLevel: 90,
   },
   {
     id: "polyglot",
-    name: "ポリグロット",
-    shortName: "ﾎﾟﾘｸﾞ",
     maxStacks: 3,
     color: "#ff8a65",
     acquiredLevel: 70,
@@ -67,8 +59,6 @@ export const BLM_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "astral-soul",
-    name: "アストラルソウル",
-    shortName: "ｱｽﾄﾗﾙ\nｿｳﾙ",
     maxStacks: 6,
     color: "#ffca28",
     acquiredLevel: 100,

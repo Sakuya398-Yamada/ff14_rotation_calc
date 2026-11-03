@@ -1,0 +1,210 @@
+{
+  "skills": {
+    "heavy-shot": {
+      "name": "Heavy Shot"
+    },
+    "straight-shot": {
+      "name": "Straight Shot"
+    },
+    "venomous-bite": {
+      "name": "Venomous Bite"
+    },
+    "windbite": {
+      "name": "Windbite"
+    },
+    "iron-jaws": {
+      "name": "Iron Jaws"
+    },
+    "caustic-bite": {
+      "name": "Caustic Bite"
+    },
+    "stormbite": {
+      "name": "Stormbite"
+    },
+    "refulgent-arrow": {
+      "name": "Refulgent Arrow"
+    },
+    "burst-shot": {
+      "name": "Burst Shot"
+    },
+    "quick-nock": {
+      "name": "Quick Nock"
+    },
+    "wide-volley": {
+      "name": "Wide Volley"
+    },
+    "shadowbite": {
+      "name": "Shadowbite"
+    },
+    "ladonsbite": {
+      "name": "Ladonsbite"
+    },
+    "apex-arrow": {
+      "name": "Apex Arrow"
+    },
+    "blast-arrow": {
+      "name": "Blast Arrow"
+    },
+    "resonant-arrow": {
+      "name": "Resonant Arrow"
+    },
+    "radiant-encore": {
+      "name": "Radiant Encore"
+    },
+    "bloodletter": {
+      "name": "Bloodletter"
+    },
+    "rain-of-death": {
+      "name": "Rain of Death"
+    },
+    "empyreal-arrow": {
+      "name": "Empyreal Arrow"
+    },
+    "pitch-perfect": {
+      "name": "Pitch Perfect"
+    },
+    "sidewinder": {
+      "name": "Sidewinder"
+    },
+    "heartbreak-shot": {
+      "name": "Heartbreak Shot"
+    },
+    "raging-strikes": {
+      "name": "Raging Strikes"
+    },
+    "barrage": {
+      "name": "Barrage"
+    },
+    "battle-voice": {
+      "name": "Battle Voice"
+    },
+    "radiant-finale": {
+      "name": "Radiant Finale"
+    },
+    "mages-ballad": {
+      "name": "Mage's Ballad"
+    },
+    "armys-paeon": {
+      "name": "Army's Paeon"
+    },
+    "wanderers-minuet": {
+      "name": "The Wanderer's Minuet"
+    }
+  },
+  "buffs": {
+    "raging-strikes": {
+      "name": "Raging Strikes",
+      "shortName": "Raging\nStrikes"
+    },
+    "battle-voice": {
+      "name": "Battle Voice",
+      "shortName": "Battle\nVoice"
+    },
+    "radiant-finale-1": {
+      "name": "Radiant Finale (1 Coda)",
+      "shortName": "Finale\n1 Coda"
+    },
+    "radiant-finale-2": {
+      "name": "Radiant Finale (2 Codas)",
+      "shortName": "Finale\n2 Coda"
+    },
+    "radiant-finale-3": {
+      "name": "Radiant Finale (3 Codas)",
+      "shortName": "Finale\n3 Coda"
+    },
+    "mages-ballad": {
+      "name": "Mage's Ballad",
+      "shortName": "Ballad"
+    },
+    "armys-paeon": {
+      "name": "Army's Paeon",
+      "shortName": "Paeon"
+    },
+    "wanderers-minuet": {
+      "name": "The Wanderer's Minuet",
+      "shortName": "Minuet"
+    },
+    "armys-muse-1": {
+      "name": "Army's Muse (Repertoire 1)",
+      "shortName": "Muse\n1"
+    },
+    "armys-muse-2": {
+      "name": "Army's Muse (Repertoire 2)",
+      "shortName": "Muse\n2"
+    },
+    "armys-muse-3": {
+      "name": "Army's Muse (Repertoire 3)",
+      "shortName": "Muse\n3"
+    },
+    "armys-muse-4": {
+      "name": "Army's Muse (Repertoire 4)",
+      "shortName": "Muse\n4"
+    },
+    "armys-ethos-1": {
+      "name": "Army's Ethos (Repertoire 1)",
+      "shortName": "Ethos\n1"
+    },
+    "armys-ethos-2": {
+      "name": "Army's Ethos (Repertoire 2)",
+      "shortName": "Ethos\n2"
+    },
+    "armys-ethos-3": {
+      "name": "Army's Ethos (Repertoire 3)",
+      "shortName": "Ethos\n3"
+    },
+    "armys-ethos-4": {
+      "name": "Army's Ethos (Repertoire 4)",
+      "shortName": "Ethos\n4"
+    },
+    "hawks-eye": {
+      "name": "Hawk's Eye",
+      "shortName": "Hawk's\nEye"
+    },
+    "barrage": {
+      "name": "Barrage",
+      "shortName": "Barrage"
+    },
+    "blast-arrow-ready": {
+      "name": "Blast Arrow Ready",
+      "shortName": "Blast\nReady"
+    },
+    "resonant-arrow-ready": {
+      "name": "Resonant Arrow Ready",
+      "shortName": "Reson.\nReady"
+    },
+    "radiant-encore-ready-1": {
+      "name": "Radiant Encore Ready (1 Coda)",
+      "shortName": "Encore\nReady 1"
+    },
+    "radiant-encore-ready-2": {
+      "name": "Radiant Encore Ready (2 Codas)",
+      "shortName": "Encore\nReady 2"
+    },
+    "radiant-encore-ready-3": {
+      "name": "Radiant Encore Ready (3 Codas)",
+      "shortName": "Encore\nReady 3"
+    }
+  },
+  "resources": {
+    "soul-voice": {
+      "name": "Soul Voice",
+      "shortName": "Soul\nVoice"
+    },
+    "coda-mages": {
+      "name": "Mage's Coda",
+      "shortName": "Coda"
+    },
+    "coda-armys": {
+      "name": "Army's Coda",
+      "shortName": "Coda"
+    },
+    "coda-wanderers": {
+      "name": "Wanderer's Coda",
+      "shortName": "Coda"
+    },
+    "repertoire": {
+      "name": "Repertoire",
+      "shortName": "Reper-\ntoire"
+    }
+  }
+}

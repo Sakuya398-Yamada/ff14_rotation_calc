@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -23,8 +22,6 @@ function makeEntry(skillId: string): TimelineEntry {
 describe("確率付与だけで付いたバフの自動消費の警告（unconfirmedProcBuffs）", () => {
   const procInstant: BuffDefinition = {
     id: "proc-instant",
-    name: "確率で付く詠唱破棄",
-    shortName: "proc",
     icon: "",
     duration: null,
     effects: [{ type: "instantCast", value: 0 }],
@@ -85,8 +82,6 @@ describe("確率付与だけで付いたバフの自動消費の警告（unconfi
   it("buffConsumptionAnyOf の期待値で消費するバフ（ホークアイ型）には警告を出さない", () => {
     const procBuff: BuffDefinition = {
       id: "proc-potency",
-      name: "確率で付く威力上書き",
-      shortName: "proc",
       icon: "",
       duration: 30,
       maxStacks: 1,
@@ -121,8 +116,6 @@ describe("確率付与だけで付いたバフの自動消費の警告（unconfi
 describe("確率付与が効いているバフに重なって無駄になる確率（wastedProc）", () => {
   const procBuff: BuffDefinition = {
     id: "proc-buff",
-    name: "確率で付くバフ",
-    shortName: "proc",
     icon: "",
     duration: 30,
     maxStacks: 1,

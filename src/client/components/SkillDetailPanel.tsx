@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats, ResourceDefinition } from "../types/skill";
+import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats } from "../types/skill";
+import type { JobId } from "../data/job-registry";
+import { buffName, skillName } from "../logic/display-names";
 import { calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
@@ -19,8 +21,8 @@ interface SkillDetailPanelProps {
   entry: ResolvedTimelineEntry;
   /** entry.resolvedSkillId に対応するスキル（autoTransform 後の実表示スキル） */
   resolvedSkill: Skill;
+  jobId: JobId;
   buffDefMap: Map<string, BuffDefinition>;
-  resourceDefMap: Map<string, ResourceDefinition>;
   stats: CharacterStats;
   onClose: () => void;
   /** 開始時刻のマニュアル設定/解除ハンドラ。undefined を渡すと自動計算に戻る */
@@ -38,8 +40,8 @@ const PROC_OUTCOME_OPTIONS: { id: "expected" | "occurred" | "notOccurred"; value
 export function SkillDetailPanel({
   entry,
   resolvedSkill,
+  jobId,
   buffDefMap,
-  resourceDefMap,
   stats,
   onClose,
   onManualStartTimeChange,
@@ -93,7 +95,8 @@ export function SkillDetailPanel({
   };
 
   const isManual = entry.manualStartTime !== undefined;
-  const procBuffName = buffDefMap.get(PROC_OUTCOME_BUFF_ID)?.name ?? PROC_OUTCOME_BUFF_ID;
+  const procBuffName = buffName(t, jobId, PROC_OUTCOME_BUFF_ID);
+  const resolvedSkillName = skillName(t, jobId, resolvedSkill.id);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -150,8 +153,8 @@ export function SkillDetailPanel({
   const isMultiTargetHit = breakdown !== null && breakdown.targets.length > 1;
 
   const errorMessages: string[] = [];
-  errorMessages.push(...formatResourceErrors(entry.resourceErrors, resourceDefMap));
-  errorMessages.push(...formatComboErrors(entry.comboErrors, buffDefMap));
+  errorMessages.push(...formatResourceErrors(entry.resourceErrors, jobId));
+  errorMessages.push(...formatComboErrors(entry.comboErrors, jobId));
   if (entry.untargetableError) errorMessages.push(t("skillDetailPanel.errors.untargetable"));
   if (entry.recastError) errorMessages.push(t("skillDetailPanel.errors.recast"));
 
@@ -165,8 +168,8 @@ export function SkillDetailPanel({
   return (
     <aside ref={panelRef} style={styles.panel} aria-label={t("skillDetailPanel.label")}>
       <div style={styles.header}>
-        <img src={resolvedSkill.icon} alt={resolvedSkill.name} style={styles.headerIcon} />
-        <div style={styles.headerName}>{resolvedSkill.name}</div>
+        <img src={resolvedSkill.icon} alt={resolvedSkillName} style={styles.headerIcon} />
+        <div style={styles.headerName}>{resolvedSkillName}</div>
         <div style={styles.headerStartTimeRow}>
           <label style={styles.headerStartTimeLabel} htmlFor="manual-start-time-input">{t("skillDetailPanel.startTime")}</label>
           <input
@@ -234,7 +237,7 @@ export function SkillDetailPanel({
         {/* 発生指定の行の外に置く。行の中だと、狭い画面で行ごと縮んでボタンの文字が折り返す */}
         {entry.wastedProc?.buffId === PROC_OUTCOME_BUFF_ID && (
           <span className="num" style={styles.headerAutoHint}>
-            {formatWastedProc(entry.wastedProc, buffDefMap)}
+            {formatWastedProc(entry.wastedProc, jobId)}
           </span>
         )}
         <button type="button" onClick={onClose} style={styles.closeButton} aria-label={t("skillDetailPanel.close")}>
@@ -250,7 +253,7 @@ export function SkillDetailPanel({
           <div className="num" style={styles.cellValue}>{entry.resolvedPotency}</div>
           {entry.consumedProc && (
             <div className="num" style={styles.expectedFormula}>
-              {formatConsumedProc(entry.consumedProc, buffDefMap)}
+              {formatConsumedProc(entry.consumedProc, jobId)}
             </div>
           )}
         </div>
@@ -262,7 +265,7 @@ export function SkillDetailPanel({
             potencyContribs.map((c) => (
               <ContribRow
                 key={c.buffId}
-                name={c.name}
+                name={buffName(t, jobId, c.buffId)}
                 value={`×${c.potencyMultiplier!.toFixed(2)}`}
                 color={c.color}
               />
@@ -277,7 +280,7 @@ export function SkillDetailPanel({
             critContribs.map((c) => (
               <ContribRow
                 key={c.buffId}
-                name={c.name}
+                name={buffName(t, jobId, c.buffId)}
                 value={c.guaranteedCrit
                   ? t("skillDetailPanel.guaranteedCrit")
                   : formatPercent(c.critRateBonus ?? 0)}
@@ -294,7 +297,7 @@ export function SkillDetailPanel({
             dhContribs.map((c) => (
               <ContribRow
                 key={c.buffId}
-                name={c.name}
+                name={buffName(t, jobId, c.buffId)}
                 value={c.guaranteedDh
                   ? t("skillDetailPanel.guaranteedDh")
                   : formatPercent(c.dhRateBonus ?? 0)}
@@ -339,7 +342,7 @@ export function SkillDetailPanel({
               <span style={{ ...styles.cellLabel, flexShrink: 0 }}>{t("skillDetailPanel.warning")}</span>
               <span style={styles.metaWarning}>
                 {t("skillDetailPanel.unconfirmedProcBuffs", {
-                  names: entry.unconfirmedProcBuffs.map((id) => buffDefMap.get(id)?.name ?? id).join(", "),
+                  names: entry.unconfirmedProcBuffs.map((id) => buffName(t, jobId, id)).join(", "),
                 })}
               </span>
             </div>
@@ -363,11 +366,12 @@ export function SkillDetailPanel({
           <ul style={styles.appliedList} aria-label={t("skillDetailPanel.appliedBuffs")}>
             {appliedBuffs.map(({ activeBuff, def }) => {
               const effects = describeBuffEffects(def);
+              const name = buffName(t, jobId, def.id);
               return (
-                <li key={activeBuff.buffId} style={styles.appliedChip} title={def.name}>
+                <li key={activeBuff.buffId} style={styles.appliedChip} title={name}>
                   <span style={{ ...styles.contribBullet, backgroundColor: def.color }} />
                   {def.icon && <img src={def.icon} alt="" style={styles.appliedIcon} />}
-                  <span>{def.name}</span>
+                  <span>{name}</span>
                   {effects.length > 0 && <span style={styles.appliedMeta}>{effects.join(" / ")}</span>}
                   {def.maxStacks !== undefined && activeBuff.stacks !== undefined && (
                     <span className="num" style={styles.appliedMeta}>×{activeBuff.stacks}</span>

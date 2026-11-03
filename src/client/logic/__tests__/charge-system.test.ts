@@ -5,7 +5,6 @@ import type { Skill, TimelineEntry } from "../../types/skill";
 /** テスト用のスキルを生成するヘルパー */
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "ogcd",
     target: "enemy",

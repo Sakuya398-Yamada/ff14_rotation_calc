@@ -187,6 +187,13 @@ describe("MyTimelinesDialog（英語）", () => {
     expect(link.querySelector("time")).toHaveTextContent(/^Oct 2[23], 2026, \d{1,2}:\d{2}\s?[AP]M$/);
   });
 
+  it("ジョブ名を英語で出す", async () => {
+    renderDialog();
+    const [link] = await screen.findAllByRole("link");
+
+    expect(link).toHaveTextContent("Black Mage Lv100");
+  });
+
   it("見出し・案内・ボタンと読み込みエラーを英語で出す", async () => {
     fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     renderDialog();

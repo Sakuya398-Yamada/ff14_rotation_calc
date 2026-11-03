@@ -13,8 +13,6 @@ export const AST_BUFFS: BuffDefinition[] = [
   {
     // 実際は自身と周囲のパーティメンバーの与ダメージ上昇。自分の与ダメージ上昇として扱う（DRG のバトルリタニーと同じ）
     id: "divination",
-    name: "ディヴィネーション",
-    shortName: "ﾃﾞｨｳﾞｨ\nﾈｰｼｮﾝ",
     icon: divinationIcon,
     duration: 20,
     effects: [
@@ -29,8 +27,6 @@ export const AST_BUFFS: BuffDefinition[] = [
   {
     // Lv92 特性「ディヴィネーション効果アップ」でディヴィネーションの使用時に付与される
     id: "divining",
-    name: "オラクル実行可",
-    shortName: "ｵﾗｸﾙ\n実行可",
     icon: diviningIcon,
     duration: 30,
     effects: [],
@@ -40,8 +36,6 @@ export const AST_BUFFS: BuffDefinition[] = [
   {
     // 実際は魔法の詠唱時間を 2.5 秒短縮する。攻撃魔法の詠唱はどれも 1.5 秒なので、詠唱なし（倍率 0）として扱う
     id: "lightspeed",
-    name: "ライトスピード",
-    shortName: "ﾗｲﾄ\nｽﾋﾟｰﾄﾞ",
     icon: lightspeedIcon,
     duration: 15,
     effects: [{ type: "castTimeMultiplier", value: 0 }],
@@ -53,8 +47,6 @@ export const AST_BUFFS: BuffDefinition[] = [
     // 巨星の支配者は独立したバフにせず、このバフのうち星の支配者が切れた後の区間で表す。
     // 時間切れでの自動爆発は数えず、ステラデトネーションを置いたときだけ爆発として数える
     id: "earthly-star",
-    name: "アーサリースター",
-    shortName: "ｱｰｻﾘｰ\nｽﾀｰ",
     icon: earthlyStarIcon,
     duration: 20,
     effects: [],
@@ -64,8 +56,6 @@ export const AST_BUFFS: BuffDefinition[] = [
   {
     // 設置から 10 秒間（成熟前）。この間のステラデトネーションは威力 205 になる
     id: "earthly-dominance",
-    name: "星の支配者",
-    shortName: "星の\n支配者",
     icon: earthlyStarIcon,
     duration: 10,
     effects: [],
@@ -74,8 +64,6 @@ export const AST_BUFFS: BuffDefinition[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
-    shortName: "迅速魔",
     icon: swiftcastIcon,
     duration: 10,
     effects: [{ type: "instantCast", value: 0 }],

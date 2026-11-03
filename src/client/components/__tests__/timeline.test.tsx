@@ -25,8 +25,9 @@ import type {
   CharacterStats,
   ResolvedTimelineEntry,
 } from "../../types/skill";
+import type { JobId } from "../../data/job-registry";
 
-function makeSkill(overrides: Partial<Skill> & { id: string; name: string }): Skill {
+function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
     potency: 100,
     type: "gcd",
@@ -50,17 +51,16 @@ const defaultStats: CharacterStats = {
   speed: 800,
 };
 
-const gcdSkill = makeSkill({ id: "test-gcd", name: "テストGCD", potency: 300 });
+const gcdSkill = makeSkill({ id: "test-gcd", potency: 300 });
 const ogcdSkill = makeSkill({
   id: "test-ogcd",
-  name: "テストoGCD",
   potency: 150,
   type: "ogcd",
 });
 const jobASkills = [gcdSkill, ogcdSkill];
 const jobASkillMap = new Map(jobASkills.map((s) => [s.id, s]));
 
-const jobBSkill = makeSkill({ id: "other-gcd", name: "別ジョブGCD", potency: 250 });
+const jobBSkill = makeSkill({ id: "other-gcd", potency: 250 });
 const jobBSkills = [jobBSkill];
 const jobBSkillMap = new Map(jobBSkills.map((s) => [s.id, s]));
 
@@ -94,6 +94,7 @@ function TestDndProvider({ children }: { children: ReactNode }) {
 
 function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {}) {
   const props = {
+    jobId: "whm" as JobId,
     skills: jobASkills,
     allSkillMap: jobASkillMap,
     resolvedEntries: [] as ResolvedTimelineEntry[],
@@ -147,10 +148,10 @@ describe("Timeline", () => {
     renderTimeline({ resolvedEntries });
 
     // スキル名はアイコンの alt と title 属性に反映される
-    expect(screen.getByAltText("テストGCD")).toBeInTheDocument();
-    expect(screen.getByAltText("テストoGCD")).toBeInTheDocument();
-    expect(screen.getByTitle(/^テストGCD \(威力: 300/)).toBeInTheDocument();
-    expect(screen.getByTitle(/^テストoGCD \(威力: 150/)).toBeInTheDocument();
+    expect(screen.getByAltText("test-gcd")).toBeInTheDocument();
+    expect(screen.getByAltText("test-ogcd")).toBeInTheDocument();
+    expect(screen.getByTitle(/^test-gcd \(威力: 300/)).toBeInTheDocument();
+    expect(screen.getByTitle(/^test-ogcd \(威力: 150/)).toBeInTheDocument();
 
     // 威力表示はステータス補正込みの期待値（SkillLanes 内で計算される値と同じ式で導出）
     const gcdExpected = calcEntryExpectedPotency(resolvedEntries[0], gcdSkill, defaultStats);
@@ -191,21 +192,21 @@ describe("Timeline", () => {
     // onRemoveEntry 後に親が渡し直す props をシミュレートして表示追従を検証する
     const twoEntries = resolve([makeEntry(gcdSkill.id), makeEntry(ogcdSkill.id)]);
     const { props, rerender } = renderTimeline({ resolvedEntries: twoEntries });
-    expect(screen.getByAltText("テストoGCD")).toBeInTheDocument();
+    expect(screen.getByAltText("test-ogcd")).toBeInTheDocument();
 
     const remaining = resolve([makeEntry(gcdSkill.id)]);
     rerender(
       <Timeline {...props} resolvedEntries={remaining} />
     );
-    expect(screen.queryByAltText("テストoGCD")).not.toBeInTheDocument();
-    expect(screen.getByAltText("テストGCD")).toBeInTheDocument();
+    expect(screen.queryByAltText("test-ogcd")).not.toBeInTheDocument();
+    expect(screen.getByAltText("test-gcd")).toBeInTheDocument();
   });
 
   it("ジョブ切替相当のprops更新で表示が追従する（タイムライン全消去→別ジョブのエントリ）", () => {
     const { props, rerender } = renderTimeline({
       resolvedEntries: resolve([makeEntry(gcdSkill.id)]),
     });
-    expect(screen.getByAltText("テストGCD")).toBeInTheDocument();
+    expect(screen.getByAltText("test-gcd")).toBeInTheDocument();
 
     // App.handleJobChange はジョブ切替時に entries を全消去する（App.tsx）
     rerender(
@@ -216,7 +217,7 @@ describe("Timeline", () => {
         resolvedEntries={[]}
       />
     );
-    expect(screen.queryByAltText("テストGCD")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("test-gcd")).not.toBeInTheDocument();
     expect(
       screen.getByText("スキルパレットからドラッグ＆ドロップしてスキルを追加")
     ).toBeInTheDocument();
@@ -230,7 +231,7 @@ describe("Timeline", () => {
         resolvedEntries={resolve([makeEntry(jobBSkill.id)], jobBSkillMap)}
       />
     );
-    expect(screen.getByAltText("別ジョブGCD")).toBeInTheDocument();
+    expect(screen.getByAltText("other-gcd")).toBeInTheDocument();
   });
 });
 
@@ -248,6 +249,7 @@ function renderBrd(skillIds: string[]) {
     BRD_BUFFS
   ).entries;
   renderTimeline({
+    jobId: "brd",
     skills: brdSkills,
     allSkillMap: brdSkillMap,
     resolvedEntries,
@@ -307,6 +309,7 @@ describe("Timeline: ホークアイの発生の有無の指定 (#838)", () => {
   function renderBrdEntries(entries: TimelineEntry[]) {
     const resolvedEntries = resolveTimeline(entries, brdSkillMap, BRD_RESOURCES, defaultStats, BRD_BUFFS).entries;
     renderTimeline({
+      jobId: "brd",
       skills: brdSkills,
       allSkillMap: brdSkillMap,
       resolvedEntries,
@@ -389,10 +392,22 @@ describe("Timeline（英語）", () => {
     expect(screen.getByRole("button", { name: "PPS range ▶" })).toHaveAttribute("title", "Select PPS range");
   });
 
-  it("スキルのツールチップを英語で出す（スキル名は日本語のまま）", () => {
+  it("スキルのツールチップを英語で出す", () => {
     renderTimeline({ resolvedEntries: resolve([makeEntry(gcdSkill.id)]) });
 
-    expect(screen.getByTitle(/^テストGCD \(Potency: 300 \/ Expected: \d+\) \[0\.00s\] (Cast: [\d.]+s|Instant)$/)).toBeInTheDocument();
+    expect(screen.getByTitle(/^test-gcd \(Potency: 300 \/ Expected: \d+\) \[0\.00s\] (Cast: [\d.]+s|Instant)$/)).toBeInTheDocument();
     expect(screen.getByTitle(/^Recast: [\d.]+s$/)).toBeInTheDocument();
+  });
+
+  // 名前はジョブの名前空間から引く（#846）
+  it("スキル・バフ・リソースのレーンの名前を英語で出す", () => {
+    renderBrd(["wanderers-minuet", "barrage", "burst-shot", "refulgent-arrow"]);
+
+    expect(screen.getByAltText("Burst Shot")).toBeInTheDocument();
+    expect(screen.getByTitle(/^Refulgent Arrow \(Potency: /)).toBeInTheDocument();
+    // レーンのラベルは英語の略称、title は正式名。略称と正式名が違うもので見る
+    expect(screen.getByTitle("The Wanderer's Minuet").textContent).toBe("Minuet");
+    expect(screen.getByTitle(/^Barrage x1 /)).toBeInTheDocument();
+    expect(screen.getByTitle("Repertoire").textContent).toBe("Reper-\ntoire");
   });
 });

@@ -1,0 +1,204 @@
+{
+  "skills": {
+    "hakaze": {
+      "name": "Hakaze"
+    },
+    "gyofu": {
+      "name": "Gyofu"
+    },
+    "jinpu": {
+      "name": "Jinpu"
+    },
+    "shifu": {
+      "name": "Shifu"
+    },
+    "yukikaze": {
+      "name": "Yukikaze"
+    },
+    "gekko": {
+      "name": "Gekko"
+    },
+    "kasha": {
+      "name": "Kasha"
+    },
+    "fuga": {
+      "name": "Fuga"
+    },
+    "fuko": {
+      "name": "Fuko"
+    },
+    "mangetsu": {
+      "name": "Mangetsu"
+    },
+    "oka": {
+      "name": "Oka"
+    },
+    "iaijutsu": {
+      "name": "Iaijutsu"
+    },
+    "higanbana": {
+      "name": "Higanbana"
+    },
+    "tenka-goken": {
+      "name": "Tenka Goken"
+    },
+    "midare-setsugekka": {
+      "name": "Midare Setsugekka"
+    },
+    "tendo-goken": {
+      "name": "Tendo Goken"
+    },
+    "tendo-setsugekka": {
+      "name": "Tendo Setsugekka"
+    },
+    "tsubame-gaeshi": {
+      "name": "Tsubame-gaeshi"
+    },
+    "kaeshi-goken": {
+      "name": "Kaeshi: Goken"
+    },
+    "kaeshi-setsugekka": {
+      "name": "Kaeshi: Setsugekka"
+    },
+    "tendo-kaeshi-goken": {
+      "name": "Tendo Kaeshi Goken"
+    },
+    "tendo-kaeshi-setsugekka": {
+      "name": "Tendo Kaeshi Setsugekka"
+    },
+    "kaeshi-namikiri": {
+      "name": "Kaeshi: Namikiri"
+    },
+    "ogi-namikiri": {
+      "name": "Ogi Namikiri"
+    },
+    "hissatsu-gyoten": {
+      "name": "Hissatsu: Gyoten"
+    },
+    "hissatsu-yaten": {
+      "name": "Hissatsu: Yaten"
+    },
+    "hissatsu-shinten": {
+      "name": "Hissatsu: Shinten"
+    },
+    "hissatsu-guren": {
+      "name": "Hissatsu: Guren"
+    },
+    "hissatsu-senei": {
+      "name": "Hissatsu: Senei"
+    },
+    "hissatsu-kyuten": {
+      "name": "Hissatsu: Kyuten"
+    },
+    "ikishoten": {
+      "name": "Ikishoten"
+    },
+    "enpi": {
+      "name": "Enpi"
+    },
+    "hagakure": {
+      "name": "Hagakure"
+    },
+    "meikyo-shisui-skill": {
+      "name": "Meikyo Shisui"
+    },
+    "zanshin": {
+      "name": "Zanshin"
+    },
+    "shoha": {
+      "name": "Shoha"
+    },
+    "third-eye": {
+      "name": "Third Eye"
+    },
+    "tengentsu": {
+      "name": "Tengentsu"
+    },
+    "meditate": {
+      "name": "Meditate"
+    },
+    "true-north": {
+      "name": "True North"
+    }
+  },
+  "buffs": {
+    "fugetsu": {
+      "name": "Fugetsu",
+      "shortName": "Fugetsu"
+    },
+    "fuka": {
+      "name": "Fuka",
+      "shortName": "Fuka"
+    },
+    "meikyo-shisui": {
+      "name": "Meikyo Shisui",
+      "shortName": "Meikyo"
+    },
+    "tendo": {
+      "name": "Tendo",
+      "shortName": "Tendo"
+    },
+    "enhanced-enpi": {
+      "name": "Enhanced Enpi",
+      "shortName": "Enpi\nUp"
+    },
+    "ogi-namikiri-ready": {
+      "name": "Ogi Namikiri Ready",
+      "shortName": "Ogi\nReady"
+    },
+    "zanshin-ready": {
+      "name": "Zanshin Ready",
+      "shortName": "Zanshin\nReady"
+    },
+    "tsubame-kaeshi-goken-ready": {
+      "name": "Kaeshi: Goken Ready",
+      "shortName": "K.Goken\nReady"
+    },
+    "tsubame-kaeshi-setsugekka-ready": {
+      "name": "Kaeshi: Setsugekka Ready",
+      "shortName": "K.Setsu\nReady"
+    },
+    "tsubame-tendo-kaeshi-goken-ready": {
+      "name": "Tendo Kaeshi Goken Ready",
+      "shortName": "Tendo\nK.Goken"
+    },
+    "tsubame-tendo-kaeshi-setsugekka-ready": {
+      "name": "Tendo Kaeshi Setsugekka Ready",
+      "shortName": "Tendo\nK.Setsu"
+    },
+    "tsubame-kaeshi-namikiri-ready": {
+      "name": "Kaeshi: Namikiri Ready",
+      "shortName": "K.Nami\nReady"
+    },
+    "meditate": {
+      "name": "Meditate",
+      "shortName": "Meditate"
+    },
+    "true-north": {
+      "name": "True North",
+      "shortName": "True\nNorth"
+    }
+  },
+  "resources": {
+    "kenki": {
+      "name": "Kenki",
+      "shortName": "Kenki"
+    },
+    "setsu": {
+      "name": "Setsu",
+      "shortName": "Setsu"
+    },
+    "getsu": {
+      "name": "Getsu",
+      "shortName": "Getsu"
+    },
+    "ka": {
+      "name": "Ka",
+      "shortName": "Ka"
+    },
+    "meditation": {
+      "name": "Meditation",
+      "shortName": "Medit."
+    }
+  }
+}

@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -24,8 +23,6 @@ function makeEntry(skillId: string): TimelineEntry {
 function makeReadyBuff(id: string): BuffDefinition {
   return {
     id,
-    name: id,
-    shortName: id,
     icon: "",
     duration: 20,
     effects: [],

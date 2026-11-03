@@ -22,8 +22,6 @@ import trueNorthIcon from "../assets/icons/drg/role_actions/True_North.png";
 export const DRG_BUFFS: BuffDefinition[] = [
   {
     id: "lance-charge",
-    name: "ランスチャージ",
-    shortName: "ﾗﾝｽ\nﾁｬｰｼﾞ",
     icon: lanceChargeIcon,
     duration: 20,
     effects: [
@@ -36,8 +34,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "battle-litany",
-    name: "バトルリタニー",
-    shortName: "ﾊﾞﾄﾙ\nﾘﾀﾆｰ",
     icon: battleLitanyIcon,
     duration: 20,
     effects: [
@@ -50,8 +46,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "life-surge",
-    name: "ライフサージ",
-    shortName: "ﾗｲﾌ\nｻｰｼﾞ",
     icon: lifeSurgeIcon,
     duration: 5,
     effects: [
@@ -65,8 +59,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "dragons-eye",
-    name: "竜眼",
-    shortName: "竜眼",
     icon: raidenThrustIcon,
     duration: 30,
     effects: [
@@ -83,8 +75,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "power-surge",
-    name: "竜槍",
-    shortName: "竜槍",
     icon: disembowelIcon,
     duration: 30,
     effects: [
@@ -98,8 +88,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "life-of-the-dragon",
-    name: "紅の竜血",
-    shortName: "紅の\n竜血",
     icon: lifeOfTheDragonIcon,
     duration: 20,
     effects: [
@@ -113,8 +101,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "dive-ready",
-    name: "ダイブレディ",
-    shortName: "ﾀﾞｲﾌﾞ\nﾚﾃﾞｨ",
     icon: mirageDiveIcon,
     duration: 15,
     effects: [],
@@ -124,8 +110,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "dragons-flight",
-    name: "ドラゴンフライト",
-    shortName: "ﾄﾞﾗｺﾞﾝ\nﾌﾗｲﾄ",
     icon: dragonfireDiveIcon,
     duration: 30,
     effects: [],
@@ -135,8 +119,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "nastrond-ready",
-    name: "ナーストレンドレディ",
-    shortName: "ﾅｰｽ\nﾚﾃﾞｨ",
     icon: nastrondIcon,
     duration: 20,
     effects: [],
@@ -146,8 +128,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "starcross-ready",
-    name: "スタークロスレディ",
-    shortName: "ｽﾀｸﾛ\nﾚﾃﾞｨ",
     icon: starcrossIcon,
     duration: 20,
     effects: [],
@@ -157,8 +137,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "drakesbane-ready",
-    name: "雲蒸竜変レディ",
-    shortName: "雲蒸\nﾚﾃﾞｨ",
     icon: drakesbaneIcon,
     duration: 15,
     effects: [
@@ -173,8 +151,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   },
   {
     id: "enhanced-piercing-talon",
-    name: "エンハンスドピアシングタロン",
-    shortName: "PT\n強化",
     icon: piercingTalonIcon,
     duration: 15,
     effects: [],
@@ -186,8 +162,6 @@ export const DRG_BUFFS: BuffDefinition[] = [
   // effects は空（方向指定ボーナス計算が本ツール未実装のため）
   {
     id: "true-north",
-    name: "トゥルーノース",
-    shortName: "ﾄｩﾙｰ\nﾉｰｽ",
     icon: trueNorthIcon,
     duration: 10,
     effects: [],

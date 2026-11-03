@@ -11,8 +11,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const SGE_RESOURCES: ResourceDefinition[] = [
   {
     id: "addersgall",
-    name: "アダーガル",
-    shortName: "ｱﾀﾞｰ\nｶﾞﾙ",
     maxStacks: 3,
     initialStacks: 3,
     autoGenerateInterval: 20,
@@ -21,8 +19,6 @@ export const SGE_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "addersting",
-    name: "アダーステック",
-    shortName: "ｱﾀﾞｰ\nｽﾃｨｸ",
     maxStacks: 3,
     initialStacks: 3,
     color: "#ec407a",

@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -22,8 +21,6 @@ function makeEntry(skillId: string): TimelineEntry {
 
 const drakesbaneReadyBuff: BuffDefinition = {
   id: "drakesbane-ready",
-  name: "雲蒸竜変レディ",
-  shortName: "雲蒸ﾚﾃﾞｨ",
   icon: "",
   duration: 15,
   effects: [{ type: "consumeOnGcd", value: 1 }],
@@ -33,8 +30,6 @@ const drakesbaneReadyBuff: BuffDefinition = {
 
 const dragonsEyeBuff: BuffDefinition = {
   id: "dragons-eye",
-  name: "竜眼",
-  shortName: "竜眼",
   icon: "",
   duration: 30,
   effects: [{ type: "consumeOnGcd", value: 1 }],

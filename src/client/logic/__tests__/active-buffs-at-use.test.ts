@@ -4,7 +4,6 @@ import type { Skill, BuffDefinition, TimelineEntry } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -23,8 +22,6 @@ function makeEntry(skillId: string): TimelineEntry {
 describe("ResolvedTimelineEntry.activeBuffsAtUse", () => {
   const lifeSurgeLikeBuff: BuffDefinition = {
     id: "life-surge",
-    name: "ライフサージ",
-    shortName: "LS",
     icon: "",
     duration: 5,
     effects: [{ type: "guaranteedCrit", value: 1 }],
@@ -69,8 +66,6 @@ describe("ResolvedTimelineEntry.activeBuffsAtUse", () => {
   it("通常のバフは activeBuffs と activeBuffsAtUse の両方に含まれる", () => {
     const potencyBuff: BuffDefinition = {
       id: "power",
-      name: "パワー",
-      shortName: "P",
       icon: "",
       duration: 20,
       effects: [{ type: "potency", value: 1.2 }],
@@ -105,8 +100,6 @@ describe("ResolvedTimelineEntry.activeBuffsAtUse", () => {
   it("スタック数は使用時点の値を保ち、後続エントリの消費で書き換わらない（#388）", () => {
     const tripleLikeBuff: BuffDefinition = {
       id: "triple",
-      name: "三連",
-      shortName: "三連",
       icon: "",
       duration: 15,
       maxStacks: 3,

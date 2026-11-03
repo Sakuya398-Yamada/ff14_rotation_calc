@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -22,8 +21,6 @@ function makeEntry(skillId: string): TimelineEntry {
 
 const enhancedPiercingTalon: BuffDefinition = {
   id: "enhanced-piercing-talon",
-  name: "エンハンスドピアシングタロン",
-  shortName: "PT強化",
   icon: "",
   duration: 15,
   effects: [],

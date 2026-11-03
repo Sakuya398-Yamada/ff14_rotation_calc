@@ -1,0 +1,182 @@
+{
+  "skills": {
+    "fire-in-red": {
+      "name": "Fire in Red"
+    },
+    "aero-in-green": {
+      "name": "Aero in Green"
+    },
+    "water-in-blue": {
+      "name": "Water in Blue"
+    },
+    "blizzard-in-cyan": {
+      "name": "Blizzard in Cyan"
+    },
+    "stone-in-yellow": {
+      "name": "Stone in Yellow"
+    },
+    "thunder-in-magenta": {
+      "name": "Thunder in Magenta"
+    },
+    "hammer-stamp": {
+      "name": "Hammer Stamp"
+    },
+    "hammer-brush": {
+      "name": "Hammer Brush"
+    },
+    "polishing-hammer": {
+      "name": "Polishing Hammer"
+    },
+    "holy-in-white": {
+      "name": "Holy in White"
+    },
+    "comet-in-black": {
+      "name": "Comet in Black"
+    },
+    "star-prism": {
+      "name": "Star Prism"
+    },
+    "rainbow-drip": {
+      "name": "Rainbow Drip"
+    },
+    "creature-motif": {
+      "name": "Creature Motif"
+    },
+    "weapon-motif": {
+      "name": "Weapon Motif"
+    },
+    "landscape-motif": {
+      "name": "Landscape Motif"
+    },
+    "pom-muse": {
+      "name": "Pom Muse"
+    },
+    "winged-muse": {
+      "name": "Winged Muse"
+    },
+    "clawed-muse": {
+      "name": "Clawed Muse"
+    },
+    "fanged-muse": {
+      "name": "Fanged Muse"
+    },
+    "mog-of-the-ages": {
+      "name": "Mog of the Ages"
+    },
+    "retribution-of-the-madeen": {
+      "name": "Retribution of the Madeen"
+    },
+    "steel-muse": {
+      "name": "Striking Muse"
+    },
+    "subtractive-palette": {
+      "name": "Subtractive Palette"
+    },
+    "scenic-muse": {
+      "name": "Starry Muse"
+    },
+    "swiftcast": {
+      "name": "Swiftcast"
+    }
+  },
+  "buffs": {
+    "aetherhues-2": {
+      "name": "Aetherhues",
+      "shortName": "Hues\n2"
+    },
+    "aetherhues-3": {
+      "name": "Aetherhues II",
+      "shortName": "Hues\n3"
+    },
+    "subtractive-palette": {
+      "name": "Subtractive Palette",
+      "shortName": "Subtr.\nPalette"
+    },
+    "color-inversion": {
+      "name": "Monochrome Tones",
+      "shortName": "Mono.\nTones"
+    },
+    "hammer-combo-ready": {
+      "name": "Hammer Time",
+      "shortName": "Hammer\nTime"
+    },
+    "hammer-brush-ready": {
+      "name": "Hammer Brush Ready",
+      "shortName": "Brush\nReady"
+    },
+    "hammer-polish-ready": {
+      "name": "Polishing Hammer Ready",
+      "shortName": "Polish\nReady"
+    },
+    "starry-muse": {
+      "name": "Starry Muse",
+      "shortName": "Starry\nMuse"
+    },
+    "installation": {
+      "name": "Hyperphantasia",
+      "shortName": "Hyper-\nphant."
+    },
+    "subtractive-ready": {
+      "name": "Subtractive Spectrum",
+      "shortName": "Subtr.\nReady"
+    },
+    "star-prism-ready": {
+      "name": "Starstruck",
+      "shortName": "Star-\nstruck"
+    },
+    "rainbow-drip-ready": {
+      "name": "Rainbow Bright",
+      "shortName": "Rainbow\nBright"
+    },
+    "wing-muse-ready": {
+      "name": "Winged Muse Ready",
+      "shortName": "Wing\nReady"
+    },
+    "claw-muse-ready": {
+      "name": "Clawed Muse Ready",
+      "shortName": "Claw\nReady"
+    },
+    "fang-muse-ready": {
+      "name": "Fanged Muse Ready",
+      "shortName": "Fang\nReady"
+    },
+    "moogle-symbol": {
+      "name": "Moogle Portrait",
+      "shortName": "Moogle"
+    },
+    "madeen-symbol": {
+      "name": "Madeen Portrait",
+      "shortName": "Madeen"
+    },
+    "swiftcast": {
+      "name": "Swiftcast",
+      "shortName": "Swift-\ncast"
+    }
+  },
+  "resources": {
+    "palette-gauge": {
+      "name": "Palette Gauge",
+      "shortName": "Palette"
+    },
+    "white-paint": {
+      "name": "White Paint",
+      "shortName": "WP"
+    },
+    "black-paint": {
+      "name": "Black Paint",
+      "shortName": "BP"
+    },
+    "animal-canvas": {
+      "name": "Creature Canvas",
+      "shortName": "Creature"
+    },
+    "weapon-canvas": {
+      "name": "Weapon Canvas",
+      "shortName": "Weapon"
+    },
+    "scape-canvas": {
+      "name": "Landscape Canvas",
+      "shortName": "Land-\nscape"
+    }
+  }
+}

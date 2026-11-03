@@ -16,7 +16,7 @@ import "./layout.css";
 import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
 import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
 import { JOB_DATA } from "../data/job-registry";
-import { contentName } from "../data/content-catalog";
+import { contentName, skillName } from "../logic/display-names";
 import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../logic/skill-level";
@@ -342,10 +342,6 @@ export function App() {
     () => new Map(levelBuffs.map((b) => [b.id, b])),
     [levelBuffs]
   );
-  const resourceDefMap = useMemo(
-    () => new Map(levelResources.map((r) => [r.id, r])),
-    [levelResources]
-  );
 
   const selectedEntry = useMemo(() => {
     if (selectedEntryUid === null) return null;
@@ -451,7 +447,7 @@ export function App() {
       {sharedInfo !== null && (
         <section aria-label={t("app.sharedInfo")} style={styles.sharedInfo}>
           <div style={styles.sharedInfoText}>
-            {sharedInfo.contentId !== null && <span>{contentName(sharedInfo.contentId)}</span>}
+            {sharedInfo.contentId !== null && <span>{contentName(t, sharedInfo.contentId)}</span>}
             {sharedInfo.title !== null && <span style={styles.sharedInfoTitle}>{sharedInfo.title}</span>}
           </div>
           <button
@@ -481,6 +477,7 @@ export function App() {
       >
       <div className="app-main" style={styles.main}>
         <SkillPalette
+          jobId={selectedJob}
           skills={skills}
           stats={stats}
           onStatsChange={setStats}
@@ -488,6 +485,7 @@ export function App() {
         <div className="app-work-area" style={styles.workArea}>
           <div style={styles.timelineSlot}>
             <Timeline
+              jobId={selectedJob}
               skills={skills}
               allSkillMap={allSkillMap}
               resolvedEntries={resolvedEntries}
@@ -516,8 +514,8 @@ export function App() {
             <SkillDetailPanel
               entry={selectedEntry}
               resolvedSkill={selectedSkill}
+              jobId={selectedJob}
               buffDefMap={buffDefMap}
-              resourceDefMap={resourceDefMap}
               stats={stats}
               onClose={() => setSelectedEntryUid(null)}
               onManualStartTimeChange={handleManualStartTimeChange}
@@ -531,7 +529,7 @@ export function App() {
           <div style={styles.dragOverlayIcon}>
             <img
               src={activeDragSkill.icon}
-              alt={activeDragSkill.name}
+              alt={skillName(t, selectedJob, activeDragSkill.id)}
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
               draggable={false}
             />

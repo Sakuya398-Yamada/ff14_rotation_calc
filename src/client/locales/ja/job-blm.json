@@ -1,0 +1,235 @@
+{
+  "skills": {
+    "fire": {
+      "name": "ファイア"
+    },
+    "fire-3": {
+      "name": "ファイガ"
+    },
+    "fire-4": {
+      "name": "ファイジャ"
+    },
+    "despair": {
+      "name": "デスペア"
+    },
+    "flare-star": {
+      "name": "フレアスター"
+    },
+    "fire-2": {
+      "name": "ファイラ"
+    },
+    "high-fire-2": {
+      "name": "ハイファイラ"
+    },
+    "flare": {
+      "name": "フレア"
+    },
+    "blizzard": {
+      "name": "ブリザド"
+    },
+    "blizzard-3": {
+      "name": "ブリザガ"
+    },
+    "blizzard-4": {
+      "name": "ブリザジャ"
+    },
+    "blizzard-2": {
+      "name": "ブリザラ"
+    },
+    "high-blizzard-2": {
+      "name": "ハイブリザラ"
+    },
+    "freeze": {
+      "name": "フリーズ"
+    },
+    "paradox": {
+      "name": "パラドックス"
+    },
+    "high-thunder": {
+      "name": "ハイサンダー"
+    },
+    "thunder-3": {
+      "name": "サンダガ"
+    },
+    "high-thunder-2": {
+      "name": "ハイサンダラ"
+    },
+    "thunder-4": {
+      "name": "サンダジャ"
+    },
+    "xenoglossy": {
+      "name": "ゼノグロシー"
+    },
+    "foul": {
+      "name": "ファウル"
+    },
+    "manafont": {
+      "name": "マナフォント"
+    },
+    "triplecast": {
+      "name": "三連魔"
+    },
+    "ley-lines": {
+      "name": "黒魔紋"
+    },
+    "transpose": {
+      "name": "トランス"
+    },
+    "amplifier": {
+      "name": "アンプリファイア"
+    },
+    "swiftcast": {
+      "name": "迅速魔"
+    },
+    "lucid-dreaming": {
+      "name": "ルーシッドドリーム"
+    },
+    "fire-up-af2": {
+      "name": "ファイア (AF1→AF2)"
+    },
+    "fire-up-af3": {
+      "name": "ファイア (AF2→AF3)"
+    },
+    "fire-stay-af3": {
+      "name": "ファイア (AF3 維持)"
+    },
+    "blizzard-up-ub2": {
+      "name": "ブリザド (UB1→UB2)"
+    },
+    "blizzard-up-ub3": {
+      "name": "ブリザド (UB2→UB3)"
+    },
+    "blizzard-stay-ub3": {
+      "name": "ブリザド (UB3 維持)"
+    },
+    "paradox-af": {
+      "name": "パラドックス (AF)"
+    },
+    "transpose-to-ub1": {
+      "name": "トランス (AF→UB1)"
+    },
+    "transpose-to-af1": {
+      "name": "トランス (UB→AF1)"
+    },
+    "fire-3-in-af": {
+      "name": "ファイガ (AF 中)"
+    },
+    "fire-2-in-af": {
+      "name": "ファイラ (AF 中)"
+    },
+    "high-fire-2-in-af": {
+      "name": "ハイファイラ (AF 中)"
+    },
+    "fire-in-ub": {
+      "name": "ファイア (UB 解除)"
+    },
+    "fire-3-from-ub3": {
+      "name": "ファイガ (UB3→AF3)"
+    },
+    "fire-2-from-ub3": {
+      "name": "ファイラ (UB3→AF3)"
+    },
+    "high-fire-2-from-ub3": {
+      "name": "ハイファイラ (UB3→AF3)"
+    },
+    "transpose-to-af1-from-ub3": {
+      "name": "トランス (UB3→AF1)"
+    },
+    "blizzard-3-in-ub": {
+      "name": "ブリザガ (UB 中)"
+    },
+    "blizzard-2-in-ub": {
+      "name": "ブリザラ (UB 中)"
+    },
+    "high-blizzard-2-in-ub": {
+      "name": "ハイブリザラ (UB 中)"
+    },
+    "blizzard-in-af": {
+      "name": "ブリザド (AF 解除)"
+    },
+    "blizzard-3-from-af3": {
+      "name": "ブリザガ (AF3→UB3)"
+    },
+    "blizzard-2-from-af3": {
+      "name": "ブリザラ (AF3→UB3)"
+    },
+    "high-blizzard-2-from-af3": {
+      "name": "ハイブリザラ (AF3→UB3)"
+    },
+    "transpose-to-ub1-from-af3": {
+      "name": "トランス (AF3→UB1)"
+    }
+  },
+  "buffs": {
+    "astral-fire-1": {
+      "name": "アストラルファイア I",
+      "shortName": "AF1"
+    },
+    "astral-fire-2": {
+      "name": "アストラルファイア II",
+      "shortName": "AF2"
+    },
+    "astral-fire-3": {
+      "name": "アストラルファイア III",
+      "shortName": "AF3"
+    },
+    "umbral-ice-1": {
+      "name": "アンブラルブリザード I",
+      "shortName": "UB1"
+    },
+    "umbral-ice-2": {
+      "name": "アンブラルブリザード II",
+      "shortName": "UB2"
+    },
+    "umbral-ice-3": {
+      "name": "アンブラルブリザード III",
+      "shortName": "UB3"
+    },
+    "thunderhead": {
+      "name": "サンダーヘッド",
+      "shortName": "ｻﾝﾀﾞｰ\nﾍｯﾄﾞ"
+    },
+    "firestarter": {
+      "name": "ファイアスターター",
+      "shortName": "ﾌｧｲｱ\nｽﾀｰﾀｰ"
+    },
+    "triplecast": {
+      "name": "三連魔",
+      "shortName": "三連魔"
+    },
+    "ley-lines": {
+      "name": "黒魔紋",
+      "shortName": "黒魔紋"
+    },
+    "swiftcast": {
+      "name": "迅速魔",
+      "shortName": "迅速魔"
+    },
+    "lucid-dreaming": {
+      "name": "ルーシッドドリーム",
+      "shortName": "ﾙｰｼｯﾄﾞ"
+    }
+  },
+  "resources": {
+    "mp": {
+      "name": "MP",
+      "shortName": "MP"
+    },
+    "umbral-heart": {
+      "name": "アンブラルハート",
+      "shortName": "ﾊｰﾄ"
+    },
+    "paradox-gauge": {
+      "name": "パラドックスゲージ",
+      "shortName": "ﾊﾟﾗﾄﾞ"
+    },
+    "polyglot": {
+      "name": "ポリグロット",
+      "shortName": "ﾎﾟﾘｸﾞ"
+    },
+    "astral-soul": {
+      "name": "アストラルソウル",
+      "shortName": "ｱｽﾄﾗﾙ\nｿｳﾙ"
+    }
+  }
+}

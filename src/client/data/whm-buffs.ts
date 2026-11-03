@@ -10,8 +10,6 @@ import swiftcastIcon from "../assets/icons/whm/role_actions/Swiftcast.png";
 export const WHM_BUFFS: BuffDefinition[] = [
   {
     id: "presence-of-mind",
-    name: "神速魔",
-    shortName: "神速魔",
     icon: presenceOfMindIcon,
     duration: 15,
     effects: [
@@ -24,8 +22,6 @@ export const WHM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "sacred-sight",
-    name: "グレアジャ実行可",
-    shortName: "ｸﾞﾚｱｼﾞｬ\n実行可",
     icon: sacredSightIcon,
     duration: 30,
     effects: [],
@@ -35,8 +31,6 @@ export const WHM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
-    shortName: "迅速魔",
     icon: swiftcastIcon,
     duration: 10,
     effects: [{ type: "instantCast", value: 0 }],

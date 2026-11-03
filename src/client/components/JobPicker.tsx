@@ -1,10 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { JobId } from "../data/job-registry";
 import type { PlayerLevel } from "../types/skill";
 import { JOB_CATALOG, JOB_ROLES, isImplementedJob } from "../data/job-catalog";
 import type { CatalogJob } from "../data/job-catalog";
 import { loadRecentJobs, pushRecentJob, saveRecentJobs } from "../logic/recent-jobs";
+import { jobName, roleName } from "../logic/display-names";
 
 const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
 
@@ -15,10 +17,13 @@ interface JobPickerProps {
   onLevelChange: (level: PlayerLevel) => void;
 }
 
-function matchesQuery(job: CatalogJob, query: string): boolean {
+/** 表示している言語にかかわらず、日英どちらの名前と略称でも絞り込む（#846） */
+function matchesQuery(job: CatalogJob, query: string, t: TFunction): boolean {
   const q = query.trim().toLowerCase();
   if (q === "") return true;
-  return job.name.toLowerCase().includes(q) || job.abbreviation.toLowerCase().includes(q);
+  return [jobName(t, job.id, "ja"), jobName(t, job.id, "en"), job.abbreviation].some((text) =>
+    text.toLowerCase().includes(q)
+  );
 }
 
 function roleOf(job: CatalogJob) {
@@ -40,6 +45,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
 
   const current = JOB_CATALOG.find((j) => j.id === selectedJob)!;
   const currentRole = roleOf(current);
+  const currentName = jobName(t, current.id);
 
   const close = (returnFocus: boolean) => {
     setOpen(false);
@@ -68,7 +74,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
     close(true);
   };
 
-  const filtered = JOB_CATALOG.filter((job) => matchesQuery(job, query));
+  const filtered = JOB_CATALOG.filter((job) => matchesQuery(job, query, t));
 
   return (
     <div ref={rootRef} style={styles.root}>
@@ -78,7 +84,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        aria-label={t("jobPicker.triggerLabel", { job: current.name, level })}
+        aria-label={t("jobPicker.triggerLabel", { job: currentName, level })}
         onClick={() => (open ? close(false) : setOpen(true))}
         style={styles.trigger}
       >
@@ -86,9 +92,9 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
           {current.abbreviation}
         </span>
         <span style={styles.triggerText}>
-          <span style={styles.triggerName}>{current.name}</span>
+          <span style={styles.triggerName}>{currentName}</span>
           <span className="num" style={styles.triggerMeta}>
-            {currentRole.label} · Lv{level}
+            {roleName(t, currentRole.id)} · Lv{level}
           </span>
         </span>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -155,14 +161,11 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
             <div style={styles.group}>
               <span style={styles.groupLabel}>{t("jobPicker.recent")}</span>
               <div style={styles.recentRow}>
-                {recent.map((id) => {
-                  const job = JOB_CATALOG.find((j) => j.id === id)!;
-                  return (
-                    <button key={id} type="button" onClick={() => pickJob(id)} style={styles.recentButton}>
-                      {job.name}
-                    </button>
-                  );
-                })}
+                {recent.map((id) => (
+                  <button key={id} type="button" onClick={() => pickJob(id)} style={styles.recentButton}>
+                    {jobName(t, id)}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -176,12 +179,13 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
               <div key={role.id} style={styles.group}>
                 <span style={styles.groupLabel}>
                   <span aria-hidden="true" style={{ ...styles.roleSwatch, backgroundColor: role.color }} />
-                  {role.label}
+                  {roleName(t, role.id)}
                 </span>
                 <div style={styles.jobGrid}>
                   {jobs.map((job) => {
                     const implemented = isImplementedJob(job.id);
                     const on = job.id === selectedJob;
+                    const name = jobName(t, job.id);
                     return (
                       <button
                         key={job.id}
@@ -189,7 +193,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                         disabled={!implemented}
                         aria-pressed={on}
                         onClick={() => implemented && pickJob(job.id as JobId)}
-                        title={implemented ? job.name : t("jobPicker.unsupportedTitle", { job: job.name })}
+                        title={implemented ? name : t("jobPicker.unsupportedTitle", { job: name })}
                         style={{
                           ...styles.jobButton,
                           ...(on ? styles.jobButtonOn : {}),
@@ -200,7 +204,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                           {job.abbreviation}
                         </span>
                         <span style={styles.jobText}>
-                          {job.name}
+                          {name}
                           {!implemented && <span style={styles.unsupported}>{t("jobPicker.unsupported")}</span>}
                         </span>
                       </button>
