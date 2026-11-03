@@ -60,7 +60,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "heavy-shot",
-    name: "ヘヴィショット",
     potency: 160,
     type: "gcd",
     target: "enemy",
@@ -73,7 +72,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "straight-shot",
-    name: "ストレートショット",
     potency: 200,
     type: "gcd",
     target: "enemy",
@@ -88,7 +86,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "venomous-bite",
-    name: "ベノムバイト",
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -101,7 +98,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "windbite",
-    name: "ウィンドバイト",
     potency: 60,
     type: "gcd",
     target: "enemy",
@@ -114,7 +110,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "iron-jaws",
-    name: "アイアンジョー",
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -133,7 +128,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "caustic-bite",
-    name: "コースティックバイト",
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -150,7 +144,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stormbite",
-    name: "ストームバイト",
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -167,7 +160,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "refulgent-arrow",
-    name: "リフルジェントアロー",
     potency: 280,
     type: "gcd",
     target: "enemy",
@@ -193,7 +185,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "burst-shot",
-    name: "バーストショット",
     potency: 220,
     type: "gcd",
     target: "enemy",
@@ -211,7 +202,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "quick-nock",
-    name: "クイックノック",
     potency: 110,
     type: "gcd",
     target: "enemy",
@@ -226,7 +216,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "wide-volley",
-    name: "ワイドボレー",
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -244,7 +233,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "shadowbite",
-    name: "シャドウバイト",
     potency: 200,
     type: "gcd",
     target: "enemy",
@@ -272,7 +260,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "ladonsbite",
-    name: "ラドンバイト",
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -292,7 +279,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "apex-arrow",
-    name: "エイペックスアロー",
     potency: 700,
     type: "gcd",
     target: "enemy",
@@ -315,7 +301,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blast-arrow",
-    name: "ブラストアロー",
     potency: 700,
     type: "gcd",
     target: "enemy",
@@ -330,7 +315,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "resonant-arrow",
-    name: "レゾナンスアロー",
     potency: 640,
     type: "gcd",
     target: "enemy",
@@ -345,7 +329,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "radiant-encore",
-    name: "光神のアンコール",
     potency: 1100,
     type: "gcd",
     target: "enemy",
@@ -368,7 +351,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "bloodletter",
-    name: "ブラッドレッター",
     potency: 130,
     type: "ogcd",
     target: "enemy",
@@ -384,7 +366,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "rain-of-death",
-    name: "レイン・オブ・デス",
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -402,7 +383,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "empyreal-arrow",
-    name: "エンピリアルアロー",
     potency: 260,
     type: "ogcd",
     target: "enemy",
@@ -419,7 +399,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "pitch-perfect",
-    name: "ピッチパーフェクト",
     potency: 360,
     type: "ogcd",
     target: "enemy",
@@ -441,7 +420,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "sidewinder",
-    name: "サイドワインダー",
     potency: 400,
     type: "ogcd",
     target: "enemy",
@@ -453,7 +431,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "heartbreak-shot",
-    name: "ハートブレイクショット",
     potency: 180,
     type: "ogcd",
     target: "enemy",
@@ -472,7 +449,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "raging-strikes",
-    name: "猛者の撃",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -485,7 +461,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "barrage",
-    name: "乱れ撃ち",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -498,7 +473,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "battle-voice",
-    name: "バトルボイス",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -511,7 +485,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "radiant-finale",
-    name: "光神のフィナーレ",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -533,7 +506,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "mages-ballad",
-    name: "賢人のバラード",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -550,7 +522,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "armys-paeon",
-    name: "軍神のパイオン",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -566,7 +537,6 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "wanderers-minuet",
-    name: "旅神のメヌエット",
     potency: 0,
     type: "ogcd",
     target: "self",

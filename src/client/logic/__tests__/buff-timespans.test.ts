@@ -4,8 +4,6 @@ import type { ActiveBuff, BuffDefinition, ResolvedTimelineEntry } from "../../ty
 
 const buff30s: BuffDefinition = {
   id: "test-buff",
-  name: "テストバフ",
-  shortName: "TB",
   icon: "",
   duration: 30,
   effects: [],

@@ -10,7 +10,6 @@ import { BLM_BUFFS } from "../../data/blm-buffs";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -28,8 +27,6 @@ function makeEntry(skillId: string): TimelineEntry {
 
 const triplecastBuff: BuffDefinition = {
   id: "triplecast-test",
-  name: "三連魔",
-  shortName: "三連魔",
   icon: "",
   duration: 15,
   maxStacks: 3,
@@ -39,8 +36,6 @@ const triplecastBuff: BuffDefinition = {
 
 const firestarterBuff: BuffDefinition = {
   id: "firestarter-test",
-  name: "ファイアスターター",
-  shortName: "FS",
   icon: "",
   duration: null,
   effects: [{ type: "instantCast", value: 0 }],
@@ -150,8 +145,6 @@ describe("instantCast バフ（詠唱破棄）", () => {
   it("instantCast バフなしでは詠唱スキルが speed バフの影響を受ける（回帰チェック）", () => {
     const speedBuff: BuffDefinition = {
       id: "speed-buff",
-      name: "スピード",
-      shortName: "SP",
       icon: "",
       duration: 30,
       effects: [{ type: "speed", value: 0.85 }],
@@ -176,8 +169,6 @@ describe("instantCast バフ（詠唱破棄）", () => {
   it("speed バフと instantCast バフが共存すると instantCast が優先される（castTime=0）", () => {
     const speedBuff: BuffDefinition = {
       id: "speed-buff",
-      name: "スピード",
-      shortName: "SP",
       icon: "",
       duration: 30,
       effects: [{ type: "speed", value: 0.85 }],
@@ -243,8 +234,6 @@ describe("instantCast バフの appliesToSkillIds スコープ制限", () => {
   it("appliesToSkillIds 指定時、対象スキル以外では消費・Instant 化されない", () => {
     const scopedBuff: BuffDefinition = {
       id: "scoped-instant",
-      name: "限定Instant",
-      shortName: "限",
       icon: "",
       duration: null,
       effects: [{ type: "instantCast", value: 0, appliesToSkillIds: ["target-spell"] }],
@@ -331,8 +320,6 @@ describe("consumeOnGcd と instantCast を併せ持つバフ（消費ロジッ�
   it("両エフェクトを持つスタック式バフは詠唱GCD 1発でスタックが1だけ減る（二重消費しない）", () => {
     const dualBuff: BuffDefinition = {
       id: "dual-effect-test",
-      name: "両効果バフ",
-      shortName: "両",
       icon: "",
       duration: null,
       maxStacks: 2,
@@ -382,8 +369,6 @@ describe("consumeOnGcd と instantCast を併せ持つバフ（消費ロジッ�
   it("両エフェクトを持つ単発バフは詠唱GCD 1発で消費される（重複削除エラーなし）", () => {
     const dualSingleBuff: BuffDefinition = {
       id: "dual-single-test",
-      name: "両効果単発バフ",
-      shortName: "両単",
       icon: "",
       duration: null,
       effects: [
@@ -418,8 +403,6 @@ describe("複数 instantCast バフの優先順位（単発バフ優先）", () 
   // 仕様: 単発バフ（maxStacks 未定義）を優先して 1 発につき 1 つだけ消費する。
   const swiftcastBuff: BuffDefinition = {
     id: "swiftcast-test",
-    name: "迅速魔",
-    shortName: "迅速魔",
     icon: "",
     duration: 10,
     effects: [{ type: "instantCast", value: 0 }],
@@ -544,8 +527,6 @@ describe("複数 instantCast バフの優先順位（単発バフ優先）", () 
 describe("castTimeMultiplier で詠唱が 0 になる詠唱GCD（ライトスピード中の魔法）", () => {
   const zeroCastBuff: BuffDefinition = {
     id: "zero-cast-test",
-    name: "ライトスピード",
-    shortName: "LS",
     icon: "",
     duration: 15,
     effects: [{ type: "castTimeMultiplier", value: 0 }],

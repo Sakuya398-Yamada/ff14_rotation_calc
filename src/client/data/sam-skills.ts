@@ -70,7 +70,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "hakaze",
-    name: "刃風",
     potency: 200,
     type: "gcd",
     target: "enemy",
@@ -82,7 +81,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "gyofu",
-    name: "暁風",
     potency: 240,
     type: "gcd",
     target: "enemy",
@@ -95,7 +93,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "jinpu",
-    name: "陣風",
     potency: 280,
     nonComboPotency: 120,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 300, nonComboPotency: 140 }],
@@ -111,7 +108,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "shifu",
-    name: "士風",
     potency: 280,
     nonComboPotency: 120,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 300, nonComboPotency: 140 }],
@@ -127,7 +123,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "yukikaze",
-    name: "雪風",
     potency: 280,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -151,7 +146,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     // 単体コンボでは風月バフは陣風（2段目）のみが付与する（範囲コンボでは満月も付与）。明鏡止水中の月光時の風月付与は、
     // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "gekko",
-    name: "月光",
     potency: 360,
     nonComboPotency: 150,
     traitPotencyOverrides: [
@@ -175,7 +169,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
     // 単体コンボでは風花バフは士風（2段目）のみが付与する（範囲コンボでは桜花も付与）。明鏡止水中の花車時の風花付与は、
     // 明鏡止水バフ側の applyBuffOnSkill エフェクトで表現する（sam-buffs.ts）。
     id: "kasha",
-    name: "花車",
     potency: 360,
     nonComboPotency: 150,
     traitPotencyOverrides: [
@@ -200,7 +193,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fuga",
-    name: "風雅",
     potency: 90,
     type: "gcd",
     target: "enemy",
@@ -213,7 +205,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "fuko",
-    name: "風光",
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -228,7 +219,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     // 満月: 範囲コンボ最終段。コンボ完走（明鏡止水中を含む）で風月を付与する。
     id: "mangetsu",
-    name: "満月",
     potency: 120,
     nonComboPotency: 100,
     type: "gcd",
@@ -248,7 +238,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   {
     // 桜花: 範囲コンボ最終段。コンボ完走（明鏡止水中を含む）で風花を付与する。
     id: "oka",
-    name: "桜花",
     potency: 120,
     nonComboPotency: 100,
     type: "gcd",
@@ -271,7 +260,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "iaijutsu",
-    name: "居合術",
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -357,7 +345,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "higanbana",
-    name: "彼岸花",
     potency: 200,
     type: "gcd",
     keepsCombo: true,
@@ -376,7 +363,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "tenka-goken",
-    name: "天下五剣",
     potency: 300,
     type: "gcd",
     keepsCombo: true,
@@ -394,7 +380,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "midare-setsugekka",
-    name: "乱れ雪月花",
     potency: 620,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 680 }],
     type: "gcd",
@@ -413,7 +398,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "tendo-goken",
-    name: "天道五剣",
     potency: 410,
     type: "gcd",
     keepsCombo: true,
@@ -432,7 +416,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "tendo-setsugekka",
-    name: "天道雪月花",
     potency: 1100,
     type: "gcd",
     keepsCombo: true,
@@ -455,7 +438,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "tsubame-gaeshi",
-    name: "燕返し",
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -474,7 +456,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // 燕返し系は剣圧を付与しない（実機: 剣圧は居合術系と奥義波切のみで付与）
   {
     id: "kaeshi-goken",
-    name: "返し五剣",
     potency: 300,
     type: "gcd",
     keepsCombo: true,
@@ -490,7 +471,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "kaeshi-setsugekka",
-    name: "返し雪月花",
     potency: 620,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 680 }],
     type: "gcd",
@@ -507,7 +487,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "tendo-kaeshi-goken",
-    name: "天道返し五剣",
     potency: 410,
     type: "gcd",
     keepsCombo: true,
@@ -523,7 +502,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "tendo-kaeshi-setsugekka",
-    name: "天道返し雪月花",
     potency: 1100,
     type: "gcd",
     keepsCombo: true,
@@ -539,7 +517,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "kaeshi-namikiri",
-    name: "返し波切",
     potency: 860,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 1000 }],
     type: "gcd",
@@ -562,7 +539,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "ogi-namikiri",
-    name: "奥義波切",
     potency: 860,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 1000 }],
     type: "gcd",
@@ -589,7 +565,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "hissatsu-gyoten",
-    name: "必殺剣・暁天",
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -602,7 +577,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hissatsu-yaten",
-    name: "必殺剣・夜天",
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -616,7 +590,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hissatsu-shinten",
-    name: "必殺剣・震天",
     potency: 250,
     type: "ogcd",
     target: "enemy",
@@ -631,7 +604,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // 共有リキャストグループ内で cooldown を揃えるため、両方に同じ上書きを入れる
   {
     id: "hissatsu-guren",
-    name: "必殺剣・紅蓮",
     potency: 400,
     type: "ogcd",
     target: "enemy",
@@ -647,7 +619,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hissatsu-senei",
-    name: "必殺剣・閃影",
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -662,7 +633,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hissatsu-kyuten",
-    name: "必殺剣・九天",
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -680,7 +650,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "ikishoten",
-    name: "意気衝天",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -694,7 +663,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "enpi",
-    name: "燕飛",
     potency: 100,
     type: "gcd",
     keepsCombo: true,
@@ -709,7 +677,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hagakure",
-    name: "葉隠",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -727,7 +694,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "meikyo-shisui-skill",
-    name: "明鏡止水",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -741,7 +707,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "zanshin",
-    name: "残心",
     potency: 940,
     type: "ogcd",
     target: "enemy",
@@ -758,7 +723,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "shoha",
-    name: "照破",
     potency: 560,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 640 }],
     type: "ogcd",
@@ -776,7 +740,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // 被ダメージ軽減・天眼通：生（軽減＋HP 継続回復）は計算対象外のため、バフは定義しない（#424）
   {
     id: "third-eye",
-    name: "心眼",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -789,7 +752,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "tengentsu",
-    name: "天眼通",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -804,7 +766,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // 剣気・剣圧はバフ中の自動生成（SAM_RESOURCES）で付き、次のアクションでバフが外れる
   {
     id: "meditate",
-    name: "黙想",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -824,7 +785,6 @@ export const SAM_ATTACK_SKILLS: Skill[] = [
   // 実装していないため、バフ effects は空。リキャスト枠の管理用途で配置可能。
   {
     id: "true-north",
-    name: "トゥルーノース",
     potency: 0,
     type: "ogcd",
     target: "self",

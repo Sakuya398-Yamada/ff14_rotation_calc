@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -23,8 +22,6 @@ function makeEntry(skillId: string): TimelineEntry {
 describe("永続バフ（duration: null）", () => {
   const permanentBuff: BuffDefinition = {
     id: "perma-buff",
-    name: "永続バフ",
-    shortName: "永続",
     icon: "",
     duration: null,
     effects: [{ type: "potency", value: 1.2 }],
@@ -33,8 +30,6 @@ describe("永続バフ（duration: null）", () => {
 
   const finiteBuff: BuffDefinition = {
     id: "finite-buff",
-    name: "有限バフ",
-    shortName: "有限",
     icon: "",
     duration: 5,
     effects: [{ type: "potency", value: 1.1 }],

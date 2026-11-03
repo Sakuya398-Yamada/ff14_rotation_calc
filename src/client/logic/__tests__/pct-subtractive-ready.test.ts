@@ -9,7 +9,6 @@ import type {
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -28,15 +27,11 @@ function makeEntry(skillId: string, uid?: string): TimelineEntry {
 const PCT_RESOURCES: ResourceDefinition[] = [
   {
     id: "palette-gauge",
-    name: "PG",
-    shortName: "PG",
     maxStacks: 100,
     color: "#eee",
   },
   {
     id: "white-paint",
-    name: "WP",
-    shortName: "WP",
     maxStacks: 5,
     color: "#fff",
     displayGroup: "paint",
@@ -45,8 +40,6 @@ const PCT_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "black-paint",
-    name: "BP",
-    shortName: "BP",
     maxStacks: 5,
     color: "#000",
     displayGroup: "paint",
@@ -57,8 +50,6 @@ const PCT_RESOURCES: ResourceDefinition[] = [
 
 const SUBTRACTIVE_READY_BUFF: BuffDefinition = {
   id: "subtractive-ready",
-  name: "サブトラクティブパレット実行可",
-  shortName: "SR",
   icon: "",
   duration: 30,
   effects: [],

@@ -47,7 +47,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire-in-red",
-    name: "レッドファイア",
     potency: 490,
     type: "gcd",
     keepsCombo: true,
@@ -72,7 +71,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "aero-in-green",
-    name: "グリーンエアロ",
     potency: 530,
     type: "gcd",
     keepsCombo: true,
@@ -94,7 +92,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "water-in-blue",
-    name: "ブルーウォータ",
     potency: 570,
     type: "gcd",
     keepsCombo: true,
@@ -123,7 +120,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "blizzard-in-cyan",
-    name: "シアンブリザド",
     potency: 860,
     type: "gcd",
     keepsCombo: true,
@@ -149,7 +145,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone-in-yellow",
-    name: "イエローストーン",
     potency: 900,
     type: "gcd",
     keepsCombo: true,
@@ -172,7 +167,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "thunder-in-magenta",
-    name: "マゼンタサンダー",
     potency: 940,
     type: "gcd",
     keepsCombo: true,
@@ -201,7 +195,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "hammer-stamp",
-    name: "ハンマースタンプ",
     potency: 560,
     type: "gcd",
     target: "enemy",
@@ -230,7 +223,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hammer-brush",
-    name: "ハンマーブラッシュ",
     potency: 580,
     type: "gcd",
     target: "enemy",
@@ -253,7 +245,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "polishing-hammer",
-    name: "ハンマーポリッシュ",
     potency: 600,
     type: "gcd",
     target: "enemy",
@@ -279,7 +270,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "holy-in-white",
-    name: "ホワイトホーリー",
     potency: 570,
     type: "gcd",
     keepsCombo: true,
@@ -303,7 +293,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "comet-in-black",
-    name: "ブラックコメット",
     potency: 940,
     type: "gcd",
     keepsCombo: true,
@@ -330,7 +319,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "star-prism",
-    name: "スタープリズム",
     potency: 1100,
     type: "gcd",
     keepsCombo: true,
@@ -351,7 +339,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "rainbow-drip",
-    name: "レインボードリップ",
     potency: 1000,
     type: "gcd",
     keepsCombo: true,
@@ -374,7 +361,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "creature-motif",
-    name: "ピクトアニマル",
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -390,7 +376,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "weapon-motif",
-    name: "ピクトウェポン",
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -406,7 +391,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "landscape-motif",
-    name: "ピクトスケープ",
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -426,7 +410,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "pom-muse",
-    name: "イマジンポンポン",
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -458,7 +441,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "winged-muse",
-    name: "イマジンウィング",
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -486,7 +468,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "clawed-muse",
-    name: "イマジンクロー",
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -508,7 +489,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "fanged-muse",
-    name: "イマジンファング",
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -534,7 +514,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "mog-of-the-ages",
-    name: "モーグリストリーム",
     potency: 1000,
     type: "ogcd",
     target: "enemy",
@@ -556,7 +535,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "retribution-of-the-madeen",
-    name: "マディーンレトリビューション",
     potency: 1100,
     type: "ogcd",
     target: "enemy",
@@ -577,7 +555,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "steel-muse",
-    name: "イマジンハンマー",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -602,7 +579,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "subtractive-palette",
-    name: "サブトラクティブパレット",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -627,7 +603,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "scenic-muse",
-    name: "イマジンスカイ",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -643,7 +618,6 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
     potency: 0,
     type: "ogcd",
     target: "self",

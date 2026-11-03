@@ -19,8 +19,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const MNK_RESOURCES: ResourceDefinition[] = [
   {
     id: "chakra",
-    name: "闘気",
-    shortName: "闘気",
     maxStacks: 10,
     initialStacks: 5,
     color: "#ff9800",
@@ -32,8 +30,6 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "opo-fury",
-    name: "壱の功力",
-    shortName: "功力",
     maxStacks: 1,
     color: "#e57373",
     acquiredLevel: 50,
@@ -42,8 +38,6 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "raptor-fury",
-    name: "弐の功力",
-    shortName: "功力",
     maxStacks: 1,
     color: "#81c784",
     acquiredLevel: 18,
@@ -52,8 +46,6 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "coeurl-fury",
-    name: "参の功力",
-    shortName: "功力",
     maxStacks: 2,
     color: "#64b5f6",
     acquiredLevel: 30,
@@ -62,8 +54,6 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "opo-chakra",
-    name: "壱のチャクラ",
-    shortName: "ﾁｬｸﾗ",
     maxStacks: 3,
     color: "#ef5350",
     acquiredLevel: 60,
@@ -73,8 +63,6 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "raptor-chakra",
-    name: "弐のチャクラ",
-    shortName: "ﾁｬｸﾗ",
     maxStacks: 3,
     color: "#66bb6a",
     acquiredLevel: 60,
@@ -84,8 +72,6 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "coeurl-chakra",
-    name: "参のチャクラ",
-    shortName: "ﾁｬｸﾗ",
     maxStacks: 3,
     color: "#42a5f5",
     acquiredLevel: 60,
@@ -95,9 +81,7 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "lunar-nadi",
-    name: "陰の闘気",
-    // レーンラベルは先頭リソースの shortName が使われるため「陰陽」とする
-    shortName: "陰陽",
+    // レーンラベルは先頭リソースの shortName が使われるため、辞書の shortName を「陰陽」（en は Nadi）にしてある
     maxStacks: 1,
     color: "#b39ddb",
     acquiredLevel: 60,
@@ -106,8 +90,6 @@ export const MNK_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "solar-nadi",
-    name: "陽の闘気",
-    shortName: "陽",
     maxStacks: 1,
     color: "#ffd54f",
     acquiredLevel: 60,

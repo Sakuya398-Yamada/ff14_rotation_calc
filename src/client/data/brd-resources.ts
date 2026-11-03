@@ -14,8 +14,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const BRD_RESOURCES: ResourceDefinition[] = [
   {
     id: "soul-voice",
-    name: "ソウルボイス",
-    shortName: "ｿｳﾙ\nﾎﾞｲｽ",
     maxStacks: 100,
     color: "#ffd700",
     displayAsGauge: true,
@@ -28,8 +26,6 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "coda-mages",
-    name: "賢人のコーダ",
-    shortName: "ｺｰﾀﾞ",
     maxStacks: 1,
     color: "#9c27b0",
     acquiredLevel: 90,
@@ -37,8 +33,6 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "coda-armys",
-    name: "軍神のコーダ",
-    shortName: "ｺｰﾀﾞ",
     maxStacks: 1,
     color: "#ff9800",
     acquiredLevel: 90,
@@ -46,8 +40,6 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "coda-wanderers",
-    name: "旅神のコーダ",
-    shortName: "ｺｰﾀﾞ",
     maxStacks: 1,
     color: "#4caf50",
     acquiredLevel: 90,
@@ -55,8 +47,6 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "repertoire",
-    name: "詩心",
-    shortName: "詩心",
     // 詩心を使わない時間帯（歌なし・賢人のバラード中）は上限 0。上限は歌ごとに whileBuffModifiers で決める
     maxStacks: 0,
     color: "#4caf50",

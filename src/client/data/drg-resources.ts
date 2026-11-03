@@ -9,8 +9,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const DRG_RESOURCES: ResourceDefinition[] = [
   {
     id: "firstminds-focus",
-    name: "天竜眼",
-    shortName: "天竜眼",
     maxStacks: 2,
     color: "#9c27b0",
     acquiredLevel: 90,

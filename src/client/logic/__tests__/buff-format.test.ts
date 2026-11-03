@@ -16,7 +16,7 @@ import { BRD_RESOURCES } from "../../data/brd-resources";
 import type { BuffDefinition, PlayerLevel } from "../../types/skill";
 
 function makeBuff(effects: BuffDefinition["effects"]): BuffDefinition {
-  return { id: "b", name: "b", shortName: "b", icon: "", duration: 10, effects, color: "#ffffff" };
+  return { id: "b", icon: "", duration: 10, effects, color: "#ffffff" };
 }
 
 describe("describeBuffEffects", () => {

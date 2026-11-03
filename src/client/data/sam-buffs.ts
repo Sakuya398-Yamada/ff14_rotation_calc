@@ -55,8 +55,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "fugetsu",
-    name: "風月",
-    shortName: "風月",
     icon: jinpuIcon,
     duration: 40,
     effects: [
@@ -70,8 +68,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "fuka",
-    name: "風花",
-    shortName: "風花",
     icon: shifuIcon,
     duration: 40,
     effects: [
@@ -90,8 +86,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "meikyo-shisui",
-    name: "明鏡止水",
-    shortName: "明鏡\n止水",
     icon: meikyoShisuiIcon,
     duration: 20,
     effects: [
@@ -130,8 +124,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "tendo",
-    name: "天道",
-    shortName: "天道",
     icon: tendoSetsugekkaIcon,
     duration: 30,
     effects: [],
@@ -145,8 +137,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "enhanced-enpi",
-    name: "燕飛効果アップ",
-    shortName: "燕飛\nUP",
     icon: enpiIcon,
     duration: 15,
     effects: [],
@@ -160,8 +150,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "ogi-namikiri-ready",
-    name: "奥義波切実行可",
-    shortName: "奥義\nﾚﾃﾞｨ",
     icon: ogiNamikiriIcon,
     duration: 30,
     effects: [],
@@ -175,8 +163,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "zanshin-ready",
-    name: "残心実行可",
-    shortName: "残心\nﾚﾃﾞｨ",
     icon: zanshinIcon,
     duration: 30,
     effects: [],
@@ -190,8 +176,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "tsubame-kaeshi-goken-ready",
-    name: "返し五剣準備",
-    shortName: "返五剣\nﾚﾃﾞｨ",
     icon: kaeshiGokenIcon,
     duration: 30,
     effects: [],
@@ -202,8 +186,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "tsubame-kaeshi-setsugekka-ready",
-    name: "返し雪月花準備",
-    shortName: "返雪月\nﾚﾃﾞｨ",
     icon: kaeshiSetsugekkaIcon,
     duration: 30,
     effects: [],
@@ -214,8 +196,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "tsubame-tendo-kaeshi-goken-ready",
-    name: "天道返し五剣準備",
-    shortName: "天道\n返五剣",
     icon: tendoKaeshiGokenIcon,
     duration: 30,
     effects: [],
@@ -226,8 +206,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "tsubame-tendo-kaeshi-setsugekka-ready",
-    name: "天道返し雪月花準備",
-    shortName: "天道\n返雪月",
     icon: tendoKaeshiSetsugekkaIcon,
     duration: 30,
     effects: [],
@@ -238,8 +216,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "tsubame-kaeshi-namikiri-ready",
-    name: "返し波切準備",
-    shortName: "返波切\nﾚﾃﾞｨ",
     icon: kaeshiNamikiriIcon,
     duration: 60,
     effects: [],
@@ -254,8 +230,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "meditate",
-    name: "黙想",
-    shortName: "黙想",
     icon: meditateIcon,
     duration: 15,
     effects: [{ type: "consumeOnAction", value: 1 }],
@@ -266,8 +240,6 @@ export const SAM_BUFFS: BuffDefinition[] = [
   // effects は空（方向指定ボーナス計算が本ツール未実装のため）
   {
     id: "true-north",
-    name: "トゥルーノース",
-    shortName: "ﾄｩﾙｰ\nﾉｰｽ",
     icon: trueNorthIcon,
     duration: 10,
     effects: [],

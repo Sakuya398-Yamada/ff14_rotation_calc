@@ -42,8 +42,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // 反対属性のブリザド系は MP 消費 0（極性マスタリー）
   {
     id: "astral-fire-1",
-    name: "アストラルファイア I",
-    shortName: "AF1",
     icon: fireIcon,
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
@@ -65,8 +63,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "astral-fire-2",
-    name: "アストラルファイア II",
-    shortName: "AF2",
     icon: fireIcon,
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
@@ -88,8 +84,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "astral-fire-3",
-    name: "アストラルファイア III",
-    shortName: "AF3",
     icon: fireIcon,
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
@@ -120,8 +114,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // 反対属性のファイア系と、UB 中のパラドックスも MP 消費 0
   {
     id: "umbral-ice-1",
-    name: "アンブラルブリザード I",
-    shortName: "UB1",
     icon: blizzardIcon,
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
@@ -138,8 +130,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "umbral-ice-2",
-    name: "アンブラルブリザード II",
-    shortName: "UB2",
     icon: blizzardIcon,
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
@@ -155,8 +145,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "umbral-ice-3",
-    name: "アンブラルブリザード III",
-    shortName: "UB3",
     icon: blizzardIcon,
     duration: null,
     exclusiveGroup: EXCLUSIVE_GROUP_AF_UB,
@@ -178,8 +166,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "thunderhead",
-    name: "サンダーヘッド",
-    shortName: "ｻﾝﾀﾞｰ\nﾍｯﾄﾞ",
     icon: thunderIcon,
     duration: null,
     effects: [],
@@ -188,8 +174,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "firestarter",
-    name: "ファイアスターター",
-    shortName: "ﾌｧｲｱ\nｽﾀｰﾀｰ",
     icon: fire3Icon,
     duration: null,
     // 次のファイガのみ詠唱時間と MP 消費を 0 にする。実機ではファイア・ファイジャ等は対象外
@@ -207,8 +191,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "triplecast",
-    name: "三連魔",
-    shortName: "三連魔",
     icon: triplecastIcon,
     duration: 15,
     maxStacks: 3,
@@ -219,8 +201,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "ley-lines",
-    name: "黒魔紋",
-    shortName: "黒魔紋",
     icon: leyLinesIcon,
     duration: 20,
     effects: [
@@ -232,8 +212,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
-    shortName: "迅速魔",
     icon: swiftcastIcon,
     duration: 10,
     effects: [{ type: "instantCast", value: 0 }],
@@ -243,8 +221,6 @@ export const BLM_BUFFS: BuffDefinition[] = [
   // バフ自体に効果は持たず、MP 回復は `BLM_RESOURCES` の `autoGenerateWhileBuff` で駆動する
   {
     id: "lucid-dreaming",
-    name: "ルーシッドドリーム",
-    shortName: "ﾙｰｼｯﾄﾞ",
     icon: lucidDreamingIcon,
     duration: 21,
     effects: [],

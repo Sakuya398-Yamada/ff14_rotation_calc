@@ -19,8 +19,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "aetherhues-2",
-    name: "色魔法2実行可",
-    shortName: "色魔法\n2",
     icon: fireInRedIcon,
     duration: 30,
     effects: [],
@@ -29,8 +27,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "aetherhues-3",
-    name: "色魔法3実行可",
-    shortName: "色魔法\n3",
     icon: fireInRedIcon,
     duration: 30,
     effects: [],
@@ -43,8 +39,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "subtractive-palette",
-    name: "サブトラクティブパレット",
-    shortName: "ｻﾌﾞﾄﾗ\nｸﾃｨﾌﾞ",
     icon: subtractivePaletteIcon,
     duration: null,
     maxStacks: 3,
@@ -53,8 +47,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "color-inversion",
-    name: "色調反転",
-    shortName: "色調\n反転",
     icon: subtractivePaletteIcon,
     duration: null,
     acquiredLevel: 90,
@@ -69,8 +61,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "hammer-combo-ready",
-    name: "ハンマーコンボ実行可",
-    shortName: "ﾊﾝﾏｰ\nｺﾝﾎﾞ",
     icon: hammerStampIcon,
     duration: 30,
     maxStacks: 3,
@@ -79,8 +69,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "hammer-brush-ready",
-    name: "ハンマーブラッシュ実行可",
-    shortName: "ﾌﾞﾗｯｼｭ\nReady",
     icon: hammerStampIcon,
     duration: 30,
     acquiredLevel: 86,
@@ -89,8 +77,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "hammer-polish-ready",
-    name: "ハンマーポリッシュ実行可",
-    shortName: "ﾎﾟﾘｯｼｭ\nReady",
     icon: hammerStampIcon,
     duration: 30,
     acquiredLevel: 86,
@@ -103,8 +89,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "starry-muse",
-    name: "イマジンスカイバフ",
-    shortName: "ｲﾏｼﾞﾝ\nｽｶｲ",
     icon: starryMuseIcon,
     duration: 20,
     effects: [
@@ -114,8 +98,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "installation",
-    name: "インスタレーション",
-    shortName: "ｲﾝｽﾀ\nﾚｰｼｮﾝ",
     icon: starryMuseIcon,
     duration: 30,
     maxStacks: 5,
@@ -161,8 +143,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "subtractive-ready",
-    name: "サブトラクティブパレット実行可",
-    shortName: "ｻﾌﾞﾄﾗ\nReady",
     icon: subtractivePaletteIcon,
     duration: 30,
     effects: [],
@@ -174,8 +154,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "star-prism-ready",
-    name: "スタープリズム実行可",
-    shortName: "ｽﾀｰ\nﾌﾟﾘｽﾞﾑ",
     icon: starPrismIcon,
     duration: 20,
     acquiredLevel: 100,
@@ -188,8 +166,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "rainbow-drip-ready",
-    name: "レインボードリップ効果アップ",
-    shortName: "ﾚｲﾝﾎﾞｰ\nReady",
     icon: rainbowDripIcon,
     duration: 30,
     // 公式ジョブガイドは「リキャストタイムが短縮され、詠唱時間無しで唱えられる」とのみ記載し数値は無い。
@@ -210,8 +186,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "wing-muse-ready",
-    name: "イマジンウィング実行可",
-    shortName: "ｳｨﾝｸﾞ\nReady",
     icon: mogOfTheAgesIcon,
     duration: null,
     effects: [],
@@ -219,8 +193,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "claw-muse-ready",
-    name: "イマジンクロー実行可",
-    shortName: "ｸﾛｰ\nReady",
     icon: mogOfTheAgesIcon,
     duration: null,
     acquiredLevel: 96,
@@ -229,8 +201,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "fang-muse-ready",
-    name: "イマジンファング実行可",
-    shortName: "ﾌｧﾝｸﾞ\nReady",
     icon: mogOfTheAgesIcon,
     duration: null,
     acquiredLevel: 96,
@@ -243,8 +213,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "moogle-symbol",
-    name: "モーグリシンボル",
-    shortName: "ﾓｰｸﾞﾘ\nｼﾝﾎﾞﾙ",
     icon: mogOfTheAgesIcon,
     duration: null,
     effects: [],
@@ -252,8 +220,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "madeen-symbol",
-    name: "マディーンシンボル",
-    shortName: "ﾏﾃﾞｨｰﾝ\nｼﾝﾎﾞﾙ",
     icon: mogOfTheAgesIcon,
     duration: null,
     effects: [],
@@ -261,8 +227,6 @@ export const PCT_BUFFS: BuffDefinition[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
-    shortName: "迅速魔",
     icon: swiftcastIcon,
     duration: 10,
     effects: [{ type: "instantCast", value: 0 }],

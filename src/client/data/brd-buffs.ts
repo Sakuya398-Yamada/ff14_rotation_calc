@@ -24,8 +24,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "raging-strikes",
-    name: "猛者の撃",
-    shortName: "猛者の\n撃",
     icon: ragingStrikesIcon,
     duration: 20,
     effects: [
@@ -38,8 +36,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "battle-voice",
-    name: "バトルボイス",
-    shortName: "ﾊﾞﾄﾙ\nﾎﾞｲｽ",
     icon: battleVoiceIcon,
     duration: 20,
     effects: [
@@ -53,8 +49,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "radiant-finale-1",
-    name: "光神のフィナーレ（1種）",
-    shortName: "ﾌｨﾅｰﾚ\n1種",
     icon: radiantFinaleIcon,
     duration: 20,
     effects: [
@@ -68,8 +62,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "radiant-finale-2",
-    name: "光神のフィナーレ（2種）",
-    shortName: "ﾌｨﾅｰﾚ\n2種",
     icon: radiantFinaleIcon,
     duration: 20,
     effects: [
@@ -83,8 +75,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "radiant-finale-3",
-    name: "光神のフィナーレ（3種）",
-    shortName: "ﾌｨﾅｰﾚ\n3種",
     icon: radiantFinaleIcon,
     duration: 20,
     effects: [
@@ -102,8 +92,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "mages-ballad",
-    name: "賢人のバラード",
-    shortName: "ﾊﾞﾗｰﾄﾞ",
     icon: magesBalladIcon,
     duration: 45,
     effects: [
@@ -118,8 +106,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-paeon",
-    name: "軍神のパイオン",
-    shortName: "ﾊﾟｲｵﾝ",
     icon: armysPaeonIcon,
     duration: 45,
     effects: [
@@ -139,8 +125,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "wanderers-minuet",
-    name: "旅神のメヌエット",
-    shortName: "ﾒﾇｴｯﾄ",
     icon: wanderersMinuetIcon,
     duration: 45,
     effects: [
@@ -164,8 +148,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "armys-muse-1",
-    name: "軍神の加護（詩心1）",
-    shortName: "軍神の\n加護1",
     icon: armysPaeonIcon,
     duration: 10,
     effects: [
@@ -180,8 +162,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-muse-2",
-    name: "軍神の加護（詩心2）",
-    shortName: "軍神の\n加護2",
     icon: armysPaeonIcon,
     duration: 10,
     effects: [
@@ -196,8 +176,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-muse-3",
-    name: "軍神の加護（詩心3）",
-    shortName: "軍神の\n加護3",
     icon: armysPaeonIcon,
     duration: 10,
     effects: [
@@ -212,8 +190,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-muse-4",
-    name: "軍神の加護（詩心4）",
-    shortName: "軍神の\n加護4",
     icon: armysPaeonIcon,
     duration: 10,
     effects: [
@@ -228,8 +204,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-ethos-1",
-    name: "軍神の契約（詩心1）",
-    shortName: "軍神の\n契約1",
     icon: armysPaeonIcon,
     duration: 30,
     effects: [
@@ -246,8 +220,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-ethos-2",
-    name: "軍神の契約（詩心2）",
-    shortName: "軍神の\n契約2",
     icon: armysPaeonIcon,
     duration: 30,
     effects: [
@@ -264,8 +236,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-ethos-3",
-    name: "軍神の契約（詩心3）",
-    shortName: "軍神の\n契約3",
     icon: armysPaeonIcon,
     duration: 30,
     effects: [
@@ -282,8 +252,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "armys-ethos-4",
-    name: "軍神の契約（詩心4）",
-    shortName: "軍神の\n契約4",
     icon: armysPaeonIcon,
     duration: 30,
     effects: [
@@ -304,8 +272,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   // ============================================================
   {
     id: "hawks-eye",
-    name: "ホークアイ",
-    shortName: "ﾎｰｸ\nｱｲ",
     icon: straightShotIcon,
     duration: 30,
     effects: [],
@@ -314,8 +280,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "barrage",
-    name: "乱れ撃ち",
-    shortName: "乱れ\n撃ち",
     icon: barrageIcon,
     duration: 10,
     effects: [],
@@ -325,8 +289,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "blast-arrow-ready",
-    name: "ブラストアローレディ",
-    shortName: "ﾌﾞﾗｽﾄ\nﾚﾃﾞｨ",
     icon: blastArrowIcon,
     duration: 10,
     effects: [],
@@ -336,8 +298,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "resonant-arrow-ready",
-    name: "レゾナンスアローレディ",
-    shortName: "ﾚｿﾞﾅﾝｽ\nﾚﾃﾞｨ",
     icon: resonantArrowIcon,
     duration: 30,
     effects: [],
@@ -347,8 +307,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "radiant-encore-ready-1",
-    name: "光神のアンコールレディ（1種）",
-    shortName: "ｱﾝｺｰﾙ\nﾚﾃﾞｨ1",
     icon: radiantEncoreIcon,
     duration: 30,
     effects: [],
@@ -358,8 +316,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "radiant-encore-ready-2",
-    name: "光神のアンコールレディ（2種）",
-    shortName: "ｱﾝｺｰﾙ\nﾚﾃﾞｨ2",
     icon: radiantEncoreIcon,
     duration: 30,
     effects: [],
@@ -369,8 +325,6 @@ export const BRD_BUFFS: BuffDefinition[] = [
   },
   {
     id: "radiant-encore-ready-3",
-    name: "光神のアンコールレディ（3種）",
-    shortName: "ｱﾝｺｰﾙ\nﾚﾃﾞｨ3",
     icon: radiantEncoreIcon,
     duration: 30,
     effects: [],

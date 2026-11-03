@@ -27,7 +27,7 @@ import type {
 } from "../../types/skill";
 import type { JobId } from "../../data/job-registry";
 
-function makeSkill(overrides: Partial<Skill> & { id: string; name: string }): Skill {
+function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
     potency: 100,
     type: "gcd",
@@ -51,17 +51,16 @@ const defaultStats: CharacterStats = {
   speed: 800,
 };
 
-const gcdSkill = makeSkill({ id: "test-gcd", name: "テストGCD", potency: 300 });
+const gcdSkill = makeSkill({ id: "test-gcd", potency: 300 });
 const ogcdSkill = makeSkill({
   id: "test-ogcd",
-  name: "テストoGCD",
   potency: 150,
   type: "ogcd",
 });
 const jobASkills = [gcdSkill, ogcdSkill];
 const jobASkillMap = new Map(jobASkills.map((s) => [s.id, s]));
 
-const jobBSkill = makeSkill({ id: "other-gcd", name: "別ジョブGCD", potency: 250 });
+const jobBSkill = makeSkill({ id: "other-gcd", potency: 250 });
 const jobBSkills = [jobBSkill];
 const jobBSkillMap = new Map(jobBSkills.map((s) => [s.id, s]));
 

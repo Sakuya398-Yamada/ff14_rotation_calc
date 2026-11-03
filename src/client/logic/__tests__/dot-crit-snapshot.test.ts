@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, BuffDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -23,8 +22,6 @@ function makeEntry(skillId: string): TimelineEntry {
 describe("DoTのクリティカル率ボーナスのスナップショット", () => {
   const battleLitany: BuffDefinition = {
     id: "battle-litany",
-    name: "バトルリタニー",
-    shortName: "ﾘﾀﾆｰ",
     icon: "",
     duration: 20,
     effects: [{ type: "critRate", value: 0.1 }],

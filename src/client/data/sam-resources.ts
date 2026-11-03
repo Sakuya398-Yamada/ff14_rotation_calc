@@ -16,8 +16,6 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
   // ============================================================
   {
     id: "kenki",
-    name: "剣気",
-    shortName: "剣気",
     maxStacks: 100,
     color: "#d32f2f",
     displayAsGauge: true,
@@ -34,8 +32,6 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
   // ============================================================
   {
     id: "setsu",
-    name: "雪閃",
-    shortName: "雪",
     maxStacks: 1,
     color: "#e1f5fe",
     acquiredLevel: 50,
@@ -45,8 +41,6 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "getsu",
-    name: "月閃",
-    shortName: "月",
     maxStacks: 1,
     color: "#ffeb3b",
     acquiredLevel: 30,
@@ -56,8 +50,6 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "ka",
-    name: "花閃",
-    shortName: "花",
     maxStacks: 1,
     color: "#ec407a",
     acquiredLevel: 40,
@@ -71,8 +63,6 @@ export const SAM_RESOURCES: ResourceDefinition[] = [
   // ============================================================
   {
     id: "meditation",
-    name: "剣圧",
-    shortName: "剣圧",
     maxStacks: 3,
     color: "#ff6f00",
     acquiredLevel: 80,

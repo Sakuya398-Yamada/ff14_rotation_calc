@@ -11,8 +11,6 @@ import type { ResourceDefinition } from "../types/skill";
 export const AST_RESOURCES: ResourceDefinition[] = [
   {
     id: "lord-of-crowns",
-    name: "クラウンロード実行可",
-    shortName: "ｸﾗｳﾝ\nﾛｰﾄﾞ",
     maxStacks: 1,
     initialStacks: 1,
     color: "#ffb74d",
@@ -20,8 +18,6 @@ export const AST_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "umbral-draw-next",
-    name: "アンブラルドロー待ち",
-    shortName: "ｱﾝﾌﾞﾗﾙ\n待ち",
     maxStacks: 1,
     initialStacks: 1,
     color: "#7986cb",

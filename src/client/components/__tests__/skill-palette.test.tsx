@@ -7,7 +7,7 @@ import { SkillPalette } from "../SkillPalette";
 import type { Skill, CharacterStats } from "../../types/skill";
 import type { JobId } from "../../data/job-registry";
 
-function makeSkill(overrides: Partial<Skill> & { id: string; name: string }): Skill {
+function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
     potency: 100,
     type: "gcd",
@@ -21,13 +21,13 @@ function makeSkill(overrides: Partial<Skill> & { id: string; name: string }): Sk
 }
 
 const whmSkills: Skill[] = [
-  makeSkill({ id: "glare", name: "グレア", potency: 340 }),
-  makeSkill({ id: "assize", name: "アサイズ", potency: 400, type: "ogcd" }),
-  makeSkill({ id: "hidden-skill", name: "非表示スキル", hidden: true }),
+  makeSkill({ id: "glare", potency: 340 }),
+  makeSkill({ id: "assize", potency: 400, type: "ogcd" }),
+  makeSkill({ id: "hidden-skill", hidden: true }),
 ];
 
 const blmSkills: Skill[] = [
-  makeSkill({ id: "fire-4", name: "ファイジャ", potency: 300 }),
+  makeSkill({ id: "fire-4", potency: 300 }),
 ];
 
 const defaultStats: CharacterStats = {

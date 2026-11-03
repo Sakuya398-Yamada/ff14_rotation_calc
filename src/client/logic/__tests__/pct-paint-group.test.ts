@@ -4,7 +4,6 @@ import type { Skill, TimelineEntry, ResourceDefinition, BuffDefinition } from ".
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
-    name: overrides.id,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -23,8 +22,6 @@ function makeEntry(skillId: string, uid?: string): TimelineEntry {
 const PAINT_RESOURCES: ResourceDefinition[] = [
   {
     id: "white-paint",
-    name: "WP",
-    shortName: "WP",
     maxStacks: 5,
     color: "#fff",
     displayGroup: "paint",
@@ -33,8 +30,6 @@ const PAINT_RESOURCES: ResourceDefinition[] = [
   },
   {
     id: "black-paint",
-    name: "BP",
-    shortName: "BP",
     maxStacks: 5,
     color: "#000",
     displayGroup: "paint",
@@ -173,8 +168,6 @@ describe("ピクトマンサー ペイントゲージ（WP/BP 共有5スロッ�
     const buffs: BuffDefinition[] = [
       {
         id: "test-inversion",
-        name: "test-inversion",
-        shortName: "TI",
         icon: "",
         duration: 5, // 5秒で切れる
         effects: [],

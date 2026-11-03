@@ -36,7 +36,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: ストーン系（単体攻撃魔法チェーン） ===
   {
     id: "stone",
-    name: "ストーン",
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -48,7 +47,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone2",
-    name: "ストンラ",
     potency: 190,
     type: "gcd",
     target: "enemy",
@@ -61,7 +59,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone3",
-    name: "ストンガ",
     potency: 220,
     type: "gcd",
     target: "enemy",
@@ -74,7 +71,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone4",
-    name: "ストンジャ",
     potency: 260,
     type: "gcd",
     target: "enemy",
@@ -87,7 +83,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "glare",
-    name: "グレア",
     potency: 290,
     type: "gcd",
     target: "enemy",
@@ -100,7 +95,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "glare3",
-    name: "グレアガ",
     potency: 310,
     type: "gcd",
     target: "enemy",
@@ -118,7 +112,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: エアロ系（DoTチェーン） ===
   {
     id: "aero",
-    name: "エアロ",
     potency: 50,
     type: "gcd",
     target: "enemy",
@@ -131,7 +124,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "aero2",
-    name: "エアロラ",
     potency: 50,
     type: "gcd",
     target: "enemy",
@@ -145,7 +137,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "dia",
-    name: "ディア",
     potency: 65,
     type: "gcd",
     target: "enemy",
@@ -164,7 +155,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: ホーリー系（範囲攻撃魔法チェーン） ===
   {
     id: "holy",
-    name: "ホーリー",
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -178,7 +168,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "holy3",
-    name: "ホーリガ",
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -194,7 +183,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: グレアジャ（神速魔効果アップ Lv92） ===
   {
     id: "glare4",
-    name: "グレアジャ",
     potency: 640,
     type: "gcd",
     target: "enemy",
@@ -213,7 +201,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: リリー関連 ===
   {
     id: "heart-of-solace",
-    name: "ハート・オブ・ソラス",
     potency: 0,
     type: "gcd",
     target: "party",
@@ -228,7 +215,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "heart-of-rapture",
-    name: "ハート・オブ・ラプチャー",
     potency: 0,
     type: "gcd",
     target: "party",
@@ -243,7 +229,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "heart-of-misery",
-    name: "ハート・オブ・ミゼリ",
     potency: 1240,
     type: "gcd",
     target: "enemy",
@@ -265,7 +250,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === oGCD ===
   {
     id: "assize",
-    name: "アサイズ",
     potency: 400,
     type: "ogcd",
     target: "enemy",
@@ -279,7 +263,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "presence-of-mind",
-    name: "神速魔",
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -292,7 +275,6 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "swiftcast",
-    name: "迅速魔",
     potency: 0,
     type: "ogcd",
     target: "self",

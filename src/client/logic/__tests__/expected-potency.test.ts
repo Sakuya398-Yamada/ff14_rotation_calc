@@ -33,7 +33,6 @@ function makeResolvedEntry(overrides: Partial<ResolvedTimelineEntry>): ResolvedT
 function makeSkill(overrides: Partial<Skill> = {}): Skill {
   return {
     id: "s",
-    name: "テストスキル",
     potency: 100,
     type: "gcd",
     target: "enemy",
