@@ -12,6 +12,13 @@
 - **回避**: Edit ツールを使う。スクリプトで一括置換するなら改行コードを判定して保持する
 - **確認**: Git for Windows（版未記録）/ 2026-10 / issue-driven-dev-starter#37
 
+## Edit / Write は、`.md` 以外のファイルで行末の空白を落とす
+
+- **条件**: Claude Code の Edit / Write ツールで、`.md` / `.mdx` 以外のファイル（`.sh`・`.json`・`.txt`・拡張子なしなど）を書くとき
+- **症状**: Edit の `new_string` と Write の `content` の各行から、行末の空白（スペース・タブ）が消える。エラーは出ない。`old_string` 側の空白は一致に使われるので、行の途中の空白で終わる組（`json=0 ` → `json=1 `）を当てると、空白が消えて後ろの語とつながる（`json=1repo=...`）。行末に空白のある行を `new_string` に入れると、変えていないその行の空白も消える
+- **回避**: Edit の組は行単位で作り、行の途中で切らない。行末の空白を残す必要がある行（テストのフィクスチャなど）は、Edit / Write で書いたあとに `cat -A` や `cmp` で確かめ、消えていればシェル（`printf`・`sed`）で書く（`CLAUDE.md` と `.claude/` 配下はシェルからの書き込みが分類器に止められることがあるので、そのときは行をユーザーに示す。`.claude/skills/template-update/SKILL.md`「3-way マージの定型手順」1）
+- **確認**: Claude Code 2.1.316 / 2026-11 / issue-driven-dev-starter#263（`.md`・`.mdx` では Edit・Write とも行末の空白が残り、`.sh`・`.json`・`.txt`・拡張子なしでは消えることを、このテンプレート元のセッションで確かめた）
+
 ## ヒアドキュメントでバックスラッシュが縮む
 
 - **条件**: Windows の Git Bash 等で、シェルの `<<'EOF'` 経由でスクリプトを書き出すとき
@@ -39,6 +46,13 @@
 - **症状**: hook はどのリポジトリへの操作かを見分けず、規約外の件名・ブランチ名を止める。`git -C <一時リポジトリ>`、heredoc で書き出したスクリプト（本文がコマンド文字列に入る）、名前を変数に入れる形も止まる
 - **回避**: 手順をスクリプトファイルに書いて `bash <スクリプト>` で回す。書き出しは Write ツールで、Write の無いサブエージェントは `printf '%s\n' '<1 行目>' '<2 行目>' > <スクリプト>` で、1 行に 1 コマンドずつ別々の引数にして書く（hook は引数の文字列の中でもコマンドの位置の git を見るので、1 つの引数の中で `;` や `&&` の後ろに git を書くと止まる）。作業中のリポジトリへの git 操作には使わない（hook の迂回になる。`CLAUDE.md`「自動ガードレール」）
 - **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#200（還元元と、このテンプレート元で hook に同じコマンドを渡して確かめた）
+
+## `/doctor` は Claude から呼べない
+
+- **条件**: rules の棚卸し（`.claude/rules/documentation-policy.md`「常駐量に予算を置く」）などで、Claude が `/doctor prompt-audit` の点検を回したいとき
+- **症状**: `/doctor` はモデルからの呼び出しが無効（`disableModelInvocation: true`）なので、Skill ツールの一覧に出ず、Claude からは呼べない。ユーザーにスラッシュコマンドを打ってもらうしかないように見える
+- **回避**: `/doctor prompt-audit` は、同梱の `claude-api` skill の `prompt-audit` サブコマンドに引数を渡しているだけなので、Claude は `Skill(skill: "claude-api", args: "prompt-audit <パス>")` で同じ点検を回せる。読み込まれた本文の Subcommands の表に `prompt-audit` があることを確かめてから進める（内部の委ね方なので、版で変わりうる。無ければユーザーに `/doctor prompt-audit` を打ってもらう）。点検の対象（`CLAUDE.md`・rules・skills・agents）は合わせて数百 KB あるので、範囲を分け（常駐の rules と agents／`issue-start`／その他の skills など）、サブエージェントで並列に回す
+- **確認**: Claude Code 2.1.317 / 2026-11 / issue-driven-dev-starter#279（還元元の CLI で確かめた。このテンプレート元のクラウドセッション（2.1.317）でも、`claude-api` skill に `prompt-audit <パス>` を渡すと、Subcommands の表に `prompt-audit` の手順があった）
 
 ## `paths:` 付き rules の読み込みを確かめる
 

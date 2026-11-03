@@ -40,9 +40,19 @@ gh api "repos/{owner}/{repo}/issues/<B>/dependencies/blocked_by?per_page=100" \
 
 ## 外し方
 
-依存が要らなくなったら、本文の `依存: #<A>` を消し、blocked by も外す。外すときも A の `id` を使う。
+依存が要らなくなったら、本文の `依存: #<A>` を消し、blocked by も外す。外すときも依存先の `id` を使う。`id` は B の blocked by の一覧から、「読み方」の出力の 1 列目（このリポジトリなら `#<M>`、別のリポジトリなら `owner/repo#<M>`）が一致するものを選んで取る。`repos/{owner}/{repo}/issues/<M>` から引くと、別のリポジトリの依存先でもこのリポジトリの #M の `id` になり、DELETE が 404 で失敗するか、このリポジトリの #M も blocked by に付いていれば、そちらを黙って外す。
 
 ```bash
-id=$(gh api "repos/{owner}/{repo}/issues/<A>" --jq .id)
-gh api -X DELETE "repos/{owner}/{repo}/issues/<B>/dependencies/blocked_by/$id" --silent
+dep='<依存先>'   # 「読み方」の出力の 1 列目のまま（#12 / owner/repo#3）
+full=$(gh api "repos/{owner}/{repo}" --jq .full_name)
+if ! id=$(gh api "repos/{owner}/{repo}/issues/<B>/dependencies/blocked_by?per_page=100" \
+  --jq '.[] | select((((.repository_url | sub(".*/repos/"; "")) as $r | if $r == "'"$full"'" then "" else $r end) + "#" + (.number | tostring)) == "'"$dep"'") | .id'); then
+  echo "blocked by を読めなかった"
+elif [ -n "$id" ]; then
+  gh api -X DELETE "repos/{owner}/{repo}/issues/<B>/dependencies/blocked_by/$id" --silent
+else
+  echo "blocked by に無い: $dep"
+fi
 ```
+
+- 「blocked by に無い」と出たら、その依存先は本文にしか無い。本文から消すだけでよい（`dep` の書き方が 1 列目と違っても出るので、違えば直して打ち直す）。「読めなかった」と出たら、標準エラーの理由を直して打ち直す（本文だけ消すと、blocked by が残る）
