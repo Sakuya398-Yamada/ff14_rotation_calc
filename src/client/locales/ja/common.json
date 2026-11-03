@@ -6,7 +6,8 @@
     "ppsRange": "PPS 区間",
     "ppsRangeUnset": "PPS範囲で指定",
     "dotExpectedPotency": "DoT 期待威力",
-    "duration": "所要時間"
+    "duration": "所要時間",
+    "durationLastDotTick": "DoT 最終ティック {{time}}s"
   },
   "app": {
     "siteName": "FF14 Rotation Calculator",

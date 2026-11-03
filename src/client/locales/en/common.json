@@ -6,7 +6,8 @@
     "ppsRange": "PPS (range)",
     "ppsRangeUnset": "Set via PPS range",
     "dotExpectedPotency": "DoT expected potency",
-    "duration": "Duration"
+    "duration": "Duration",
+    "durationLastDotTick": "Last DoT tick {{time}}s"
   },
   "app": {
     "siteName": "FFXIV Rotation Calculator",

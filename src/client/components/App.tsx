@@ -14,11 +14,11 @@ import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
 import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
-import { resolveTimeline, calcPps } from "../logic/resolve-timeline";
+import { resolveTimeline } from "../logic/resolve-timeline";
+import { calcRangePps, calcTimelineSummary } from "../logic/timeline-summary";
 import { JOB_DATA } from "../data/job-registry";
 import { contentName, skillName } from "../logic/display-names";
-import { DEFAULT_STATS, calcExpectedMultiplier } from "../logic/stat-calc";
-import { calcEntryExpectedPotency } from "../logic/expected-potency";
+import { DEFAULT_STATS } from "../logic/stat-calc";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../logic/skill-level";
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
@@ -327,34 +327,10 @@ export function App() {
     []
   );
 
-  // per-entryのクリティカル率ボーナスを考慮した合計期待威力（複数体ヒット合算込み）
-  const { totalExpectedPotency, dotExpectedPotency } = useMemo(() => {
-    const directExpected = resolvedEntries.reduce((sum, entry) => {
-      const skill = allSkillMap.get(entry.resolvedSkillId);
-      return sum + calcEntryExpectedPotency(entry, skill, stats);
-    }, 0);
-    // DoTはティックごとにスナップショット済みのcritRateBonus・dhRateBonusを適用
-    // （DoTは保守的に1体のみ付与の前提のため targetCount は反映しない）
-    const dotExpected = timelineResult.dotTicks.reduce((sum, tick) => {
-      const dotMul = calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus);
-      return sum + Math.floor(tick.potency * dotMul);
-    }, 0);
-    return { totalExpectedPotency: directExpected + dotExpected, dotExpectedPotency: dotExpected };
-  }, [stats, resolvedEntries, allSkillMap, timelineResult.dotTicks]);
-
-  // 全体PPS: 0 〜 タイムライン全体終了まで（DoT最終ティック含む）
-  const overallPps = useMemo(() => {
-    if (timelineResult.timelineEndTime <= 0) return null;
-    return calcPps(
-      resolvedEntries,
-      allSkillMap,
-      timelineResult.dotTicks,
-      0,
-      timelineResult.timelineEndTime,
-      stats,
-      { includeEnd: true }
-    );
-  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, stats]);
+  const summary = useMemo(
+    () => calcTimelineSummary(timelineResult, allSkillMap, stats),
+    [timelineResult, allSkillMap, stats]
+  );
 
   const buffDefMap = useMemo(
     () => new Map(levelBuffs.map((b) => [b.id, b])),
@@ -374,17 +350,8 @@ export function App() {
   // 範囲選択PPS
   const rangePps = useMemo(() => {
     if (!ppsRange) return null;
-    return calcPps(
-      resolvedEntries,
-      allSkillMap,
-      timelineResult.dotTicks,
-      ppsRange.startTime,
-      ppsRange.endTime,
-      stats,
-      // 区間がタイムライン終端まで届くときは、終端ちょうどの最終ティックも含める（#400）
-      { includeEnd: ppsRange.endTime >= timelineResult.timelineEndTime }
-    );
-  }, [resolvedEntries, allSkillMap, timelineResult.dotTicks, timelineResult.timelineEndTime, ppsRange, stats]);
+    return calcRangePps(timelineResult, allSkillMap, ppsRange, stats);
+  }, [timelineResult, allSkillMap, ppsRange, stats]);
 
   return (
     <div className="app-root" style={styles.app}>
@@ -487,12 +454,13 @@ export function App() {
         </section>
       )}
       <SummaryBar
-        totalExpectedPotency={totalExpectedPotency}
-        dotExpectedPotency={dotExpectedPotency}
-        overallPps={overallPps}
+        totalExpectedPotency={summary.totalExpectedPotency}
+        dotExpectedPotency={summary.dotExpectedPotency}
+        overallPps={summary.overallPps}
         rangePps={rangePps}
         ppsRange={ppsRange}
-        duration={timelineResult.timelineEndTime}
+        duration={summary.duration}
+        lastDotTickTime={summary.lastDotTickTime}
       />
       <DndContext
         sensors={dndSensors}
