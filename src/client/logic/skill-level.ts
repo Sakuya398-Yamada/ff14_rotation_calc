@@ -17,6 +17,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   let gcdRecastTime = skill.gcdRecastTime;
   let potencyScaling = skill.potencyScaling;
   let buffApplications = skill.buffApplications;
+  let comboResourceChanges = skill.comboResourceChanges;
   let buffConsumptionAnyOf = skill.buffConsumptionAnyOf;
   let conditionalPotencyBuffs = skill.conditionalPotencyBuffs;
 
@@ -33,6 +34,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
       if (override.gcdRecastTime !== undefined) gcdRecastTime = override.gcdRecastTime;
       if (override.potencyScaling !== undefined) potencyScaling = override.potencyScaling;
       if (override.buffApplications !== undefined) buffApplications = override.buffApplications;
+      if (override.comboResourceChanges !== undefined) comboResourceChanges = override.comboResourceChanges;
       if (override.buffConsumptionAnyOf !== undefined) buffConsumptionAnyOf = override.buffConsumptionAnyOf;
       if (override.conditionalPotencyBuffs !== undefined) conditionalPotencyBuffs = override.conditionalPotencyBuffs;
     }
@@ -48,6 +50,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     gcdRecastTime === skill.gcdRecastTime &&
     potencyScaling === skill.potencyScaling &&
     buffApplications === skill.buffApplications &&
+    comboResourceChanges === skill.comboResourceChanges &&
     buffConsumptionAnyOf === skill.buffConsumptionAnyOf &&
     conditionalPotencyBuffs === skill.conditionalPotencyBuffs
   ) {
@@ -65,6 +68,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     gcdRecastTime,
     potencyScaling,
     buffApplications,
+    comboResourceChanges,
     buffConsumptionAnyOf,
     conditionalPotencyBuffs,
   };
