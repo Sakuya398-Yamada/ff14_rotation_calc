@@ -260,15 +260,21 @@ describe("MyTimelinesDialog: 削除", () => {
   it.each([
     ["429", () => Promise.resolve(jsonResponse({ error: "rate_limited" }, 429)), "短時間に続けて保存・削除したため"],
     ["通信断", () => Promise.reject(new TypeError("Failed to fetch")), "削除できませんでした。通信状況を確かめて"],
-  ] as const)("削除に失敗したら（%s）行を残してエラーを出し、もう一度押せる", async (_label, respond, message) => {
+  ] as const)("削除に失敗したら（%s）行を残してエラーを出し、押せるようにした削除ボタンにフォーカスを戻す", async (_label, respond, message) => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ items: [item(1)], nextCursor: null })).mockImplementationOnce(respond);
     renderDialog();
     await screen.findAllByRole("link");
-    fireEvent.click(deleteButton("タイムライン 1"));
+    const button = deleteButton("タイムライン 1");
+    button.focus();
+    fireEvent.click(button);
+    // ブラウザは無効にしたボタンからフォーカスを外す。jsdom は外さず、無効なボタンの blur() も効かないので、ほかの要素に移して同じく外れた状態にする
+    expect(button).toBeDisabled();
+    screen.getByRole("link").focus();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(deleteButton("タイムライン 1")).toBeEnabled();
+    expect(deleteButton("タイムライン 1")).toHaveFocus();
   });
 
   it("削除のエラーは、閉じて開き直すと消す", async () => {

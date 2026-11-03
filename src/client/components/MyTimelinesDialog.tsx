@@ -24,6 +24,8 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
   // 送信中の削除。閉じたときに中断する
   const deleteControllerRef = useRef<AbortController | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  // 削除に失敗した行の id。削除中はボタンを無効にするので、ブラウザがフォーカスを外す。押せるようになってから戻す
+  const refocusDeleteIdRef = useRef<string | null>(null);
   // 「もっと見る」で足した先頭の行の id。最後のページでは押したボタンが消えてフォーカスが外れるので、足した行へ移す
   const focusIdRef = useRef<string | null>(null);
   // 1 ページ目を読み込むまでは null
@@ -66,6 +68,7 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     deleteControllerRef.current = null;
     setDeletingId(null);
     if (outcome.kind === "error") {
+      refocusDeleteIdRef.current = item.id;
       setDeleteError(outcome.error);
       return;
     }
@@ -109,6 +112,13 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     focusIdRef.current = null;
     listRef.current?.querySelector<HTMLElement>(`a[data-timeline-id="${id}"]`)?.focus();
   }, [items]);
+
+  useLayoutEffect(() => {
+    const id = refocusDeleteIdRef.current;
+    if (id === null || deletingId !== null) return;
+    refocusDeleteIdRef.current = null;
+    listRef.current?.querySelector<HTMLElement>(`button[data-delete-id="${id}"]`)?.focus();
+  }, [deletingId]);
 
   return (
     <dialog
@@ -160,6 +170,7 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
                 </a>
                 <button
                   type="button"
+                  data-delete-id={item.id}
                   aria-label={t("myTimelinesDialog.deleteLabel", { title: item.title ?? t("myTimelinesDialog.untitled") })}
                   onClick={() => void handleDelete(item)}
                   disabled={deletingId !== null}
