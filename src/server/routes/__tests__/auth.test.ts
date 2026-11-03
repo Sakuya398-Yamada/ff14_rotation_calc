@@ -208,13 +208,20 @@ describe("ログイン後に戻るパス", () => {
     ["プロトコル相対の URL", "//evil.example/en/", "/"],
     ["バックスラッシュで始まる別ホスト", "/\\evil.example/en/", "/"],
     ["タブを挟んだ別ホスト", "/\t/evil.example/en/", "/"],
+    // 解決するとオリジンは同じままパスが `//evil.example/...` になり、Location に入れるとプロトコル相対の URL として読まれる
+    ["ドットセグメントで別ホスト", "/.//evil.example/en/", "/"],
+    ["親ディレクトリで別ホスト", "/a/..//evil.example/en/", "/"],
+    ["エンコードしたドットで別ホスト", "/%2e//evil.example/en/", "/"],
+    ["ドットとバックスラッシュで別ホスト", "/./\\evil.example/en/", "/"],
     ["同じオリジンでも絶対 URL", `${ORIGIN}/en/`, "/"],
     ["javascript: の URL", "javascript:alert(1)", "/"],
   ])("%s（%j）を渡すと、ログイン後に %s へ戻る", async (_label, returnTo, expected) => {
-    const { res } = await login({ returnTo });
+    const { res, stored } = await login({ returnTo });
 
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toBe(expected);
+    // コールバックでもう一度検査するが、それに頼らず、短命の Cookie に入れる時点で検査を済ませておく
+    expect(stored.returnTo).toBe(expected);
   });
 });
 

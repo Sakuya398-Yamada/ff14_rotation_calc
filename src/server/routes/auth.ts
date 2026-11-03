@@ -34,7 +34,10 @@ export function safeReturnPath(value: string | undefined, origin: string): strin
   } catch {
     return "/";
   }
-  return url.origin === origin ? url.pathname + url.search + url.hash : "/";
+  const path = url.pathname + url.search + url.hash;
+  // `/.//host` のようなドットセグメントは、解決するとオリジンが同じままパスが `//host` になり、Location に入れると別のホストとして読まれる。
+  // 解決でバックスラッシュは `/` に変わるので、`//` だけを見ればよい
+  return url.origin === origin && !path.startsWith("//") ? path : "/";
 }
 
 /** ID が無ければログインできない環境（null）。ID があるのに secret が無いのは設定の誤りなので、例外（既定の onError がログに出して 500）にする */
