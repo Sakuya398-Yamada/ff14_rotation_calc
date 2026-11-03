@@ -27,7 +27,7 @@
       "network": "The shared timeline could not be loaded. Check your connection and reload the page. The timeline you were working on is left as it was."
     },
     "saveErrors": {
-      "invalid": "The timeline could not be saved because it contains content that cannot be saved.",
+      "invalid": "The timeline could not be saved because it contains data that cannot be saved.",
       "too_large": "The timeline is too large to save. Remove some entries and save again.",
       "rate_limited": "You saved too many times in a short period, so the timeline was not saved. Wait about a minute and save again.",
       "verification_failed": "The bot check could not be completed. Save after the check finishes (if this keeps happening, reload the page).",
@@ -40,7 +40,7 @@
   "saveTimelineDialog": {
     "title": "Save and share the timeline",
     "close": "Close save & share",
-    "intro": "Saving issues a share URL. Anyone who knows the URL can open this timeline.",
+    "intro": "Saving creates a share URL. Anyone who knows the URL can open this timeline.",
     "titleLabel": "Title (optional)",
     "titleNote": "Up to {{max}} characters. The title and the timeline cannot be changed after saving (editing and saving again gives a new URL).",
     "contentLabel": "Content (optional)",
@@ -94,7 +94,7 @@
     "triggerLabel": "Select job and level (current: {{job}} Lv{{level}})",
     "panelLabel": "Select job and level",
     "level": "Level",
-    "levelNote": "Below Lv100, which actions are available and their potencies are for reference only (alpha)",
+    "levelNote": "Below Lv100, action availability and potencies are for reference only (alpha)",
     "levelWarning": "Potencies at Lv{{level}} may not be accurate",
     "search": "Search jobs",
     "searchPlaceholder": "Filter by job name or abbreviation (e.g. BLM)",
