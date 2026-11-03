@@ -40,6 +40,20 @@ function computeBuffEndTime(startTime: number, duration: number | null): number 
 }
 
 /**
+ * startTime に付与したバフの終了時刻。maxDuration のあるバフ（戦嵐）が効果中なら、付け直さずに残り時間へ duration を足し、
+ * 付与時刻から maxDuration までで止める（重ねがけの延長）。それ以外は付与時刻から duration（付け直し）
+ */
+function computeAppliedEndTime(activeBuffs: ActiveBuff[], buffDef: BuffDefinition, startTime: number): number {
+  const refreshed = computeBuffEndTime(startTime, buffDef.duration);
+  const existing = activeBuffs.find((ab) => ab.buffId === buffDef.id);
+  if (buffDef.maxDuration === undefined || buffDef.duration === null || !existing) return refreshed;
+  return Math.min(
+    computeBuffEndTime(existing.endTime, buffDef.duration),
+    computeBuffEndTime(startTime, buffDef.maxDuration),
+  );
+}
+
+/**
  * 確率付きで付与したバフが time 時点で1回以上発動している確率 1 − Π(1 − p_i)。
  * 効果時間内の付与元だけを数え、付与元が無ければ undefined を返す。
  */
@@ -539,7 +553,7 @@ function applyBuffsOnDeplete(
     const newBuff: ActiveBuff = {
       buffId: buffDef.id,
       startTime,
-      endTime: computeBuffEndTime(startTime, buffDef.duration),
+      endTime: computeAppliedEndTime(activeBuffs, buffDef, startTime),
       stacks: buffDef.maxStacks,
     };
     const existingIdx = activeBuffs.findIndex((ab) => ab.buffId === buffDef.id);
@@ -564,7 +578,7 @@ function applyBuffAt(
   const newBuff: ActiveBuff = {
     buffId: buffDef.id,
     startTime,
-    endTime: computeBuffEndTime(startTime, buffDef.duration),
+    endTime: computeAppliedEndTime(activeBuffs, buffDef, startTime),
     stacks: buffDef.maxStacks,
   };
   const existingIdx = activeBuffs.findIndex((ab) => ab.buffId === buffDef.id);
@@ -1648,7 +1662,7 @@ export function resolveTimeline(
             const newBuff: ActiveBuff = {
               buffId,
               startTime,
-              endTime: computeBuffEndTime(startTime, buffDef.duration),
+              endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
               stacks: buffDef.maxStacks,
             };
             if (existingIdx >= 0) {
@@ -1672,7 +1686,7 @@ export function resolveTimeline(
             const newBuff: ActiveBuff = {
               buffId,
               startTime,
-              endTime: computeBuffEndTime(startTime, buffDef.duration),
+              endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
               stacks: buffDef.maxStacks,
             };
             if (existingIdx >= 0) {
@@ -1714,7 +1728,7 @@ export function resolveTimeline(
           const newBuff: ActiveBuff = {
             buffId,
             startTime,
-            endTime: computeBuffEndTime(startTime, buffDef.duration),
+            endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
             stacks: buffDef.maxStacks,
           };
           if (existingIdx >= 0) {
@@ -1746,6 +1760,19 @@ export function resolveTimeline(
         }
       }
 
+      // buffExtensions: 効果中のバフだけを延長する（原初の解放の戦嵐 +10 秒。上限は maxDuration）。
+      // 付け直しと同じく startTime を使用時刻にし、延長前の区間はこの時刻で表示を区切る
+      for (const ext of skill.buffExtensions ?? []) {
+        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === ext.buffId);
+        if (idx < 0) continue;
+        const maxDuration = buffDefMap.get(ext.buffId)?.maxDuration;
+        const extended = computeBuffEndTime(currentActiveBuffs[idx].endTime, ext.seconds);
+        const endTime = maxDuration === undefined
+          ? extended
+          : Math.min(extended, computeBuffEndTime(startTime, maxDuration));
+        currentActiveBuffs[idx] = { ...currentActiveBuffs[idx], startTime, endTime };
+      }
+
       // コンボ成立時のみのバフ適用
       if (!wsComboError && skill.comboBuffApplications) {
         for (const buffId of skill.comboBuffApplications) {
@@ -1757,7 +1784,7 @@ export function resolveTimeline(
           const newBuff: ActiveBuff = {
             buffId,
             startTime,
-            endTime: computeBuffEndTime(startTime, buffDef.duration),
+            endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
             stacks: buffDef.maxStacks,
           };
           if (existingIdx >= 0) {
@@ -1790,7 +1817,7 @@ export function resolveTimeline(
         const newBuff: ActiveBuff = {
           buffId,
           startTime,
-          endTime: computeBuffEndTime(startTime, buffDef.duration),
+          endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
           stacks: buffDef.maxStacks,
         };
         if (existingIdx >= 0) {

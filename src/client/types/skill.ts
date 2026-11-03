@@ -136,6 +136,11 @@ export interface Skill {
    * chargeKey は短縮対象スキルの cooldownGroup（未設定ならスキル ID）。未使用・チャージ満タンなら何もしない
    */
   cooldownReductionsOnUse?: { chargeKey: string; seconds: number }[];
+  /**
+   * 使ったときに、効果中のバフだけを seconds 秒延長する（戦士の原初の解放で戦嵐を 10 秒）。
+   * 効果中でなければ何もしない。上限はそのバフの BuffDefinition.maxDuration（付与時刻から数える。未設定なら上限なし）
+   */
+  buffExtensions?: { buffId: string; seconds: number }[];
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
@@ -451,6 +456,11 @@ export interface BuffDefinition {
   color: string;
   /** スタック付きバフの最大スタック数（未設定の場合はスタックなし） */
   maxStacks?: number;
+  /**
+   * 重ねがけで延長する上限（秒。戦士の戦嵐は 60）。設定すると、効果中に付与し直したとき付け直さずに残り時間へ
+   * duration を足し、付与時刻から maxDuration までで止める。Skill.buffExtensions の延長の上限にも使う
+   */
+  maxDuration?: number;
   /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
   acquiredLevel?: number;
   /** 排他グループ名（同グループのバフは1つだけアクティブ。新規適用時に既存を解除） */
