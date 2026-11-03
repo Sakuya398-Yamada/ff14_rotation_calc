@@ -1,7 +1,7 @@
 ---
 taskId: daily-triage
 title: 【毎日】Issue トリアージルーティン
-schedule: "0 19 * * *"
+schedule: "0 8 * * *"
 description: メモ inbox・知見ボードから Issue を起票し、priority:* の無い Open Issue に優先度を付けて、着手順のおすすめを実行ログに出す（実装と routine-ok の付与はしない）
 ---
 
