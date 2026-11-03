@@ -592,6 +592,8 @@ const BLM_BASE_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 5,
+    // 変化先（deriveHidden で作る 2 種は spread で引き継ぐ）とリキャストを共有する（#811）
+    cooldownGroup: "blm-transpose",
     acquiredLevel: 4,
     // 無極性時は何もしない（cooldown 消費のみ）。AF/UB 中は autoTransform で隠しスキルに切替 (Issue #218)
     buffApplications: [],
@@ -771,6 +773,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 5,
+    cooldownGroup: "blm-transpose",
     acquiredLevel: 4,
     hidden: true,
     buffApplications: ["umbral-ice-1"],
@@ -784,6 +787,7 @@ const BLM_BASE_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 5,
+    cooldownGroup: "blm-transpose",
     acquiredLevel: 4,
     hidden: true,
     buffApplications: ["astral-fire-1"],
