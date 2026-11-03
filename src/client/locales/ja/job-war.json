@@ -1,0 +1,106 @@
+{
+  "skills": {
+    "heavy-swing": {
+      "name": "ヘヴィスウィング"
+    },
+    "maim": {
+      "name": "メイム"
+    },
+    "storms-path": {
+      "name": "シュトルムヴィント"
+    },
+    "storms-eye": {
+      "name": "シュトルムブレハ"
+    },
+    "overpower": {
+      "name": "オーバーパワー"
+    },
+    "mythril-tempest": {
+      "name": "ミスリルテンペスト"
+    },
+    "inner-beast": {
+      "name": "原初の魂"
+    },
+    "fell-cleave": {
+      "name": "フェルクリーヴ"
+    },
+    "inner-chaos": {
+      "name": "インナーカオス"
+    },
+    "steel-cyclone": {
+      "name": "スチールサイクロン"
+    },
+    "decimate": {
+      "name": "デシメート"
+    },
+    "chaotic-cyclone": {
+      "name": "カオティックサイクロン"
+    },
+    "berserk": {
+      "name": "バーサク"
+    },
+    "inner-release": {
+      "name": "原初の解放"
+    },
+    "primal-wrath": {
+      "name": "原初の激震"
+    },
+    "primal-rend": {
+      "name": "プライマルレンド"
+    },
+    "primal-ruination": {
+      "name": "ルイネーター"
+    },
+    "tomahawk": {
+      "name": "トマホーク"
+    },
+    "infuriate": {
+      "name": "ウォークライ"
+    },
+    "upheaval": {
+      "name": "アップヒーバル"
+    },
+    "orogeny": {
+      "name": "オロジェネシス"
+    },
+    "onslaught": {
+      "name": "オンスロート"
+    }
+  },
+  "buffs": {
+    "surging-tempest": {
+      "name": "戦嵐",
+      "shortName": "戦嵐"
+    },
+    "berserk": {
+      "name": "バーサク",
+      "shortName": "ﾊﾞｰｻｸ"
+    },
+    "inner-release": {
+      "name": "原初の解放",
+      "shortName": "原初の\n解放"
+    },
+    "nascent-chaos": {
+      "name": "原初の混沌",
+      "shortName": "原初の\n混沌"
+    },
+    "primal-rend-ready": {
+      "name": "プライマルレンド実行可",
+      "shortName": "ﾚﾝﾄﾞ\n実行可"
+    },
+    "primal-ruination-ready": {
+      "name": "ルイネーター実行可",
+      "shortName": "ﾙｲﾈｰﾀｰ\n実行可"
+    },
+    "wrathful": {
+      "name": "原初の激震実行可",
+      "shortName": "激震\n実行可"
+    }
+  },
+  "resources": {
+    "beast-gauge": {
+      "name": "ビーストゲージ",
+      "shortName": "ﾋﾞｰｽﾄ\nｹﾞｰｼﾞ"
+    }
+  }
+}

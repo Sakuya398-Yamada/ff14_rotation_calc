@@ -1,0 +1,106 @@
+{
+  "skills": {
+    "heavy-swing": {
+      "name": "Heavy Swing"
+    },
+    "maim": {
+      "name": "Maim"
+    },
+    "storms-path": {
+      "name": "Storm's Path"
+    },
+    "storms-eye": {
+      "name": "Storm's Eye"
+    },
+    "overpower": {
+      "name": "Overpower"
+    },
+    "mythril-tempest": {
+      "name": "Mythril Tempest"
+    },
+    "inner-beast": {
+      "name": "Inner Beast"
+    },
+    "fell-cleave": {
+      "name": "Fell Cleave"
+    },
+    "inner-chaos": {
+      "name": "Inner Chaos"
+    },
+    "steel-cyclone": {
+      "name": "Steel Cyclone"
+    },
+    "decimate": {
+      "name": "Decimate"
+    },
+    "chaotic-cyclone": {
+      "name": "Chaotic Cyclone"
+    },
+    "berserk": {
+      "name": "Berserk"
+    },
+    "inner-release": {
+      "name": "Inner Release"
+    },
+    "primal-wrath": {
+      "name": "Primal Wrath"
+    },
+    "primal-rend": {
+      "name": "Primal Rend"
+    },
+    "primal-ruination": {
+      "name": "Primal Ruination"
+    },
+    "tomahawk": {
+      "name": "Tomahawk"
+    },
+    "infuriate": {
+      "name": "Infuriate"
+    },
+    "upheaval": {
+      "name": "Upheaval"
+    },
+    "orogeny": {
+      "name": "Orogeny"
+    },
+    "onslaught": {
+      "name": "Onslaught"
+    }
+  },
+  "buffs": {
+    "surging-tempest": {
+      "name": "Surging Tempest",
+      "shortName": "Surging\nTempest"
+    },
+    "berserk": {
+      "name": "Berserk",
+      "shortName": "Berserk"
+    },
+    "inner-release": {
+      "name": "Inner Release",
+      "shortName": "Inner\nRelease"
+    },
+    "nascent-chaos": {
+      "name": "Nascent Chaos",
+      "shortName": "Nascent\nChaos"
+    },
+    "primal-rend-ready": {
+      "name": "Primal Rend Ready",
+      "shortName": "P.Rend\nReady"
+    },
+    "primal-ruination-ready": {
+      "name": "Primal Ruination Ready",
+      "shortName": "P.Ruin\nReady"
+    },
+    "wrathful": {
+      "name": "Wrathful",
+      "shortName": "Wrathful"
+    }
+  },
+  "resources": {
+    "beast-gauge": {
+      "name": "Beast Gauge",
+      "shortName": "Beast\nGauge"
+    }
+  }
+}

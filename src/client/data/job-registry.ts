@@ -28,10 +28,13 @@ import { AST_BUFFS } from "./ast-buffs";
 import { SGE_ATTACK_SKILLS } from "./sge-skills";
 import { SGE_RESOURCES } from "./sge-resources";
 import { SGE_BUFFS } from "./sge-buffs";
+import { WAR_ATTACK_SKILLS } from "./war-skills";
+import { WAR_RESOURCES } from "./war-resources";
+import { WAR_BUFFS } from "./war-buffs";
 import type { Skill, BuffDefinition, ResourceDefinition } from "../types/skill";
 
 /** ジョブID */
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge" | "war";
 
 /** ジョブデータ定義 */
 export interface JobData {
@@ -56,4 +59,5 @@ export const JOB_DATA: Record<JobId, JobData> = {
   sch: { abbreviation: "SCH", skills: SCH_ATTACK_SKILLS, buffs: SCH_BUFFS, resources: SCH_RESOURCES },
   ast: { abbreviation: "AST", skills: AST_ATTACK_SKILLS, buffs: AST_BUFFS, resources: AST_RESOURCES },
   sge: { abbreviation: "SGE", skills: SGE_ATTACK_SKILLS, buffs: SGE_BUFFS, resources: SGE_RESOURCES },
+  war: { abbreviation: "WAR", skills: WAR_ATTACK_SKILLS, buffs: WAR_BUFFS, resources: WAR_RESOURCES },
 };
