@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CONTENT_CATALOG, CONTENT_CATEGORIES, contentName } from "../content-catalog";
+import { CONTENT_CATALOG, CONTENT_CATEGORIES } from "../content-catalog";
 
 describe("CONTENT_CATALOG", () => {
   it("保存済みの ID を変えたり消したりしていない（ID は D1 の content_id に残る）", () => {
@@ -15,19 +15,7 @@ describe("CONTENT_CATALOG", () => {
   it("ID は重複せず、区分はすべて定義済み", () => {
     const ids = CONTENT_CATALOG.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
-    const categoryIds = new Set(CONTENT_CATEGORIES.map((c) => c.id));
+    const categoryIds = new Set(CONTENT_CATEGORIES);
     expect(CONTENT_CATALOG.every((c) => categoryIds.has(c.category))).toBe(true);
-  });
-});
-
-describe("contentName", () => {
-  it("マスタにある ID は表示名を返す", () => {
-    expect(contentName("m4s")).toBe("至天の座アルカディア零式：ライトヘビー級4");
-    expect(contentName("dancing-mad")).toBe("絶妖星乱舞");
-  });
-
-  it("マスタに無い ID はそのまま返す", () => {
-    expect(contentName("m13s")).toBe("m13s");
-    expect(contentName("constructor")).toBe("constructor");
   });
 });

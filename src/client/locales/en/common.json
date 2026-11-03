@@ -97,7 +97,7 @@
     "levelNote": "Below Lv100, action availability and potencies are for reference only (alpha)",
     "levelWarning": "Potencies at Lv{{level}} may not be accurate",
     "search": "Search jobs",
-    "searchPlaceholder": "Filter by job name or abbreviation (e.g. BLM)",
+    "searchPlaceholder": "Filter by job name or abbreviation (e.g. Black Mage, BLM)",
     "recent": "Recently used jobs",
     "noMatch": "No matching jobs",
     "unsupportedTitle": "{{job}} (not supported)",

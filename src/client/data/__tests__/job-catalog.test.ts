@@ -4,11 +4,11 @@ import { JOB_DATA } from "../job-registry";
 import type { JobId } from "../job-registry";
 
 describe("JOB_CATALOG", () => {
-  it("実装済みジョブはすべてカタログにあり、名前と略称が JOB_DATA と一致する", () => {
+  // 名前は辞書の catalog にだけ持つ（#846）。抜けは display-names.test.ts で見る
+  it("実装済みジョブはすべてカタログにあり、略称が JOB_DATA と一致する", () => {
     for (const id of Object.keys(JOB_DATA) as JobId[]) {
       const entry = JOB_CATALOG.find((j) => j.id === id);
       expect(entry, `${id} が JOB_CATALOG にない`).toBeDefined();
-      expect(entry!.name).toBe(JOB_DATA[id].name);
       expect(entry!.abbreviation).toBe(JOB_DATA[id].abbreviation);
     }
   });

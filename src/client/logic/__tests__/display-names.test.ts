@@ -67,7 +67,7 @@ describe("名前の辞書", () => {
       ...JOB_CATALOG.map((j) => ({ ns, key: `jobs.${j.id}.name` })),
       ...JOB_ROLES.map((r) => ({ ns, key: `roles.${r.id}.name` })),
       ...CONTENT_CATALOG.map((c) => ({ ns, key: `contents.${c.id}.name` })),
-      ...CONTENT_CATEGORIES.map((c) => ({ ns, key: `contentCategories.${c.id}.name` })),
+      ...CONTENT_CATEGORIES.map((c) => ({ ns, key: `contentCategories.${c}.name` })),
     ];
     expect(missingKeys(entries)).toEqual([]);
   });
@@ -95,6 +95,7 @@ describe("名前を引く関数", () => {
     expect(jobName(i18next.t, "blm")).toBe("黒魔道士");
     expect(roleName(i18next.t, "caster")).toBe("遠隔魔法DPS");
     expect(contentName(i18next.t, "m4s")).toBe("至天の座アルカディア零式：ライトヘビー級4");
+    expect(contentName(i18next.t, "dancing-mad")).toBe("絶妖星乱舞");
     expect(contentCategoryName(i18next.t, "ultimate")).toBe("絶");
   });
 

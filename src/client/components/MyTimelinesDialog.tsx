@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
-import { JOB_CATALOG } from "../data/job-catalog";
 import { useLanguage } from "../i18n";
 import { fetchMyTimelines, type MyTimelineItem } from "../logic/my-timelines";
 import { buildShareUrl } from "../logic/shared-timeline";
+import { jobName } from "../logic/display-names";
 import "./my-timelines-dialog.css";
 
 interface MyTimelinesDialogProps {
@@ -12,10 +12,6 @@ interface MyTimelinesDialogProps {
   onClose: () => void;
   /** 閉じたときにフォーカスを戻す要素（開いたボタン） */
   returnFocusRef: RefObject<HTMLElement | null>;
-}
-
-function jobName(job: string): string {
-  return JOB_CATALOG.find((j) => j.id === job)?.name ?? job;
 }
 
 export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelinesDialogProps) {
@@ -122,7 +118,7 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
                 <a href={buildShareUrl(window.location.origin, item.id, lang)} data-timeline-id={item.id} style={styles.link}>
                   <span style={styles.itemTitle}>{item.title ?? t("myTimelinesDialog.untitled")}</span>
                   <span style={styles.itemMeta}>
-                    {t("myTimelinesDialog.jobLevel", { job: jobName(item.job), level: item.level })}
+                    {t("myTimelinesDialog.jobLevel", { job: jobName(t, item.job), level: item.level })}
                     <time dateTime={item.createdAt}>
                       {new Date(item.createdAt).toLocaleString(lang, { dateStyle: "medium", timeStyle: "short" })}
                     </time>

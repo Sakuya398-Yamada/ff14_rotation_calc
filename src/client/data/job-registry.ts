@@ -35,7 +35,6 @@ export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch
 
 /** ジョブデータ定義 */
 export interface JobData {
-  name: string;
   abbreviation: string;
   skills: Skill[];
   buffs: BuffDefinition[];
@@ -47,14 +46,14 @@ export interface JobData {
  * ジョブピッカーの表示順・ロールは job-catalog.ts の JOB_CATALOG で決まる。ここにジョブを追加したら JOB_CATALOG にも揃える。
  */
 export const JOB_DATA: Record<JobId, JobData> = {
-  whm: { name: "白魔道士", abbreviation: "WHM", skills: WHM_ATTACK_SKILLS, buffs: WHM_BUFFS, resources: WHM_RESOURCES },
-  drg: { name: "竜騎士", abbreviation: "DRG", skills: DRG_ATTACK_SKILLS, buffs: DRG_BUFFS, resources: DRG_RESOURCES },
-  brd: { name: "詩人", abbreviation: "BRD", skills: BRD_ATTACK_SKILLS, buffs: BRD_BUFFS, resources: BRD_RESOURCES },
-  pct: { name: "ピクトマンサー", abbreviation: "PCT", skills: PCT_ATTACK_SKILLS, buffs: PCT_BUFFS, resources: PCT_RESOURCES },
-  blm: { name: "黒魔道士", abbreviation: "BLM", skills: BLM_ATTACK_SKILLS, buffs: BLM_BUFFS, resources: BLM_RESOURCES },
-  sam: { name: "侍", abbreviation: "SAM", skills: SAM_ATTACK_SKILLS, buffs: SAM_BUFFS, resources: SAM_RESOURCES },
-  mnk: { name: "モンク", abbreviation: "MNK", skills: MNK_ATTACK_SKILLS, buffs: MNK_BUFFS, resources: MNK_RESOURCES },
-  sch: { name: "学者", abbreviation: "SCH", skills: SCH_ATTACK_SKILLS, buffs: SCH_BUFFS, resources: SCH_RESOURCES },
-  ast: { name: "占星術師", abbreviation: "AST", skills: AST_ATTACK_SKILLS, buffs: AST_BUFFS, resources: AST_RESOURCES },
-  sge: { name: "賢者", abbreviation: "SGE", skills: SGE_ATTACK_SKILLS, buffs: SGE_BUFFS, resources: SGE_RESOURCES },
+  whm: { abbreviation: "WHM", skills: WHM_ATTACK_SKILLS, buffs: WHM_BUFFS, resources: WHM_RESOURCES },
+  drg: { abbreviation: "DRG", skills: DRG_ATTACK_SKILLS, buffs: DRG_BUFFS, resources: DRG_RESOURCES },
+  brd: { abbreviation: "BRD", skills: BRD_ATTACK_SKILLS, buffs: BRD_BUFFS, resources: BRD_RESOURCES },
+  pct: { abbreviation: "PCT", skills: PCT_ATTACK_SKILLS, buffs: PCT_BUFFS, resources: PCT_RESOURCES },
+  blm: { abbreviation: "BLM", skills: BLM_ATTACK_SKILLS, buffs: BLM_BUFFS, resources: BLM_RESOURCES },
+  sam: { abbreviation: "SAM", skills: SAM_ATTACK_SKILLS, buffs: SAM_BUFFS, resources: SAM_RESOURCES },
+  mnk: { abbreviation: "MNK", skills: MNK_ATTACK_SKILLS, buffs: MNK_BUFFS, resources: MNK_RESOURCES },
+  sch: { abbreviation: "SCH", skills: SCH_ATTACK_SKILLS, buffs: SCH_BUFFS, resources: SCH_RESOURCES },
+  ast: { abbreviation: "AST", skills: AST_ATTACK_SKILLS, buffs: AST_BUFFS, resources: AST_RESOURCES },
+  sge: { abbreviation: "SGE", skills: SGE_ATTACK_SKILLS, buffs: SGE_BUFFS, resources: SGE_RESOURCES },
 };

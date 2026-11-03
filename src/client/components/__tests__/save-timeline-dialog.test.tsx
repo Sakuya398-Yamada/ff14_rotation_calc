@@ -349,6 +349,17 @@ describe("SaveTimelineDialog（英語）", () => {
     expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
   });
 
+  it("コンテンツと区分の名前を英語で出す", () => {
+    renderDialog();
+    const select = screen.getByLabelText("Content (optional)");
+
+    expect(within(select).getAllByRole("group").map((g) => g.getAttribute("label"))).toEqual(["Savage", "Ultimate"]);
+    expect(
+      within(within(select).getByRole("group", { name: "Ultimate" })).getByRole("option", { name: "Dancing Mad (Ultimate)" })
+    ).toHaveValue("dancing-mad");
+    expect(within(select).getByRole("option", { name: "AAC Light-heavyweight M1 (Savage)" })).toHaveValue("m1s");
+  });
+
   it("保存のエラーを英語で出す", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: "rate_limited" }, 429));
     renderDialog();
