@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vite
 import { render, screen, fireEvent, cleanup, act, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
+import i18next from "i18next";
 import { MyTimelinesDialog } from "../MyTimelinesDialog";
 import { MY_TIMELINES_ERROR_MESSAGE, type MyTimelineItem } from "../../logic/my-timelines";
 
@@ -170,5 +171,19 @@ describe("MyTimelinesDialog", () => {
     rerender(<MyTimelinesDialog {...props} open={false} />);
     expect(button).toHaveFocus();
     button.remove();
+  });
+});
+
+describe("MyTimelinesDialog（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("共有 URL を /en/t/<id> にし、作成日時を英語の書式で出す", async () => {
+    renderDialog();
+    const [link] = await screen.findAllByRole("link");
+
+    expect(link).toHaveAttribute("href", `${window.location.origin}/en/t/${item(1).id}`);
+    // 日付はテストを動かす環境のタイムゾーンで 22 日か 23 日になる
+    expect(link.querySelector("time")).toHaveTextContent(/^Oct 2[23], 2026, \d{1,2}:\d{2}\s?[AP]M$/);
   });
 });

@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION, deserializeAppState, type AppStateSnapshot, type PersistedAppState } from "./timeline-storage";
+import { languageBasePath, type Language } from "./language-path";
 
 /** 保存できるタイトルの最大長（サーバーの検証も同じ値を使う） */
 export const MAX_TITLE_LENGTH = 100;
@@ -31,9 +32,9 @@ export const SHARED_LOAD_ERROR_MESSAGES: Record<SharedLoadError, string> = {
   network: `共有タイムラインを読み込めませんでした。通信状況を確かめて、ページを再読み込みしてください。${KEPT_NOTE}`,
 };
 
-const SHARED_PATH_RE = /^\/t\/([^/]+)\/?$/;
+const SHARED_PATH_RE = /^(?:\/en)?\/t\/([^/]+)\/?$/;
 
-/** 共有 URL（/t/<id>）のパスから id を取り出す。共有 URL でなければ null */
+/** 共有 URL（/t/<id>、英語は /en/t/<id>）のパスから id を取り出す。共有 URL でなければ null */
 export function getSharedTimelineId(pathname: string): string | null {
   return SHARED_PATH_RE.exec(pathname)?.[1] ?? null;
 }
@@ -86,9 +87,9 @@ export async function loadSharedTimeline(
   };
 }
 
-/** 共有 URL（/t/<id>）を作る。getSharedTimelineId の逆 */
-export function buildShareUrl(origin: string, id: string): string {
-  return `${origin}/t/${id}`;
+/** 共有 URL（/t/<id>、英語は /en/t/<id>）を作る。getSharedTimelineId の逆 */
+export function buildShareUrl(origin: string, id: string, lang: Language = "ja"): string {
+  return `${origin}${languageBasePath(lang)}t/${id}`;
 }
 
 export type SaveError = "invalid" | "too_large" | "rate_limited" | "verification_failed" | "network";

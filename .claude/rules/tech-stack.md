@@ -8,6 +8,7 @@
 |---------|------|------|
 | 言語 | TypeScript | フロント・バックエンド統一 |
 | フロントエンド | React + Vite | SPA構成 |
+| 多言語化 | i18next 26 + react-i18next 17 | 初期化 `src/client/i18n.ts`、辞書 `src/client/locales/`。言語は URL のパスで決め（`/` は日本語、`/en/` は英語）、英語の HTML は `src/client/en/index.html`。規約は `coding-standards.md`「多言語化（i18n）」（#844） |
 | バックエンド | Hono (Cloudflare Workers) | 軽量・Web標準準拠。フロントと同じ Worker で動かす（エントリ: `src/server/index.ts`、設定: `wrangler.jsonc`）。レート制限は Rate Limiting バインディング `TIMELINE_RATE_LIMITER`（`wrangler.jsonc` の `ratelimits`）。保存のボット対策は Cloudflare Turnstile（sitekey はビルド時の `VITE_TURNSTILE_SITE_KEY`、secret は Worker の secret `TURNSTILE_SECRET_KEY`。ローカルは `.dev.vars`、PR のプレビューは `wrangler.jsonc` の `previews.vars` のテスト用。#479・#581） |
 | API 入力検証 | zod 4 + `@hono/zod-validator` | スキーマは `src/server/routes/*-schema.ts`。Worker の型は `@cloudflare/workers-types` を入れず `src/server/env.ts` に使う分だけ書く（client と共用の tsconfig の DOM 型とぶつかるため） |
 | DB | Cloudflare D1（SQLite） | Worker のバインディング `DB`（`wrangler.jsonc` の `d1_databases`）。PR のプレビューは全 PR で共有するプレビュー用の D1（同じファイルの `previews`。マイグレーションは `wrangler.preview-migrations.jsonc`。#581）。ローカルは `.wrangler/state` の D1 |
@@ -34,6 +35,7 @@
 ```
 [ブラウザ] → [Cloudflare Worker: ff14-rotation-calc]
                ├ /api/*  → Hono（src/server/index.ts）→ D1（バインディング DB）
+               ├ /en/*   → Hono → Static Assets の /en/（英語の en/index.html。バインディング ASSETS）
                └ それ以外 → Static Assets（dist/client。未知のパスは index.html）
 ```
 

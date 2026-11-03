@@ -5,9 +5,15 @@ export interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
 }
 
+export interface AssetsBinding {
+  fetch(request: Request): Promise<Response>;
+}
+
 export type Bindings = {
   // drizzle-orm/d1 の drizzle() に渡すだけなので型は付けない
   DB: unknown;
+  // Static Assets（wrangler.jsonc の assets.binding）
+  ASSETS: AssetsBinding;
   TIMELINE_RATE_LIMITER: RateLimiter;
   // Worker の secret。ローカルは .dev.vars、PR プレビューは wrangler.jsonc の previews.vars（どちらもテスト用）から読む
   TURNSTILE_SECRET_KEY?: string;

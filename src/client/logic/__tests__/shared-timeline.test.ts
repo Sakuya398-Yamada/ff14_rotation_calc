@@ -76,6 +76,17 @@ describe("getSharedTimelineId", () => {
   it.each(["/", "/t/", `/t/${ID}/extra`, `/x/${ID}`])("%s は共有 URL ではない", (pathname) => {
     expect(getSharedTimelineId(pathname)).toBeNull();
   });
+
+  it.each([`/en/t/${ID}`, `/en/t/${ID}/`])("英語の %s からも id を取り出す", (pathname) => {
+    expect(getSharedTimelineId(pathname)).toBe(ID);
+  });
+
+  it.each(["/en/", "/en/t/", `/en/t/${ID}/extra`, `/fr/t/${ID}`, `/en/en/t/${ID}`])(
+    "%s は共有 URL ではない",
+    (pathname) => {
+      expect(getSharedTimelineId(pathname)).toBeNull();
+    }
+  );
 });
 
 describe("loadSharedTimeline", () => {
@@ -202,6 +213,13 @@ describe("buildShareUrl", () => {
     const url = buildShareUrl("https://example.com", ID);
 
     expect(url).toBe(`https://example.com/t/${ID}`);
+    expect(getSharedTimelineId(new URL(url).pathname)).toBe(ID);
+  });
+
+  it("英語では <origin>/en/t/<id> を作り、getSharedTimelineId で同じ id に戻る", () => {
+    const url = buildShareUrl("https://example.com", ID, "en");
+
+    expect(url).toBe(`https://example.com/en/t/${ID}`);
     expect(getSharedTimelineId(new URL(url).pathname)).toBe(ID);
   });
 });

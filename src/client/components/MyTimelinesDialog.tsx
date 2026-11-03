@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { JOB_CATALOG } from "../data/job-catalog";
+import { useLanguage } from "../i18n";
 import { MY_TIMELINES_ERROR_MESSAGE, fetchMyTimelines, type MyTimelineItem } from "../logic/my-timelines";
 import { buildShareUrl } from "../logic/shared-timeline";
 import "./my-timelines-dialog.css";
@@ -17,6 +18,7 @@ function jobName(job: string): string {
 }
 
 export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelinesDialogProps) {
+  const lang = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
   // 取得中の一覧。閉じたときに中断する
   const loadControllerRef = useRef<AbortController | null>(null);
@@ -115,12 +117,12 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
             {items.map((item) => (
               <li key={item.id}>
                 {/* ページを移動して共有 URL の読み込み（作業中の置き換えの確認を含む）に任せる。リンクなので新しいタブでも開ける */}
-                <a href={buildShareUrl(window.location.origin, item.id)} data-timeline-id={item.id} style={styles.link}>
+                <a href={buildShareUrl(window.location.origin, item.id, lang)} data-timeline-id={item.id} style={styles.link}>
                   <span style={styles.itemTitle}>{item.title ?? "（無題）"}</span>
                   <span style={styles.itemMeta}>
                     {jobName(item.job)} Lv{item.level}・
                     <time dateTime={item.createdAt}>
-                      {new Date(item.createdAt).toLocaleString("ja-JP", { dateStyle: "medium", timeStyle: "short" })}
+                      {new Date(item.createdAt).toLocaleString(lang, { dateStyle: "medium", timeStyle: "short" })}
                     </time>
                   </span>
                 </a>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "../i18n";
 import type { PpsRange } from "../types/skill";
 import type { calcPps } from "../logic/resolve-timeline";
 
@@ -24,23 +26,31 @@ export function SummaryBar({
   ppsRange,
   duration,
 }: SummaryBarProps) {
+  const { t } = useTranslation();
+  const lang = useLanguage();
   const hasResult = totalExpectedPotency > 0;
   const items: { label: string; value: string; note?: string; accent?: boolean }[] = [
-    { label: "合計期待威力", value: hasResult ? totalExpectedPotency.toLocaleString("ja-JP") : EMPTY },
-    { label: "PPS 全体", value: overallPps ? overallPps.pps.toFixed(2) : EMPTY, accent: true },
     {
-      label: "PPS 区間",
+      label: t("summaryBar.totalExpectedPotency"),
+      value: hasResult ? totalExpectedPotency.toLocaleString(lang) : EMPTY,
+    },
+    { label: t("summaryBar.ppsOverall"), value: overallPps ? overallPps.pps.toFixed(2) : EMPTY, accent: true },
+    {
+      label: t("summaryBar.ppsRange"),
       value: rangePps ? rangePps.pps.toFixed(2) : EMPTY,
       note: ppsRange
         ? `${ppsRange.startTime.toFixed(1)}–${ppsRange.endTime.toFixed(1)}s`
-        : "PPS範囲で指定",
+        : t("summaryBar.ppsRangeUnset"),
     },
-    { label: "DoT 期待威力", value: hasResult ? dotExpectedPotency.toLocaleString("ja-JP") : EMPTY },
-    { label: "所要時間", value: duration > 0 ? `${duration.toFixed(1)}s` : EMPTY },
+    {
+      label: t("summaryBar.dotExpectedPotency"),
+      value: hasResult ? dotExpectedPotency.toLocaleString(lang) : EMPTY,
+    },
+    { label: t("summaryBar.duration"), value: duration > 0 ? `${duration.toFixed(1)}s` : EMPTY },
   ];
 
   return (
-    <section aria-label="集計" style={styles.bar}>
+    <section aria-label={t("summaryBar.regionLabel")} style={styles.bar}>
       {items.map((item) => (
         <div key={item.label} style={styles.cell}>
           <span style={styles.label}>

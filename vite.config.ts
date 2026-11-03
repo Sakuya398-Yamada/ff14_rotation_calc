@@ -2,6 +2,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   plugins: [
@@ -24,9 +25,25 @@ export default defineConfig({
     // プラグインが環境ごとに dist/client（フロント）と dist/ff14_rotation_calc（Worker）へ分けて出力する
     outDir: "../../dist",
   },
+  environments: {
+    client: {
+      build: {
+        // 英語のページ（/en/）は別の HTML にする。lang と title を言語ごとに持つため（#844）。
+        // トップレベルの build に書くと Worker の環境のビルドにも入り、HTML を Worker の入口として解決しようとして失敗する
+        rolldownOptions: {
+          input: {
+            index: fileURLToPath(new URL("./src/client/index.html", import.meta.url)),
+            en: fileURLToPath(new URL("./src/client/en/index.html", import.meta.url)),
+          },
+        },
+      },
+    },
+  },
   test: {
     // 既定では Vite の root（src/client）の下しか探さないので、src/server のテストも拾えるよう広げる（このパスはカレントディレクトリ基準）
     dir: "src",
+    // 文言を i18next から引くコンポーネントのテスト用に、ja で初期化する（dir と違い、このパスは Vite の root 基準）
+    setupFiles: ["./test-setup.ts"],
     // jsdom の UI テストは getByRole の多用で通常でも 0.1〜0.5 秒かかり、CPU が混むと 10 倍以上に伸びて既定の 5 秒を超える（#565）。
     // 同期のテストはタイムアウトで中断されず、遅すぎたら失敗扱いになるだけ。延ばして失うのは、終わらない非同期テストの検出が遅れることくらい
     testTimeout: 20_000,
