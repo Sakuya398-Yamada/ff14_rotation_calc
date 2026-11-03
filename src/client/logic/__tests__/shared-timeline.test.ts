@@ -151,6 +151,7 @@ describe("loadSharedTimeline", () => {
 
   it.each([
     ["404", "not_found", () => Promise.resolve(jsonResponse({ error: "not_found" }, 404))],
+    ["410（保存した人が削除した）", "deleted", () => Promise.resolve(jsonResponse({ error: "deleted" }, 410))],
     ["500", "network", () => Promise.resolve(jsonResponse({ error: "internal" }, 500))],
     ["通信断（fetch が reject する）", "network", () => Promise.reject(new TypeError("Failed to fetch"))],
     [

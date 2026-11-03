@@ -149,11 +149,12 @@ What you are working on (the selected job, level, stats, timeline, boss untarget
 Saving a timeline to the server with "Save & share" at the top of the screen creates a share URL. With this URL, the same timeline can be opened in other browsers and on other devices. You can optionally give it a title of up to 100 characters. You can also optionally choose the content (the Dawntrail savage raids and the ultimate raids of each expansion).
 
 - Anyone who knows the URL can open the timeline
-- A saved timeline, its title and its content cannot be changed or deleted later. If you edit it and save it again, it gets a different URL
+- A saved timeline, its title and its content cannot be changed later. If you edit it and save it again, it gets a different URL. You can delete it from the "Saved timelines" list described next
 - Opening a share URL replaces the timeline you are working on with the shared one (if your timeline has entries, you are asked to confirm before it is replaced)
 - When you open a share URL, the content chosen and the title given when it was saved are shown at the top of the screen
 - Editing and saving a timeline opened from a share URL does not change the original timeline (it is saved as a copy with a different URL)
-- If you save many times in a short period, you will not be able to save for a while
+- A timeline deleted by the person who saved it cannot be opened from its share URL (opening it shows that it was deleted)
+- If you save or delete many times in a short period, you will not be able to save or delete for a while
 - When you open the save dialog, a bot check (Cloudflare [Turnstile](https://www.cloudflare.com/application-services/products/turnstile/)) is shown, and you cannot save until the check is complete. For the check, information about your browser is sent to Cloudflare (only when you open the save dialog)
 
 ### Q. I want to find a saved timeline later
@@ -161,7 +162,8 @@ Saving a timeline to the server with "Save & share" at the top of the screen cre
 With "Saved timelines" at the top of the screen, you can list the timelines saved in this browser, newest first. Even if you forgot to note a share URL, you can choose the timeline from the list and open it. Each row of the list is a link to its share URL, so you can also open it in a new tab or copy the URL.
 
 - Only timelines saved in the same browser appear in the list (there is no login; your browser is identified by a cookie). Timelines saved in other browsers or on other devices do not appear
-- If you clear the browser's browsing data (site data), or 400 days pass without saving or viewing the list, the timelines saved until then no longer appear in the list. The timelines themselves remain on the server, so they can still be opened from their share URLs
+- With "Delete" on each row of the list, you can delete a saved timeline. Once deleted, it can no longer be opened from its share URL, even by people you shared the URL with. This cannot be undone
+- If you clear the browser's browsing data (site data), or 400 days pass without saving or viewing the list, the timelines saved until then no longer appear in the list and can no longer be deleted. The timelines themselves remain on the server, so they can still be opened from their share URLs
 
 ---
 
