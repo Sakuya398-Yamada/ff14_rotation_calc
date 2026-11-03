@@ -401,14 +401,13 @@ describe("Timeline（英語）", () => {
 
   // 名前はジョブの名前空間から引く（#846）
   it("スキル・バフ・リソースのレーンの名前を英語で出す", () => {
-    renderBrd(["barrage", "burst-shot", "refulgent-arrow"]);
+    renderBrd(["wanderers-minuet", "barrage", "burst-shot", "refulgent-arrow"]);
 
     expect(screen.getByAltText("Burst Shot")).toBeInTheDocument();
     expect(screen.getByTitle(/^Refulgent Arrow \(Potency: /)).toBeInTheDocument();
-    // バフレーンのラベルは英語の略称、title は正式名
-    expect(screen.getByTitle("Barrage")).toHaveTextContent(/^Barrage$/);
+    // レーンのラベルは英語の略称、title は正式名。略称と正式名が違うもので見る
+    expect(screen.getByTitle("The Wanderer's Minuet").textContent).toBe("Minuet");
     expect(screen.getByTitle(/^Barrage x1 /)).toBeInTheDocument();
-    // リソースレーンのラベルは英語の略称（\n で 2 行に分けている）
-    expect(screen.getByTitle("Soul Voice")).toHaveTextContent("Soul Voice");
+    expect(screen.getByTitle("Repertoire").textContent).toBe("Reper-\ntoire");
   });
 });
