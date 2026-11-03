@@ -6,7 +6,8 @@ export type DisplayEntry = ResolvedTimelineEntry & { skill: Skill; displaySkill:
 /** displayGroup でまとめたリソースレーンの描画単位 */
 export interface ResourceGroup {
   key: string;
-  label: string;
+  /** ラベルに名前を出すリソース（グループは先頭のリソース） */
+  labelResourceId: string;
   resources: ResourceDefinition[];
   /** displayGroupPriority 昇順で並べたリソース（統合スロット描画時の充填順） */
   sortedResources: ResourceDefinition[];
@@ -20,6 +21,5 @@ export interface ResourceGroup {
 export interface CooldownSpan {
   startTime: number;
   endTime: number;
-  skillName: string;
   icon: string;
 }

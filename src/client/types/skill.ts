@@ -647,10 +647,10 @@ export interface ResolvedTimelineEntry {
   unconfirmedProcBuffs?: string[];
   /**
    * buffConsumptionAnyOf の fallbackPotency で威力を期待値に補正したときの、消費したバフと発動確率 P。
-   * 付与元が無いフィラー枠は P = 0。fallbackSkillName は出なかったときに撃つ GCD の名前（#842）。
+   * 付与元が無いフィラー枠は P = 0。fallbackSkillId は出なかったときに撃つ GCD の ID（#842。名前は表示するときに引く。#846）。
    * 乱れ撃ちのような確定のバフを消費したときは無い
    */
-  consumedProc?: { buffId: string; procRate: number; fallbackSkillName?: string };
+  consumedProc?: { buffId: string; procRate: number; fallbackSkillId?: string };
   /**
    * 確率付与（buffApplicationProcRates）が、すでに付いているバフに重なって無駄になる確率（付与時点の P × 付与確率）。
    * 効いているバフに重ねたときだけ持つ（#842）

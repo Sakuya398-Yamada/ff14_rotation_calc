@@ -6,8 +6,6 @@ import type { ActiveBuff, BuffDefinition } from "../types/skill";
  */
 export interface BuffContribution {
   buffId: string;
-  name: string;
-  shortName: string;
   icon: string;
   color: string;
   stacks?: number;
@@ -76,8 +74,6 @@ export function getBuffContributions(
 
     result.push({
       buffId: ab.buffId,
-      name: def.name,
-      shortName: def.shortName,
       icon: def.icon,
       color: def.color,
       stacks: ab.stacks,

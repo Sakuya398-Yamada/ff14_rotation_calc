@@ -1,6 +1,8 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useTranslation } from "react-i18next";
-import type { Skill, ResolvedTimelineEntry, CharacterStats, BuffDefinition } from "../../types/skill";
+import type { Skill, ResolvedTimelineEntry, CharacterStats } from "../../types/skill";
+import type { JobId } from "../../data/job-registry";
+import { skillName } from "../../logic/display-names";
 import type { DisplayEntry } from "./types";
 import { calcEntryPotencyBreakdown } from "../../logic/expected-potency";
 import {
@@ -25,7 +27,7 @@ interface SkillLanesProps {
   entriesWithErrors: Set<string>;
   getResolvedEntryRecast: (entry: ResolvedTimelineEntry, skill: Skill) => number;
   stats: CharacterStats;
-  buffDefMap: Map<string, BuffDefinition>;
+  jobId: JobId;
   selectedEntryUid: string | null;
   draggingEntryUid: string | null;
   labelBg: string;
@@ -76,7 +78,7 @@ export function SkillLanes({
   entriesWithErrors,
   getResolvedEntryRecast,
   stats,
-  buffDefMap,
+  jobId,
   selectedEntryUid,
   draggingEntryUid,
   labelBg,
@@ -100,17 +102,18 @@ export function SkillLanes({
             const expectedPot = breakdown ? breakdown.total : null;
             const targetBreakdown = formatTargetBreakdown(breakdown, t);
             const consumedProcLabel = entry.consumedProc
-              ? ` / ${formatConsumedProc(entry.consumedProc, buffDefMap)}`
+              ? ` / ${formatConsumedProc(entry.consumedProc, jobId)}`
               : "";
             // 上書きの表示はホークアイだけ（ほかのジョブの確率付与は対象外。#842）
             const wastedProcLabel = entry.wastedProc?.buffId === PROC_OUTCOME_BUFF_ID
-              ? ` / ${formatWastedProc(entry.wastedProc, buffDefMap)}`
+              ? ` / ${formatWastedProc(entry.wastedProc, jobId)}`
               : "";
             // 付与元でなくなった指定（レベルを下げたバイト系など）は解決で無視されるので出さない
             const procOccurredLabel = entry.procOccurred !== undefined && isProcOutcomeSource(entry.displaySkill)
-              ? formatProcOccurred(entry.procOccurred, buffDefMap)
+              ? formatProcOccurred(entry.procOccurred, jobId)
               : null;
             const isAutoTransformed = entry.resolvedSkillId !== entry.skillId;
+            const name = skillName(t, jobId, entry.displaySkill.id);
             // castTime > recast の場合は次 GCD が打てるのは castTime 後（resolve-timeline.ts と整合）。
             // skillBlock の幅を max(castTime, recast) に拡張し、各バーを blockDuration 基準で割合計算する。
             const blockDuration = Math.max(castTime, recast);
@@ -166,12 +169,12 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${castTime > 0 ? ` ${t("skillLanes.cast", { time: castTime })}` : ` ${t("skillLanes.instant")}`}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? ` ⚠ ${t("skillLanes.comboBroken")}` : ""}${entry.unconfirmedProcBuffs ? ` ⚠ ${t("skillLanes.unconfirmedProc")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
+                  title={`${name}${isAutoTransformed ? ` (← ${skillName(t, jobId, entry.skill.id)})` : ""} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${castTime > 0 ? ` ${t("skillLanes.cast", { time: castTime })}` : ` ${t("skillLanes.instant")}`}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? ` ⚠ ${t("skillLanes.comboBroken")}` : ""}${entry.unconfirmedProcBuffs ? ` ⚠ ${t("skillLanes.unconfirmedProc")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
                     src={entry.displaySkill.icon}
-                    alt={entry.displaySkill.name}
+                    alt={name}
                     style={styles.iconImage}
                     draggable={false}
                   />
@@ -206,6 +209,7 @@ export function SkillLanes({
               : null;
             const expectedPot = breakdown ? breakdown.total : null;
             const targetBreakdown = formatTargetBreakdown(breakdown, t);
+            const name = skillName(t, jobId, entry.displaySkill.id);
             return (
               <div
                 key={entry.uid}
@@ -224,12 +228,12 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
+                  title={`${name} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
                     src={entry.displaySkill.icon}
-                    alt={entry.displaySkill.name}
+                    alt={name}
                     style={styles.iconImage}
                     draggable={false}
                   />

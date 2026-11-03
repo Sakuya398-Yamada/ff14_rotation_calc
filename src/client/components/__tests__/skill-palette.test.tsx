@@ -5,6 +5,7 @@ import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { SkillPalette } from "../SkillPalette";
 import type { Skill, CharacterStats } from "../../types/skill";
+import type { JobId } from "../../data/job-registry";
 
 function makeSkill(overrides: Partial<Skill> & { id: string; name: string }): Skill {
   return {
@@ -20,7 +21,7 @@ function makeSkill(overrides: Partial<Skill> & { id: string; name: string }): Sk
 }
 
 const whmSkills: Skill[] = [
-  makeSkill({ id: "glare-3", name: "グレア", potency: 340 }),
+  makeSkill({ id: "glare", name: "グレア", potency: 340 }),
   makeSkill({ id: "assize", name: "アサイズ", potency: 400, type: "ogcd" }),
   makeSkill({ id: "hidden-skill", name: "非表示スキル", hidden: true }),
 ];
@@ -38,6 +39,7 @@ const defaultStats: CharacterStats = {
 
 function renderPalette(overrides: Partial<Parameters<typeof SkillPalette>[0]> = {}) {
   const props = {
+    jobId: "whm" as JobId,
     skills: whmSkills,
     stats: defaultStats,
     onStatsChange: vi.fn(),
@@ -63,14 +65,15 @@ describe("SkillPalette", () => {
     renderPalette();
     expect(screen.getByText("グレア")).toBeInTheDocument();
     expect(screen.getByText("アサイズ")).toBeInTheDocument();
-    expect(screen.queryByText("非表示スキル")).not.toBeInTheDocument();
+    // 辞書に無い ID は ID のまま出るので、ID で探す
+    expect(screen.queryByText("hidden-skill")).not.toBeInTheDocument();
   });
 
   it("skills prop の変更（ジョブ切替相当）でスキル一覧が更新される", () => {
     const { props, rerender } = renderPalette();
     expect(screen.getByText("グレア")).toBeInTheDocument();
 
-    rerender(<SkillPalette {...props} skills={blmSkills} />);
+    rerender(<SkillPalette {...props} jobId="blm" skills={blmSkills} />);
     expect(screen.getByText("ファイジャ")).toBeInTheDocument();
     expect(screen.queryByText("グレア")).not.toBeInTheDocument();
   });
@@ -105,7 +108,7 @@ describe("SkillPalette（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
 
-  it("見出し・ステータス・威力を英語で出す（スキル名は日本語のまま）", () => {
+  it("見出し・ステータス・威力・スキル名を英語で出す", () => {
     renderPalette();
 
     expect(screen.getByRole("heading", { name: "Job palette" })).toBeInTheDocument();
@@ -113,7 +116,8 @@ describe("SkillPalette（英語）", () => {
     expect(screen.getByText("Critical Hit")).toBeInTheDocument();
     expect(screen.getByText(/^Rate \d+\.\d% \/ Multiplier x\d\.\d{3}$/)).toBeInTheDocument();
     expect(screen.getByText("Potency 340")).toBeInTheDocument();
-    expect(screen.getByTitle("グレア (Potency: 340)")).toBeInTheDocument();
+    expect(screen.getByText("Glare")).toBeInTheDocument();
+    expect(screen.getByTitle("Glare (Potency: 340)")).toBeInTheDocument();
     expect(screen.queryByText("ジョブパレット")).not.toBeInTheDocument();
   });
 });

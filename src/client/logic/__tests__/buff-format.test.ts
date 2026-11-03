@@ -102,18 +102,16 @@ describe("formatProcRateShort", () => {
 
 describe("formatConsumedProc", () => {
   it("バフ名を引いて「<バフ名>発動確率 xx.x%」にする", () => {
-    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "ホークアイ" }]]);
-    expect(formatConsumedProc({ buffId: "b", procRate: 0.35 }, buffDefMap)).toBe("ホークアイ発動確率 35.0%");
+    expect(formatConsumedProc({ buffId: "hawks-eye", procRate: 0.35 }, "brd")).toBe("ホークアイ発動確率 35.0%");
   });
 
-  it("バフ定義が無いときは buffId を名前の代わりに使う", () => {
-    expect(formatConsumedProc({ buffId: "b", procRate: 0.35 }, new Map())).toBe("b発動確率 35.0%");
+  it("辞書に無いバフは buffId を名前の代わりに使う", () => {
+    expect(formatConsumedProc({ buffId: "b", procRate: 0.35 }, "brd")).toBe("b発動確率 35.0%");
   });
 
   // 出なかった分岐で撃つ GCD を添えて、フィラー枠であることを示す (#842)
-  it("fallback のスキル名があれば「（不発時は<スキル名>）」を添える", () => {
-    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "ホークアイ" }]]);
-    expect(formatConsumedProc({ buffId: "b", procRate: 0.5775, fallbackSkillName: "バーストショット" }, buffDefMap)).toBe(
+  it("fallback のスキルがあれば、名前を引いて「（不発時は<スキル名>）」を添える", () => {
+    expect(formatConsumedProc({ buffId: "hawks-eye", procRate: 0.5775, fallbackSkillId: "burst-shot" }, "brd")).toBe(
       "ホークアイ発動確率 57.8%（不発時はバーストショット）",
     );
   });
@@ -121,9 +119,8 @@ describe("formatConsumedProc", () => {
 
 describe("formatWastedProc", () => {
   it("バフ名を引いて「<バフ名>上書き確率 xx.x%」にする", () => {
-    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "ホークアイ" }]]);
     // 0.35 × 0.35 = 0.12249999999999998 を 12.2 にしない
-    expect(formatWastedProc({ buffId: "b", rate: 0.35 * 0.35 }, buffDefMap)).toBe("ホークアイ上書き確率 12.3%");
+    expect(formatWastedProc({ buffId: "hawks-eye", rate: 0.35 * 0.35 }, "brd")).toBe("ホークアイ上書き確率 12.3%");
   });
 });
 
@@ -156,7 +153,6 @@ describe("buff-format（英語）", () => {
   afterEach(() => i18next.changeLanguage("ja"));
 
   it("効果の要約と、発動確率・上書き確率の文を英語で出す", () => {
-    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "Hawk's Eye" }]]);
 
     expect(
       describeBuffEffects(
@@ -167,9 +163,9 @@ describe("buff-format（英語）", () => {
         ])
       )
     ).toEqual(["Potency ×1.10", "Guaranteed critical hit", "Instant cast (some actions)"]);
-    expect(formatConsumedProc({ buffId: "b", procRate: 0.35, fallbackSkillName: "Burst Shot" }, buffDefMap)).toBe(
+    expect(formatConsumedProc({ buffId: "hawks-eye", procRate: 0.35, fallbackSkillId: "burst-shot" }, "brd")).toBe(
       "Hawk's Eye proc chance 35.0% (Burst Shot if it doesn't proc)",
     );
-    expect(formatWastedProc({ buffId: "b", rate: 0.35 * 0.35 }, buffDefMap)).toBe("Hawk's Eye overwrite chance 12.3%");
+    expect(formatWastedProc({ buffId: "hawks-eye", rate: 0.35 * 0.35 }, "brd")).toBe("Hawk's Eye overwrite chance 12.3%");
   });
 });

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
 import type { Skill, CharacterStats } from "../types/skill";
+import type { JobId } from "../data/job-registry";
+import { skillName } from "../logic/display-names";
 import type { PaletteDragData } from "./timeline/dnd-types";
 import { calcCritRate, calcCritMultiplier, calcDhRate, calcDetMultiplier, calcGcd } from "../logic/stat-calc";
 import "./timeline.css";
@@ -32,8 +34,9 @@ function CollapsibleSection({ title, defaultOpen = true, children }: Collapsible
 }
 
 /** dnd-kit のドラッグ元となるスキルカード（タッチ・マウス両対応） */
-function PaletteSkillCard({ skill }: { skill: Skill }) {
+function PaletteSkillCard({ jobId, skill }: { jobId: JobId; skill: Skill }) {
   const { t } = useTranslation();
+  const name = skillName(t, jobId, skill.id);
   const data: PaletteDragData = { source: "palette", skillId: skill.id, skillType: skill.type };
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: `palette-${skill.id}`,
@@ -54,16 +57,16 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
         touchAction: "manipulation",
         ...(isDragging ? { opacity: 0.5 } : {}),
       }}
-      title={t("skillPalette.cardTitle", { name: skill.name, potency: skill.potency })}
+      title={t("skillPalette.cardTitle", { name, potency: skill.potency })}
     >
       <img
         src={skill.icon}
-        alt={skill.name}
+        alt={name}
         style={{ ...styles.skillIcon, borderRadius: isOgcd ? "50%" : "var(--radius-md)" }}
         draggable={false}
       />
       <div style={styles.skillInfo}>
-        <div style={styles.skillName}>{skill.name}</div>
+        <div style={styles.skillName}>{name}</div>
         <div className="num" style={styles.skillPotency}>{t("skillPalette.potency", { potency: skill.potency })}</div>
       </div>
     </div>
@@ -71,12 +74,14 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
 }
 
 interface SkillPaletteProps {
+  jobId: JobId;
   skills: Skill[];
   stats: CharacterStats;
   onStatsChange: (stats: CharacterStats) => void;
 }
 
 export function SkillPalette({
+  jobId,
   skills,
   stats,
   onStatsChange,
@@ -134,7 +139,7 @@ export function SkillPalette({
       <CollapsibleSection title="GCD">
         <div style={styles.skillGrid}>
           {gcdSkills.map((skill) => (
-            <PaletteSkillCard key={skill.id} skill={skill} />
+            <PaletteSkillCard key={skill.id} jobId={jobId} skill={skill} />
           ))}
         </div>
       </CollapsibleSection>
@@ -142,7 +147,7 @@ export function SkillPalette({
       <CollapsibleSection title="oGCD">
         <div style={styles.skillGrid}>
           {ogcdSkills.map((skill) => (
-            <PaletteSkillCard key={skill.id} skill={skill} />
+            <PaletteSkillCard key={skill.id} jobId={jobId} skill={skill} />
           ))}
         </div>
       </CollapsibleSection>

@@ -1363,7 +1363,7 @@ export function resolveTimeline(
         consumedProc = {
           buffId: anyOfMatchedBuffId,
           procRate,
-          ...(fallbackSkill ? { fallbackSkillName: fallbackSkill.name } : {}),
+          ...(fallbackSkill ? { fallbackSkillId: fallbackSkill.id } : {}),
         };
       }
     }

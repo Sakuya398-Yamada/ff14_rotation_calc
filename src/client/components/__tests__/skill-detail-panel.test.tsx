@@ -16,6 +16,7 @@ import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
 import { BLM_BUFFS } from "../../data/blm-buffs";
 import { BLM_RESOURCES } from "../../data/blm-resources";
 import type { BuffDefinition, CharacterStats, ResourceDefinition, Skill } from "../../types/skill";
+import type { JobId } from "../../data/job-registry";
 
 const stats: CharacterStats = {
   critical: 3000,
@@ -24,7 +25,7 @@ const stats: CharacterStats = {
   speed: 800,
 };
 
-function setupJob(skills: Skill[], buffs: BuffDefinition[], resources: ResourceDefinition[]) {
+function setupJob(jobId: JobId, skills: Skill[], buffs: BuffDefinition[], resources: ResourceDefinition[]) {
   const buffIds = new Set(buffs.map((b) => b.id));
   const resourceIds = new Set(resources.map((r) => r.id));
   const skillMap = getAllSkillMapForLevel(
@@ -35,17 +36,17 @@ function setupJob(skills: Skill[], buffs: BuffDefinition[], resources: ResourceD
     resourceIds
   );
   return {
+    jobId,
     skillMap,
     buffs,
     resources,
     buffDefMap: new Map(buffs.map((b) => [b.id, b])),
-    resourceDefMap: new Map(resources.map((r) => [r.id, r])),
   };
 }
 
-const BRD = setupJob(BRD_ATTACK_SKILLS, BRD_BUFFS, BRD_RESOURCES);
-const MNK = setupJob(MNK_ATTACK_SKILLS, MNK_BUFFS, MNK_RESOURCES);
-const BLM = setupJob(BLM_ATTACK_SKILLS, BLM_BUFFS, BLM_RESOURCES);
+const BRD = setupJob("brd", BRD_ATTACK_SKILLS, BRD_BUFFS, BRD_RESOURCES);
+const MNK = setupJob("mnk", MNK_ATTACK_SKILLS, MNK_BUFFS, MNK_RESOURCES);
+const BLM = setupJob("blm", BLM_ATTACK_SKILLS, BLM_BUFFS, BLM_RESOURCES);
 
 /** skillIds を解決し、最後のエントリの詳細パネルを描画する */
 function renderLastEntry(skillIds: string[], job = BRD) {
@@ -61,8 +62,8 @@ function renderLastEntry(skillIds: string[], job = BRD) {
     <SkillDetailPanel
       entry={entry}
       resolvedSkill={job.skillMap.get(entry.resolvedSkillId)!}
+      jobId={job.jobId}
       buffDefMap={job.buffDefMap}
-      resourceDefMap={job.resourceDefMap}
       stats={stats}
       onClose={vi.fn()}
       onManualStartTimeChange={vi.fn()}
@@ -87,8 +88,8 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
       <SkillDetailPanel
         entry={entry}
         resolvedSkill={job.skillMap.get(entry.resolvedSkillId)!}
+        jobId={job.jobId}
         buffDefMap={job.buffDefMap}
-        resourceDefMap={job.resourceDefMap}
         stats={stats}
         onClose={vi.fn()}
         onManualStartTimeChange={vi.fn()}
@@ -237,12 +238,13 @@ describe("SkillDetailPanel（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
 
-  it("見出しと発生の指定を英語で出す（バフ名は日本語のまま）", () => {
+  it("見出しと発生の指定を英語で出す", () => {
     renderLastEntry(["burst-shot"]);
 
     expect(screen.getByRole("complementary", { name: "Action details panel" })).toBeInTheDocument();
     expect(screen.getByText("Base potency")).toBeInTheDocument();
-    const group = screen.getByRole("group", { name: "ホークアイ proc" });
+    expect(screen.getByAltText("Burst Shot")).toBeInTheDocument();
+    const group = screen.getByRole("group", { name: "Hawk's Eye proc" });
     expect(within(group).getAllByRole("button").map((b) => b.textContent)).toEqual(["Expected", "Proc", "No proc"]);
     expect(screen.queryByText("基本威力")).not.toBeInTheDocument();
   });
@@ -250,7 +252,7 @@ describe("SkillDetailPanel（英語）", () => {
   it("エラーの文言を英語で出す", () => {
     renderLastEntry(["pitch-perfect"]);
 
-    expect(screen.getByText(/Buff condition not met: 旅神のメヌエット/)).toBeInTheDocument();
-    expect(screen.getByText(/Insufficient resources: 詩心/)).toBeInTheDocument();
+    expect(screen.getByText(/Buff condition not met: The Wanderer's Minuet/)).toBeInTheDocument();
+    expect(screen.getByText(/Insufficient resources: Repertoire/)).toBeInTheDocument();
   });
 });

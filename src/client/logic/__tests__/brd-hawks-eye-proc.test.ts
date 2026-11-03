@@ -131,7 +131,7 @@ describe("BRD: ホークアイ proc 確率の期待値反映 (#118 / #427) と�
     const refulgent = result.entries[0];
     expect(refulgent.comboErrors).toEqual([]);
     expect(refulgent.resolvedPotency).toBe(220);
-    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 0, fallbackSkillName: "バーストショット" });
+    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 0, fallbackSkillId: "burst-shot" });
     expect(refulgent.activeBuffs.find((ab) => ab.buffId === "hawks-eye")?.procRate).toBeCloseTo(0.35, 10);
   });
 
@@ -319,7 +319,7 @@ describe("BRD: ホークアイの発生の有無を付与元ごとに指定す�
     expect(refulgent.recastError).toBeFalsy();
     expect(refulgent.comboErrors).toEqual([]);
     expect(refulgent.resolvedPotency).toBe(280);
-    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 1, fallbackSkillName: "バーストショット" });
+    expect(refulgent.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 1, fallbackSkillId: "burst-shot" });
     // 出なかった分岐が無い（1 − P = 0）ので、ホークアイは付け直さない (#842)
     expect(hasHawksEye(refulgent)).toBe(false);
   });
@@ -439,17 +439,17 @@ describe("BRD: 消費側の出なかった分岐の付与確率を伝える (#84
 
   // 1 本目は付与元が無い（P = 0）フィラー枠なので、fallback の付与確率がそのまま 2 本目の P になる
   it.each([
-    [70, "refulgent-arrow", "ヘヴィショット", 160, 0.2],
-    [80, "shadowbite", "クイックノック", 110, 0.2],
-    [100, "shadowbite", "ラドンバイト", 140, 0.35],
-  ] as const)("Lv%s の %s は、出なかった分岐で %s（威力 %i・付与確率 %s）を撃つ", (level, skillId, fallbackName, fallbackPotency, rate) => {
+    [70, "refulgent-arrow", "heavy-shot", 160, 0.2],
+    [80, "shadowbite", "quick-nock", 110, 0.2],
+    [100, "shadowbite", "ladonsbite", 140, 0.35],
+  ] as const)("Lv%s の %s は、出なかった分岐で %s（威力 %i・付与確率 %s）を撃つ", (level, skillId, fallbackSkillId, fallbackPotency, rate) => {
     const result = resolveAtLevel([entry(skillId), entry(skillId)], level);
 
     const [first, second] = result.entries;
     expect(first.resolvedSkillId).toBe(skillId);
     expect(first.comboErrors).toEqual([]);
     expect(first.resolvedPotency).toBe(fallbackPotency);
-    expect(first.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 0, fallbackSkillName: fallbackName });
+    expect(first.consumedProc).toEqual({ buffId: "hawks-eye", procRate: 0, fallbackSkillId });
     expect(second.recastError).toBeFalsy();
     expect(second.comboErrors).toEqual([]);
     expect(second.consumedProc?.procRate).toBeCloseTo(rate, 10);

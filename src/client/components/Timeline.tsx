@@ -20,9 +20,11 @@ import { DotLanes } from "./timeline/DotLanes";
 import { TimelineOverlays } from "./timeline/TimelineOverlays";
 import { TimelineRuler } from "./timeline/TimelineRuler";
 import { DeleteZone } from "./timeline/DeleteZone";
+import type { JobId } from "../data/job-registry";
 import "./timeline.css";
 
 interface TimelineProps {
+  jobId: JobId;
   skills: Skill[];
   allSkillMap: Map<string, Skill>;
   resolvedEntries: ResolvedTimelineEntry[];
@@ -48,6 +50,7 @@ interface TimelineProps {
 }
 
 export function Timeline({
+  jobId,
   skills,
   allSkillMap,
   resolvedEntries,
@@ -78,7 +81,8 @@ export function Timeline({
   const resourceGroups = useMemo(() => {
     const groups: {
       key: string;
-      label: string;
+      /** ラベルに名前を出すリソース（グループは先頭のリソース） */
+      labelResourceId: string;
       resources: typeof resources;
       /** displayGroupPriority 昇順で並べたリソース（統合スロット描画時の充填順） */
       sortedResources: typeof resources;
@@ -104,7 +108,7 @@ export function Timeline({
             : undefined;
           groups.push({
             key: res.displayGroup,
-            label: res.shortName,
+            labelResourceId: res.id,
             resources: groupResources,
             sortedResources,
             groupMaxStacks,
@@ -112,7 +116,7 @@ export function Timeline({
           });
         }
       } else {
-        groups.push({ key: res.id, label: res.shortName, resources: [res], sortedResources: [res] });
+        groups.push({ key: res.id, labelResourceId: res.id, resources: [res], sortedResources: [res] });
       }
     }
     return groups;
@@ -134,11 +138,6 @@ export function Timeline({
   );
   // 全スキルマップ（autoTransform対象を含む表示・計算用）
   const skillMap = allSkillMap;
-
-  const buffDefMap = useMemo(
-    () => new Map(buffs.map((b) => [b.id, b])),
-    [buffs]
-  );
 
   const getRecastTime = useCallback(
     (skill: Skill) => {
@@ -206,9 +205,9 @@ export function Timeline({
     onMoveEntry,
   });
 
-  // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, skillName, icon}]
+  // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, icon}]
   const cooldownSpans = useMemo(() => {
-    const spans: Map<string, { startTime: number; endTime: number; skillName: string; icon: string }[]> = new Map();
+    const spans: Map<string, { startTime: number; endTime: number; icon: string }[]> = new Map();
     for (const entry of resolvedEntries) {
       const skill = skillMap.get(entry.resolvedSkillId) ?? skillMap.get(entry.skillId);
       if (!skill || skill.cooldown === undefined) continue;
@@ -220,7 +219,6 @@ export function Timeline({
       spans.get(skill.id)!.push({
         startTime: entry.startTime,
         endTime: Math.round((entry.startTime + skill.cooldown) * 1000) / 1000,
-        skillName: skill.name,
         icon: skill.icon,
       });
     }
@@ -402,7 +400,7 @@ export function Timeline({
                 entriesWithErrors={entriesWithErrors}
                 getResolvedEntryRecast={getResolvedEntryRecast}
                 stats={stats}
-                buffDefMap={buffDefMap}
+                jobId={jobId}
                 selectedEntryUid={selectedEntryUid}
                 draggingEntryUid={draggingEntryUid}
                 labelBg={labelBg}
@@ -412,6 +410,7 @@ export function Timeline({
               {/* リソースゲージ行 */}
               {showResources && (
                 <ResourceLanes
+                  jobId={jobId}
                   resourceGroups={resourceGroups}
                   resolvedEntries={resolvedEntries}
                   resourceTicks={resourceTicks}
@@ -422,6 +421,7 @@ export function Timeline({
               {/* バフレーン */}
               {showBuffs && (
                 <BuffLanes
+                  jobId={jobId}
                   buffs={buffs}
                   buffTimespans={buffTimespans}
                   totalDuration={totalDuration}
@@ -432,6 +432,7 @@ export function Timeline({
               {/* リキャストレーン */}
               {showRecasts && (
                 <RecastLanes
+                  jobId={jobId}
                   cooldownSpans={cooldownSpans}
                   skillMap={skillMap}
                   labelBg={labelBg}
@@ -441,9 +442,9 @@ export function Timeline({
               {/* DoTレーン */}
               {showDoTs && activeDoTs.length > 0 && (
                 <DotLanes
+                  jobId={jobId}
                   activeDoTs={activeDoTs}
                   dotTicks={dotTicks}
-                  skillMap={skillMap}
                   stats={stats}
                   labelBg={labelBg}
                 />

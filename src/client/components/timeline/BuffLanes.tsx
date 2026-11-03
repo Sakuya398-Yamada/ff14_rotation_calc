@@ -1,10 +1,13 @@
 import { useTranslation } from "react-i18next";
 import type { BuffDefinition, ActiveBuff } from "../../types/skill";
+import type { JobId } from "../../data/job-registry";
+import { buffName, buffShortName } from "../../logic/display-names";
 import { formatProcRate, formatProcRateShort } from "../../logic/buff-format";
 import { styles } from "./styles";
 import { PX_PER_SEC } from "./constants";
 
 interface BuffLanesProps {
+  jobId: JobId;
   buffs: BuffDefinition[];
   buffTimespans: Map<string, ActiveBuff[]>;
   totalDuration: number;
@@ -12,17 +15,18 @@ interface BuffLanesProps {
 }
 
 /** バフレーン（バフ定義ごとに1行、適用スパンをバー描画） */
-export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: BuffLanesProps) {
+export function BuffLanes({ jobId, buffs, buffTimespans, totalDuration, labelBg }: BuffLanesProps) {
   const { t } = useTranslation();
   return (
     <>
       {buffs.map((buffDef) => {
         const spans = buffTimespans.get(buffDef.id);
         if (!spans || spans.length === 0) return null;
+        const name = buffName(t, jobId, buffDef.id);
         return (
           <div key={buffDef.id} style={styles.buffLane}>
-            <div style={{ ...styles.buffLaneLabel, backgroundColor: labelBg }} title={buffDef.name}>
-              {buffDef.shortName}
+            <div style={{ ...styles.buffLaneLabel, backgroundColor: labelBg }} title={name}>
+              {buffShortName(t, jobId, buffDef.id)}
             </div>
             <div style={styles.buffLaneContent}>
               {spans.map((span, i) => {
@@ -59,11 +63,11 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                       backgroundColor: `color-mix(in srgb, ${buffDef.color} 19%, transparent)`,
                       borderColor: buffDef.color,
                     }}
-                    title={`${buffDef.name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${endTimeLabel})${procRateLabel}`}
+                    title={`${name}${stacksLabel} (${span.startTime.toFixed(2)}s - ${endTimeLabel})${procRateLabel}`}
                   >
                     <img
                       src={buffDef.icon}
-                      alt={buffDef.name}
+                      alt={name}
                       style={styles.buffIcon}
                     />
                     <span className="num" style={styles.buffDuration}>

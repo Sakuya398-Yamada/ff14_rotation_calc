@@ -1,23 +1,26 @@
 import { useTranslation } from "react-i18next";
 import type { Skill } from "../../types/skill";
+import type { JobId } from "../../data/job-registry";
+import { skillName } from "../../logic/display-names";
 import type { CooldownSpan } from "./types";
 import { styles } from "./styles";
 import { PX_PER_SEC } from "./constants";
 
 interface RecastLanesProps {
+  jobId: JobId;
   cooldownSpans: Map<string, CooldownSpan[]>;
   skillMap: Map<string, Skill>;
   labelBg: string;
 }
 
 /** 個別リキャスト（クールダウン）レーン（対象スキルごとに1行） */
-export function RecastLanes({ cooldownSpans, skillMap, labelBg }: RecastLanesProps) {
+export function RecastLanes({ jobId, cooldownSpans, skillMap, labelBg }: RecastLanesProps) {
   const { t } = useTranslation();
   return (
     <>
       {Array.from(cooldownSpans.entries()).map(([skillId, spans]) => {
         const skill = skillMap.get(skillId);
-        const label = skill?.name ?? skillId;
+        const label = skillName(t, jobId, skillId);
         return (
           <div key={`recast-${skillId}`} style={styles.recastLane}>
             <div style={{ ...styles.recastLaneLabel, backgroundColor: labelBg }} title={t("recastLanes.laneTitle", { name: label })}>
@@ -43,7 +46,7 @@ export function RecastLanes({ cooldownSpans, skillMap, labelBg }: RecastLanesPro
                       width,
                     }}
                     title={t("recastLanes.spanTitle", {
-                      name: span.skillName,
+                      name: label,
                       start: span.startTime.toFixed(2),
                       end: span.endTime.toFixed(2),
                       cooldown: skill?.cooldown,
@@ -51,7 +54,7 @@ export function RecastLanes({ cooldownSpans, skillMap, labelBg }: RecastLanesPro
                   >
                     <img
                       src={span.icon}
-                      alt={span.skillName}
+                      alt={label}
                       style={styles.recastIcon}
                     />
                     <span style={styles.recastDuration}>

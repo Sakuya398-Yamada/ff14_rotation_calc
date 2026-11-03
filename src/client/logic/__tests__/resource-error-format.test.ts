@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import i18next from "i18next";
 import { formatResourceErrors, formatResourceErrorWarnings } from "../resource-error-format";
-import { MNK_RESOURCES } from "../../data/mnk-resources";
 import type { ResourceError } from "../../types/skill";
-
-const resourceDefMap = new Map(MNK_RESOURCES.map((r) => [r.id, r]));
 
 describe("formatResourceErrors (#612)", () => {
   it("種類ごとに 1 行にまとめ、不足 → 超過の順に並べる", () => {
@@ -14,20 +11,20 @@ describe("formatResourceErrors (#612)", () => {
       { resourceId: "raptor-chakra", kind: "overMax" },
     ];
 
-    expect(formatResourceErrors(errors, resourceDefMap)).toEqual([
+    expect(formatResourceErrors(errors, "mnk")).toEqual([
       "リソース不足: 闘気",
       "リソース超過: 壱のチャクラ, 弐のチャクラ",
     ]);
   });
 
-  it("定義の無いリソースは ID のまま出す", () => {
-    expect(formatResourceErrors([{ resourceId: "mp", kind: "insufficient" }], resourceDefMap)).toEqual([
+  it("辞書に無いリソースは ID のまま出す", () => {
+    expect(formatResourceErrors([{ resourceId: "mp", kind: "insufficient" }], "mnk")).toEqual([
       "リソース不足: mp",
     ]);
   });
 
   it("エラーが無ければ空配列", () => {
-    expect(formatResourceErrors([], resourceDefMap)).toEqual([]);
+    expect(formatResourceErrors([], "mnk")).toEqual([]);
   });
 });
 
@@ -59,7 +56,7 @@ describe("resource-error-format（英語）", () => {
       { resourceId: "opo-chakra", kind: "overMax" },
     ];
 
-    expect(formatResourceErrors(errors, resourceDefMap)).toEqual(["Insufficient resources: 闘気", "Resource overcap: 壱のチャクラ"]);
+    expect(formatResourceErrors(errors, "mnk")).toEqual(["Insufficient resources: Chakra", "Resource overcap: Opo-opo Chakra"]);
     expect(formatResourceErrorWarnings(errors)).toBe(" ⚠ Insufficient resources ⚠ Resource overcap");
   });
 });

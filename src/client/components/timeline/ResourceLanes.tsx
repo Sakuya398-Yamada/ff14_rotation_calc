@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import type { ActiveBuff, ResolvedTimelineEntry, ResourceSnapshot, ResourceTick } from "../../types/skill";
 import type { ResourceGroup } from "./types";
+import type { JobId } from "../../data/job-registry";
+import { resourceName, resourceShortName } from "../../logic/display-names";
 import { styles } from "./styles";
 import { PX_PER_SEC, RESOURCE_DOT_SIZE, RESOURCE_DOT_GAP } from "./constants";
 import { getEffectiveMaxStacks } from "../../logic/resolve-timeline";
@@ -51,6 +53,7 @@ function isMarkerVisible(group: ResourceGroup, m: ResourceMarker): boolean {
 }
 
 interface ResourceLanesProps {
+  jobId: JobId;
   resourceGroups: ResourceGroup[];
   resolvedEntries: ResolvedTimelineEntry[];
   resourceTicks: ResourceTick[];
@@ -58,14 +61,14 @@ interface ResourceLanesProps {
 }
 
 /** リソースゲージ行（displayGroup 単位で1行ずつ描画） */
-export function ResourceLanes({ resourceGroups, resolvedEntries, resourceTicks, labelBg }: ResourceLanesProps) {
+export function ResourceLanes({ jobId, resourceGroups, resolvedEntries, resourceTicks, labelBg }: ResourceLanesProps) {
   const { t } = useTranslation();
   return (
     <>
       {resourceGroups.map((group) => (
         <div key={group.key} style={styles.resourceLane}>
-          <div style={{ ...styles.resourceLaneLabel, backgroundColor: labelBg }} title={group.resources.map((r) => r.name).join(" / ")}>
-            {group.label}
+          <div style={{ ...styles.resourceLaneLabel, backgroundColor: labelBg }} title={group.resources.map((r) => resourceName(t, jobId, r.id)).join(" / ")}>
+            {resourceShortName(t, jobId, group.labelResourceId)}
           </div>
           <div style={styles.resourceLaneContent}>
             {getMarkers(group, resolvedEntries, resourceTicks).filter((m) => isMarkerVisible(group, m)).map((m) => {
@@ -79,13 +82,13 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, resourceTicks, 
                   }}
                   title={
                     group.groupMaxStacks !== undefined
-                      ? group.resources.map((r) => `${r.name}: ${m.snapshot[r.id] ?? 0}`).join(" / ") +
+                      ? group.resources.map((r) => `${resourceName(t, jobId, r.id)}: ${m.snapshot[r.id] ?? 0}`).join(" / ") +
                         ` ${t("resourceLanes.total", {
                           total: group.resources.reduce((s, r) => s + (m.snapshot[r.id] ?? 0), 0),
                           max: group.groupMaxStacks,
                         })}` +
                         (hasError ? ` ${t("resourceLanes.insufficient")}` : "")
-                      : group.resources.map((r) => `${r.name}: ${m.snapshot[r.id] ?? 0}/${getEffectiveMaxStacks(r, m.activeBuffs)}`).join(", ") +
+                      : group.resources.map((r) => `${resourceName(t, jobId, r.id)}: ${m.snapshot[r.id] ?? 0}/${getEffectiveMaxStacks(r, m.activeBuffs)}`).join(", ") +
                         (hasError ? ` ${t("resourceLanes.insufficient")}` : "")
                   }
                 >
