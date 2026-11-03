@@ -20,6 +20,7 @@ const baseProps = {
   rangePps: null,
   ppsRange: null,
   duration: 0,
+  lastDotTickTime: null,
 };
 
 describe("SummaryBar", () => {
@@ -32,6 +33,7 @@ describe("SummaryBar", () => {
         rangePps={PPS(320.7)}
         ppsRange={{ startTime: 0, endTime: 10 }}
         duration={30.64}
+        lastDotTickTime={null}
       />
     );
     expect(within(cellOf("合計期待威力")).getByText("5,377")).toBeInTheDocument();
@@ -40,6 +42,13 @@ describe("SummaryBar", () => {
     expect(within(cellOf("PPS 区間")).getByText("0.0–10.0s")).toBeInTheDocument();
     expect(within(cellOf("DoT 期待威力")).getByText("1,120")).toBeInTheDocument();
     expect(within(cellOf("所要時間")).getByText("30.6s")).toBeInTheDocument();
+    expect(within(cellOf("所要時間")).queryByText(/DoT 最終ティック/)).not.toBeInTheDocument();
+  });
+
+  it("DoT が所要時間より後まで続くときは、所要時間の欄に最後の DoT ティックの時刻を添える（#835）", () => {
+    render(<SummaryBar {...baseProps} totalExpectedPotency={500} overallPps={PPS(100)} duration={7.5} lastDotTickTime={30} />);
+    expect(within(cellOf("所要時間")).getByText("7.5s")).toBeInTheDocument();
+    expect(within(cellOf("所要時間")).getByText("DoT 最終ティック 30.0s")).toBeInTheDocument();
   });
 
   it("スキルが無いときは各値を「—」にする（旧ヘッダー表示の「0 のとき非表示」に相当）", () => {
@@ -78,5 +87,10 @@ describe("SummaryBar（英語）", () => {
     expect(within(cellOf("PPS (range)")).getByText("Set via PPS range")).toBeInTheDocument();
     expect(within(cellOf("Duration")).getByText("5.0s")).toBeInTheDocument();
     expect(screen.queryByText("合計期待威力")).not.toBeInTheDocument();
+  });
+
+  it("所要時間の注記（最後の DoT ティックの時刻）を英語で出す", () => {
+    render(<SummaryBar {...baseProps} totalExpectedPotency={500} overallPps={PPS(100)} duration={7.5} lastDotTickTime={30} />);
+    expect(within(cellOf("Duration")).getByText("Last DoT tick 30.0s")).toBeInTheDocument();
   });
 });

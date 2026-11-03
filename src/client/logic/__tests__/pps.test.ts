@@ -31,7 +31,7 @@ const skillMap = new Map([
 const stats = DEFAULT_STATS;
 const result = resolveTimeline([makeEntry("dot"), makeEntry("gcd"), makeEntry("gcd")], skillMap, [], stats);
 
-// App.tsx の合計期待威力と同じ式
+// 全エントリと全ティックの期待威力の合計（#835 より前の集計行の合計期待威力と同じ式）
 const totalExpected =
   result.entries.reduce((sum, e) => sum + calcEntryExpectedPotency(e, skillMap.get(e.resolvedSkillId), stats), 0) +
   result.dotTicks.reduce(
@@ -45,7 +45,7 @@ describe("calcPps", () => {
     expect(result.timelineEndTime).toBe(lastTick);
   });
 
-  it("includeEnd 指定時、全体 PPS の合計威力は合計期待威力と一致する（最終ティックを含む）（#400）", () => {
+  it("includeEnd 指定時、0 〜 タイムライン終端の合計威力は全エントリと全ティックの期待威力の合計と一致する（最終ティックを含む）（#400）", () => {
     const overall = calcPps(result.entries, skillMap, result.dotTicks, 0, result.timelineEndTime, stats, {
       includeEnd: true,
     });
