@@ -21,7 +21,7 @@ argument-hint: "#<Issue番号>"
 | 3 | コード探索（code-explorer） | `phases/03-exploration.md` | 修正箇所が明確な bug / docs は可（利用者から見える挙動・上限・制約を変える Issue では、利用者向けドキュメントの Grep だけは行う。扱いは `phases/03-exploration.md`「スキップ条件」） |
 | 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可（`phases/04-design.md`「いつ設計 Phase を行うか」の表の 1・2 行目に当たる変更（手順書・規約から人の確認を外す・弱める変更と、無人ルーティンの書き込み・判断の手順を変える変更）は不可） |
 | 5 | 実装・検証・コミット | `phases/05-implementation.md`（条件付きの手順は `phases/05-*.md` に分けてあり、本体から該当するときだけ読む） | 不可 |
-| 6 | コードレビュー（code-reviewer） | `phases/06-review.md` | 散文のみの docs は可（手順・コマンドを含むランブックは不可） |
+| 6 | コードレビュー（code-reviewer） | `phases/06-review.md` | 散文のみの docs は可（手順・コマンドを含むランブックと、記述を別ファイルへ移す・まとめる変更は不可。`phases/06-review.md`「スキップ条件」） |
 | 7 | PR作成 | `phases/07-pr-creation.md` | 不可 |
 | 8 | Issueへの記録（+ 知見ボード・テンプレート元への還元） | `phases/08-issue-recording.md` | 不可 |
 
@@ -37,7 +37,7 @@ argument-hint: "#<Issue番号>"
   - `AskUserQuestion` が使えないときは、質問ごとに名前（`設計`・`候補1` など）を付けて並べ、`設計-Y 候補1-N` の形で答えてもらう
 - **判断の線引き**: 読み方が分かれて成果物が変わる曖昧さは質問する。調べれば分かること（コードの構造・ライブラリの使い方・既存の挙動）は自分で調べる。ツール呼び出しの回数を理由に止まらない
 - **1 Issue = 1 PR**: スコープ外の変更を混ぜない（後述「スコープ外問題の起票提案」）
-- **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ）を使う。未接続・エラー時は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe` のフルパス起動。`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）にフォールバックし（各 Phase の `gh issue` / `gh pr` などのサブコマンドは、クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では GraphQL を使うので 403 になる。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の REST に置き換える）、それも無ければ整形済みの本文を提示してユーザーに操作を依頼する。フロー全体は止めない
+- **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ）を使う。未接続・エラー時（使うツールがツール一覧に無いときも含む。MCP はつながっていても `search_issues` / `search_pull_requests` だけが無いセッションがある）は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe` のフルパス起動。`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）にフォールバックし（各 Phase の `gh issue` / `gh pr` などのサブコマンドは、クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では GraphQL を使うので 403 になる。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の REST に置き換える）、それも無ければ整形済みの本文を提示してユーザーに操作を依頼する。フロー全体は止めない
 - **セッション**: 1 セッション 1 Issue。別の Issue に移るときは `/clear` してから始める
 
 ## サブエージェント
@@ -85,7 +85,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 ### 起票フロー（共通）
 
-1. **重複チェック**: GitHub MCP の `search_issues`（`owner` / `repo` を指定、query は自然文）で近い Issue を探す。候補があれば、手順 2 の提示にリンクを載せ、選択肢に [A]（既存 Issue への追記）を足す。書き方のパターンが原因の問題（使えないコマンドの指定・古い参照・同じ誤記など）は、起票の前に同じ書き方をリポジトリ全体で Grep し、当たったうち同じ誤りの箇所を 1 つの候補にまとめる（別の語の一部として当たったものや、CHANGELOG のような履歴の記述は入れない）。同じ書き方は Open Issue の本文からも探す。ガイドや知見から写した完了条件・手順に同じ誤りが残っていることがあり、残したままだと、その Issue を `/issue-start` したときの乖離チェックで 1 件ずつ見つかって手戻りになる。`search_issues` は意味で探すので文字列の一致には使わず、Open Issue を本文ごと一覧で取って文字列で絞る（GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "body"]`、`perPage: 100`。`pageInfo.hasNextPage` が true の間は `after` に `endCursor` を渡して続ける）。`gh` なら `gh api "repos/{owner}/{repo}/issues?state=open&per_page=100" --jq '.[] | select(.pull_request == null) | select((.body // "") | contains("<書き方>")) | [.number, .title] | @tsv'`。一覧には PR も入るので、件数は同じ URL を `--jq 'length'` で取って見る。100 件ちょうどなら次のページがあるので、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す）。当たった Issue は手順 2 の提示に載せる。その本文の書き換えは GitHub 上の操作なので、起票とは別に、新旧の差分を示して確認を得てから行う（`phases/01-no-repo-change.md`「GitHub 上の操作だけで終わる Issue」手順 2）。1 か所だけで起票すると、残りの箇所は次にそのファイルを触ったセッションが見つけるたびに、別の Issue に分かれていく。まとめると粒度（`.claude/rules/git-conventions.md`「粒度」）を超えるなら、箇所で分けて起票し、互いを「## 関連Issue」に書く
+1. **重複チェック**: GitHub MCP の `search_issues`（`owner` / `repo` を指定、query は自然文）で近い Issue を探す。候補があれば、手順 2 の提示にリンクを載せ、選択肢に [A]（既存 Issue への追記）を足す。書き方のパターンが原因の問題（使えないコマンドの指定・古い参照・同じ誤記など）は、起票の前に同じ書き方をリポジトリ全体で Grep し、当たったうち同じ誤りの箇所を 1 つの候補にまとめる（別の語の一部として当たったものや、CHANGELOG のような履歴の記述は入れない）。同じ書き方は Open Issue の本文からも探す。ガイドや知見から写した完了条件・手順に同じ誤りが残っていることがあり、残したままだと、その Issue を `/issue-start` したときの乖離チェックで 1 件ずつ見つかって手戻りになる。`search_issues` は意味で探すので文字列の一致には使わず、Open Issue を本文ごと一覧で取って文字列で絞る（GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "body"]`、`perPage: 100`。`pageInfo.hasNextPage` が true の間は `after` に `endCursor` を渡して続ける）。`gh` なら `gh api "repos/{owner}/{repo}/issues?state=open&per_page=100" --jq '.[] | select(.pull_request == null) | select((.body // "") | contains("<書き方>")) | [.number, .title] | @tsv'`。一覧には PR も入るので、件数は同じ URL を `--jq 'length'` で取って見る。100 件ちょうどなら次のページがあるので、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す）。当たった Issue は手順 2 の提示に載せる。その本文の書き換えは GitHub 上の操作なので、起票とは別に、新旧の差分を示して確認を得てから行う（`phases/01-no-repo-change.md`「GitHub 上の操作だけで終わる Issue」手順 2）。1 か所だけで起票すると、残りの箇所は次にそのファイルを触ったセッションが見つけるたびに、別の Issue に分かれていく。まとめると粒度（`.claude/rules/git-conventions.md`「粒度」）を超えるなら、箇所で分けて起票し、互いを「## 関連Issue」に書く。原因が別々でも、同じ文・同じ段落を書き換える候補（空回しやレビューで出た、既存の文面の曖昧さなど）は 1 つの候補にまとめ、目的を「その段落を 1 通りに読めるようにする」のように 1 つで書く。別々に起票すると、同じ箇所を書き換える小さな Issue が連鎖し、並行して着手したときに衝突する。まとめると粒度を超えるなら文で分け、後の候補に先の候補への `依存:` を書いて順に進める
 2. **ユーザー確認**: 以下のフォーマットで提示する
 
    ```

@@ -43,17 +43,17 @@ git checkout -b <type>/<issue番号>-<kebab-case説明>
 
 Claude Code のクラウドセッションは、開始時に作業ブランチが割り当てられ（多くは `claude/*`。`ccr-*` など別の名前のこともある）、セッションの指示で他のブランチへの push が制限されていることが多い（git のプロキシ自体は通すので、制限は指示によるもの。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない」）。**`CLAUDE_CODE_REMOTE=true` で、セッションの指示が作業ブランチを指定している、または `git branch --show-current` が `claude/*` なら**（push 制限が明示されていなくても）、上の手順（`git checkout main` / `git pull` / `git checkout -b`）は行わず、**割り当てられたブランチでそのまま作業する**（ブランチ名の規約の対象外。`.claude/rules/git-conventions.md`「ブランチ命名」の例外）。それ以外（ローカル、またはクラウドでも指示に作業ブランチが無く `main` 等にいる場合）は上の通常手順に従う。GitHub MCP が無く `gh` に頼る場合、クラウドでは GraphQL 系のサブコマンドが使えない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
 
-1. `git branch --show-current` が指示のブランチと違えば、`git switch <ブランチ名>` で切り替える（ローカルか `origin` にあれば、作成扱いにならずブランチ名 hook に当たらない）。どちらにも無ければ、`claude/*` なら `git switch -c <ブランチ名>` で作る。それ以外の名前は hook が作成を止める（hook は名前でしか判定できない）ので、ユーザーに確認する
+1. `git branch --show-current` が指示のブランチと違えば、`git switch <ブランチ名>` で切り替える（ローカルか `origin` にあれば、作成扱いにならずブランチ名 hook に当たらない）。どちらにも無ければ、セッションブランチ（`claude/*`・`copilot/*`）の名前なら `git switch -c <ブランチ名>` で作る。それ以外の名前は hook が作成を止める（hook は名前でしか判定できない）ので、ユーザーに確認する
 2. `git fetch origin main` のあと、`git log --oneline origin/main..HEAD` が空であることを確かめる。コミットが残っていれば、どちらの残りかを見分ける
-   - **マージ済みの前の Issue の残り**（同じセッションで 2 件目に移ったときなど）: `git diff --quiet HEAD origin/main` が成功する（squash merge 後でツリーが同じ）か、このブランチの PR（`list_pull_requests` の `head` に `<owner>:<ブランチ名>`、`state: closed`）がマージ済みで、その head の SHA が `git rev-parse HEAD` と一致する。この場合は `git reset --keep origin/main` で付け直す（未コミットの変更を消すときは止まる。`git reset --hard` は `settings.json` で deny、`git checkout -B` は `claude/*` 以外の名前だとブランチ名 hook に止められる）
+   - **マージ済みの前の Issue の残り**（同じセッションで 2 件目に移ったときなど）: `git diff --quiet HEAD origin/main` が成功する（squash merge 後でツリーが同じ）か、このブランチの PR（`list_pull_requests` の `head` に `<owner>:<ブランチ名>`、`state: closed`）がマージ済みで、その head の SHA が `git rev-parse HEAD` と一致する。この場合は `git reset --keep origin/main` で付け直す（未コミットの変更を消すときは止まる。`git reset --hard` は `settings.json` で deny、`git checkout -B` はセッションブランチ（`claude/*`・`copilot/*`）以外の名前だとブランチ名 hook に止められる）
      - `git reset --keep` が auto mode などで拒否されたら、リモートにこのブランチが残っているかを `git ls-remote --heads origin <ブランチ名>` で見て分ける。ローカルの追跡ブランチ（`git branch -vv` の `[origin/<ブランチ名>]`）は、prune しない限りリモートでの削除を反映しないので、判断に使わない。どちらの道も `settings.json` の allow にある `git branch` / `git switch` / `git merge` で済む（ローカルでは allow にあるコマンドは auto mode でも分類器より先に許可される。クラウドセッションでは allow に当たる Bash コマンドも分類器が判定するので、こちらも止められることがある。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの auto mode では、allow に当たる Bash も分類器が判定する」）
-       - **空（マージ後に削除済み）**: 名前が `claude/*` なら、`git branch -m <ブランチ名>-merged-<HEAD の短縮 SHA>` で旧ブランチを退避し、`git switch -c <ブランチ名> origin/main` で作り直す。旧コミットは退避したブランチに残り、PR には乗らない（退避名に SHA を付けるのは、同じセッションで次に移ったときに名前がぶつからないため）。`claude/*` 以外の名前は作り直しがブランチ名 hook に止められるので、退避せずに次と同じく取り込む
+       - **空（マージ後に削除済み）**: 名前がセッションブランチ（`claude/*`・`copilot/*`）なら、`git branch -m <ブランチ名>-merged-<HEAD の短縮 SHA>` で旧ブランチを退避し、`git switch -c <ブランチ名> origin/main` で作り直す。旧コミットは退避したブランチに残り、PR には乗らない（退避名に SHA を付けるのは、同じセッションで次に移ったときに名前がぶつからないため）。それ以外の名前は作り直しがブランチ名 hook に止められるので、退避せずに次と同じく取り込む
        - **残っている**: `git merge origin/main` で取り込む（止まったときは下の「遅れていた場合」）。force push が要らず、squash merge する運用なら最終履歴と PR の差分（Files changed）には影響しない。PR のコミット一覧には前の Issue のコミットが残るので、Phase 7 の PR 本文に、それがマージ済みの前の Issue の分であることを一言書く
    - **この Issue の途中の作業**（同じセッションで `/clear` して同じ Issue をやり直したとき）: Phase 1 手順 2 で、この Issue にこのセッションの「## 着手」の印（セッション URL が自分のもの）があり、残っているコミットの件名がこの Issue の `#<番号>` を持つ。この場合は付け直さず、そのまま続ける
    - **それ以外**: 別の作業の残りなので、続きとして使うかをユーザーに確認する（1 Issue = 1 PR）
 3. 下の「古い main 派生の検知」は同じように行う
 4. ブランチ名から Issue を辿れないので、次の 2 つで紐づける
-   - コミット件名に `#<issue番号>` を付ける（hook が省略を許すのは `claude/*` だけで、それ以外の名前では必須になる）
+   - コミット件名に `#<issue番号>` を付ける（hook が省略を許すのはセッションブランチ（`claude/*`・`copilot/*`）だけで、それ以外の名前では必須になる）
    - Issue に着手の印をコメントする（`add_issue_comment`）。並行セッションが Phase 1 でこの Issue や兄弟 Issue の作業中を検知するための印。付ける前に、このブランチの印が別の Issue に残っていないかを見る。同じセッションで前の Issue をマージせずに中断し、`/clear` して移ってきた場合、前の Issue に印が残っていて、並行セッションにはそのブランチで作業中と読まれる。`/clear` より前の会話は残っていないので、リポジトリの新しいコメントから探す（同じセッションの印は新しい方にあるので、最新 100 件に無ければそれ以上は遡らない）：
 
      ```bash

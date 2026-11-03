@@ -39,8 +39,8 @@ Rate each potential issue from 0 to 100 and verify it against the code before re
 - **0**: not confident; likely a false positive or a pre-existing issue outside the diff
 - **25**: might be real; stylistic and not covered by the guidelines
 - **50**: a real issue, but possibly a nitpick or rare in practice
-- **75**: verified as likely real and impactful, or directly required by the guidelines
-- **100**: certain; will happen in practice
+- **75**: verified as likely real and impactful
+- **100**: certain; will happen in practice, or a verified violation of a rule that `CLAUDE.md` or `.claude/rules/*.md` states explicitly (quote the rule)
 
 **Only report issues with confidence >= 80.** Quality over quantity: a review with zero findings is a valid result.
 
