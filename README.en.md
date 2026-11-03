@@ -32,6 +32,7 @@ The following jobs are currently supported.
 | SCH | Scholar |
 | AST | Astrologian |
 | SGE | Sage |
+| PLD | Paladin |
 
 To request another job, please [open an issue](#bugs-requests-and-contact).
 
@@ -106,7 +107,7 @@ The timeline is split into several lanes.
 
 ## Limitations
 
-This tool focuses on calculating **damage rotations of DPS roles against a single boss**. The following are **not supported**.
+This tool focuses on calculating **damage rotations against a single boss** (for tanks and healers too, only the potency of attack actions is calculated). The following are **not supported**.
 
 - **Actions that target allies are out of scope**
   - Healing, mitigation, buffs on allies, shields and so on are not included in the calculation (support actions of healers and tanks are not supported)
@@ -135,7 +136,7 @@ Icons are registered one by one when a job or action is added. Some may be missi
 
 ### Q. The job I want to use is not supported
 
-Currently only 10 jobs are supported: WHM / DRG / BRD / PCT / BLM / SAM / MNK / SCH / AST / SGE. Other jobs will be added over time. Requests are welcome in Issues.
+Currently only 11 jobs are supported: WHM / DRG / BRD / PCT / BLM / SAM / MNK / SCH / AST / SGE / PLD. Other jobs will be added over time. Requests are welcome in Issues.
 
 ### Q. Is my data saved?
 
