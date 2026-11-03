@@ -4,7 +4,9 @@
 #   1x0000000000000000000000000000000AA: 必ず成功 / 2x0000000000000000000000000000000AA: 必ず失敗
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
-# Discord でのログイン（#876）。テスト用の値は無いので、試すときだけ .dev.vars で行頭の # を外し、登録したアプリの値を書く
-# （手順は CONTRIBUTING.md「Discord でのログイン」。ID は wrangler.jsonc の vars に書いた後は要らない）。書かなければログインの API は 404 になる
-# DISCORD_CLIENT_ID=
+# Discord でのログイン（#876・#892）。クライアント ID は wrangler.jsonc の vars にあるが、secret にテスト用の値は無いので、
+# ローカルでは ID を空で上書きしてログインを無効にする（ログインの API は 404。消すと secret が無いので 500 になる）。
+# 試すときだけ、.dev.vars で DISCORD_CLIENT_ID= の行を消し（wrangler.jsonc の ID が使われる）、下の行の # を外して secret を書く
+# （手順は CONTRIBUTING.md「Discord でのログイン」）
+DISCORD_CLIENT_ID=
 # DISCORD_CLIENT_SECRET=
