@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Skill } from "../../types/skill";
 import type { CooldownSpan } from "./types";
 import { styles } from "./styles";
@@ -11,6 +12,7 @@ interface RecastLanesProps {
 
 /** 個別リキャスト（クールダウン）レーン（対象スキルごとに1行） */
 export function RecastLanes({ cooldownSpans, skillMap, labelBg }: RecastLanesProps) {
+  const { t } = useTranslation();
   return (
     <>
       {Array.from(cooldownSpans.entries()).map(([skillId, spans]) => {
@@ -18,7 +20,7 @@ export function RecastLanes({ cooldownSpans, skillMap, labelBg }: RecastLanesPro
         const label = skill?.name ?? skillId;
         return (
           <div key={`recast-${skillId}`} style={styles.recastLane}>
-            <div style={{ ...styles.recastLaneLabel, backgroundColor: labelBg }} title={`${label} リキャスト`}>
+            <div style={{ ...styles.recastLaneLabel, backgroundColor: labelBg }} title={t("recastLanes.laneTitle", { name: label })}>
               RC
               {skill?.icon && (
                 <img
@@ -40,7 +42,12 @@ export function RecastLanes({ cooldownSpans, skillMap, labelBg }: RecastLanesPro
                       left,
                       width,
                     }}
-                    title={`${span.skillName} リキャスト (${span.startTime.toFixed(2)}s - ${span.endTime.toFixed(2)}s / ${skill?.cooldown}s)`}
+                    title={t("recastLanes.spanTitle", {
+                      name: span.skillName,
+                      start: span.startTime.toFixed(2),
+                      end: span.endTime.toFixed(2),
+                      cooldown: skill?.cooldown,
+                    })}
                   >
                     <img
                       src={span.icon}

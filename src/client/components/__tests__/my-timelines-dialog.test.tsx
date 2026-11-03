@@ -5,7 +5,7 @@ import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
 import i18next from "i18next";
 import { MyTimelinesDialog } from "../MyTimelinesDialog";
-import { MY_TIMELINES_ERROR_MESSAGE, type MyTimelineItem } from "../../logic/my-timelines";
+import type { MyTimelineItem } from "../../logic/my-timelines";
 
 // jsdom は HTMLDialogElement の showModal / close を実装していないため最小限の代替を入れる
 beforeAll(() => {
@@ -82,7 +82,7 @@ describe("MyTimelinesDialog", () => {
     fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     renderDialog();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(MY_TIMELINES_ERROR_MESSAGE);
+    expect(await screen.findByRole("alert")).toHaveTextContent(i18next.t("myTimelines.loadError"));
     expect(screen.queryByText("読み込み中…")).not.toBeInTheDocument();
   });
 
@@ -122,7 +122,7 @@ describe("MyTimelinesDialog", () => {
     renderDialog();
     fireEvent.click(await screen.findByRole("button", { name: "もっと見る" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(MY_TIMELINES_ERROR_MESSAGE);
+    expect(await screen.findByRole("alert")).toHaveTextContent(i18next.t("myTimelines.loadError"));
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(screen.getByRole("button", { name: "もっと見る" })).toBeEnabled();
   });
@@ -185,5 +185,16 @@ describe("MyTimelinesDialog（英語）", () => {
     expect(link).toHaveAttribute("href", `${window.location.origin}/en/t/${item(1).id}`);
     // 日付はテストを動かす環境のタイムゾーンで 22 日か 23 日になる
     expect(link.querySelector("time")).toHaveTextContent(/^Oct 2[23], 2026, \d{1,2}:\d{2}\s?[AP]M$/);
+  });
+
+  it("見出し・案内・ボタンと読み込みエラーを英語で出す", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    renderDialog();
+
+    expect(screen.getByRole("heading", { name: "Saved timelines" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Your saved timelines could not be loaded. Check your connection and try again."
+    );
+    expect(screen.getByRole("button", { name: "Close saved timelines" })).toBeInTheDocument();
   });
 });

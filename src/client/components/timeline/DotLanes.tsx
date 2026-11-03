@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Skill, CharacterStats, DoTTick, ActiveDoT } from "../../types/skill";
 import { calcExpectedMultiplier } from "../../logic/stat-calc";
 import { styles } from "./styles";
@@ -13,6 +14,7 @@ interface DotLanesProps {
 
 /** DoTレーン（スキルIDごとに1行、DoTバーとティックマーカーを描画） */
 export function DotLanes({ activeDoTs, dotTicks, skillMap, stats, labelBg }: DotLanesProps) {
+  const { t } = useTranslation();
   // スキルIDごとにDoTをグループ化
   const dotBySkill = new Map<string, ActiveDoT[]>();
   for (const dot of activeDoTs) {
@@ -27,7 +29,7 @@ export function DotLanes({ activeDoTs, dotTicks, skillMap, stats, labelBg }: Dot
       {Array.from(dotBySkill.entries()).map(([skillId, dots]) => {
         const skill = skillMap.get(skillId);
         const label = skill?.name ?? skillId;
-        const ticksForSkill = dotTicks.filter((t) => t.skillId === skillId);
+        const ticksForSkill = dotTicks.filter((tick) => tick.skillId === skillId);
 
         return (
           <div key={`dot-${skillId}`} style={styles.dotLane}>
@@ -46,7 +48,7 @@ export function DotLanes({ activeDoTs, dotTicks, skillMap, stats, labelBg }: Dot
                       left,
                       width,
                     }}
-                    title={`${label} DoT (${dot.potency}威力/tick${dot.buffMultiplier !== 1 ? ` x${dot.buffMultiplier.toFixed(2)}` : ""}) ${dot.startTime.toFixed(2)}s - ${dot.endTime.toFixed(2)}s`}
+                    title={`${label} DoT (${t("dotLanes.potencyPerTick", { potency: dot.potency })}${dot.buffMultiplier !== 1 ? ` x${dot.buffMultiplier.toFixed(2)}` : ""}) ${dot.startTime.toFixed(2)}s - ${dot.endTime.toFixed(2)}s`}
                   >
                     <img
                       src={dot.icon}
@@ -67,7 +69,7 @@ export function DotLanes({ activeDoTs, dotTicks, skillMap, stats, labelBg }: Dot
                     ...styles.dotTickMarker,
                     left: tick.time * PX_PER_SEC,
                   }}
-                  title={`DoTティック: ${tick.potency}威力${tick.critRateBonus > 0 || tick.dhRateBonus > 0 ? ` (CRT+${Math.round(tick.critRateBonus * 100)}%${tick.dhRateBonus > 0 ? ` DH+${Math.round(tick.dhRateBonus * 100)}%` : ""})` : ""} @ ${tick.time.toFixed(2)}s${stats ? ` / 期待値: ${Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus))}` : ""}`}
+                  title={`${t("dotLanes.tick", { potency: tick.potency })}${tick.critRateBonus > 0 || tick.dhRateBonus > 0 ? ` (CRT+${Math.round(tick.critRateBonus * 100)}%${tick.dhRateBonus > 0 ? ` DH+${Math.round(tick.dhRateBonus * 100)}%` : ""})` : ""} @ ${tick.time.toFixed(2)}s${stats ? ` / ${t("dotLanes.expected", { value: Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus)) })}` : ""}`}
                 >
                   <div style={styles.dotTickLine} />
                   <div style={styles.dotTickPotency}>

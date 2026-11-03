@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { BuffDefinition, ActiveBuff } from "../../types/skill";
 import { formatProcRate, formatProcRateShort } from "../../logic/buff-format";
 import { styles } from "./styles";
@@ -12,6 +13,7 @@ interface BuffLanesProps {
 
 /** バフレーン（バフ定義ごとに1行、適用スパンをバー描画） */
 export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: BuffLanesProps) {
+  const { t } = useTranslation();
   return (
     <>
       {buffs.map((buffDef) => {
@@ -35,7 +37,7 @@ export function BuffLanes({ buffs, buffTimespans, totalDuration, labelBg }: Buff
                 const endTimeLabel = isPermanent ? "∞" : `${span.endTime.toFixed(2)}s`;
                 // 先の付与元が切れると実際の確率は下がるが、付与した時点の値だけを出す (#615)
                 const procRateLabel = span.procRate !== undefined
-                  ? ` 発動確率 ${formatProcRate(span.procRate)}（付与時点）`
+                  ? ` ${t("buffLanes.procRate", { rate: formatProcRate(span.procRate) })}`
                   : "";
                 const durationLabel = buffDef.maxStacks
                   ? `x${span.stacks ?? buffDef.maxStacks}`

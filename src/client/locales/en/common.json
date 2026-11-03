@@ -7,5 +7,277 @@
     "ppsRangeUnset": "Set via PPS range",
     "dotExpectedPotency": "DoT expected potency",
     "duration": "Duration"
+  },
+  "app": {
+    "confirmOpenShared": "Opening the shared timeline will replace the timeline you are working on. Open it?",
+    "saveAndShare": "Save & share",
+    "myTimelines": "Saved timelines",
+    "settings": "Settings",
+    "closeSharedLoadError": "Close",
+    "sharedInfo": "Opened shared timeline",
+    "closeSharedInfo": "Close the shared timeline info",
+    "contactLabel": "Bugs & requests:",
+    "mailLabel": "Email:"
+  },
+  "sharedTimeline": {
+    "loadErrors": {
+      "not_found": "The shared timeline was not found. Check that the URL is correct. The timeline you were working on is left as it was.",
+      "unsupported_version": "This shared timeline was saved in a format that this version cannot load. The timeline you were working on is left as it was.",
+      "invalid_data": "The shared timeline data could not be loaded. The timeline you were working on is left as it was.",
+      "network": "The shared timeline could not be loaded. Check your connection and reload the page. The timeline you were working on is left as it was."
+    },
+    "saveErrors": {
+      "invalid": "The timeline could not be saved because it contains data that cannot be saved.",
+      "too_large": "The timeline is too large to save. Remove some entries and save again.",
+      "rate_limited": "You saved too many times in a short period, so the timeline was not saved. Wait about a minute and save again.",
+      "verification_failed": "The bot check could not be completed. Save after the check finishes (if this keeps happening, reload the page).",
+      "network": "The timeline could not be saved. Check your connection and save again."
+    }
+  },
+  "myTimelines": {
+    "loadError": "Your saved timelines could not be loaded. Check your connection and try again."
+  },
+  "saveTimelineDialog": {
+    "title": "Save and share the timeline",
+    "close": "Close save & share",
+    "intro": "Saving creates a share URL. Anyone who knows the URL can open this timeline.",
+    "titleLabel": "Title (optional)",
+    "titleNote": "Up to {{max}} characters. The title and the timeline cannot be changed after saving (editing and saving again gives a new URL).",
+    "contentLabel": "Content (optional)",
+    "noContent": "None",
+    "closeButton": "Close",
+    "saving": "Saving…",
+    "save": "Save",
+    "saved": "Saved. You can open the saved timeline with this URL.",
+    "shareUrl": "Share URL",
+    "copied": "Copied",
+    "copy": "Copy",
+    "copyFailed": "Could not copy. Select the URL and copy it."
+  },
+  "myTimelinesDialog": {
+    "title": "Saved timelines",
+    "close": "Close saved timelines",
+    "intro": "Timelines saved in this browser, newest first. If you clear the browser's site data, they no longer appear here (you can still open them from their share URLs).",
+    "loading": "Loading…",
+    "empty": "No timelines have been saved in this browser.",
+    "untitled": "(Untitled)",
+    "jobLevel": "{{job}} Lv{{level}} · ",
+    "loadMore": "Load more",
+    "closeButton": "Close"
+  },
+  "settingsDialog": {
+    "title": "Settings",
+    "close": "Close settings",
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Match OS"
+    },
+    "accent": "Accent color",
+    "accents": {
+      "blue": "Blue",
+      "pink": "Pink",
+      "purple": "Purple",
+      "green": "Green"
+    },
+    "density": "Timeline density",
+    "unsupported": "Not supported",
+    "densities": {
+      "standard": "Standard",
+      "compact": "Compact"
+    },
+    "savedNote": "Changes are saved in this browser",
+    "closeButton": "Close"
+  },
+  "jobPicker": {
+    "triggerLabel": "Select job and level (current: {{job}} Lv{{level}})",
+    "panelLabel": "Select job and level",
+    "level": "Level",
+    "levelNote": "Below Lv100, action availability and potencies are for reference only (alpha)",
+    "levelWarning": "Potencies at Lv{{level}} may not be accurate",
+    "search": "Search jobs",
+    "searchPlaceholder": "Filter by job name or abbreviation (e.g. BLM)",
+    "recent": "Recently used jobs",
+    "noMatch": "No matching jobs",
+    "unsupportedTitle": "{{job}} (not supported)",
+    "unsupported": "Not supported"
+  },
+  "skillPalette": {
+    "title": "Job palette",
+    "cardTitle": "{{name}} (Potency: {{potency}})",
+    "potency": "Potency {{potency}}",
+    "statsSection": "Stats",
+    "stats": {
+      "critical": "Critical Hit",
+      "directHit": "Direct Hit Rate",
+      "determination": "Determination",
+      "speed": "Skill/Spell Speed"
+    },
+    "rate": "Rate {{rate}}%",
+    "multiplier": "Multiplier x{{multiplier}}"
+  },
+  "buffFormat": {
+    "effects": {
+      "potency": "Potency ×{{value}}",
+      "guaranteedCrit": "Guaranteed critical hit",
+      "guaranteedDh": "Guaranteed direct hit",
+      "instantCast": "Instant cast"
+    },
+    "someSkills": "{{effect}} (some actions)",
+    "consumedProc": "{{name}} proc chance {{rate}}",
+    "consumedProcWithFallback": "{{name}} proc chance {{rate}} ({{skill}} if it doesn't proc)",
+    "wastedProc": "{{name}} overwrite chance {{rate}}",
+    "procOccurred": "{{name}}: proc",
+    "procNotOccurred": "{{name}}: no proc"
+  },
+  "comboErrorFormat": {
+    "labels": {
+      "missing": "Buff condition not met",
+      "forbidden": "Buff active"
+    },
+    "anyOf": "{{names}}",
+    "anyOfSeparator": " or "
+  },
+  "resourceErrorFormat": {
+    "labels": {
+      "insufficient": "Insufficient resources",
+      "overMax": "Resource overcap"
+    }
+  },
+  "skillDetailPanel": {
+    "label": "Action details panel",
+    "startTime": "Start time",
+    "resetStartTimeLabel": "Revert to the calculated start time",
+    "resetStartTime": "Reset to auto",
+    "autoStartTime": "(Calculated: {{time}}s)",
+    "procOutcome": "{{name}} proc",
+    "procOutcomes": {
+      "expected": "Expected",
+      "occurred": "Proc",
+      "notOccurred": "No proc"
+    },
+    "close": "Close",
+    "basePotency": "Base potency",
+    "buffMultiplier": "Buff multiplier",
+    "noContributions": "None",
+    "critRateBonus": "Critical hit rate bonus",
+    "guaranteedCrit": "Guaranteed critical hit",
+    "dhRateBonus": "Direct hit rate bonus",
+    "guaranteedDh": "Guaranteed direct hit",
+    "expected": "Expected",
+    "expectedMultiTarget": "Expected (×{{targets}} targets total)",
+    "firstTarget": "Target 1: {{potency}}",
+    "nthTarget": "Target {{n}}: {{potency}}",
+    "combo": "Combo",
+    "comboOk": "OK",
+    "comboBroken": "Broken",
+    "warning": "Warning",
+    "unconfirmedProcBuffs": "{{names}} (chance-based; may not proc)",
+    "error": "Errors",
+    "noErrors": "None",
+    "errors": {
+      "untargetable": "Boss untargetable",
+      "recast": "Recast not ready"
+    },
+    "appliedBuffs": "Active buffs",
+    "noAppliedBuffs": "None",
+    "remaining": "{{time}} left"
+  },
+  "timelineHeader": {
+    "title": "Timeline",
+    "untargetableTitle": "Boss untargetable windows",
+    "untargetable": "Untargetable",
+    "multiTargetTitle": "Multi-target windows (time ranges with a set number of enemies)",
+    "multiTarget": "Multi-target",
+    "hideDots": "Hide DoTs",
+    "showDots": "Show DoTs",
+    "hideBuffs": "Hide buffs",
+    "showBuffs": "Show buffs",
+    "buffs": "Buffs",
+    "hideRecasts": "Hide recasts",
+    "showRecasts": "Show recasts",
+    "recasts": "Recasts",
+    "hideResources": "Hide resource gauges",
+    "showResources": "Show resource gauges",
+    "resources": "Resources",
+    "ppsRangeTitle": "Select PPS range",
+    "ppsRange": "PPS range"
+  },
+  "ppsRangeEditor": {
+    "title": "Select PPS range",
+    "start": "Start:",
+    "end": "End:",
+    "resetTitle": "Reset to the whole timeline",
+    "reset": "All",
+    "rangePps": "Range PPS:",
+    "breakdown": "(Potency: {{total}} = direct {{direct}} + DoT {{dot}})"
+  },
+  "multiTargetWindowEditor": {
+    "title": "Multi-target windows",
+    "add": "+ Add",
+    "empty": "No multi-target windows set",
+    "start": "Start:",
+    "end": "End:",
+    "targetCount": "Enemies:",
+    "delete": "Delete"
+  },
+  "untargetableWindowEditor": {
+    "title": "Boss untargetable windows",
+    "add": "+ Add",
+    "empty": "No untargetable windows set",
+    "start": "Start:",
+    "end": "End:",
+    "delete": "Delete"
+  },
+  "timeline": {
+    "placeholder": "Drag and drop actions from the palette to add them",
+    "hint": "Drag actions on the timeline to reorder them / drop them on the area at the bottom to delete them"
+  },
+  "timelineOverlays": {
+    "untargetableTitle": "Boss untargetable ({{start}}s - {{end}}s)",
+    "untargetable": "Untargetable",
+    "multiTargetTitle": "Multi-target ×{{targets}} ({{start}}s - {{end}}s)",
+    "ppsRangeTitle": "PPS range ({{start}}s - {{end}}s)"
+  },
+  "recastLanes": {
+    "laneTitle": "{{name}} recast",
+    "spanTitle": "{{name}} recast ({{start}}s - {{end}}s / {{cooldown}}s)"
+  },
+  "manualStartTimeBadge": {
+    "title": "Start time set manually"
+  },
+  "deleteZone": {
+    "label": "Drop here to delete"
+  },
+  "skillLanes": {
+    "recast": "Recast: {{time}}s",
+    "castTime": "Cast time: {{time}}s",
+    "animationLock": "Animation lock: {{time}}s",
+    "potency": "Potency: {{potency}}",
+    "expected": "Expected: {{value}}",
+    "manual": "manual",
+    "cast": "Cast: {{time}}s",
+    "instant": "Instant",
+    "comboBroken": "Combo broken",
+    "unconfirmedProc": "Consumes a chance-based buff",
+    "untargetable": "Boss untargetable",
+    "recastError": "Recast not ready"
+  },
+  "helpers": {
+    "targetBreakdown": "×{{targets}} targets (target 1: {{single}})",
+    "targetBreakdownReduced": "×{{targets}} targets (target 1: {{single}} / reduced: {{reduced}})"
+  },
+  "dotLanes": {
+    "potencyPerTick": "{{potency}} potency/tick",
+    "tick": "DoT tick: {{potency}} potency",
+    "expected": "Expected: {{value}}"
+  },
+  "buffLanes": {
+    "procRate": "proc chance {{rate}} (when applied)"
+  },
+  "resourceLanes": {
+    "total": "(total {{total}}/{{max}})",
+    "insufficient": "(insufficient)"
   }
 }

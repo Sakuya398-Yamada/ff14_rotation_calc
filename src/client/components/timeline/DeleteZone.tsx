@@ -1,4 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
+import { useTranslation } from "react-i18next";
 import { DELETE_ZONE_ID } from "./dnd-types";
 import { styles } from "./styles";
 
@@ -8,6 +9,7 @@ interface DeleteZoneProps {
 
 /** タイムライン内エントリのドラッグ中のみ表示される削除ドロップゾーン */
 export function DeleteZone({ overDeleteZone }: DeleteZoneProps) {
+  const { t } = useTranslation();
   const { setNodeRef } = useDroppable({ id: DELETE_ZONE_ID });
   return (
     <div
@@ -18,7 +20,7 @@ export function DeleteZone({ overDeleteZone }: DeleteZoneProps) {
       }}
     >
       <div style={styles.deleteDropZoneIcon} aria-hidden>×</div>
-      <div style={styles.deleteDropZoneLabel}>ここにドロップして削除</div>
+      <div style={styles.deleteDropZoneLabel}>{t("deleteZone.label")}</div>
     </div>
   );
 }

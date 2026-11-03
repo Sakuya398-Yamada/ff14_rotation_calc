@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import i18next from "i18next";
 import {
   describeBuffEffects,
   formatBuffRemaining,
@@ -147,5 +148,28 @@ describe("isProcOutcomeSource", () => {
   it("確率 1 の付与は確定なので付与元に数えない", () => {
     const skill = { ...brdSkillAt(100, "burst-shot"), buffApplicationProcRates: { "hawks-eye": 1 } };
     expect(isProcOutcomeSource(skill)).toBe(false);
+  });
+});
+
+describe("buff-format（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("効果の要約と、発動確率・上書き確率の文を英語で出す", () => {
+    const buffDefMap = new Map([["b", { ...makeBuff([]), name: "Hawk's Eye" }]]);
+
+    expect(
+      describeBuffEffects(
+        makeBuff([
+          { type: "potency", value: 1.1 },
+          { type: "guaranteedCrit", value: 1 },
+          { type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] },
+        ])
+      )
+    ).toEqual(["Potency ×1.10", "Guaranteed critical hit", "Instant cast (some actions)"]);
+    expect(formatConsumedProc({ buffId: "b", procRate: 0.35, fallbackSkillName: "Burst Shot" }, buffDefMap)).toBe(
+      "Hawk's Eye proc chance 35.0% (Burst Shot if it doesn't proc)",
+    );
+    expect(formatWastedProc({ buffId: "b", rate: 0.35 * 0.35 }, buffDefMap)).toBe("Hawk's Eye overwrite chance 12.3%");
   });
 });

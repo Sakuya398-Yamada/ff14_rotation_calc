@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { styles } from "./styles";
 
 /**
@@ -5,8 +6,9 @@ import { styles } from "./styles";
  * シンプルなインライン SVG（自作）。
  */
 export function ManualStartTimeBadge() {
+  const { t } = useTranslation();
   return (
-    <div style={styles.manualBadge} title="開始時刻を手動設定中">
+    <div style={styles.manualBadge} title={t("manualStartTimeBadge.title")}>
       <svg
         width="10"
         height="10"

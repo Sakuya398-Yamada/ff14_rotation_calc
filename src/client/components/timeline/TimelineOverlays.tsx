@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../../types/skill";
 import { PX_PER_SEC, LANE_LABEL_WIDTH, RULER_HEIGHT } from "./constants";
 
@@ -15,6 +16,7 @@ export function TimelineOverlays({
   ppsRange,
   showPpsRange,
 }: TimelineOverlaysProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* ボス離脱ウィンドウ */}
@@ -40,7 +42,7 @@ export function TimelineOverlays({
               justifyContent: "center",
               paddingTop: "2px",
             }}
-            title={`ボス離脱 (${w.startTime}s - ${w.endTime}s)`}
+            title={t("timelineOverlays.untargetableTitle", { start: w.startTime, end: w.endTime })}
           >
             <span
               style={{
@@ -51,7 +53,7 @@ export function TimelineOverlays({
                 pointerEvents: "none",
               }}
             >
-              離脱
+              {t("timelineOverlays.untargetable")}
             </span>
           </div>
         );
@@ -80,7 +82,7 @@ export function TimelineOverlays({
               justifyContent: "center",
               paddingTop: "2px",
             }}
-            title={`複数体 ×${w.targetCount} (${w.startTime}s - ${w.endTime}s)`}
+            title={t("timelineOverlays.multiTargetTitle", { targets: w.targetCount, start: w.startTime, end: w.endTime })}
           >
             <span
               style={{
@@ -115,7 +117,7 @@ export function TimelineOverlays({
               zIndex: 4,
               pointerEvents: "none",
             }}
-            title={`PPS範囲 (${ppsRange.startTime}s - ${ppsRange.endTime}s)`}
+            title={t("timelineOverlays.ppsRangeTitle", { start: ppsRange.startTime, end: ppsRange.endTime })}
           />
         );
       })()}

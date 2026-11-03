@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import type { ActiveBuff, BuffDefinition, BuffEffect, ResolvedTimelineEntry, Skill } from "../types/skill";
 
 function formatRate(value: number): string {
@@ -7,7 +8,7 @@ function formatRate(value: number): string {
 function describeEffectBody(effect: BuffEffect): string | null {
   switch (effect.type) {
     case "potency":
-      return `威力×${effect.value.toFixed(2)}`;
+      return i18next.t("buffFormat.effects.potency", { value: effect.value.toFixed(2) });
     case "critRate":
       return `CRT+${formatRate(effect.value)}`;
     case "dhRate":
@@ -15,11 +16,11 @@ function describeEffectBody(effect: BuffEffect): string | null {
     case "speed":
       return `GCD×${effect.value}`;
     case "guaranteedCrit":
-      return "確定CRT";
+      return i18next.t("buffFormat.effects.guaranteedCrit");
     case "guaranteedDh":
-      return "確定DH";
+      return i18next.t("buffFormat.effects.guaranteedDh");
     case "instantCast":
-      return "即時詠唱";
+      return i18next.t("buffFormat.effects.instantCast");
     default:
       // コンボ判定・リソース操作など計算の内部挙動を表す種別は、利用者向けの要約に出さない
       return null;
@@ -29,7 +30,7 @@ function describeEffectBody(effect: BuffEffect): string | null {
 function describeEffect(effect: BuffEffect): string | null {
   const body = describeEffectBody(effect);
   if (body === null) return null;
-  return effect.appliesToSkillIds ? `${body}（一部スキル）` : body;
+  return effect.appliesToSkillIds ? i18next.t("buffFormat.someSkills", { effect: body }) : body;
 }
 
 /** バフ効果の利用者向け要約（重複は除く）。表示できる効果が無ければ空配列 */
@@ -66,8 +67,10 @@ export function formatConsumedProc(
   buffDefMap: Map<string, BuffDefinition>,
 ): string {
   const name = buffDefMap.get(consumedProc.buffId)?.name ?? consumedProc.buffId;
-  const fallback = consumedProc.fallbackSkillName ? `（不発時は${consumedProc.fallbackSkillName}）` : "";
-  return `${name}発動確率 ${formatProcRate(consumedProc.procRate)}${fallback}`;
+  const rate = formatProcRate(consumedProc.procRate);
+  return consumedProc.fallbackSkillName
+    ? i18next.t("buffFormat.consumedProcWithFallback", { name, rate, skill: consumedProc.fallbackSkillName })
+    : i18next.t("buffFormat.consumedProc", { name, rate });
 }
 
 /** 効いているバフに重ねて無駄になる確率付与。例: "ホークアイ上書き確率 12.3%" (#842) */
@@ -76,7 +79,7 @@ export function formatWastedProc(
   buffDefMap: Map<string, BuffDefinition>,
 ): string {
   const name = buffDefMap.get(wastedProc.buffId)?.name ?? wastedProc.buffId;
-  return `${name}上書き確率 ${formatProcRate(wastedProc.rate)}`;
+  return i18next.t("buffFormat.wastedProc", { name, rate: formatProcRate(wastedProc.rate) });
 }
 
 /** 発生の有無を指定できる確率付与のバフ。ほかのジョブの確率付与は対象外 (#838) */
@@ -94,5 +97,5 @@ export function isProcOutcomeSource(skill: Skill): boolean {
 /** TimelineEntry.procOccurred の表示名。例: "ホークアイ: 発生" */
 export function formatProcOccurred(procOccurred: boolean, buffDefMap: Map<string, BuffDefinition>): string {
   const name = buffDefMap.get(PROC_OUTCOME_BUFF_ID)?.name ?? PROC_OUTCOME_BUFF_ID;
-  return `${name}: ${procOccurred ? "発生" : "不発"}`;
+  return i18next.t(procOccurred ? "buffFormat.procOccurred" : "buffFormat.procNotOccurred", { name });
 }

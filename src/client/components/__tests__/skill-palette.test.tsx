@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import i18next from "i18next";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { SkillPalette } from "../SkillPalette";
@@ -97,5 +98,22 @@ describe("SkillPalette", () => {
     expect(screen.getByText("グレア")).toBeInTheDocument();
     fireEvent.click(getSectionTitle(/^[▼▶]GCD$/));
     expect(screen.queryByText("グレア")).not.toBeInTheDocument();
+  });
+});
+
+describe("SkillPalette（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("見出し・ステータス・威力を英語で出す（スキル名は日本語のまま）", () => {
+    renderPalette();
+
+    expect(screen.getByRole("heading", { name: "Job palette" })).toBeInTheDocument();
+    expect(getSectionTitle(/Stats$/)).toBeInTheDocument();
+    expect(screen.getByText("Critical Hit")).toBeInTheDocument();
+    expect(screen.getByText(/^Rate \d+\.\d% \/ Multiplier x\d\.\d{3}$/)).toBeInTheDocument();
+    expect(screen.getByText("Potency 340")).toBeInTheDocument();
+    expect(screen.getByTitle("グレア (Potency: 340)")).toBeInTheDocument();
+    expect(screen.queryByText("ジョブパレット")).not.toBeInTheDocument();
   });
 });

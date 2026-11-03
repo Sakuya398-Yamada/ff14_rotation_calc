@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { useTranslation } from "react-i18next";
 import type { BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../../types/skill";
 import { styles } from "./styles";
 
@@ -54,9 +55,11 @@ export function TimelineHeader({
   onPpsRangeChange,
   lastGcdEndTime,
 }: TimelineHeaderProps) {
+  const { t } = useTranslation();
+  const arrow = (open: boolean) => (open ? "▼" : "▶");
   return (
     <div style={styles.header}>
-      <h2 style={styles.title}>タイムライン</h2>
+      <h2 style={styles.title}>{t("timelineHeader.title")}</h2>
       <div style={styles.headerControls}>
         <button
           style={{
@@ -64,9 +67,9 @@ export function TimelineHeader({
             ...(untargetableWindows.length > 0 ? { borderColor: "color-mix(in srgb, var(--color-zone-untargetable) 50%, transparent)", color: "var(--color-zone-untargetable)" } : {}),
           }}
           onClick={() => setShowUntargetableEditor((v) => !v)}
-          title="ボス離脱タイミング設定"
+          title={t("timelineHeader.untargetableTitle")}
         >
-          {showUntargetableEditor ? "離脱 ▼" : "離脱 ▶"}
+          {`${t("timelineHeader.untargetable")} ${arrow(showUntargetableEditor)}`}
           {untargetableWindows.length > 0 && ` (${untargetableWindows.length})`}
         </button>
         <button
@@ -75,16 +78,16 @@ export function TimelineHeader({
             ...(multiTargetWindows.length > 0 ? { borderColor: "color-mix(in srgb, var(--color-zone-multi-target) 50%, transparent)", color: "var(--color-zone-multi-target)" } : {}),
           }}
           onClick={() => setShowMultiTargetEditor((v) => !v)}
-          title="複数体ウィンドウ設定（敵の数を指定する時間帯）"
+          title={t("timelineHeader.multiTargetTitle")}
         >
-          {showMultiTargetEditor ? "複数体 ▼" : "複数体 ▶"}
+          {`${t("timelineHeader.multiTarget")} ${arrow(showMultiTargetEditor)}`}
           {multiTargetWindows.length > 0 && ` (${multiTargetWindows.length})`}
         </button>
         {hasDoTs && (
           <button
             style={styles.toggleButton}
             onClick={() => setShowDoTs((v) => !v)}
-            title={showDoTs ? "DoT表示を非表示" : "DoT表示を表示"}
+            title={showDoTs ? t("timelineHeader.hideDots") : t("timelineHeader.showDots")}
           >
             {showDoTs ? "DoT ▼" : "DoT ▶"}
           </button>
@@ -93,27 +96,27 @@ export function TimelineHeader({
           <button
             style={styles.toggleButton}
             onClick={() => setShowBuffs((v) => !v)}
-            title={showBuffs ? "バフ表示を非表示" : "バフ表示を表示"}
+            title={showBuffs ? t("timelineHeader.hideBuffs") : t("timelineHeader.showBuffs")}
           >
-            {showBuffs ? "バフ ▼" : "バフ ▶"}
+            {`${t("timelineHeader.buffs")} ${arrow(showBuffs)}`}
           </button>
         )}
         {hasRecastSkills && (
           <button
             style={styles.toggleButton}
             onClick={() => setShowRecasts((v) => !v)}
-            title={showRecasts ? "リキャスト表示を非表示" : "リキャスト表示を表示"}
+            title={showRecasts ? t("timelineHeader.hideRecasts") : t("timelineHeader.showRecasts")}
           >
-            {showRecasts ? "リキャスト ▼" : "リキャスト ▶"}
+            {`${t("timelineHeader.recasts")} ${arrow(showRecasts)}`}
           </button>
         )}
         {hasResources && (
           <button
             style={styles.toggleButton}
             onClick={() => setShowResources((v) => !v)}
-            title={showResources ? "リソースゲージを非表示" : "リソースゲージを表示"}
+            title={showResources ? t("timelineHeader.hideResources") : t("timelineHeader.showResources")}
           >
-            {showResources ? "リソース ▼" : "リソース ▶"}
+            {`${t("timelineHeader.resources")} ${arrow(showResources)}`}
           </button>
         )}
         <button
@@ -131,9 +134,9 @@ export function TimelineHeader({
               onPpsRangeChange(null);
             }
           }}
-          title="PPS範囲選択"
+          title={t("timelineHeader.ppsRangeTitle")}
         >
-          {showPpsRange ? "PPS範囲 ▼" : "PPS範囲 ▶"}
+          {`${t("timelineHeader.ppsRange")} ${arrow(showPpsRange)}`}
         </button>
       </div>
     </div>

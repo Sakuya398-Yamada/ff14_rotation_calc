@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { MultiTargetWindow } from "../../types/skill";
 import { zoneEditorStyles } from "./zone-editor-styles";
 
@@ -13,10 +14,11 @@ export function MultiTargetWindowEditor({
   multiTargetWindows,
   onMultiTargetWindowsChange,
 }: MultiTargetWindowEditorProps) {
+  const { t } = useTranslation();
   return (
     <div style={zoneStyles.editor}>
       <div style={zoneStyles.header}>
-        <span style={zoneStyles.title}>複数体ウィンドウ</span>
+        <span style={zoneStyles.title}>{t("multiTargetWindowEditor.title")}</span>
         <button
           style={zoneStyles.actionButton}
           onClick={() => {
@@ -29,16 +31,16 @@ export function MultiTargetWindowEditor({
             ]);
           }}
         >
-          + 追加
+          {t("multiTargetWindowEditor.add")}
         </button>
       </div>
       {multiTargetWindows.length === 0 && (
-        <div style={zoneStyles.empty}>複数体ウィンドウが未設定です</div>
+        <div style={zoneStyles.empty}>{t("multiTargetWindowEditor.empty")}</div>
       )}
       {multiTargetWindows.map((w, i) => (
         <div key={i} style={zoneStyles.row}>
           <label style={zoneStyles.label}>
-            開始:
+            {t("multiTargetWindowEditor.start")}
             <input
               type="number"
               step="0.5"
@@ -56,7 +58,7 @@ export function MultiTargetWindowEditor({
             s
           </label>
           <label style={zoneStyles.label}>
-            終了:
+            {t("multiTargetWindowEditor.end")}
             <input
               type="number"
               step="0.5"
@@ -74,7 +76,7 @@ export function MultiTargetWindowEditor({
             s
           </label>
           <label style={zoneStyles.label}>
-            敵の数:
+            {t("multiTargetWindowEditor.targetCount")}
             <input
               type="number"
               step="1"
@@ -96,7 +98,7 @@ export function MultiTargetWindowEditor({
             onClick={() => {
               onMultiTargetWindowsChange(multiTargetWindows.filter((_, idx) => idx !== i));
             }}
-            title="削除"
+            title={t("multiTargetWindowEditor.delete")}
           >
             x
           </button>

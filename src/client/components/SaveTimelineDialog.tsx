@@ -1,10 +1,10 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import { CONTENT_CATALOG, CONTENT_CATEGORIES } from "../data/content-catalog";
 import { useLanguage } from "../i18n";
 import {
   MAX_TITLE_LENGTH,
-  SAVE_ERROR_MESSAGES,
   buildShareUrl,
   saveTimeline,
   type SaveError,
@@ -26,6 +26,7 @@ interface SaveTimelineDialogProps {
 }
 
 export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose, returnFocusRef }: SaveTimelineDialogProps) {
+  const { t } = useTranslation();
   const lang = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -130,9 +131,9 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
     >
       <div style={styles.header}>
         <h2 id="save-timeline-dialog-title" style={styles.title}>
-          タイムラインを保存して共有
+          {t("saveTimelineDialog.title")}
         </h2>
-        <button type="button" aria-label="保存・共有を閉じる" onClick={onClose} style={styles.iconButton}>
+        <button type="button" aria-label={t("saveTimelineDialog.close")} onClick={onClose} style={styles.iconButton}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <path d="M3 3l10 10M13 3L3 13" />
           </svg>
@@ -144,11 +145,11 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
           {/* form にしないのは、IME の変換確定の Enter で、書き換えられない行を書きかけのタイトルで保存しないため */}
           <div style={styles.body}>
             <p style={styles.text}>
-              保存すると共有 URL を発行します。URL を知っている人は誰でも、このタイムラインを開けます。
+              {t("saveTimelineDialog.intro")}
             </p>
             <div style={styles.field}>
               <label htmlFor={titleId} style={styles.label}>
-                タイトル（任意）
+                {t("saveTimelineDialog.titleLabel")}
               </label>
               <input
                 ref={titleInputRef}
@@ -160,12 +161,12 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
                 style={styles.input}
               />
               <span style={styles.note}>
-                {MAX_TITLE_LENGTH} 文字まで。タイトルとタイムラインの内容は、保存後は変更できません（編集して保存し直すと、別の URL になります）
+                {t("saveTimelineDialog.titleNote", { max: MAX_TITLE_LENGTH })}
               </span>
             </div>
             <div style={styles.field}>
               <label htmlFor={contentFieldId} style={styles.label}>
-                コンテンツ（任意）
+                {t("saveTimelineDialog.contentLabel")}
               </label>
               <select
                 id={contentFieldId}
@@ -173,7 +174,7 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
                 onChange={(e) => setContentId(e.target.value)}
                 style={styles.input}
               >
-                <option value="">指定なし</option>
+                <option value="">{t("saveTimelineDialog.noContent")}</option>
                 {CONTENT_CATEGORIES.map((category) => (
                   <optgroup key={category.id} label={category.label}>
                     {CONTENT_CATALOG.filter((c) => c.category === category.id).map((c) => (
@@ -197,13 +198,13 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
             )}
             {error !== null && (
               <p role="alert" style={styles.error}>
-                {SAVE_ERROR_MESSAGES[error]}
+                {t(`sharedTimeline.saveErrors.${error}` as const)}
               </p>
             )}
           </div>
           <div style={styles.footer}>
             <button type="button" onClick={onClose} style={styles.secondaryButton}>
-              閉じる
+              {t("saveTimelineDialog.closeButton")}
             </button>
             <button
               type="button"
@@ -211,7 +212,7 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
               disabled={saving || turnstileToken === null}
               style={saving || turnstileToken === null ? { ...styles.primaryButton, ...styles.disabledButton } : styles.primaryButton}
             >
-              {saving ? "保存中…" : "保存"}
+              {saving ? t("saveTimelineDialog.saving") : t("saveTimelineDialog.save")}
             </button>
           </div>
         </>
@@ -219,11 +220,11 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
         <>
           <div style={styles.body}>
             <p role="status" style={styles.text}>
-              保存しました。この URL で、保存したタイムラインを開けます。
+              {t("saveTimelineDialog.saved")}
             </p>
             <div style={styles.field}>
               <label htmlFor={urlId} style={styles.label}>
-                共有 URL
+                {t("saveTimelineDialog.shareUrl")}
               </label>
               <div style={styles.urlRow}>
                 <input
@@ -236,19 +237,19 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
                   style={styles.input}
                 />
                 <button ref={copyButtonRef} type="button" onClick={() => void handleCopy()} style={styles.secondaryButton}>
-                  {copyState === "copied" ? "コピーしました" : "コピー"}
+                  {copyState === "copied" ? t("saveTimelineDialog.copied") : t("saveTimelineDialog.copy")}
                 </button>
               </div>
             </div>
             {copyState === "failed" && (
               <p role="alert" style={styles.error}>
-                コピーできませんでした。URL を選択してコピーしてください。
+                {t("saveTimelineDialog.copyFailed")}
               </p>
             )}
           </div>
           <div style={styles.footer}>
             <button type="button" onClick={onClose} style={styles.primaryButton}>
-              閉じる
+              {t("saveTimelineDialog.closeButton")}
             </button>
           </div>
         </>

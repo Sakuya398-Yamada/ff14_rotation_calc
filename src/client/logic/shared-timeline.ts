@@ -23,15 +23,6 @@ export type SharedLoadOutcome =
   | { kind: "cancelled" }
   | { kind: "error"; error: SharedLoadError };
 
-const KEPT_NOTE = "作業中のタイムラインはそのまま残っています。";
-
-export const SHARED_LOAD_ERROR_MESSAGES: Record<SharedLoadError, string> = {
-  not_found: `共有タイムラインが見つかりませんでした。URL が正しいか確認してください。${KEPT_NOTE}`,
-  unsupported_version: `この共有タイムラインは、今のバージョンでは読み込めない形式で保存されています。${KEPT_NOTE}`,
-  invalid_data: `共有タイムラインのデータを読み込めませんでした。${KEPT_NOTE}`,
-  network: `共有タイムラインを読み込めませんでした。通信状況を確かめて、ページを再読み込みしてください。${KEPT_NOTE}`,
-};
-
 const SHARED_PATH_RE = /^(?:\/en)?\/t\/([^/]+)\/?$/;
 
 /** 共有 URL（/t/<id>、英語は /en/t/<id>）のパスから id を取り出す。共有 URL でなければ null */
@@ -92,18 +83,10 @@ export function buildShareUrl(origin: string, id: string, lang: Language = "ja")
   return `${origin}${languageBasePath(lang)}t/${id}`;
 }
 
+// 文は辞書の sharedTimeline.saveErrors。verification_failed は保存を押す前のウィジェットのエラーにも出すので、「保存できませんでした」とは書かない
 export type SaveError = "invalid" | "too_large" | "rate_limited" | "verification_failed" | "network";
 
 export type SaveOutcome = { kind: "saved"; id: string } | { kind: "cancelled" } | { kind: "error"; error: SaveError };
-
-export const SAVE_ERROR_MESSAGES: Record<SaveError, string> = {
-  invalid: "タイムラインに保存できない内容が含まれているため、保存できませんでした。",
-  too_large: "タイムラインが大きすぎて保存できません。エントリを減らしてから保存してください。",
-  rate_limited: "短時間に続けて保存したため、保存できませんでした。1 分ほど待ってから、もう一度保存してください。",
-  // 保存を押す前のウィジェットのエラーにも出すので、「保存できませんでした」とは書かない
-  verification_failed: "ボット対策の確認ができませんでした。確認が終わってから保存してください（続くときは、ページを再読み込みしてください）。",
-  network: "保存できませんでした。通信状況を確かめて、もう一度保存してください。",
-};
 
 function saveFailed(error: SaveError): SaveOutcome {
   return { kind: "error", error };

@@ -1,22 +1,15 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import type { AccentColor, AppSettings, ThemePreference } from "../logic/app-settings";
 import "./settings-dialog.css";
 
-const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: "light", label: "ライト" },
-  { value: "dark", label: "ダーク" },
-  { value: "system", label: "OS に合わせる" },
-];
+const THEME_OPTIONS: ThemePreference[] = ["light", "dark", "system"];
 
-const ACCENT_OPTIONS: { value: AccentColor; label: string }[] = [
-  { value: "blue", label: "青" },
-  { value: "pink", label: "ピンク" },
-  { value: "purple", label: "紫" },
-  { value: "green", label: "緑" },
-];
+const ACCENT_OPTIONS: AccentColor[] = ["blue", "pink", "purple", "green"];
 
-const DENSITY_OPTIONS = ["標準", "コンパクト"];
+// 未対応の項目で設定の値を持たないので、辞書のキーと React の key に使う ID だけを置く
+const DENSITY_OPTIONS = ["standard", "compact"] as const;
 
 interface SettingsDialogProps {
   open: boolean;
@@ -28,6 +21,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, settings, onChange, onClose, returnFocusRef }: SettingsDialogProps) {
+  const { t } = useTranslation();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -59,9 +53,9 @@ export function SettingsDialog({ open, settings, onChange, onClose, returnFocusR
     >
       <div style={styles.header}>
         <h2 id="settings-dialog-title" style={styles.title}>
-          設定
+          {t("settingsDialog.title")}
         </h2>
-        <button type="button" aria-label="設定を閉じる" onClick={onClose} style={styles.iconButton}>
+        <button type="button" aria-label={t("settingsDialog.close")} onClick={onClose} style={styles.iconButton}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <path d="M3 3l10 10M13 3L3 13" />
           </svg>
@@ -70,21 +64,21 @@ export function SettingsDialog({ open, settings, onChange, onClose, returnFocusR
 
       <div style={styles.body}>
         <fieldset style={styles.fieldset}>
-          <legend style={styles.legend}>テーマ</legend>
+          <legend style={styles.legend}>{t("settingsDialog.theme")}</legend>
           <div style={styles.segmented}>
-            {THEME_OPTIONS.map((opt) => {
-              const checked = settings.theme === opt.value;
+            {THEME_OPTIONS.map((theme) => {
+              const checked = settings.theme === theme;
               return (
-                <label key={opt.value} className="settings-option" style={checked ? styles.segmentOn : styles.segment}>
+                <label key={theme} className="settings-option" style={checked ? styles.segmentOn : styles.segment}>
                   <input
                     type="radio"
                     name="settings-theme"
-                    value={opt.value}
+                    value={theme}
                     checked={checked}
-                    onChange={() => onChange({ ...settings, theme: opt.value })}
+                    onChange={() => onChange({ ...settings, theme })}
                     className="settings-visually-hidden"
                   />
-                  {opt.label}
+                  {t(`settingsDialog.themes.${theme}` as const)}
                 </label>
               );
             })}
@@ -92,28 +86,29 @@ export function SettingsDialog({ open, settings, onChange, onClose, returnFocusR
         </fieldset>
 
         <fieldset style={styles.fieldset}>
-          <legend style={styles.legend}>アクセントカラー</legend>
+          <legend style={styles.legend}>{t("settingsDialog.accent")}</legend>
           <div style={styles.swatches}>
-            {ACCENT_OPTIONS.map((opt) => {
-              const checked = settings.accent === opt.value;
+            {ACCENT_OPTIONS.map((accent) => {
+              const checked = settings.accent === accent;
+              const label = t(`settingsDialog.accents.${accent}` as const);
               return (
                 <label
-                  key={opt.value}
+                  key={accent}
                   className="settings-option"
-                  title={opt.label}
+                  title={label}
                   style={{
                     ...styles.swatch,
-                    background: `var(--accent-${opt.value})`,
+                    background: `var(--accent-${accent})`,
                     borderColor: checked ? "var(--color-text)" : "transparent",
                   }}
                 >
                   <input
                     type="radio"
                     name="settings-accent"
-                    value={opt.value}
-                    aria-label={opt.label}
+                    value={accent}
+                    aria-label={label}
                     checked={checked}
-                    onChange={() => onChange({ ...settings, accent: opt.value })}
+                    onChange={() => onChange({ ...settings, accent })}
                     className="settings-visually-hidden"
                   />
                 </label>
@@ -124,13 +119,13 @@ export function SettingsDialog({ open, settings, onChange, onClose, returnFocusR
 
         <fieldset disabled style={styles.fieldset}>
           <legend style={styles.legend}>
-            タイムラインの表示密度 <span style={styles.unsupported}>未対応</span>
+            {t("settingsDialog.density")} <span style={styles.unsupported}>{t("settingsDialog.unsupported")}</span>
           </legend>
           <div style={{ ...styles.segmented, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", opacity: 0.45 }}>
-            {DENSITY_OPTIONS.map((label, i) => (
-              <label key={label} style={{ ...(i === 0 ? styles.segmentOn : styles.segment), cursor: "not-allowed" }}>
+            {DENSITY_OPTIONS.map((density, i) => (
+              <label key={density} style={{ ...(i === 0 ? styles.segmentOn : styles.segment), cursor: "not-allowed" }}>
                 <input type="radio" name="settings-density" defaultChecked={i === 0} className="settings-visually-hidden" />
-                {label}
+                {t(`settingsDialog.densities.${density}` as const)}
               </label>
             ))}
           </div>
@@ -138,9 +133,9 @@ export function SettingsDialog({ open, settings, onChange, onClose, returnFocusR
       </div>
 
       <div style={styles.footer}>
-        <span style={styles.note}>変更はこのブラウザに保存されます</span>
+        <span style={styles.note}>{t("settingsDialog.savedNote")}</span>
         <button type="button" onClick={onClose} style={styles.primaryButton}>
-          閉じる
+          {t("settingsDialog.closeButton")}
         </button>
       </div>
     </dialog>

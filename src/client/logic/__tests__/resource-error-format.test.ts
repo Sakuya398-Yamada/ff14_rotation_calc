@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import i18next from "i18next";
 import { formatResourceErrors, formatResourceErrorWarnings } from "../resource-error-format";
 import { MNK_RESOURCES } from "../../data/mnk-resources";
 import type { ResourceError } from "../../types/skill";
@@ -45,5 +46,20 @@ describe("formatResourceErrorWarnings (#612)", () => {
 
   it("エラーが無ければ空文字", () => {
     expect(formatResourceErrorWarnings([])).toBe("");
+  });
+});
+
+describe("resource-error-format（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("種類のラベルを英語にする", () => {
+    const errors: ResourceError[] = [
+      { resourceId: "chakra", kind: "insufficient" },
+      { resourceId: "opo-chakra", kind: "overMax" },
+    ];
+
+    expect(formatResourceErrors(errors, resourceDefMap)).toEqual(["Insufficient resources: 闘気", "Resource overcap: 壱のチャクラ"]);
+    expect(formatResourceErrorWarnings(errors)).toBe(" ⚠ Insufficient resources ⚠ Resource overcap");
   });
 });
