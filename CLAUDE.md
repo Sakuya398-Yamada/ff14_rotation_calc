@@ -43,7 +43,7 @@ FF14（ファイナルファンタジー14）のスキル回し（ローテー�
 
 `/issue-start` の各Phase詳細は `.claude/skills/issue-start/SKILL.md`、Issue の分割・起票（`/issue-plan`）は `.claude/skills/issue-plan/SKILL.md`、Open Issue の消化優先度の判定と `priority:*` ラベルの付与（`/issue-priority`）は `.claude/skills/issue-priority/SKILL.md` を参照。1 セッションで扱う Issue は 1 件を基本とし、別の Issue に移るときは `/clear` してから始める。スコープ外問題の起票判定と起票フローは `.claude/skills/issue-start/SKILL.md`「スコープ外問題の起票提案」。
 
-精度向上のためのチェック項目（Issue 本文乖離検出 / スコープ乖離判定 / 系統スキル網羅性 / 系統横断ユニットテスト）は対応する `.claude/skills/issue-start/phases/*.md` 内のチェック節を参照（Issue #231 で導入）。
+精度向上のためのチェック項目（「Issue 本文と現状コードの乖離チェック」「本文と後追いコメントでスコープが乖離している場合」「必須チェック項目（系統スキルの網羅性）」「系統横断ユニットテスト（Issue #231）」）は、`.claude/skills/issue-start/phases/*.md` の同名の節を参照。
 
 ## 自動ガードレール
 

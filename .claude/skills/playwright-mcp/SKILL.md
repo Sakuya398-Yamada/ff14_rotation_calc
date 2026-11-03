@@ -140,7 +140,7 @@ async (page) => {
 
 ## React 制御フォーム要素の操作ワークアラウンド（`value` 直接代入が効かない場合）
 
-本リポジトリのジョブセレクター（`<select>`）やステータス入力欄（`<input>`）は React の制御コンポーネントで実装されている。`browser_evaluate` で `select.value = 'blm'; select.dispatchEvent(new Event('change'))` と書いても、**React 内部の状態と乖離して値が反映されない**（`select.value` が空 `''` に戻る）。React が value プロパティのセッターを追跡しているため、**native setter を経由してから `change` イベントを dispatch する** 必要がある。Issue #256 のセッションで実証済み（知見ボード #195）。
+本リポジトリの保存ダイアログのコンテンツ選択（`<select>`、`SaveTimelineDialog.tsx`）やステータス入力欄（`<input>`、`SkillPalette.tsx`）は React の制御コンポーネントで実装されている。`browser_evaluate` で `select.value = '<コンテンツ ID>'; select.dispatchEvent(new Event('change'))` と書いても、**React 内部の状態と乖離して値が反映されない**（`select.value` が空 `''` に戻る）。React が value プロパティのセッターを追跡しているため、**native setter を経由してから `change` イベントを dispatch する** 必要がある。Issue #256 のセッションで、当時の `<select>` のジョブセレクターで実証済み（知見ボード #195）。
 
 ```js
 // React の制御 select/input は value を直接代入しても internal state と乖離する。
@@ -148,7 +148,7 @@ async (page) => {
 const nativeSetter = Object.getOwnPropertyDescriptor(
   window.HTMLSelectElement.prototype, 'value'   // <input> なら HTMLInputElement
 ).set;
-nativeSetter.call(select, 'blm');
+nativeSetter.call(select, '<コンテンツ ID>');
 select.dispatchEvent(new Event('change', { bubbles: true }));
 ```
 
@@ -156,7 +156,7 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 
 1. **`<select>` に限らず制御コンポーネント全般に当てはまる**: `<input>`（ステータス入力欄）なら `HTMLInputElement.prototype`、`<textarea>` なら `HTMLTextAreaElement.prototype` を使う
 2. **`change` イベントは `bubbles: true` で dispatch する**: React はルートでイベントを委譲リッスンしているため、バブリングしないと onChange が呼ばれない
-3. **ユースケース**: ジョブセレクター切り替え・ステータス入力欄編集・フィルター変更など、UI 視覚検証で頻出
+3. **ユースケース**: コンテンツ選択の切り替え・ステータス入力欄編集・フィルター変更など、UI 視覚検証で頻出（ジョブの切り替えは `JobPicker.tsx` のボタンとダイアログなので、`browser_click` で操作する）
 4. 可能なら `browser_evaluate` ではなく `browser_select_option` / `browser_type`（ref 指定）を優先する。これらは実ブラウザ操作をエミュレートするため React とも整合する。`browser_evaluate` でのワークアラウンドは、snapshot の ref が使えない一括操作スクリプト等で必要になった場合の手段
 
 ## 保存データを注入して検証する
@@ -188,7 +188,7 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 
 Playwright MCP は stdio サーバーのため、HTTP/SSE サーバーと違って **Claude Code の自動再接続対象外** になり得る。セッション開始時は `<system-reminder>` で deferred tools が列挙されるが、長時間放置すると `The following deferred tools are no longer available (their MCP server disconnected)` が飛んできて、それ以降 `ToolSearch` でも見つからない状態になる。
 
-> **検出環境の注記**: この事象は元々 Claude Code クラウド／devcontainer 環境で観測された（知見ボード #195、2026-04-28）。Windows 11 ローカル環境で同じアイドルタイムアウトが起きるかは 2026-05-10 時点で独立検証していないが、**stdio + アイドル時の socket close という機構自体は OS 非依存**であり、十分長い放置（目安: 30 分以上）では同様に再現し得る前提で復旧手順を整備しておく。Windows 11 で再現が確認できたら本セクションに環境別の挙動差分を追記する。
+> **検出環境の注記**: この事象は元々 Claude Code クラウド／devcontainer 環境で観測された（知見ボード #195、2026-04-28）。**stdio + アイドル時の socket close という機構自体は OS 非依存**なので、Windows 11 のローカル環境でも、十分長い放置（目安: 30 分以上）では同様に再現し得る前提で復旧手順を置いている。
 
 ### Claude 側で取るべきアクション
 

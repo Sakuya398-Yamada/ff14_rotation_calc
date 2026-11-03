@@ -73,16 +73,16 @@ Phase 4 で系統スキルの網羅性を要した設計の場合（`phases/04-d
 // Vitest / Jest の例。他言語では parametrize / table-driven test に読み替える
 import { test, expect } from "vitest";
 
-const BLIZZARD_FAMILY = ["blizzard", "blizzara", "blizzaga", "blizzaja"] as const;
+const BLIZZARD_FAMILY = ["blizzard", "blizzard-2", "blizzard-3", "blizzard-4", "high-blizzard-2"] as const;
 
 test.each(BLIZZARD_FAMILY)("UB 中の %s で MP が回復する", (skillId) => {
-  const result = simulateCast(skillId, { ubLevel: 3 });
+  const result = simulateCast(skillId, { ubLevel: 3 }); // simulateCast は説明用の仮の関数
   expect(result.mpDelta).toBeGreaterThan(0);
 });
 ```
 
 - `test.each` で系統スキル ID を回して共通アサートにする。新スキル追加時も配列へ 1 行足すだけで対象になる
-- 既存テスト（例: `src/client/logic/__tests__/blm-af-ub.test.ts`）に同じパターンがあれば踏襲する
+- 既存テスト（例: 範囲スキルの減衰を `it.each` で回している `src/client/logic/__tests__/blm-aoe-data.test.ts`）に同じパターンがあれば踏襲する
 - UI 検証は別途 Phase 6 で実施する
 
 ## スコープ外問題の記録と末尾提案

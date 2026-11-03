@@ -19,7 +19,7 @@ argument-hint: "#<Issue番号>"
 | 1 | Issue分析・不足確認・補完（+ テンプレート更新チェック） | `phases/01-issue-analysis.md`（条件付きの手順は `phases/01-*.md` に分けてあり、本体から該当するときだけ読む） | 不可 |
 | 2 | ラベル付与・ブランチ作成 | `phases/02-branch-setup.md` | 不可 |
 | 3 | コード探索（code-explorer） | `phases/03-exploration.md` | 修正箇所が明確な bug / docs は可（利用者から見える挙動・上限・制約を変える Issue では、利用者向けドキュメントの Grep だけは行う。扱いは `phases/03-exploration.md`「スキップ条件」） |
-| 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可（手順書・規約から人の確認を外す・弱める変更と、無人ルーティンの書き込み・判断の手順（ルーティンが参照する skill の判定基準と、ルーティンが書き込み（起票・コメント投稿・コメント編集など）に使うコマンド例（`pitfalls-cloud.md` のフォールバック）を含む。`weekday-issue-start` が従う `/issue-start` の手順は除く）を変える変更は不可） |
+| 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可（`phases/04-design.md`「いつ設計 Phase を行うか」の表の 1・2 行目に当たる変更（手順書・規約から人の確認を外す・弱める変更と、無人ルーティンの書き込み・判断の手順を変える変更）は不可） |
 | 5 | 実装・検証・コミット | `phases/05-implementation.md`（条件付きの手順は `phases/05-*.md` に分けてあり、本体から該当するときだけ読む） | 不可 |
 | 6 | コードレビュー（code-reviewer） | `phases/06-review.md` | 散文のみの docs は可（手順・コマンドを含むランブックは不可） |
 | 7 | PR作成 | `phases/07-pr-creation.md` | 不可 |
@@ -60,7 +60,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 | 用途 | 使うもの | 未接続時のフォールバック |
 |------|---------|------------------------|
-| Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `list_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request` / `subscribe_pr_activity`（クラウドセッションでは claude-code-remote 側の `mcp__claude-code-remote__subscribe_pr_activity`。`phases/07-pr-creation.md` 手順 4） | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...`（クラウドセッションでは `gh api` の REST。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」） |
+| Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `list_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request`。PR の購読（`subscribe_pr_activity`）は GitHub MCP に無いことがあるので、`phases/07-pr-creation.md` 手順 4 で確かめる（クラウドセッションでは claude-code-remote 側の `mcp__claude-code-remote__subscribe_pr_activity`） | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...`（クラウドセッションでは `gh api` の REST。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」） |
 | 外部仕様・技術情報（FF14 公式ジョブガイド・ゲーム仕様等） | Brave Search MCP: `brave_web_search` | 組み込みの `WebSearch` / `WebFetch`、またはユーザーに確認 |
 | ライブラリの最新ドキュメント | context7 MCP（`resolve-library-id` → `query-docs`）※本リポジトリでは未登録。必要時に `.mcp.json` へ追加 | 公式ドキュメントを `WebFetch` |
 | UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}`。`.claude/skills/playwright-mcp/SKILL.md`） | クラウドセッションでは Node から Playwright を直接使う（`playwright-mcp/SKILL.md`「MCP が使えないとき」）。それもできなければユーザーに手動確認を依頼し、未検証と明記する |
