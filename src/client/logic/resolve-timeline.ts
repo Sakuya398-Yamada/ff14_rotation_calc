@@ -1821,6 +1821,10 @@ export function resolveTimeline(
         }
       }
 
+      for (const r of skill.cooldownReductionsOnUse ?? []) {
+        reduceChargeCooldown(r.chargeKey, r.seconds, startTime);
+      }
+
       // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
       // コンボ不成立時はDoTを適用しない（コンボ成立時の追加効果扱い）
       if (skill.dotPotency && skill.dotDuration && !wsComboError) {

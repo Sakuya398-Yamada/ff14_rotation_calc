@@ -131,6 +131,11 @@ export interface Skill {
    * 不一致時は「最後に使用したスキルの値」が採用されるため、グループ全体で一意になるように設定すること。
    */
   cooldownGroup?: string;
+  /**
+   * 使ったときに、列挙したリキャストを seconds 秒短縮する（戦士のフェルクリーヴ等でウォークライを 5 秒）。
+   * chargeKey は短縮対象スキルの cooldownGroup（未設定ならスキル ID）。未使用・チャージ満タンなら何もしない
+   */
+  cooldownReductionsOnUse?: { chargeKey: string; seconds: number }[];
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
