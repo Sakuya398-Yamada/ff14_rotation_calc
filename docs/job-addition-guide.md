@@ -241,7 +241,7 @@ export const XXX_ATTACK_SKILLS: Skill[] = [
    - バフ: ジョブガイドに欄が無いので、XIVAPI v2 の `Status` シート（`https://v2.xivapi.com/api/search?sheets=Status&query=Name="<日本語名>"&language=ja&fields=Name,Name@lang(en)`。`query` は URL エンコードする）で引く。同じ名前の行が複数返ることがあるので、英語版ジョブガイドの説明文に出てくる名前と照らす。データ独自の名前（「〜実行可」「〜レディ」など）は、英語名を `language=en` で `Name` に入れて引き、実在を確かめる
    - データ独自の派生名（「ファイガ (AF 中)」のような状態違いの定義）: 元のスキルの英語名に、同じ括弧書きを英語にして付ける（`Fire III (in AF)`）
    - 英語の `shortName`: 2 行に収まる英語名はそのまま改行して入れ、収まらないものだけ英語圏で通じる略語にする（`LotD`・`PoM` など）
-3. `src/client/i18n.ts` で 2 つの JSON を import し、`resources` の `ja` と `en` に `"job-<job>"` として登録する（en には `satisfies typeof jaJob<Job>` を付ける。ja に無いキーが en にあると型エラーになる）
+3. `src/client/i18n.ts` で 2 つの JSON を import し、`resources` の `ja` と `en` に `"job-<job>"` として登録する（en には `satisfies typeof jaJob<Job>` を付ける。ja のキーが en に欠けていると型エラーになる。en にしか無いキーは検出しない）
 
 抜けは `src/client/logic/__tests__/display-names.test.ts` が検出する（全ジョブのデータにある ID のすべてに、ja と en の空でない名前があるか）。
 
