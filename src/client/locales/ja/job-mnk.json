@@ -1,0 +1,235 @@
+{
+  "skills": {
+    "dragon-kick": {
+      "name": "双竜脚"
+    },
+    "bootshine": {
+      "name": "連撃"
+    },
+    "bootshine-fury": {
+      "name": "連撃（功力）"
+    },
+    "leaping-opo": {
+      "name": "猿舞連撃"
+    },
+    "leaping-opo-fury": {
+      "name": "猿舞連撃（功力）"
+    },
+    "twin-snakes": {
+      "name": "双掌打"
+    },
+    "true-strike": {
+      "name": "正拳突き"
+    },
+    "true-strike-fury": {
+      "name": "正拳突き（功力）"
+    },
+    "rising-raptor": {
+      "name": "竜頷正拳撃"
+    },
+    "rising-raptor-fury": {
+      "name": "竜頷正拳撃（功力）"
+    },
+    "demolish": {
+      "name": "破砕拳"
+    },
+    "snap-punch": {
+      "name": "崩拳"
+    },
+    "snap-punch-fury": {
+      "name": "崩拳（功力）"
+    },
+    "pouncing-coeurl": {
+      "name": "虎襲崩拳"
+    },
+    "pouncing-coeurl-fury": {
+      "name": "虎襲崩拳（功力）"
+    },
+    "arm-of-the-destroyer": {
+      "name": "壊神衝"
+    },
+    "shadow-of-the-destroyer": {
+      "name": "壊神脚"
+    },
+    "four-point-fury": {
+      "name": "四面脚"
+    },
+    "rockbreaker": {
+      "name": "地烈斬"
+    },
+    "form-shift": {
+      "name": "演武"
+    },
+    "six-sided-star": {
+      "name": "六合星導脚"
+    },
+    "masterful-blitz": {
+      "name": "必殺技"
+    },
+    "tornado-kick": {
+      "name": "闘魂旋風脚"
+    },
+    "phantom-rush": {
+      "name": "夢幻闘舞"
+    },
+    "elixir-field": {
+      "name": "蒼気砲"
+    },
+    "elixir-burst": {
+      "name": "真空波"
+    },
+    "flint-strike": {
+      "name": "爆裂脚"
+    },
+    "rising-phoenix": {
+      "name": "鳳凰の舞"
+    },
+    "celestial-revolution": {
+      "name": "天宙脚"
+    },
+    "winds-reply": {
+      "name": "絶空拳"
+    },
+    "fires-reply": {
+      "name": "乾坤闘気弾"
+    },
+    "steeled-meditation": {
+      "name": "鉄山闘気"
+    },
+    "forbidden-meditation": {
+      "name": "陰陽闘気"
+    },
+    "steel-peak": {
+      "name": "鉄山靠"
+    },
+    "the-forbidden-chakra": {
+      "name": "陰陽闘気斬"
+    },
+    "howling-fist": {
+      "name": "空鳴拳"
+    },
+    "enlightenment": {
+      "name": "万象闘気圏"
+    },
+    "perfect-balance": {
+      "name": "踏鳴"
+    },
+    "riddle-of-fire": {
+      "name": "紅蓮の極意"
+    },
+    "riddle-of-wind": {
+      "name": "疾風の極意"
+    },
+    "brotherhood": {
+      "name": "桃園結義"
+    },
+    "riddle-of-earth": {
+      "name": "金剛の極意"
+    },
+    "mantra": {
+      "name": "マントラ"
+    },
+    "thunderclap": {
+      "name": "抜重歩法"
+    },
+    "true-north": {
+      "name": "トゥルーノース"
+    }
+  },
+  "buffs": {
+    "opo-form": {
+      "name": "壱の型",
+      "shortName": "壱型"
+    },
+    "raptor-form": {
+      "name": "弐の型",
+      "shortName": "弐型"
+    },
+    "coeurl-form": {
+      "name": "参の型",
+      "shortName": "参型"
+    },
+    "perfect-balance": {
+      "name": "踏鳴",
+      "shortName": "踏鳴"
+    },
+    "formless-fist": {
+      "name": "零の型",
+      "shortName": "零型"
+    },
+    "riddle-of-fire": {
+      "name": "紅蓮の極意",
+      "shortName": "紅蓮"
+    },
+    "fire-rumination": {
+      "name": "乾坤闘気弾実行可",
+      "shortName": "乾坤\nﾚﾃﾞｨ"
+    },
+    "riddle-of-wind": {
+      "name": "疾風の極意",
+      "shortName": "疾風"
+    },
+    "wind-rumination": {
+      "name": "絶空拳実行可",
+      "shortName": "絶空\nﾚﾃﾞｨ"
+    },
+    "brotherhood-no-chakra-gain": {
+      "name": "桃園結義",
+      "shortName": "桃園"
+    },
+    "brotherhood": {
+      "name": "桃園結義",
+      "shortName": "桃園"
+    },
+    "riddle-of-earth": {
+      "name": "金剛の極意",
+      "shortName": "金剛"
+    },
+    "mantra": {
+      "name": "マントラ",
+      "shortName": "ﾏﾝﾄﾗ"
+    },
+    "true-north": {
+      "name": "トゥルーノース",
+      "shortName": "ﾄｩﾙｰ\nﾉｰｽ"
+    }
+  },
+  "resources": {
+    "chakra": {
+      "name": "闘気",
+      "shortName": "闘気"
+    },
+    "opo-fury": {
+      "name": "壱の功力",
+      "shortName": "功力"
+    },
+    "raptor-fury": {
+      "name": "弐の功力",
+      "shortName": "功力"
+    },
+    "coeurl-fury": {
+      "name": "参の功力",
+      "shortName": "功力"
+    },
+    "opo-chakra": {
+      "name": "壱のチャクラ",
+      "shortName": "ﾁｬｸﾗ"
+    },
+    "raptor-chakra": {
+      "name": "弐のチャクラ",
+      "shortName": "ﾁｬｸﾗ"
+    },
+    "coeurl-chakra": {
+      "name": "参のチャクラ",
+      "shortName": "ﾁｬｸﾗ"
+    },
+    "lunar-nadi": {
+      "name": "陰の闘気",
+      "shortName": "陰陽"
+    },
+    "solar-nadi": {
+      "name": "陽の闘気",
+      "shortName": "陽"
+    }
+  }
+}

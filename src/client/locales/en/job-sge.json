@@ -1,0 +1,99 @@
+{
+  "skills": {
+    "dosis": {
+      "name": "Dosis"
+    },
+    "dosis2": {
+      "name": "Dosis II"
+    },
+    "dosis3": {
+      "name": "Dosis III"
+    },
+    "eukrasian-dosis": {
+      "name": "Eukrasian Dosis"
+    },
+    "eukrasian-dosis2": {
+      "name": "Eukrasian Dosis II"
+    },
+    "eukrasian-dosis3": {
+      "name": "Eukrasian Dosis III"
+    },
+    "eukrasia": {
+      "name": "Eukrasia"
+    },
+    "phlegma": {
+      "name": "Phlegma"
+    },
+    "phlegma2": {
+      "name": "Phlegma II"
+    },
+    "phlegma3": {
+      "name": "Phlegma III"
+    },
+    "toxikon": {
+      "name": "Toxikon"
+    },
+    "toxikon2": {
+      "name": "Toxikon II"
+    },
+    "dyskrasia": {
+      "name": "Dyskrasia"
+    },
+    "dyskrasia2": {
+      "name": "Dyskrasia II"
+    },
+    "eukrasian-dyskrasia": {
+      "name": "Eukrasian Dyskrasia"
+    },
+    "pneuma": {
+      "name": "Pneuma"
+    },
+    "diagnosis": {
+      "name": "Diagnosis"
+    },
+    "eukrasian-diagnosis": {
+      "name": "Eukrasian Diagnosis"
+    },
+    "psyche": {
+      "name": "Psyche"
+    },
+    "druochole": {
+      "name": "Druochole"
+    },
+    "kerachole": {
+      "name": "Kerachole"
+    },
+    "ixochole": {
+      "name": "Ixochole"
+    },
+    "taurochole": {
+      "name": "Taurochole"
+    },
+    "rhizomata": {
+      "name": "Rhizomata"
+    },
+    "swiftcast": {
+      "name": "Swiftcast"
+    }
+  },
+  "buffs": {
+    "eukrasia": {
+      "name": "Eukrasia",
+      "shortName": "Eukrasia"
+    },
+    "swiftcast": {
+      "name": "Swiftcast",
+      "shortName": "Swift-\ncast"
+    }
+  },
+  "resources": {
+    "addersgall": {
+      "name": "Addersgall",
+      "shortName": "Adders-\ngall"
+    },
+    "addersting": {
+      "name": "Addersting",
+      "shortName": "Adders-\nting"
+    }
+  }
+}

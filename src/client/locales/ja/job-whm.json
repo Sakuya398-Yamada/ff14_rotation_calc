@@ -1,0 +1,82 @@
+{
+  "skills": {
+    "stone": {
+      "name": "ストーン"
+    },
+    "stone2": {
+      "name": "ストンラ"
+    },
+    "stone3": {
+      "name": "ストンガ"
+    },
+    "stone4": {
+      "name": "ストンジャ"
+    },
+    "glare": {
+      "name": "グレア"
+    },
+    "glare3": {
+      "name": "グレアガ"
+    },
+    "aero": {
+      "name": "エアロ"
+    },
+    "aero2": {
+      "name": "エアロラ"
+    },
+    "dia": {
+      "name": "ディア"
+    },
+    "holy": {
+      "name": "ホーリー"
+    },
+    "holy3": {
+      "name": "ホーリガ"
+    },
+    "glare4": {
+      "name": "グレアジャ"
+    },
+    "heart-of-solace": {
+      "name": "ハート・オブ・ソラス"
+    },
+    "heart-of-rapture": {
+      "name": "ハート・オブ・ラプチャー"
+    },
+    "heart-of-misery": {
+      "name": "ハート・オブ・ミゼリ"
+    },
+    "assize": {
+      "name": "アサイズ"
+    },
+    "presence-of-mind": {
+      "name": "神速魔"
+    },
+    "swiftcast": {
+      "name": "迅速魔"
+    }
+  },
+  "buffs": {
+    "presence-of-mind": {
+      "name": "神速魔",
+      "shortName": "神速魔"
+    },
+    "sacred-sight": {
+      "name": "グレアジャ実行可",
+      "shortName": "ｸﾞﾚｱｼﾞｬ\n実行可"
+    },
+    "swiftcast": {
+      "name": "迅速魔",
+      "shortName": "迅速魔"
+    }
+  },
+  "resources": {
+    "healing-lily": {
+      "name": "ヒーリングリリー",
+      "shortName": "H.ﾘﾘｰ"
+    },
+    "blood-lily": {
+      "name": "ブラッドリリー",
+      "shortName": "B.ﾘﾘｰ"
+    }
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "skills": {
+    "hakaze": {
+      "name": "刃風"
+    },
+    "gyofu": {
+      "name": "暁風"
+    },
+    "jinpu": {
+      "name": "陣風"
+    },
+    "shifu": {
+      "name": "士風"
+    },
+    "yukikaze": {
+      "name": "雪風"
+    },
+    "gekko": {
+      "name": "月光"
+    },
+    "kasha": {
+      "name": "花車"
+    },
+    "fuga": {
+      "name": "風雅"
+    },
+    "fuko": {
+      "name": "風光"
+    },
+    "mangetsu": {
+      "name": "満月"
+    },
+    "oka": {
+      "name": "桜花"
+    },
+    "iaijutsu": {
+      "name": "居合術"
+    },
+    "higanbana": {
+      "name": "彼岸花"
+    },
+    "tenka-goken": {
+      "name": "天下五剣"
+    },
+    "midare-setsugekka": {
+      "name": "乱れ雪月花"
+    },
+    "tendo-goken": {
+      "name": "天道五剣"
+    },
+    "tendo-setsugekka": {
+      "name": "天道雪月花"
+    },
+    "tsubame-gaeshi": {
+      "name": "燕返し"
+    },
+    "kaeshi-goken": {
+      "name": "返し五剣"
+    },
+    "kaeshi-setsugekka": {
+      "name": "返し雪月花"
+    },
+    "tendo-kaeshi-goken": {
+      "name": "天道返し五剣"
+    },
+    "tendo-kaeshi-setsugekka": {
+      "name": "天道返し雪月花"
+    },
+    "kaeshi-namikiri": {
+      "name": "返し波切"
+    },
+    "ogi-namikiri": {
+      "name": "奥義波切"
+    },
+    "hissatsu-gyoten": {
+      "name": "必殺剣・暁天"
+    },
+    "hissatsu-yaten": {
+      "name": "必殺剣・夜天"
+    },
+    "hissatsu-shinten": {
+      "name": "必殺剣・震天"
+    },
+    "hissatsu-guren": {
+      "name": "必殺剣・紅蓮"
+    },
+    "hissatsu-senei": {
+      "name": "必殺剣・閃影"
+    },
+    "hissatsu-kyuten": {
+      "name": "必殺剣・九天"
+    },
+    "ikishoten": {
+      "name": "意気衝天"
+    },
+    "enpi": {
+      "name": "燕飛"
+    },
+    "hagakure": {
+      "name": "葉隠"
+    },
+    "meikyo-shisui-skill": {
+      "name": "明鏡止水"
+    },
+    "zanshin": {
+      "name": "残心"
+    },
+    "shoha": {
+      "name": "照破"
+    },
+    "third-eye": {
+      "name": "心眼"
+    },
+    "tengentsu": {
+      "name": "天眼通"
+    },
+    "meditate": {
+      "name": "黙想"
+    },
+    "true-north": {
+      "name": "トゥルーノース"
+    }
+  },
+  "buffs": {
+    "fugetsu": {
+      "name": "風月",
+      "shortName": "風月"
+    },
+    "fuka": {
+      "name": "風花",
+      "shortName": "風花"
+    },
+    "meikyo-shisui": {
+      "name": "明鏡止水",
+      "shortName": "明鏡\n止水"
+    },
+    "tendo": {
+      "name": "天道",
+      "shortName": "天道"
+    },
+    "enhanced-enpi": {
+      "name": "燕飛効果アップ",
+      "shortName": "燕飛\nUP"
+    },
+    "ogi-namikiri-ready": {
+      "name": "奥義波切実行可",
+      "shortName": "奥義\nﾚﾃﾞｨ"
+    },
+    "zanshin-ready": {
+      "name": "残心実行可",
+      "shortName": "残心\nﾚﾃﾞｨ"
+    },
+    "tsubame-kaeshi-goken-ready": {
+      "name": "返し五剣準備",
+      "shortName": "返五剣\nﾚﾃﾞｨ"
+    },
+    "tsubame-kaeshi-setsugekka-ready": {
+      "name": "返し雪月花準備",
+      "shortName": "返雪月\nﾚﾃﾞｨ"
+    },
+    "tsubame-tendo-kaeshi-goken-ready": {
+      "name": "天道返し五剣準備",
+      "shortName": "天道\n返五剣"
+    },
+    "tsubame-tendo-kaeshi-setsugekka-ready": {
+      "name": "天道返し雪月花準備",
+      "shortName": "天道\n返雪月"
+    },
+    "tsubame-kaeshi-namikiri-ready": {
+      "name": "返し波切準備",
+      "shortName": "返波切\nﾚﾃﾞｨ"
+    },
+    "meditate": {
+      "name": "黙想",
+      "shortName": "黙想"
+    },
+    "true-north": {
+      "name": "トゥルーノース",
+      "shortName": "ﾄｩﾙｰ\nﾉｰｽ"
+    }
+  },
+  "resources": {
+    "kenki": {
+      "name": "剣気",
+      "shortName": "剣気"
+    },
+    "setsu": {
+      "name": "雪閃",
+      "shortName": "雪"
+    },
+    "getsu": {
+      "name": "月閃",
+      "shortName": "月"
+    },
+    "ka": {
+      "name": "花閃",
+      "shortName": "花"
+    },
+    "meditation": {
+      "name": "剣圧",
+      "shortName": "剣圧"
+    }
+  }
+}

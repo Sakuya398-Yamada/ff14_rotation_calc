@@ -1,0 +1,151 @@
+{
+  "jobs": {
+    "pld": {
+      "name": "Paladin"
+    },
+    "war": {
+      "name": "Warrior"
+    },
+    "drk": {
+      "name": "Dark Knight"
+    },
+    "gnb": {
+      "name": "Gunbreaker"
+    },
+    "whm": {
+      "name": "White Mage"
+    },
+    "sch": {
+      "name": "Scholar"
+    },
+    "ast": {
+      "name": "Astrologian"
+    },
+    "sge": {
+      "name": "Sage"
+    },
+    "mnk": {
+      "name": "Monk"
+    },
+    "drg": {
+      "name": "Dragoon"
+    },
+    "nin": {
+      "name": "Ninja"
+    },
+    "sam": {
+      "name": "Samurai"
+    },
+    "rpr": {
+      "name": "Reaper"
+    },
+    "vpr": {
+      "name": "Viper"
+    },
+    "brd": {
+      "name": "Bard"
+    },
+    "mch": {
+      "name": "Machinist"
+    },
+    "dnc": {
+      "name": "Dancer"
+    },
+    "blm": {
+      "name": "Black Mage"
+    },
+    "smn": {
+      "name": "Summoner"
+    },
+    "rdm": {
+      "name": "Red Mage"
+    },
+    "pct": {
+      "name": "Pictomancer"
+    }
+  },
+  "roles": {
+    "tank": {
+      "name": "Tank"
+    },
+    "healer": {
+      "name": "Healer"
+    },
+    "melee": {
+      "name": "Melee DPS"
+    },
+    "ranged": {
+      "name": "Physical Ranged DPS"
+    },
+    "caster": {
+      "name": "Magical Ranged DPS"
+    }
+  },
+  "contents": {
+    "m1s": {
+      "name": "AAC Light-heavyweight M1 (Savage)"
+    },
+    "m2s": {
+      "name": "AAC Light-heavyweight M2 (Savage)"
+    },
+    "m3s": {
+      "name": "AAC Light-heavyweight M3 (Savage)"
+    },
+    "m4s": {
+      "name": "AAC Light-heavyweight M4 (Savage)"
+    },
+    "m5s": {
+      "name": "AAC Cruiserweight M1 (Savage)"
+    },
+    "m6s": {
+      "name": "AAC Cruiserweight M2 (Savage)"
+    },
+    "m7s": {
+      "name": "AAC Cruiserweight M3 (Savage)"
+    },
+    "m8s": {
+      "name": "AAC Cruiserweight M4 (Savage)"
+    },
+    "m9s": {
+      "name": "AAC Heavyweight M1 (Savage)"
+    },
+    "m10s": {
+      "name": "AAC Heavyweight M2 (Savage)"
+    },
+    "m11s": {
+      "name": "AAC Heavyweight M3 (Savage)"
+    },
+    "m12s": {
+      "name": "AAC Heavyweight M4 (Savage)"
+    },
+    "ucob": {
+      "name": "The Unending Coil of Bahamut (Ultimate)"
+    },
+    "uwu": {
+      "name": "The Weapon's Refrain (Ultimate)"
+    },
+    "tea": {
+      "name": "The Epic of Alexander (Ultimate)"
+    },
+    "dsr": {
+      "name": "Dragonsong's Reprise (Ultimate)"
+    },
+    "top": {
+      "name": "The Omega Protocol (Ultimate)"
+    },
+    "fru": {
+      "name": "Futures Rewritten (Ultimate)"
+    },
+    "dancing-mad": {
+      "name": "Dancing Mad (Ultimate)"
+    }
+  },
+  "contentCategories": {
+    "savage": {
+      "name": "Savage"
+    },
+    "ultimate": {
+      "name": "Ultimate"
+    }
+  }
+}

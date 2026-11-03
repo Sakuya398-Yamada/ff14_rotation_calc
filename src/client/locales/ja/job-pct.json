@@ -1,0 +1,182 @@
+{
+  "skills": {
+    "fire-in-red": {
+      "name": "レッドファイア"
+    },
+    "aero-in-green": {
+      "name": "グリーンエアロ"
+    },
+    "water-in-blue": {
+      "name": "ブルーウォータ"
+    },
+    "blizzard-in-cyan": {
+      "name": "シアンブリザド"
+    },
+    "stone-in-yellow": {
+      "name": "イエローストーン"
+    },
+    "thunder-in-magenta": {
+      "name": "マゼンタサンダー"
+    },
+    "hammer-stamp": {
+      "name": "ハンマースタンプ"
+    },
+    "hammer-brush": {
+      "name": "ハンマーブラッシュ"
+    },
+    "polishing-hammer": {
+      "name": "ハンマーポリッシュ"
+    },
+    "holy-in-white": {
+      "name": "ホワイトホーリー"
+    },
+    "comet-in-black": {
+      "name": "ブラックコメット"
+    },
+    "star-prism": {
+      "name": "スタープリズム"
+    },
+    "rainbow-drip": {
+      "name": "レインボードリップ"
+    },
+    "creature-motif": {
+      "name": "ピクトアニマル"
+    },
+    "weapon-motif": {
+      "name": "ピクトウェポン"
+    },
+    "landscape-motif": {
+      "name": "ピクトスケープ"
+    },
+    "pom-muse": {
+      "name": "イマジンポンポン"
+    },
+    "winged-muse": {
+      "name": "イマジンウィング"
+    },
+    "clawed-muse": {
+      "name": "イマジンクロー"
+    },
+    "fanged-muse": {
+      "name": "イマジンファング"
+    },
+    "mog-of-the-ages": {
+      "name": "モーグリストリーム"
+    },
+    "retribution-of-the-madeen": {
+      "name": "マディーンレトリビューション"
+    },
+    "steel-muse": {
+      "name": "イマジンハンマー"
+    },
+    "subtractive-palette": {
+      "name": "サブトラクティブパレット"
+    },
+    "scenic-muse": {
+      "name": "イマジンスカイ"
+    },
+    "swiftcast": {
+      "name": "迅速魔"
+    }
+  },
+  "buffs": {
+    "aetherhues-2": {
+      "name": "色魔法2実行可",
+      "shortName": "色魔法\n2"
+    },
+    "aetherhues-3": {
+      "name": "色魔法3実行可",
+      "shortName": "色魔法\n3"
+    },
+    "subtractive-palette": {
+      "name": "サブトラクティブパレット",
+      "shortName": "ｻﾌﾞﾄﾗ\nｸﾃｨﾌﾞ"
+    },
+    "color-inversion": {
+      "name": "色調反転",
+      "shortName": "色調\n反転"
+    },
+    "hammer-combo-ready": {
+      "name": "ハンマーコンボ実行可",
+      "shortName": "ﾊﾝﾏｰ\nｺﾝﾎﾞ"
+    },
+    "hammer-brush-ready": {
+      "name": "ハンマーブラッシュ実行可",
+      "shortName": "ﾌﾞﾗｯｼｭ\nReady"
+    },
+    "hammer-polish-ready": {
+      "name": "ハンマーポリッシュ実行可",
+      "shortName": "ﾎﾟﾘｯｼｭ\nReady"
+    },
+    "starry-muse": {
+      "name": "イマジンスカイバフ",
+      "shortName": "ｲﾏｼﾞﾝ\nｽｶｲ"
+    },
+    "installation": {
+      "name": "インスタレーション",
+      "shortName": "ｲﾝｽﾀ\nﾚｰｼｮﾝ"
+    },
+    "subtractive-ready": {
+      "name": "サブトラクティブパレット実行可",
+      "shortName": "ｻﾌﾞﾄﾗ\nReady"
+    },
+    "star-prism-ready": {
+      "name": "スタープリズム実行可",
+      "shortName": "ｽﾀｰ\nﾌﾟﾘｽﾞﾑ"
+    },
+    "rainbow-drip-ready": {
+      "name": "レインボードリップ効果アップ",
+      "shortName": "ﾚｲﾝﾎﾞｰ\nReady"
+    },
+    "wing-muse-ready": {
+      "name": "イマジンウィング実行可",
+      "shortName": "ｳｨﾝｸﾞ\nReady"
+    },
+    "claw-muse-ready": {
+      "name": "イマジンクロー実行可",
+      "shortName": "ｸﾛｰ\nReady"
+    },
+    "fang-muse-ready": {
+      "name": "イマジンファング実行可",
+      "shortName": "ﾌｧﾝｸﾞ\nReady"
+    },
+    "moogle-symbol": {
+      "name": "モーグリシンボル",
+      "shortName": "ﾓｰｸﾞﾘ\nｼﾝﾎﾞﾙ"
+    },
+    "madeen-symbol": {
+      "name": "マディーンシンボル",
+      "shortName": "ﾏﾃﾞｨｰﾝ\nｼﾝﾎﾞﾙ"
+    },
+    "swiftcast": {
+      "name": "迅速魔",
+      "shortName": "迅速魔"
+    }
+  },
+  "resources": {
+    "palette-gauge": {
+      "name": "パレットゲージ",
+      "shortName": "ﾊﾟﾚｯﾄ"
+    },
+    "white-paint": {
+      "name": "ホワイトペイント",
+      "shortName": "WP"
+    },
+    "black-paint": {
+      "name": "ブラックペイント",
+      "shortName": "BP"
+    },
+    "animal-canvas": {
+      "name": "アニマルキャンバス",
+      "shortName": "ｱﾆﾏﾙ"
+    },
+    "weapon-canvas": {
+      "name": "ウェポンキャンバス",
+      "shortName": "ｳｪﾎﾟﾝ"
+    },
+    "scape-canvas": {
+      "name": "スケープキャンバス",
+      "shortName": "ｽｹｰﾌﾟ"
+    }
+  }
+}

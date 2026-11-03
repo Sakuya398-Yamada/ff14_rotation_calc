@@ -1,0 +1,210 @@
+{
+  "skills": {
+    "heavy-shot": {
+      "name": "ヘヴィショット"
+    },
+    "straight-shot": {
+      "name": "ストレートショット"
+    },
+    "venomous-bite": {
+      "name": "ベノムバイト"
+    },
+    "windbite": {
+      "name": "ウィンドバイト"
+    },
+    "iron-jaws": {
+      "name": "アイアンジョー"
+    },
+    "caustic-bite": {
+      "name": "コースティックバイト"
+    },
+    "stormbite": {
+      "name": "ストームバイト"
+    },
+    "refulgent-arrow": {
+      "name": "リフルジェントアロー"
+    },
+    "burst-shot": {
+      "name": "バーストショット"
+    },
+    "quick-nock": {
+      "name": "クイックノック"
+    },
+    "wide-volley": {
+      "name": "ワイドボレー"
+    },
+    "shadowbite": {
+      "name": "シャドウバイト"
+    },
+    "ladonsbite": {
+      "name": "ラドンバイト"
+    },
+    "apex-arrow": {
+      "name": "エイペックスアロー"
+    },
+    "blast-arrow": {
+      "name": "ブラストアロー"
+    },
+    "resonant-arrow": {
+      "name": "レゾナンスアロー"
+    },
+    "radiant-encore": {
+      "name": "光神のアンコール"
+    },
+    "bloodletter": {
+      "name": "ブラッドレッター"
+    },
+    "rain-of-death": {
+      "name": "レイン・オブ・デス"
+    },
+    "empyreal-arrow": {
+      "name": "エンピリアルアロー"
+    },
+    "pitch-perfect": {
+      "name": "ピッチパーフェクト"
+    },
+    "sidewinder": {
+      "name": "サイドワインダー"
+    },
+    "heartbreak-shot": {
+      "name": "ハートブレイクショット"
+    },
+    "raging-strikes": {
+      "name": "猛者の撃"
+    },
+    "barrage": {
+      "name": "乱れ撃ち"
+    },
+    "battle-voice": {
+      "name": "バトルボイス"
+    },
+    "radiant-finale": {
+      "name": "光神のフィナーレ"
+    },
+    "mages-ballad": {
+      "name": "賢人のバラード"
+    },
+    "armys-paeon": {
+      "name": "軍神のパイオン"
+    },
+    "wanderers-minuet": {
+      "name": "旅神のメヌエット"
+    }
+  },
+  "buffs": {
+    "raging-strikes": {
+      "name": "猛者の撃",
+      "shortName": "猛者の\n撃"
+    },
+    "battle-voice": {
+      "name": "バトルボイス",
+      "shortName": "ﾊﾞﾄﾙ\nﾎﾞｲｽ"
+    },
+    "radiant-finale-1": {
+      "name": "光神のフィナーレ（1種）",
+      "shortName": "ﾌｨﾅｰﾚ\n1種"
+    },
+    "radiant-finale-2": {
+      "name": "光神のフィナーレ（2種）",
+      "shortName": "ﾌｨﾅｰﾚ\n2種"
+    },
+    "radiant-finale-3": {
+      "name": "光神のフィナーレ（3種）",
+      "shortName": "ﾌｨﾅｰﾚ\n3種"
+    },
+    "mages-ballad": {
+      "name": "賢人のバラード",
+      "shortName": "ﾊﾞﾗｰﾄﾞ"
+    },
+    "armys-paeon": {
+      "name": "軍神のパイオン",
+      "shortName": "ﾊﾟｲｵﾝ"
+    },
+    "wanderers-minuet": {
+      "name": "旅神のメヌエット",
+      "shortName": "ﾒﾇｴｯﾄ"
+    },
+    "armys-muse-1": {
+      "name": "軍神の加護（詩心1）",
+      "shortName": "軍神の\n加護1"
+    },
+    "armys-muse-2": {
+      "name": "軍神の加護（詩心2）",
+      "shortName": "軍神の\n加護2"
+    },
+    "armys-muse-3": {
+      "name": "軍神の加護（詩心3）",
+      "shortName": "軍神の\n加護3"
+    },
+    "armys-muse-4": {
+      "name": "軍神の加護（詩心4）",
+      "shortName": "軍神の\n加護4"
+    },
+    "armys-ethos-1": {
+      "name": "軍神の契約（詩心1）",
+      "shortName": "軍神の\n契約1"
+    },
+    "armys-ethos-2": {
+      "name": "軍神の契約（詩心2）",
+      "shortName": "軍神の\n契約2"
+    },
+    "armys-ethos-3": {
+      "name": "軍神の契約（詩心3）",
+      "shortName": "軍神の\n契約3"
+    },
+    "armys-ethos-4": {
+      "name": "軍神の契約（詩心4）",
+      "shortName": "軍神の\n契約4"
+    },
+    "hawks-eye": {
+      "name": "ホークアイ",
+      "shortName": "ﾎｰｸ\nｱｲ"
+    },
+    "barrage": {
+      "name": "乱れ撃ち",
+      "shortName": "乱れ\n撃ち"
+    },
+    "blast-arrow-ready": {
+      "name": "ブラストアローレディ",
+      "shortName": "ﾌﾞﾗｽﾄ\nﾚﾃﾞｨ"
+    },
+    "resonant-arrow-ready": {
+      "name": "レゾナンスアローレディ",
+      "shortName": "ﾚｿﾞﾅﾝｽ\nﾚﾃﾞｨ"
+    },
+    "radiant-encore-ready-1": {
+      "name": "光神のアンコールレディ（1種）",
+      "shortName": "ｱﾝｺｰﾙ\nﾚﾃﾞｨ1"
+    },
+    "radiant-encore-ready-2": {
+      "name": "光神のアンコールレディ（2種）",
+      "shortName": "ｱﾝｺｰﾙ\nﾚﾃﾞｨ2"
+    },
+    "radiant-encore-ready-3": {
+      "name": "光神のアンコールレディ（3種）",
+      "shortName": "ｱﾝｺｰﾙ\nﾚﾃﾞｨ3"
+    }
+  },
+  "resources": {
+    "soul-voice": {
+      "name": "ソウルボイス",
+      "shortName": "ｿｳﾙ\nﾎﾞｲｽ"
+    },
+    "coda-mages": {
+      "name": "賢人のコーダ",
+      "shortName": "ｺｰﾀﾞ"
+    },
+    "coda-armys": {
+      "name": "軍神のコーダ",
+      "shortName": "ｺｰﾀﾞ"
+    },
+    "coda-wanderers": {
+      "name": "旅神のコーダ",
+      "shortName": "ｺｰﾀﾞ"
+    },
+    "repertoire": {
+      "name": "詩心",
+      "shortName": "詩心"
+    }
+  }
+}

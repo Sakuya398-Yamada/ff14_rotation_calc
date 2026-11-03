@@ -1,0 +1,87 @@
+{
+  "skills": {
+    "sch-ruin": {
+      "name": "ルイン"
+    },
+    "broil": {
+      "name": "気炎法"
+    },
+    "broil2": {
+      "name": "魔炎法"
+    },
+    "broil3": {
+      "name": "死炎法"
+    },
+    "broil4": {
+      "name": "極炎法"
+    },
+    "sch-ruin2": {
+      "name": "ルインラ"
+    },
+    "sch-bio": {
+      "name": "バイオ"
+    },
+    "sch-bio2": {
+      "name": "バイオラ"
+    },
+    "biolysis": {
+      "name": "蠱毒法"
+    },
+    "art-of-war": {
+      "name": "破陣法"
+    },
+    "art-of-war2": {
+      "name": "裂陣法"
+    },
+    "energy-drain": {
+      "name": "エナジードレイン"
+    },
+    "aetherflow": {
+      "name": "エーテルフロー"
+    },
+    "dissipation": {
+      "name": "転化"
+    },
+    "lustrate": {
+      "name": "生命活性法"
+    },
+    "sacred-soil": {
+      "name": "野戦治療の陣"
+    },
+    "indomitability": {
+      "name": "不撓不屈の策"
+    },
+    "excogitation": {
+      "name": "深謀遠慮の策"
+    },
+    "chain-stratagem": {
+      "name": "連環計"
+    },
+    "baneful-impaction": {
+      "name": "埋伏の毒"
+    },
+    "swiftcast": {
+      "name": "迅速魔"
+    }
+  },
+  "buffs": {
+    "chain-stratagem": {
+      "name": "連環計",
+      "shortName": "連環計"
+    },
+    "impact-imminent": {
+      "name": "埋伏の毒実行可",
+      "shortName": "埋伏\n実行可"
+    },
+    "swiftcast": {
+      "name": "迅速魔",
+      "shortName": "迅速魔"
+    }
+  },
+  "resources": {
+    "aetherflow": {
+      "name": "エーテルフロー",
+      "shortName": "ｴｰﾃﾙ\nﾌﾛｰ"
+    }
+  }
+}

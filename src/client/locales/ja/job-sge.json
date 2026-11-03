@@ -1,0 +1,99 @@
+{
+  "skills": {
+    "dosis": {
+      "name": "ドシス"
+    },
+    "dosis2": {
+      "name": "ドシスII"
+    },
+    "dosis3": {
+      "name": "ドシスIII"
+    },
+    "eukrasian-dosis": {
+      "name": "エウクラシア・ドシス"
+    },
+    "eukrasian-dosis2": {
+      "name": "エウクラシア・ドシスII"
+    },
+    "eukrasian-dosis3": {
+      "name": "エウクラシア・ドシスIII"
+    },
+    "eukrasia": {
+      "name": "エウクラシア"
+    },
+    "phlegma": {
+      "name": "フレグマ"
+    },
+    "phlegma2": {
+      "name": "フレグマII"
+    },
+    "phlegma3": {
+      "name": "フレグマIII"
+    },
+    "toxikon": {
+      "name": "トキシコン"
+    },
+    "toxikon2": {
+      "name": "トキシコンII"
+    },
+    "dyskrasia": {
+      "name": "ディスクラシア"
+    },
+    "dyskrasia2": {
+      "name": "ディスクラシアII"
+    },
+    "eukrasian-dyskrasia": {
+      "name": "エウクラシア・ディスクラシア"
+    },
+    "pneuma": {
+      "name": "プネウマ"
+    },
+    "diagnosis": {
+      "name": "ディアグノシス"
+    },
+    "eukrasian-diagnosis": {
+      "name": "エウクラシア・ディアグノシス"
+    },
+    "psyche": {
+      "name": "プシュケー"
+    },
+    "druochole": {
+      "name": "ドルオコレ"
+    },
+    "kerachole": {
+      "name": "ケーラコレ"
+    },
+    "ixochole": {
+      "name": "イックソコレ"
+    },
+    "taurochole": {
+      "name": "タウロコレ"
+    },
+    "rhizomata": {
+      "name": "リゾーマタ"
+    },
+    "swiftcast": {
+      "name": "迅速魔"
+    }
+  },
+  "buffs": {
+    "eukrasia": {
+      "name": "エウクラシア",
+      "shortName": "ｴｳｸﾗ\nｼｱ"
+    },
+    "swiftcast": {
+      "name": "迅速魔",
+      "shortName": "迅速魔"
+    }
+  },
+  "resources": {
+    "addersgall": {
+      "name": "アダーガル",
+      "shortName": "ｱﾀﾞｰ\nｶﾞﾙ"
+    },
+    "addersting": {
+      "name": "アダーステック",
+      "shortName": "ｱﾀﾞｰ\nｽﾃｨｸ"
+    }
+  }
+}

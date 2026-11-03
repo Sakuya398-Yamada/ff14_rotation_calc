@@ -1,0 +1,100 @@
+{
+  "skills": {
+    "malefic": {
+      "name": "マレフィク"
+    },
+    "malefic2": {
+      "name": "マレフィラ"
+    },
+    "malefic3": {
+      "name": "マレフィガ"
+    },
+    "malefic4": {
+      "name": "マレフィジャ"
+    },
+    "fall-malefic": {
+      "name": "フォールマレフィク"
+    },
+    "combust": {
+      "name": "コンバス"
+    },
+    "combust2": {
+      "name": "コンバラ"
+    },
+    "combust3": {
+      "name": "コンバガ"
+    },
+    "gravity": {
+      "name": "グラビデ"
+    },
+    "gravity2": {
+      "name": "グラビラ"
+    },
+    "macrocosmos": {
+      "name": "マクロコスモス"
+    },
+    "divination": {
+      "name": "ディヴィネーション"
+    },
+    "oracle": {
+      "name": "オラクル"
+    },
+    "lightspeed": {
+      "name": "ライトスピード"
+    },
+    "astral-draw": {
+      "name": "アストラルドロー"
+    },
+    "umbral-draw": {
+      "name": "アンブラルドロー"
+    },
+    "lord-of-crowns": {
+      "name": "クラウンロード"
+    },
+    "earthly-star": {
+      "name": "アーサリースター"
+    },
+    "stellar-detonation": {
+      "name": "ステラデトネーション"
+    },
+    "swiftcast": {
+      "name": "迅速魔"
+    }
+  },
+  "buffs": {
+    "divination": {
+      "name": "ディヴィネーション",
+      "shortName": "ﾃﾞｨｳﾞｨ\nﾈｰｼｮﾝ"
+    },
+    "divining": {
+      "name": "オラクル実行可",
+      "shortName": "ｵﾗｸﾙ\n実行可"
+    },
+    "lightspeed": {
+      "name": "ライトスピード",
+      "shortName": "ﾗｲﾄ\nｽﾋﾟｰﾄﾞ"
+    },
+    "earthly-star": {
+      "name": "アーサリースター",
+      "shortName": "ｱｰｻﾘｰ\nｽﾀｰ"
+    },
+    "earthly-dominance": {
+      "name": "星の支配者",
+      "shortName": "星の\n支配者"
+    },
+    "swiftcast": {
+      "name": "迅速魔",
+      "shortName": "迅速魔"
+    }
+  },
+  "resources": {
+    "lord-of-crowns": {
+      "name": "クラウンロード実行可",
+      "shortName": "ｸﾗｳﾝ\nﾛｰﾄﾞ"
+    },
+    "umbral-draw-next": {
+      "name": "アンブラルドロー待ち",
+      "shortName": "ｱﾝﾌﾞﾗﾙ\n待ち"
+    }
+  }
+}

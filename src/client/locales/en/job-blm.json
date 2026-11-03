@@ -1,0 +1,235 @@
+{
+  "skills": {
+    "fire": {
+      "name": "Fire"
+    },
+    "fire-3": {
+      "name": "Fire III"
+    },
+    "fire-4": {
+      "name": "Fire IV"
+    },
+    "despair": {
+      "name": "Despair"
+    },
+    "flare-star": {
+      "name": "Flare Star"
+    },
+    "fire-2": {
+      "name": "Fire II"
+    },
+    "high-fire-2": {
+      "name": "High Fire II"
+    },
+    "flare": {
+      "name": "Flare"
+    },
+    "blizzard": {
+      "name": "Blizzard"
+    },
+    "blizzard-3": {
+      "name": "Blizzard III"
+    },
+    "blizzard-4": {
+      "name": "Blizzard IV"
+    },
+    "blizzard-2": {
+      "name": "Blizzard II"
+    },
+    "high-blizzard-2": {
+      "name": "High Blizzard II"
+    },
+    "freeze": {
+      "name": "Freeze"
+    },
+    "paradox": {
+      "name": "Paradox"
+    },
+    "high-thunder": {
+      "name": "High Thunder"
+    },
+    "thunder-3": {
+      "name": "Thunder III"
+    },
+    "high-thunder-2": {
+      "name": "High Thunder II"
+    },
+    "thunder-4": {
+      "name": "Thunder IV"
+    },
+    "xenoglossy": {
+      "name": "Xenoglossy"
+    },
+    "foul": {
+      "name": "Foul"
+    },
+    "manafont": {
+      "name": "Manafont"
+    },
+    "triplecast": {
+      "name": "Triplecast"
+    },
+    "ley-lines": {
+      "name": "Ley Lines"
+    },
+    "transpose": {
+      "name": "Transpose"
+    },
+    "amplifier": {
+      "name": "Amplifier"
+    },
+    "swiftcast": {
+      "name": "Swiftcast"
+    },
+    "lucid-dreaming": {
+      "name": "Lucid Dreaming"
+    },
+    "fire-up-af2": {
+      "name": "Fire (AF1→AF2)"
+    },
+    "fire-up-af3": {
+      "name": "Fire (AF2→AF3)"
+    },
+    "fire-stay-af3": {
+      "name": "Fire (stays AF3)"
+    },
+    "blizzard-up-ub2": {
+      "name": "Blizzard (UB1→UB2)"
+    },
+    "blizzard-up-ub3": {
+      "name": "Blizzard (UB2→UB3)"
+    },
+    "blizzard-stay-ub3": {
+      "name": "Blizzard (stays UB3)"
+    },
+    "paradox-af": {
+      "name": "Paradox (AF)"
+    },
+    "transpose-to-ub1": {
+      "name": "Transpose (AF→UB1)"
+    },
+    "transpose-to-af1": {
+      "name": "Transpose (UB→AF1)"
+    },
+    "fire-3-in-af": {
+      "name": "Fire III (in AF)"
+    },
+    "fire-2-in-af": {
+      "name": "Fire II (in AF)"
+    },
+    "high-fire-2-in-af": {
+      "name": "High Fire II (in AF)"
+    },
+    "fire-in-ub": {
+      "name": "Fire (ends UB)"
+    },
+    "fire-3-from-ub3": {
+      "name": "Fire III (UB3→AF3)"
+    },
+    "fire-2-from-ub3": {
+      "name": "Fire II (UB3→AF3)"
+    },
+    "high-fire-2-from-ub3": {
+      "name": "High Fire II (UB3→AF3)"
+    },
+    "transpose-to-af1-from-ub3": {
+      "name": "Transpose (UB3→AF1)"
+    },
+    "blizzard-3-in-ub": {
+      "name": "Blizzard III (in UB)"
+    },
+    "blizzard-2-in-ub": {
+      "name": "Blizzard II (in UB)"
+    },
+    "high-blizzard-2-in-ub": {
+      "name": "High Blizzard II (in UB)"
+    },
+    "blizzard-in-af": {
+      "name": "Blizzard (ends AF)"
+    },
+    "blizzard-3-from-af3": {
+      "name": "Blizzard III (AF3→UB3)"
+    },
+    "blizzard-2-from-af3": {
+      "name": "Blizzard II (AF3→UB3)"
+    },
+    "high-blizzard-2-from-af3": {
+      "name": "High Blizzard II (AF3→UB3)"
+    },
+    "transpose-to-ub1-from-af3": {
+      "name": "Transpose (AF3→UB1)"
+    }
+  },
+  "buffs": {
+    "astral-fire-1": {
+      "name": "Astral Fire I",
+      "shortName": "AF1"
+    },
+    "astral-fire-2": {
+      "name": "Astral Fire II",
+      "shortName": "AF2"
+    },
+    "astral-fire-3": {
+      "name": "Astral Fire III",
+      "shortName": "AF3"
+    },
+    "umbral-ice-1": {
+      "name": "Umbral Ice I",
+      "shortName": "UI1"
+    },
+    "umbral-ice-2": {
+      "name": "Umbral Ice II",
+      "shortName": "UI2"
+    },
+    "umbral-ice-3": {
+      "name": "Umbral Ice III",
+      "shortName": "UI3"
+    },
+    "thunderhead": {
+      "name": "Thunderhead",
+      "shortName": "Thunder\nhead"
+    },
+    "firestarter": {
+      "name": "Firestarter",
+      "shortName": "Fire-\nstarter"
+    },
+    "triplecast": {
+      "name": "Triplecast",
+      "shortName": "Triple-\ncast"
+    },
+    "ley-lines": {
+      "name": "Ley Lines",
+      "shortName": "Ley\nLines"
+    },
+    "swiftcast": {
+      "name": "Swiftcast",
+      "shortName": "Swift-\ncast"
+    },
+    "lucid-dreaming": {
+      "name": "Lucid Dreaming",
+      "shortName": "Lucid"
+    }
+  },
+  "resources": {
+    "mp": {
+      "name": "MP",
+      "shortName": "MP"
+    },
+    "umbral-heart": {
+      "name": "Umbral Heart",
+      "shortName": "Hearts"
+    },
+    "paradox-gauge": {
+      "name": "Paradox Gauge",
+      "shortName": "Paradox"
+    },
+    "polyglot": {
+      "name": "Polyglot",
+      "shortName": "Poly-\nglot"
+    },
+    "astral-soul": {
+      "name": "Astral Soul",
+      "shortName": "Astral\nSoul"
+    }
+  }
+}

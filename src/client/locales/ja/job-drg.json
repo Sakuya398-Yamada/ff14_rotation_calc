@@ -1,0 +1,166 @@
+{
+  "skills": {
+    "true-thrust": {
+      "name": "トゥルースラスト"
+    },
+    "vorpal-thrust": {
+      "name": "ボーパルスラスト"
+    },
+    "full-thrust": {
+      "name": "フルスラスト"
+    },
+    "fang-and-claw": {
+      "name": "竜牙竜爪"
+    },
+    "disembowel": {
+      "name": "ディセムボウル"
+    },
+    "chaos-thrust": {
+      "name": "桜華狂咲"
+    },
+    "wheeling-thrust": {
+      "name": "竜尾大車輪"
+    },
+    "drakesbane": {
+      "name": "雲蒸竜変"
+    },
+    "raiden-thrust": {
+      "name": "竜眼雷電"
+    },
+    "piercing-talon": {
+      "name": "ピアシングタロン"
+    },
+    "doom-spike": {
+      "name": "ドゥームスパイク"
+    },
+    "sonic-thrust": {
+      "name": "ソニックスラスト"
+    },
+    "coerthan-torment": {
+      "name": "クルザントーメント"
+    },
+    "draconian-fury": {
+      "name": "竜眼蒼穹"
+    },
+    "heavens-thrust": {
+      "name": "ヘヴンスラスト"
+    },
+    "chaotic-spring": {
+      "name": "桜華繚乱"
+    },
+    "lance-barrage": {
+      "name": "スラストラッシュ"
+    },
+    "spiral-blow": {
+      "name": "スパイラルブロウ"
+    },
+    "life-surge": {
+      "name": "ライフサージ"
+    },
+    "lance-charge": {
+      "name": "ランスチャージ"
+    },
+    "battle-litany": {
+      "name": "バトルリタニー"
+    },
+    "jump": {
+      "name": "ジャンプ"
+    },
+    "high-jump": {
+      "name": "ハイジャンプ"
+    },
+    "mirage-dive": {
+      "name": "ミラージュダイブ"
+    },
+    "dragonfire-dive": {
+      "name": "ドラゴンダイブ"
+    },
+    "rise-of-the-dragon": {
+      "name": "ドラゴンライズ"
+    },
+    "stardiver": {
+      "name": "スターダイバー"
+    },
+    "starcross": {
+      "name": "スタークロッサー"
+    },
+    "geirskogul": {
+      "name": "ゲイルスコグル"
+    },
+    "nastrond": {
+      "name": "ナーストレンド"
+    },
+    "wyrmwind-thrust": {
+      "name": "天竜点睛"
+    },
+    "elusive-jump": {
+      "name": "イルーシブジャンプ"
+    },
+    "winged-glide": {
+      "name": "ウィンググライド"
+    },
+    "true-north": {
+      "name": "トゥルーノース"
+    }
+  },
+  "buffs": {
+    "lance-charge": {
+      "name": "ランスチャージ",
+      "shortName": "ﾗﾝｽ\nﾁｬｰｼﾞ"
+    },
+    "battle-litany": {
+      "name": "バトルリタニー",
+      "shortName": "ﾊﾞﾄﾙ\nﾘﾀﾆｰ"
+    },
+    "life-surge": {
+      "name": "ライフサージ",
+      "shortName": "ﾗｲﾌ\nｻｰｼﾞ"
+    },
+    "dragons-eye": {
+      "name": "竜眼",
+      "shortName": "竜眼"
+    },
+    "power-surge": {
+      "name": "竜槍",
+      "shortName": "竜槍"
+    },
+    "life-of-the-dragon": {
+      "name": "紅の竜血",
+      "shortName": "紅の\n竜血"
+    },
+    "dive-ready": {
+      "name": "ダイブレディ",
+      "shortName": "ﾀﾞｲﾌﾞ\nﾚﾃﾞｨ"
+    },
+    "dragons-flight": {
+      "name": "ドラゴンフライト",
+      "shortName": "ﾄﾞﾗｺﾞﾝ\nﾌﾗｲﾄ"
+    },
+    "nastrond-ready": {
+      "name": "ナーストレンドレディ",
+      "shortName": "ﾅｰｽ\nﾚﾃﾞｨ"
+    },
+    "starcross-ready": {
+      "name": "スタークロスレディ",
+      "shortName": "ｽﾀｸﾛ\nﾚﾃﾞｨ"
+    },
+    "drakesbane-ready": {
+      "name": "雲蒸竜変レディ",
+      "shortName": "雲蒸\nﾚﾃﾞｨ"
+    },
+    "enhanced-piercing-talon": {
+      "name": "エンハンスドピアシングタロン",
+      "shortName": "PT\n強化"
+    },
+    "true-north": {
+      "name": "トゥルーノース",
+      "shortName": "ﾄｩﾙｰ\nﾉｰｽ"
+    }
+  },
+  "resources": {
+    "firstminds-focus": {
+      "name": "天竜眼",
+      "shortName": "天竜眼"
+    }
+  }
+}

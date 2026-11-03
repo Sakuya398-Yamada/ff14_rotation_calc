@@ -1,0 +1,82 @@
+{
+  "skills": {
+    "stone": {
+      "name": "Stone"
+    },
+    "stone2": {
+      "name": "Stone II"
+    },
+    "stone3": {
+      "name": "Stone III"
+    },
+    "stone4": {
+      "name": "Stone IV"
+    },
+    "glare": {
+      "name": "Glare"
+    },
+    "glare3": {
+      "name": "Glare III"
+    },
+    "aero": {
+      "name": "Aero"
+    },
+    "aero2": {
+      "name": "Aero II"
+    },
+    "dia": {
+      "name": "Dia"
+    },
+    "holy": {
+      "name": "Holy"
+    },
+    "holy3": {
+      "name": "Holy III"
+    },
+    "glare4": {
+      "name": "Glare IV"
+    },
+    "heart-of-solace": {
+      "name": "Afflatus Solace"
+    },
+    "heart-of-rapture": {
+      "name": "Afflatus Rapture"
+    },
+    "heart-of-misery": {
+      "name": "Afflatus Misery"
+    },
+    "assize": {
+      "name": "Assize"
+    },
+    "presence-of-mind": {
+      "name": "Presence of Mind"
+    },
+    "swiftcast": {
+      "name": "Swiftcast"
+    }
+  },
+  "buffs": {
+    "presence-of-mind": {
+      "name": "Presence of Mind",
+      "shortName": "PoM"
+    },
+    "sacred-sight": {
+      "name": "Sacred Sight",
+      "shortName": "Sacred\nSight"
+    },
+    "swiftcast": {
+      "name": "Swiftcast",
+      "shortName": "Swift-\ncast"
+    }
+  },
+  "resources": {
+    "healing-lily": {
+      "name": "Healing Lily",
+      "shortName": "Healing\nLily"
+    },
+    "blood-lily": {
+      "name": "Blood Lily",
+      "shortName": "Blood\nLily"
+    }
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "skills": {
+    "dragon-kick": {
+      "name": "Dragon Kick"
+    },
+    "bootshine": {
+      "name": "Bootshine"
+    },
+    "bootshine-fury": {
+      "name": "Bootshine (Fury)"
+    },
+    "leaping-opo": {
+      "name": "Leaping Opo"
+    },
+    "leaping-opo-fury": {
+      "name": "Leaping Opo (Fury)"
+    },
+    "twin-snakes": {
+      "name": "Twin Snakes"
+    },
+    "true-strike": {
+      "name": "True Strike"
+    },
+    "true-strike-fury": {
+      "name": "True Strike (Fury)"
+    },
+    "rising-raptor": {
+      "name": "Rising Raptor"
+    },
+    "rising-raptor-fury": {
+      "name": "Rising Raptor (Fury)"
+    },
+    "demolish": {
+      "name": "Demolish"
+    },
+    "snap-punch": {
+      "name": "Snap Punch"
+    },
+    "snap-punch-fury": {
+      "name": "Snap Punch (Fury)"
+    },
+    "pouncing-coeurl": {
+      "name": "Pouncing Coeurl"
+    },
+    "pouncing-coeurl-fury": {
+      "name": "Pouncing Coeurl (Fury)"
+    },
+    "arm-of-the-destroyer": {
+      "name": "Arm of the Destroyer"
+    },
+    "shadow-of-the-destroyer": {
+      "name": "Shadow of the Destroyer"
+    },
+    "four-point-fury": {
+      "name": "Four-point Fury"
+    },
+    "rockbreaker": {
+      "name": "Rockbreaker"
+    },
+    "form-shift": {
+      "name": "Form Shift"
+    },
+    "six-sided-star": {
+      "name": "Six-sided Star"
+    },
+    "masterful-blitz": {
+      "name": "Masterful Blitz"
+    },
+    "tornado-kick": {
+      "name": "Tornado Kick"
+    },
+    "phantom-rush": {
+      "name": "Phantom Rush"
+    },
+    "elixir-field": {
+      "name": "Elixir Field"
+    },
+    "elixir-burst": {
+      "name": "Elixir Burst"
+    },
+    "flint-strike": {
+      "name": "Flint Strike"
+    },
+    "rising-phoenix": {
+      "name": "Rising Phoenix"
+    },
+    "celestial-revolution": {
+      "name": "Celestial Revolution"
+    },
+    "winds-reply": {
+      "name": "Wind's Reply"
+    },
+    "fires-reply": {
+      "name": "Fire's Reply"
+    },
+    "steeled-meditation": {
+      "name": "Steeled Meditation"
+    },
+    "forbidden-meditation": {
+      "name": "Forbidden Meditation"
+    },
+    "steel-peak": {
+      "name": "Steel Peak"
+    },
+    "the-forbidden-chakra": {
+      "name": "The Forbidden Chakra"
+    },
+    "howling-fist": {
+      "name": "Howling Fist"
+    },
+    "enlightenment": {
+      "name": "Enlightenment"
+    },
+    "perfect-balance": {
+      "name": "Perfect Balance"
+    },
+    "riddle-of-fire": {
+      "name": "Riddle of Fire"
+    },
+    "riddle-of-wind": {
+      "name": "Riddle of Wind"
+    },
+    "brotherhood": {
+      "name": "Brotherhood"
+    },
+    "riddle-of-earth": {
+      "name": "Riddle of Earth"
+    },
+    "mantra": {
+      "name": "Mantra"
+    },
+    "thunderclap": {
+      "name": "Thunderclap"
+    },
+    "true-north": {
+      "name": "True North"
+    }
+  },
+  "buffs": {
+    "opo-form": {
+      "name": "Opo-opo Form",
+      "shortName": "Opo\nForm"
+    },
+    "raptor-form": {
+      "name": "Raptor Form",
+      "shortName": "Raptor\nForm"
+    },
+    "coeurl-form": {
+      "name": "Coeurl Form",
+      "shortName": "Coeurl\nForm"
+    },
+    "perfect-balance": {
+      "name": "Perfect Balance",
+      "shortName": "Perfect\nBalance"
+    },
+    "formless-fist": {
+      "name": "Formless Fist",
+      "shortName": "Form-\nless"
+    },
+    "riddle-of-fire": {
+      "name": "Riddle of Fire",
+      "shortName": "RoF"
+    },
+    "fire-rumination": {
+      "name": "Fire's Rumination",
+      "shortName": "Fire's\nRumin."
+    },
+    "riddle-of-wind": {
+      "name": "Riddle of Wind",
+      "shortName": "RoW"
+    },
+    "wind-rumination": {
+      "name": "Wind's Rumination",
+      "shortName": "Wind's\nRumin."
+    },
+    "brotherhood-no-chakra-gain": {
+      "name": "Brotherhood",
+      "shortName": "Brother-\nhood"
+    },
+    "brotherhood": {
+      "name": "Brotherhood",
+      "shortName": "Brother-\nhood"
+    },
+    "riddle-of-earth": {
+      "name": "Riddle of Earth",
+      "shortName": "RoE"
+    },
+    "mantra": {
+      "name": "Mantra",
+      "shortName": "Mantra"
+    },
+    "true-north": {
+      "name": "True North",
+      "shortName": "True\nNorth"
+    }
+  },
+  "resources": {
+    "chakra": {
+      "name": "Chakra",
+      "shortName": "Chakra"
+    },
+    "opo-fury": {
+      "name": "Opo-opo's Fury",
+      "shortName": "Fury"
+    },
+    "raptor-fury": {
+      "name": "Raptor's Fury",
+      "shortName": "Fury"
+    },
+    "coeurl-fury": {
+      "name": "Coeurl's Fury",
+      "shortName": "Fury"
+    },
+    "opo-chakra": {
+      "name": "Opo-opo Chakra",
+      "shortName": "Chakra"
+    },
+    "raptor-chakra": {
+      "name": "Raptor Chakra",
+      "shortName": "Chakra"
+    },
+    "coeurl-chakra": {
+      "name": "Coeurl Chakra",
+      "shortName": "Chakra"
+    },
+    "lunar-nadi": {
+      "name": "Lunar Nadi",
+      "shortName": "Nadi"
+    },
+    "solar-nadi": {
+      "name": "Solar Nadi",
+      "shortName": "Solar"
+    }
+  }
+}
