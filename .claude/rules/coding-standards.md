@@ -24,9 +24,14 @@ ff14_rotation_calc/
 ├── scripts/             # 本番の運用で手や cron から呼ぶスクリプト（D1 のバックアップ。docs/d1-backup.md）
 ├── src/
 │   ├── client/          # React フロントエンド
+│   │   ├── assets/      # アイコン画像（icons/<ジョブ ID>/*.png）
 │   │   ├── components/
-│   │   ├── pages/
+│   │   ├── data/        # ジョブごとのスキル・バフ・リソースのデータ（<ジョブ ID>-skills.ts 等）と、ジョブ・コンテンツの一覧
+│   │   ├── en/          # 英語版の HTML（/en/ で配信する index.html）
 │   │   ├── locales/     # i18n の辞書（{ja,en}/<名前空間>.json。後述「多言語化（i18n）」）
+│   │   ├── logic/       # 画面に依らない処理（タイムラインの解決・期待値の計算・保存・言語の判定など）
+│   │   ├── styles/      # CSS（デザイントークンの tokens.css）
+│   │   ├── types/       # スキル・バフ・リソースなどのデータの型（skill.ts）
 │   │   ├── i18n.ts      # i18next の初期化
 │   │   └── main.tsx
 │   └── server/          # Hono バックエンド（Cloudflare Worker）
