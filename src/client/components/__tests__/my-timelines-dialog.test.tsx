@@ -174,6 +174,143 @@ describe("MyTimelinesDialog", () => {
   });
 });
 
+describe("MyTimelinesDialog: 削除", () => {
+  let confirmMock: ReturnType<typeof vi.fn<(message?: string) => boolean>>;
+
+  beforeEach(() => {
+    // jsdom は window.confirm を実装していないため差し替える
+    confirmMock = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirmMock);
+  });
+
+  function deleteButton(title: string) {
+    return screen.getByRole("button", { name: `「${title}」を削除` });
+  }
+
+  it("各行の削除ボタンで確認を出し、OK なら DELETE を送って行を一覧から外し、次の行にフォーカスを移す", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(deleteButton("タイムライン 2"));
+
+    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining("「タイムライン 2」を削除しますか？"));
+    expect(fetchMock.mock.calls[1][0]).toBe(`/api/timelines/${item(2).id}`);
+    expect(fetchMock.mock.calls[1][1]?.method).toBe("DELETE");
+    await vi.waitFor(() => expect(screen.getAllByRole("link")).toHaveLength(1));
+    expect(screen.getByRole("link")).toHaveTextContent("タイムライン 1");
+    expect(screen.getByRole("link")).toHaveFocus();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("最後の行を削除すると前の行に、全部削除すると無いことを表示して閉じるボタンにフォーカスを移す", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }))
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(deleteButton("タイムライン 1"));
+
+    await vi.waitFor(() => expect(screen.getAllByRole("link")).toHaveLength(1));
+    expect(screen.getByRole("link")).toHaveTextContent("タイムライン 2");
+    expect(screen.getByRole("link")).toHaveFocus();
+
+    fireEvent.click(deleteButton("タイムライン 2"));
+    expect(await screen.findByText("このブラウザで保存したタイムラインはありません。")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "閉じる" }).at(-1)).toHaveFocus();
+  });
+
+  it("タイトルの無い行は「（無題）」として確認する", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [item(1, { title: null })], nextCursor: null }));
+    confirmMock.mockReturnValue(false);
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(deleteButton("（無題）"));
+
+    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining("「（無題）」を削除しますか？"));
+  });
+
+  it("確認でキャンセルしたら送らず、行も残す", async () => {
+    confirmMock.mockReturnValue(false);
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(deleteButton("タイムライン 1"));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+  });
+
+  it("削除中はどの行の削除ボタンも押せず、応答が届いたら押せるようにする", async () => {
+    let respond!: (res: Response) => void;
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }))
+      .mockReturnValueOnce(new Promise((resolve) => (respond = resolve)));
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(deleteButton("タイムライン 2"));
+
+    expect(deleteButton("タイムライン 2")).toBeDisabled();
+    expect(deleteButton("タイムライン 2")).toHaveTextContent("削除中…");
+    expect(deleteButton("タイムライン 1")).toBeDisabled();
+    await act(async () => respond(new Response(null, { status: 204 })));
+    expect(deleteButton("タイムライン 1")).toBeEnabled();
+  });
+
+  it.each([
+    ["429", () => Promise.resolve(jsonResponse({ error: "rate_limited" }, 429)), "短時間に続けて保存・削除したため"],
+    ["通信断", () => Promise.reject(new TypeError("Failed to fetch")), "削除できませんでした。通信状況を確かめて"],
+  ] as const)("削除に失敗したら（%s）行を残してエラーを出し、押せるようにした削除ボタンにフォーカスを戻す", async (_label, respond, message) => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [item(1)], nextCursor: null })).mockImplementationOnce(respond);
+    renderDialog();
+    await screen.findAllByRole("link");
+    const button = deleteButton("タイムライン 1");
+    button.focus();
+    fireEvent.click(button);
+    // ブラウザは無効にしたボタンからフォーカスを外す。jsdom は外さず、無効なボタンの blur() も効かないので、ほかの要素に移して同じく外れた状態にする
+    expect(button).toBeDisabled();
+    screen.getByRole("link").focus();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(deleteButton("タイムライン 1")).toBeEnabled();
+    expect(deleteButton("タイムライン 1")).toHaveFocus();
+  });
+
+  it("削除のエラーは、閉じて開き直すと消す", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(1)], nextCursor: null }))
+      .mockResolvedValueOnce(jsonResponse({ error: "internal" }, 500));
+    const { props, rerender } = renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(deleteButton("タイムライン 1"));
+    await screen.findByRole("alert");
+    rerender(<MyTimelinesDialog {...props} open={false} />);
+    rerender(<MyTimelinesDialog {...props} open={true} />);
+
+    await screen.findAllByRole("link");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("削除中に閉じると送信を中断し、閉じた後に応答が届いても、開き直したときに削除中の表示やエラーを残さない", async () => {
+    let respond!: (res: Response) => void;
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(1)], nextCursor: null }))
+      .mockReturnValueOnce(new Promise((resolve) => (respond = resolve)));
+    const { props, rerender } = renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(deleteButton("タイムライン 1"));
+    rerender(<MyTimelinesDialog {...props} open={false} />);
+
+    expect(fetchMock.mock.calls[1][1]?.signal?.aborted).toBe(true);
+    await act(async () => respond(jsonResponse({ error: "internal" }, 500)));
+    rerender(<MyTimelinesDialog {...props} open={true} />);
+    await screen.findAllByRole("link");
+    expect(deleteButton("タイムライン 1")).toBeEnabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
 describe("MyTimelinesDialog（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
@@ -203,5 +340,23 @@ describe("MyTimelinesDialog（英語）", () => {
       "Your saved timelines could not be loaded. Check your connection and try again."
     );
     expect(screen.getByRole("button", { name: "Close saved timelines" })).toBeInTheDocument();
+  });
+
+  it("削除ボタン・確認・削除のエラーを英語で出す", async () => {
+    const confirmMock = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirmMock);
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(1)], nextCursor: null }))
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    renderDialog();
+    await screen.findAllByRole("link");
+    const button = screen.getByRole("button", { name: 'Delete "タイムライン 1"' });
+    expect(button).toHaveTextContent("Delete");
+    fireEvent.click(button);
+
+    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('Delete "タイムライン 1"?'));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The timeline could not be deleted. Check your connection and try again."
+    );
   });
 });

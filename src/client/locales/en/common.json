@@ -25,6 +25,7 @@
   "sharedTimeline": {
     "loadErrors": {
       "not_found": "The shared timeline was not found. Check that the URL is correct. The timeline you were working on is left as it was.",
+      "deleted": "This shared timeline was deleted by the person who saved it. The timeline you were working on is left as it was.",
       "unsupported_version": "This shared timeline was saved in a format that this version cannot load. The timeline you were working on is left as it was.",
       "invalid_data": "The shared timeline data could not be loaded. The timeline you were working on is left as it was.",
       "network": "The shared timeline could not be loaded. Check your connection and reload the page. The timeline you were working on is left as it was."
@@ -66,6 +67,14 @@
     "untitled": "(Untitled)",
     "jobLevel": "{{job}} Lv{{level}} · ",
     "loadMore": "Load more",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "deleteLabel": "Delete \"{{title}}\"",
+    "confirmDelete": "Delete \"{{title}}\"? It can no longer be opened from its share URL, even by people you shared the URL with. This cannot be undone.",
+    "deleteErrors": {
+      "rate_limited": "You saved or deleted too many times in a short period, so the timeline was not deleted. Wait about a minute and try again.",
+      "network": "The timeline could not be deleted. Check your connection and try again."
+    },
     "closeButton": "Close"
   },
   "settingsDialog": {
