@@ -9,6 +9,7 @@
     "duration": "Duration"
   },
   "app": {
+    "siteName": "FFXIV Rotation Calculator",
     "confirmOpenShared": "Opening the shared timeline will replace the timeline you are working on. Open it?",
     "saveAndShare": "Save & share",
     "myTimelines": "Saved timelines",

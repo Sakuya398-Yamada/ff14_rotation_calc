@@ -389,7 +389,7 @@ export function App() {
   return (
     <div className="app-root" style={styles.app}>
       <header className="app-header" style={styles.header}>
-        <h1 style={styles.headerTitle}>FF14 Rotation Calculator</h1>
+        <h1 style={styles.headerTitle}>{t("app.siteName")}</h1>
         <JobPicker
           selectedJob={selectedJob}
           level={level}
