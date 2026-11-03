@@ -44,6 +44,6 @@ MCP は**補助的な手段**。接続エラー・未設定時はフロー全体
 
 クラウドセッション（`CLAUDE_CODE_REMOTE=true`）でも `.mcp.json` はそのまま読み込まれる（ローカルと共用し、クラウド用に書き換えない）。サーバーごとの違い:
 
-- `github`: 同名のクラウド組み込み GitHub ツールが優先され、`.mcp.json` の `github-mcp-server` は起動しない。ツール名は同じ `mcp__github__*` で、バイナリも PAT も要らない
+- `github`: 同名のクラウド組み込み GitHub ツールが優先され、`.mcp.json` の `github-mcp-server` は起動しない。ツール名は同じ `mcp__github__*` で、バイナリも PAT も要らない。ただし `search_issues` / `search_pull_requests` が無いセッションがある（代わりの手順は `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）
 - `brave-search`: `BRAVE_API_KEY` が無くても起動はするが、呼ぶと `422 SUBSCRIPTION_TOKEN_INVALID` になる。組み込みの `WebSearch` / `WebFetch` に切り替えて続ける
 - `playwright`: クラウド環境の環境変数でブラウザを Chromium に切り替える（`.claude/skills/playwright-mcp/SKILL.md`「クラウドセッション」）

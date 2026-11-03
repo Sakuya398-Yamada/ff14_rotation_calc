@@ -20,7 +20,7 @@ description: 複数のGitHub Issueを分析し、依存関係に基づいたWave
 
 ### Step 1: Issue取得
 
-GitHub MCPの `issue_read`（method: `get`）で各Issueの本文・ラベルを取得し、`issue_read`（method: `get_comments`）でコメントも取得して内容を把握する。
+GitHub MCPの `issue_read`（method: `get`）で各Issueの本文・ラベルを取得し、`issue_read`（method: `get_comments`）でコメントも取得して内容を把握する。明示された依存は、本文の `依存: #N` と GitHub の依存関係（blocked by）の両方から集める（`issue_read` は blocked by を返さない。取り方は `.claude/skills/issue-start/dependencies.md`「読み方」）。
 
 ### Step 2: 依存関係分析
 
