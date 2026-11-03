@@ -1,6 +1,6 @@
 # Playwright MCP 補助: 変更前後の見た目の比較
 
-`SKILL.md`「変更前後で見た目が変わらないことを確かめる」から読む。完了条件に「〜の見た目が変わらない（変更前後で比べる）」のような項目があるときに使う。SKILL.md が Bash の出力上限（30,000 バイト）を超えないよう、場面を限って読むこの節を分けてある。
+`SKILL.md`「変更前後で見た目が変わらないことを確かめる」から読む。完了条件に「〜の見た目が変わらない（変更前後で比べる）」や「〜を読めるようにする（変更前後のスクリーンショットで比べる）」のような項目があるときに使う。SKILL.md が Bash の出力上限（30,000 バイト）を超えないよう、場面を限って読むこの節を分けてある。
 
 ## 変更前後で見た目が変わらないことを確かめる
 
@@ -95,3 +95,90 @@ PY
 1. **差が出たら、切り出した範囲を見る**: `before-diff.png` と `after-diff.png` に差の範囲だけを切り出して保存するので、Read ツールで開いて見比べる
 2. **変更と関係の無さそうな差が出たら、変更前を 2 回撮って比べる**: 2 回の間でも差が出るなら、アニメーションなど撮るたびに揺れる部分がある。その部分が比較から外れるように `collect` のセレクターを絞り、PNG は差の範囲がその部分だけかを確かめる
 3. **`.timeline-scroll` はエントリが 1 件以上あるときにしか描かれない**: `seed` を空のままにすると、幅を測る `scroll.evaluate` がタイムアウトする
+
+## 見た目を変える変更で、要素ごとに変更前後を並べる
+
+前の節は、差が無いこと（JSON の diff が空、差の範囲が `None`）で「変わらない」を示す。完了条件が「〜を読めるようにする（変更前後のスクリーンショットで比べる）」のように見た目を変えるものなら、差が出るのが前提なので、この節で、対象の要素ごとに変更前後を拡大して並べて見比べ、差が対象の要素の枠の外に出ていないことを確かめる。
+
+全ページの PNG や差の範囲の切り出しを Read ツールで開くと、長辺が 2,000px に収まるよう縮小されるので、小さな文字の見え方を判断できない（#692 では全ページが幅 13,582px、差の範囲でも 7,064px になり、8px の数字が読めるかを判断できなかった）。要素の box で切り出して整数倍（最近傍）に拡大すると、1px の線も崩さずに見比べられる。
+
+1. **前の節と同じ手順で撮る**: 変更前を撮る時機・ビューポートの幅・`snap.cjs` は前の節のとおり。`collect` は対象の要素だけに絞り（#692 では `.timeline-scroll [title^="ソウルボイス: "] span` でゲージのラベルだけ）、`box` を例のとおり `[x, y, 幅, 高さ]` で返す。`snap.cjs` は等倍でスクロールせずに撮るので、`box` がそのまま PNG の座標になる
+2. **比較画像を作る**: 要素ごとに、変更前後の `box` を合わせた範囲で両方の PNG を切り出し、「変更前｜変更後」を横に並べて整数倍に拡大する。JSON の順に縦に積み、高さが 2,000px を超える手前でファイルを分ける
+3. **差が対象の要素の枠の外に無いことを確かめる**: 差分から対象の要素の枠を塗ったマスクを引き、`getbbox()` が `None` になれば、差は枠の中だけにある
+
+比較画像を作る（3 つ目の引数が倍率）:
+
+```bash
+python3 - "${TMPDIR:-/tmp}/visual-diff/before" "${TMPDIR:-/tmp}/visual-diff/after" 4 <<'PY'
+import json, sys
+from PIL import Image, ImageChops
+MAX = 2000   # Read ツールは長辺がこれを超える画像を縮小する
+PAD = 2      # 枠の外に描かれる縁取り・影の分も切り出す
+GAP = 8      # 要素と要素の間（拡大後の px）
+before, after, scale = sys.argv[1], sys.argv[2], int(sys.argv[3])
+imgs = [Image.open(f'{p}.png').convert('RGB') for p in (before, after)]
+els = [json.load(open(f'{p}.json')) for p in (before, after)]
+if len(els[0]) != len(els[1]):
+    sys.exit(f'要素の数が違う: {len(els[0])} / {len(els[1])}')
+rows, same = [], []
+for i, (ea, eb) in enumerate(zip(*els)):
+    # 大きさや位置が変わっても両方が収まるよう、変更前後の box を合わせた範囲で切り出す
+    (ax, ay, aw, ah), (bx, by, bw, bh) = ea['box'], eb['box']
+    box = (min(ax, bx) - PAD, min(ay, by) - PAD, max(ax + aw, bx + bw) + PAD, max(ay + ah, by + bh) + PAD)
+    ca, cb = imgs[0].crop(box), imgs[1].crop(box)
+    if not ImageChops.difference(ca, cb).getbbox():
+        same.append(i)
+    row = Image.new('RGB', (ca.width * 2 + 1, ca.height), (255, 0, 255))   # 間の 1px の線で変更前（左）と変更後（右）を分ける
+    row.paste(ca, (0, 0))
+    row.paste(cb, (ca.width + 1, 0))
+    row = row.resize((row.width * scale, row.height * scale), Image.NEAREST)
+    if max(row.size) > MAX:
+        sys.exit(f'{i} 番目の要素が {scale} 倍で {row.size} になる。倍率を下げる')
+    rows.append((i, row))
+pages = [[]]
+for i, row in rows:
+    if pages[-1] and sum(r.height + GAP for _, r in pages[-1]) + row.height > MAX:
+        pages.append([])
+    pages[-1].append((i, row))
+for n, page in enumerate(pages, 1):
+    sheet = Image.new('RGB', (max(r.width for _, r in page), sum(r.height + GAP for _, r in page) - GAP), (255, 0, 255))
+    y = 0
+    for _, row in page:
+        sheet.paste(row, (0, y))
+        y += row.height + GAP
+    sheet.save(f'{after}-compare-{n}.png')
+    print(f'{after}-compare-{n}.png: {page[0][0]}〜{page[-1][0]} 番目')
+print('差の無い要素:', same)
+PY
+```
+
+差が対象の要素の枠の外に無いことを確かめる:
+
+```bash
+python3 - "${TMPDIR:-/tmp}/visual-diff/before" "${TMPDIR:-/tmp}/visual-diff/after" <<'PY'
+import json, sys
+from PIL import Image, ImageChops, ImageDraw
+PAD = 2   # 比較画像のスクリプトと同じ値にする
+before, after = sys.argv[1:3]
+a, b = (Image.open(f'{p}.png').convert('RGB') for p in (before, after))
+if a.size != b.size:
+    sys.exit(f'大きさが違う: {a.size} / {b.size}')
+mask = Image.new('RGB', a.size)
+draw = ImageDraw.Draw(mask)
+for p in (before, after):
+    for e in json.load(open(f'{p}.json')):
+        x, y, w, h = e['box']
+        draw.rectangle((x - PAD, y - PAD, x + w - 1 + PAD, y + h - 1 + PAD), fill='white')
+box = ImageChops.subtract(ImageChops.difference(a, b), mask).getbbox()
+print(box)
+if box:
+    a.crop(box).save(f'{before}-outside.png')
+    b.crop(box).save(f'{after}-outside.png')
+PY
+```
+
+ポイント:
+
+1. **拡大は線の形を見るためのもの**: 実際の大きさで読めるかは、倍率を 1 にした比較画像でも見る。「差の無い要素」に、変えたはずの要素が入っていたら、変更が効いていない
+2. **`None` にならなかったら、枠の外の差を見る**: `before-outside.png` と `after-outside.png` に枠の外の差の範囲を切り出すので、Read ツールで開く。対象の要素の縁取りや影が枠から `PAD` より外に描かれるなら `PAD` を広げ、関係の無い場所が変わっているなら、変更が対象の外に及んでいる（撮るたびに揺れる部分かどうかは、前の節のポイント 2 で見分ける）
+3. **要素の数が変わる変更では、変更前後で同じ要素が同じ順に並ぶセレクターにする**: 比較画像は JSON の順で変更前と変更後を組にする
