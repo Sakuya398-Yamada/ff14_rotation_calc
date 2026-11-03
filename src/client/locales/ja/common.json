@@ -9,6 +9,7 @@
     "duration": "所要時間"
   },
   "app": {
+    "siteName": "FF14 Rotation Calculator",
     "confirmOpenShared": "共有タイムラインを開くと、作業中のタイムラインは置き換えられます。開きますか？",
     "saveAndShare": "保存・共有",
     "myTimelines": "保存したタイムライン",
