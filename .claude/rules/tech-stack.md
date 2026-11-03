@@ -36,7 +36,9 @@
 [ブラウザ] → [Cloudflare Worker: ff14-rotation-calc]
                ├ /api/*  → Hono（src/server/index.ts）→ D1（バインディング DB）
                ├ /en/*   → Hono → Static Assets の /en/（英語の en/index.html。バインディング ASSETS）
+               ├ /t/*    → Hono → Static Assets の /（index.html）
                └ それ以外 → Static Assets（dist/client。未知のパスは index.html）
+             ※ 共有 URL（/t/*・/en/t/*）の応答には Hono が X-Robots-Tag: noindex を付ける（#837）
 ```
 
 - 配信 URL: `https://ff14-rotation-calc.forestry-for.workers.dev`（独自ドメインは使わない）

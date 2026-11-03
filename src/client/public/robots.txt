@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://ff14-rotation-calc.forestry-for.workers.dev/sitemap.xml
