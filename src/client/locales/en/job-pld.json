@@ -1,0 +1,151 @@
+{
+  "skills": {
+    "fast-blade": {
+      "name": "Fast Blade"
+    },
+    "riot-blade": {
+      "name": "Riot Blade"
+    },
+    "royal-authority": {
+      "name": "Royal Authority"
+    },
+    "total-eclipse": {
+      "name": "Total Eclipse"
+    },
+    "prominence": {
+      "name": "Prominence"
+    },
+    "shield-lob": {
+      "name": "Shield Lob"
+    },
+    "goring-blade": {
+      "name": "Goring Blade"
+    },
+    "atonement": {
+      "name": "Atonement"
+    },
+    "supplication": {
+      "name": "Supplication"
+    },
+    "sepulchre": {
+      "name": "Sepulchre"
+    },
+    "holy-spirit": {
+      "name": "Holy Spirit"
+    },
+    "holy-spirit-divine-might": {
+      "name": "Holy Spirit (Divine Might)"
+    },
+    "holy-spirit-requiescat": {
+      "name": "Holy Spirit (Requiescat)"
+    },
+    "holy-circle": {
+      "name": "Holy Circle"
+    },
+    "holy-circle-divine-might": {
+      "name": "Holy Circle (Divine Might)"
+    },
+    "holy-circle-requiescat": {
+      "name": "Holy Circle (Requiescat)"
+    },
+    "confiteor": {
+      "name": "Confiteor"
+    },
+    "confiteor-requiescat": {
+      "name": "Confiteor (Requiescat)"
+    },
+    "blade-of-faith": {
+      "name": "Blade of Faith"
+    },
+    "blade-of-faith-requiescat": {
+      "name": "Blade of Faith (Requiescat)"
+    },
+    "blade-of-truth": {
+      "name": "Blade of Truth"
+    },
+    "blade-of-truth-requiescat": {
+      "name": "Blade of Truth (Requiescat)"
+    },
+    "blade-of-valor": {
+      "name": "Blade of Valor"
+    },
+    "blade-of-valor-requiescat": {
+      "name": "Blade of Valor (Requiescat)"
+    },
+    "fight-or-flight": {
+      "name": "Fight or Flight"
+    },
+    "spirits-within": {
+      "name": "Spirits Within"
+    },
+    "expiacion": {
+      "name": "Expiacion"
+    },
+    "circle-of-scorn": {
+      "name": "Circle of Scorn"
+    },
+    "intervene": {
+      "name": "Intervene"
+    },
+    "requiescat": {
+      "name": "Requiescat"
+    },
+    "imperator": {
+      "name": "Imperator"
+    },
+    "blade-of-honor": {
+      "name": "Blade of Honor"
+    }
+  },
+  "buffs": {
+    "fight-or-flight": {
+      "name": "Fight or Flight",
+      "shortName": "FoF"
+    },
+    "goring-blade-ready": {
+      "name": "Goring Blade Ready",
+      "shortName": "Goring\nReady"
+    },
+    "divine-might": {
+      "name": "Divine Might",
+      "shortName": "Divine\nMight"
+    },
+    "atonement-ready": {
+      "name": "Atonement Ready",
+      "shortName": "Atone.\nReady"
+    },
+    "supplication-ready": {
+      "name": "Supplication Ready",
+      "shortName": "Suppl.\nReady"
+    },
+    "sepulchre-ready": {
+      "name": "Sepulchre Ready",
+      "shortName": "Sepul.\nReady"
+    },
+    "requiescat": {
+      "name": "Requiescat",
+      "shortName": "Requies-\ncat"
+    },
+    "confiteor-ready": {
+      "name": "Confiteor Ready",
+      "shortName": "Conf.\nReady"
+    },
+    "blade-of-faith-ready": {
+      "name": "Blade of Faith Ready",
+      "shortName": "BoF\nReady"
+    },
+    "blade-of-truth-ready": {
+      "name": "Blade of Truth Ready",
+      "shortName": "BoT\nReady"
+    },
+    "blade-of-valor-ready": {
+      "name": "Blade of Valor Ready",
+      "shortName": "BoV\nReady"
+    },
+    "blade-of-honor-ready": {
+      "name": "Blade of Honor Ready",
+      "shortName": "BoH\nReady"
+    }
+  },
+  "resources": {}
+}

@@ -94,4 +94,23 @@ describe("getSkillsForLevel", () => {
       expect(result.consumeAllOfResource).toBe(expected);
     });
   });
+
+  describe("traitPotencyOverrides の comboBuffApplications", () => {
+    it.each([
+      { level: 70, expected: undefined },
+      { level: 80, expected: ["divine-might"] },
+    ])("Lv72 で付くコンボ成立時の付与バフは Lv$level で $expected", ({ level, expected }) => {
+      const skills: Skill[] = [
+        makeSkill({
+          id: "prominence",
+          comboFrom: ["total-eclipse"],
+          traitPotencyOverrides: [{ traitLevel: 72, comboBuffApplications: ["divine-might"] }],
+        }),
+      ];
+
+      const [result] = getSkillsForLevel(skills, level as PlayerLevel, new Set(["divine-might"]), new Set());
+
+      expect(result.comboBuffApplications).toEqual(expected);
+    });
+  });
 });

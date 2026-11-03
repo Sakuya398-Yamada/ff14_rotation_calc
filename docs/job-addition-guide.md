@@ -271,7 +271,7 @@ export const JOB_DATA: Record<JobId, JobData> = {
 
 ジョブピッカーの表示順とロールは `src/client/data/job-catalog.ts` の `JOB_CATALOG` で決まる（`JOB_DATA` のキー順は表示に使われない）。`JOB_CATALOG` には未実装ジョブも含めて全 21 ジョブが載っているので、追加時に書き換える必要は無い。`JobId` には `JOB_CATALOG` の `id`（例: 占星術師なら `ast`）を使い、`JOB_DATA` の `abbreviation` を `JOB_CATALOG` の値と揃える。食い違うと `src/client/data/__tests__/job-catalog.test.ts` が赤になる。ジョブ名は辞書の catalog（`src/client/locales/{ja,en}/catalog.json` の `jobs.<id>.name`）に 21 ジョブとも登録済みなので、足す必要は無い。`JobPicker.tsx` 側への追記は不要（`JOB_DATA` にあるジョブが選べるようになる）。
 
-`src/client/components/__tests__/job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」は、選べることを確かめるジョブの表示名を**固定配列で列挙している**ため、新ジョブの表示名を配列に追記し、テスト名の N も合わせて更新する。このテストは列挙したジョブだけを確かめるので、追記を忘れても `npm test` は赤にならない（チェックリストで確かめる）。未実装ジョブの例にナイトを使っているので、ナイトを追加するときは別の未実装ジョブに差し替える。
+`src/client/components/__tests__/job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」は、選べることを確かめるジョブの表示名を**固定配列で列挙している**ため、新ジョブの表示名を配列に追記し、テスト名の N も合わせて更新する。このテストは列挙したジョブだけを確かめるので、追記を忘れても `npm test` は赤にならない（チェックリストで確かめる）。未実装ジョブの例（日本語と英語の 2 か所）にはまだ実装していないジョブを使っているので、そのジョブを追加するときは別の未実装ジョブに差し替える。`src/client/logic/__tests__/recent-jobs.test.ts` の「未実装・不正な ID と重複を捨てる」も未実装の ID の例に同じジョブを使っているので、一緒に差し替える。
 
 ---
 

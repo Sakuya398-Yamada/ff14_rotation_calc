@@ -1,0 +1,151 @@
+{
+  "skills": {
+    "fast-blade": {
+      "name": "ファストブレード"
+    },
+    "riot-blade": {
+      "name": "ライオットソード"
+    },
+    "royal-authority": {
+      "name": "ロイヤルアソリティ"
+    },
+    "total-eclipse": {
+      "name": "トータルエクリプス"
+    },
+    "prominence": {
+      "name": "プロミネンス"
+    },
+    "shield-lob": {
+      "name": "シールドロブ"
+    },
+    "goring-blade": {
+      "name": "ゴアブレード"
+    },
+    "atonement": {
+      "name": "ロイエ"
+    },
+    "supplication": {
+      "name": "ゲベート"
+    },
+    "sepulchre": {
+      "name": "グラブカッマー"
+    },
+    "holy-spirit": {
+      "name": "ホーリースピリット"
+    },
+    "holy-spirit-divine-might": {
+      "name": "ホーリースピリット (神聖魔法効果アップ中)"
+    },
+    "holy-spirit-requiescat": {
+      "name": "ホーリースピリット (レクイエスカット中)"
+    },
+    "holy-circle": {
+      "name": "ホーリーサークル"
+    },
+    "holy-circle-divine-might": {
+      "name": "ホーリーサークル (神聖魔法効果アップ中)"
+    },
+    "holy-circle-requiescat": {
+      "name": "ホーリーサークル (レクイエスカット中)"
+    },
+    "confiteor": {
+      "name": "コンフィテオル"
+    },
+    "confiteor-requiescat": {
+      "name": "コンフィテオル (レクイエスカット中)"
+    },
+    "blade-of-faith": {
+      "name": "ブレード・オブ・フェイス"
+    },
+    "blade-of-faith-requiescat": {
+      "name": "ブレード・オブ・フェイス (レクイエスカット中)"
+    },
+    "blade-of-truth": {
+      "name": "ブレード・オブ・トゥルース"
+    },
+    "blade-of-truth-requiescat": {
+      "name": "ブレード・オブ・トゥルース (レクイエスカット中)"
+    },
+    "blade-of-valor": {
+      "name": "ブレード・オブ・ヴァラー"
+    },
+    "blade-of-valor-requiescat": {
+      "name": "ブレード・オブ・ヴァラー (レクイエスカット中)"
+    },
+    "fight-or-flight": {
+      "name": "ファイト・オア・フライト"
+    },
+    "spirits-within": {
+      "name": "スピリッツウィズイン"
+    },
+    "expiacion": {
+      "name": "エクスピアシオン"
+    },
+    "circle-of-scorn": {
+      "name": "サークル・オブ・ドゥーム"
+    },
+    "intervene": {
+      "name": "インターヴィーン"
+    },
+    "requiescat": {
+      "name": "レクイエスカット"
+    },
+    "imperator": {
+      "name": "インペラトル"
+    },
+    "blade-of-honor": {
+      "name": "ブレード・オブ・オナー"
+    }
+  },
+  "buffs": {
+    "fight-or-flight": {
+      "name": "ファイト・オア・フライト",
+      "shortName": "ﾌｧｲﾄ\nｵｱﾌﾗｲﾄ"
+    },
+    "goring-blade-ready": {
+      "name": "ゴアブレード実行可",
+      "shortName": "ｺﾞｱ\n実行可"
+    },
+    "divine-might": {
+      "name": "神聖魔法効果アップ",
+      "shortName": "神聖\n魔法UP"
+    },
+    "atonement-ready": {
+      "name": "ロイエ実行可",
+      "shortName": "ﾛｲｴ\n実行可"
+    },
+    "supplication-ready": {
+      "name": "ゲベート実行可",
+      "shortName": "ｹﾞﾍﾞｰﾄ\n実行可"
+    },
+    "sepulchre-ready": {
+      "name": "グラブカッマー実行可",
+      "shortName": "ｸﾞﾗﾌﾞ\n実行可"
+    },
+    "requiescat": {
+      "name": "レクイエスカット",
+      "shortName": "ﾚｸｲｴ\nｽｶｯﾄ"
+    },
+    "confiteor-ready": {
+      "name": "コンフィテオル実行可",
+      "shortName": "ｺﾝﾌｨ\n実行可"
+    },
+    "blade-of-faith-ready": {
+      "name": "ブレード・オブ・フェイス実行可",
+      "shortName": "ﾌｪｲｽ\n実行可"
+    },
+    "blade-of-truth-ready": {
+      "name": "ブレード・オブ・トゥルース実行可",
+      "shortName": "ﾄｩﾙｰｽ\n実行可"
+    },
+    "blade-of-valor-ready": {
+      "name": "ブレード・オブ・ヴァラー実行可",
+      "shortName": "ｳﾞｧﾗｰ\n実行可"
+    },
+    "blade-of-honor-ready": {
+      "name": "ブレード・オブ・オナー実行可",
+      "shortName": "ｵﾅｰ\n実行可"
+    }
+  },
+  "resources": {}
+}
