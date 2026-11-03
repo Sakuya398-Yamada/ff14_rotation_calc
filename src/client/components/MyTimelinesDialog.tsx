@@ -36,6 +36,9 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
   // 削除の送信中の行の id。送信中は、ほかの行も削除させない
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<DeleteMyTimelineError | null>(null);
+  // 最後にコピーを試した行とその結果。表示するのはその 1 行分だけ
+  const [copyState, setCopyState] = useState<{ id: string; status: "copied" | "failed" } | null>(null);
+  const copyFallbackInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async (cursor: string | null) => {
     const controller = new AbortController();
@@ -81,6 +84,20 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     setItems((prev) => prev?.filter((i) => i.id !== item.id) ?? prev);
   };
 
+  const handleCopy = async (item: MyTimelineItem) => {
+    let status: "copied" | "failed";
+    try {
+      await navigator.clipboard.writeText(buildShareUrl(window.location.origin, item.id, lang));
+      status = "copied";
+    } catch {
+      // http のページや権限が無いときはクリップボードが使えないので、URL を出して手でコピーしてもらう
+      status = "failed";
+    }
+    // 書き込みを待つ間に閉じたら、結果を出さない（状態は閉じたときに戻してある）
+    if (!dialogRef.current?.open) return;
+    setCopyState({ id: item.id, status });
+  };
+
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -99,6 +116,7 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
       setError(false);
       setDeletingId(null);
       setDeleteError(null);
+      setCopyState(null);
       dialog.close();
       // モーダル中は外側の要素にフォーカスできないため、close() の後で戻す
       returnFocusRef.current?.focus();
@@ -119,6 +137,16 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     refocusDeleteIdRef.current = null;
     listRef.current?.querySelector<HTMLElement>(`button[data-delete-id="${id}"]`)?.focus();
   }, [deletingId]);
+
+  // 失敗したときに出す URL の欄は、出してからでないとフォーカスできない
+  useLayoutEffect(() => {
+    if (copyState?.status !== "failed") return;
+    copyFallbackInputRef.current?.focus();
+    copyFallbackInputRef.current?.select();
+  }, [copyState]);
+
+  // コピーに失敗した行。削除して一覧から消えたら、URL の欄も出さない
+  const copyFailedItem = copyState?.status === "failed" ? items?.find((i) => i.id === copyState.id) : undefined;
 
   return (
     <dialog
@@ -170,6 +198,21 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
                 </a>
                 <button
                   type="button"
+                  aria-label={t(
+                    copyState?.id === item.id && copyState.status === "copied"
+                      ? "myTimelinesDialog.copiedLabel"
+                      : "myTimelinesDialog.copyLabel",
+                    { title: item.title ?? t("myTimelinesDialog.untitled") }
+                  )}
+                  onClick={() => void handleCopy(item)}
+                  style={styles.copyButton}
+                >
+                  {copyState?.id === item.id && copyState.status === "copied"
+                    ? t("myTimelinesDialog.copied")
+                    : t("myTimelinesDialog.copy")}
+                </button>
+                <button
+                  type="button"
                   data-delete-id={item.id}
                   aria-label={t("myTimelinesDialog.deleteLabel", { title: item.title ?? t("myTimelinesDialog.untitled") })}
                   onClick={() => void handleDelete(item)}
@@ -181,6 +224,22 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
               </li>
             ))}
           </ul>
+        )}
+        {copyFailedItem && (
+          <>
+            <p role="alert" style={styles.error}>
+              {t("myTimelinesDialog.copyFailed")}
+            </p>
+            <input
+              ref={copyFallbackInputRef}
+              type="text"
+              value={buildShareUrl(window.location.origin, copyFailedItem.id, lang)}
+              readOnly
+              aria-label={t("myTimelinesDialog.shareUrlLabel", { title: copyFailedItem.title ?? t("myTimelinesDialog.untitled") })}
+              onFocus={(e) => e.currentTarget.select()}
+              style={styles.input}
+            />
+          </>
         )}
         {error && (
           <p role="alert" style={styles.error}>
@@ -215,6 +274,14 @@ const buttonBase: React.CSSProperties = {
   fontSize: "12px",
   fontWeight: 500,
   cursor: "pointer",
+};
+
+const rowButtonBase: React.CSSProperties = {
+  ...buttonBase,
+  minHeight: "32px",
+  padding: "0 var(--space-3)",
+  border: "1px solid var(--color-field)",
+  background: "transparent",
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -333,12 +400,22 @@ const styles: Record<string, React.CSSProperties> = {
     background: "var(--color-raised)",
     color: "var(--color-text)",
   },
-  deleteButton: {
-    ...buttonBase,
-    minHeight: "32px",
+  input: {
+    height: "40px",
     padding: "0 var(--space-3)",
     border: "1px solid var(--color-field)",
-    background: "transparent",
+    borderRadius: "var(--radius-lg)",
+    background: "var(--color-raised)",
+    color: "var(--color-text)",
+    fontFamily: "inherit",
+    fontSize: "13px",
+  },
+  copyButton: {
+    ...rowButtonBase,
+    color: "var(--color-text)",
+  },
+  deleteButton: {
+    ...rowButtonBase,
     color: "var(--color-error)",
   },
 };

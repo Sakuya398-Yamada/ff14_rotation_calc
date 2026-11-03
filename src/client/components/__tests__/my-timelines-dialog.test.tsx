@@ -311,6 +311,111 @@ describe("MyTimelinesDialog: 削除", () => {
   });
 });
 
+describe("MyTimelinesDialog: 共有 URL のコピー", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "clipboard");
+  });
+
+  function stubClipboard(writeText: (text: string) => Promise<void>) {
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  }
+
+  function copyButton(title: string) {
+    return screen.getByRole("button", { name: `「${title}」の共有 URL をコピー` });
+  }
+
+  it("各行のコピーボタンで、その行の共有 URL をクリップボードに書き、その行だけにコピーしたことを表示する", async () => {
+    const writeText = vi.fn(async () => {});
+    stubClipboard(writeText);
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }));
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(copyButton("タイムライン 1"));
+
+    const copied = await screen.findByRole("button", { name: "「タイムライン 1」の共有 URL をコピーしました" });
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/t/${item(1).id}`);
+    expect(copied).toHaveTextContent("コピーしました");
+    expect(copyButton("タイムライン 2")).toHaveTextContent(/^コピー$/);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    // 別の行をコピーすると、前の行の表示は戻す
+    fireEvent.click(copyButton("タイムライン 2"));
+    expect(await screen.findByRole("button", { name: "「タイムライン 2」の共有 URL をコピーしました" })).toBeInTheDocument();
+    expect(writeText).toHaveBeenLastCalledWith(`${window.location.origin}/t/${item(2).id}`);
+    expect(copyButton("タイムライン 1")).toHaveTextContent(/^コピー$/);
+  });
+
+  it("タイトルの無い行は「（無題）」としてボタンの名前を付ける", async () => {
+    stubClipboard(vi.fn(async () => {}));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [item(1, { title: null })], nextCursor: null }));
+    renderDialog();
+    await screen.findAllByRole("link");
+
+    expect(copyButton("（無題）")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["書き込みが拒否される", () => stubClipboard(() => Promise.reject(new DOMException("denied", "NotAllowedError")))],
+    ["クリップボードが使えない", () => {}],
+  ])("コピーできないとき（%s）は、手でコピーするよう案内し、その行の共有 URL を出して選択する", async (_label, setup) => {
+    setup();
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }));
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(copyButton("タイムライン 1"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("URL を選択してコピーしてください");
+    const urlInput = screen.getByRole("textbox", { name: "「タイムライン 1」の共有 URL" });
+    expect(urlInput).toHaveValue(`${window.location.origin}/t/${item(1).id}`);
+    expect(urlInput).toHaveFocus();
+    expect(copyButton("タイムライン 1")).toHaveTextContent(/^コピー$/);
+  });
+
+  it("コピーに失敗した行を削除すると、出していた URL と案内も消す", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(copyButton("タイムライン 1"));
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "「タイムライン 1」を削除" }));
+
+    await vi.waitFor(() => expect(screen.getAllByRole("link")).toHaveLength(1));
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("コピーしたことの表示とコピーに失敗した案内は、閉じて開き直すと消す", async () => {
+    stubClipboard(() => Promise.reject(new DOMException("denied", "NotAllowedError")));
+    const { props, rerender } = renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(copyButton("タイムライン 1"));
+    await screen.findByRole("alert");
+    rerender(<MyTimelinesDialog {...props} open={false} />);
+    rerender(<MyTimelinesDialog {...props} open={true} />);
+
+    await screen.findAllByRole("link");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("書き込みを待つ間に閉じたら、開き直したときにコピーしたことを表示しない", async () => {
+    let resolveWrite!: () => void;
+    stubClipboard(() => new Promise<void>((resolve) => (resolveWrite = resolve)));
+    const { props, rerender } = renderDialog();
+    await screen.findAllByRole("link");
+    fireEvent.click(copyButton("タイムライン 1"));
+    rerender(<MyTimelinesDialog {...props} open={false} />);
+    await act(async () => resolveWrite());
+    rerender(<MyTimelinesDialog {...props} open={true} />);
+
+    await screen.findAllByRole("link");
+    expect(copyButton("タイムライン 1")).toHaveTextContent(/^コピー$/);
+  });
+});
+
 describe("MyTimelinesDialog（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
@@ -358,5 +463,29 @@ describe("MyTimelinesDialog（英語）", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The timeline could not be deleted. Check your connection and try again."
     );
+  });
+
+  it("コピーボタンと、コピーした・できなかったときの表示を英語で出し、/en/t/<id> をコピーする", async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    try {
+      renderDialog();
+      await screen.findAllByRole("link");
+      const button = screen.getByRole("button", { name: 'Copy the share URL of "タイムライン 1"' });
+      expect(button).toHaveTextContent(/^Copy$/);
+      fireEvent.click(button);
+
+      expect(await screen.findByRole("button", { name: 'Copied the share URL of "タイムライン 1"' })).toHaveTextContent("Copied");
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/en/t/${item(1).id}`);
+
+      writeText.mockRejectedValueOnce(new DOMException("denied", "NotAllowedError"));
+      fireEvent.click(screen.getByRole("button", { name: 'Copied the share URL of "タイムライン 1"' }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("Could not copy. Select the URL and copy it.");
+      expect(screen.getByRole("textbox", { name: 'Share URL of "タイムライン 1"' })).toHaveValue(
+        `${window.location.origin}/en/t/${item(1).id}`
+      );
+    } finally {
+      Reflect.deleteProperty(navigator, "clipboard");
+    }
   });
 });
