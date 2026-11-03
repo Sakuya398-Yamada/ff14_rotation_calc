@@ -305,7 +305,7 @@ SAM の以下が雛形として参考になる：
 - [ ] `src/client/locales/{ja,en}/job-<job>.json` に全スキル・バフ・リソースの名前があり、`src/client/i18n.ts` の `resources` に登録されている（`display-names.test.ts` が抜けを検出する）。英語の `shortName` がレーンのラベルに収まることを `/en/` の画面で確かめた
 - [ ] `job-registry.ts` の `JobId` Union と `JOB_DATA` レコードに新ジョブが追加されている（`JobId` は `JOB_CATALOG` の `id`、略称は `JOB_CATALOG` と一致。ピッカーの表示順は `JOB_CATALOG` で決まる）
 - [ ] `job-picker.test.tsx` の「実装済みNジョブは選べ、未実装ジョブは「未対応」で選べない」の期待値（固定配列）に新ジョブの表示名が追記され、テスト名の N が更新されている
-- [ ] `README.md` の「対応ジョブ」表と FAQ「使いたいジョブが未対応」のジョブ一覧・ジョブ数に新ジョブが追記されている（並び順は `JOB_DATA` のキー順）
+- [ ] `README.md` の「対応ジョブ」表と FAQ「使いたいジョブが未対応」、`README.en.md` の「Supported jobs」表と FAQ「The job I want to use is not supported」のジョブ一覧・ジョブ数に新ジョブが追記されている（並び順は `JOB_DATA` のキー順。英語のジョブ名は `locales/en/catalog.json`）
 - [ ] `npm run build` / `npm test` が GREEN
 - [ ] 画面上部のジョブピッカーで新ジョブを選べ（「未対応」にならない）、パレットからスキルをタイムラインに配置して期待威力が計算できる
 
