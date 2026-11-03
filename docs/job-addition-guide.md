@@ -169,7 +169,7 @@ export const XXX_BUFFS: BuffDefinition[] = [
 | チャージ式・共有CD | `maxCharges` + `cooldownGroup` | `brd-skills.ts` の `bloodletter`・`rain-of-death`・`heartbreak-shot` |
 | バフ必須スキル | `requiredBuff` | `sam-skills.ts` の `kaeshi-goken`・`kaeshi-setsugekka`・`ogi-namikiri` |
 | 確定クリ | `guaranteedCrit: true` | `sam-skills.ts` の `midare-setsugekka`・`kaeshi-setsugekka`・`tendo-kaeshi-setsugekka` |
-| 自動変化 | `autoTransform: AutoTransformEntry[]` + `hidden: true` | `sam-skills.ts` の `iaijutsu`（居合術 → 6 種に変化）／変化先は `hidden: true` |
+| 自動変化 | `autoTransform: AutoTransformEntry[]` + `hidden: true` | `sam-skills.ts` の `iaijutsu`（居合術 → 5 種に変化）／変化先は `hidden: true` |
 | AoE 威力減衰 | `maxTargets` + `falloffRate` + `falloffStartTarget` | `src/client/types/skill.ts` の `Skill`（同名のフィールドのコメント） |
 
 ### 共有リキャストグループ（`cooldownGroup`）の注意
@@ -319,7 +319,7 @@ SAM の以下が雛形として参考になる：
 | バフ数 | 3 | 12 |
 | リソース数 | 2 | 5（うち閃 3 は `displayGroup` 統合） |
 | WS コンボ | なし | あり（`comboFrom` 系） |
-| `autoTransform` | なし | あり（居合術 → 6 種） |
+| `autoTransform` | なし | あり（居合術 → 5 種） |
 | 共有CD（`cooldownGroup`） | なし | あり |
 | 排他バフ（`exclusiveGroup`） | なし | あり |
 | `requiredBuff` / `guaranteedCrit` | なし | あり |
