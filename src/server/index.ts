@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type { Bindings } from "./env";
+import { createAuthRoute, createMeRoute } from "./routes/auth";
 import { createMyTimelinesRoute, createTimelinesRoute } from "./routes/timelines";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -9,6 +10,8 @@ const getDb = (env: Bindings) => drizzle(env.DB);
 app.get("/api/health", (c) => c.json({ status: "ok" }));
 app.route("/api/timelines", createTimelinesRoute(getDb));
 app.route("/api/me/timelines", createMyTimelinesRoute(getDb));
+app.route("/api/auth", createAuthRoute(getDb));
+app.route("/api/me", createMeRoute(getDb));
 
 // 共有 URL（/t/<id>・/en/t/<id>）は利用者のタイムラインなので、検索結果に載せない。robots.txt で塞ぐとクローラーが
 // noindex を読めず、リンクされた URL が中身の無いまま載ることがあるので、ヘッダーで外す（#837）。

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, sqliteTable, text, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
+import { check, index, integer, primaryKey, sqliteTable, text, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 
 // 中身は書き換えない（UPDATE するのは削除の印の deleted_at だけ。#832）。設計の根拠は #462 の結論コメント「テーブル設計」
 export const timelines = sqliteTable(
@@ -36,3 +36,45 @@ export const timelines = sqliteTable(
     check("timelines_data_json_valid", sql`json_valid(${t.data})`),
   ],
 );
+
+// ログインしたユーザー。個人情報を持たないよう、メールアドレス・表示名は置かない（#651 の結論コメント「データモデル」）
+export const users = sqliteTable("users", {
+  // nanoid（21 文字）
+  id: text("id").primaryKey(),
+  createdAt: integer("created_at")
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// プロバイダのアカウントとユーザーの対応。プロバイダを足すときは行を足すだけで済む
+export const userIdentities = sqliteTable(
+  "user_identities",
+  {
+    // 今は "discord" だけ
+    provider: text("provider").notNull(),
+    // Discord は snowflake の id（username は一意でないので使わない）
+    providerUserId: text("provider_user_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    createdAt: integer("created_at")
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [primaryKey({ columns: [t.provider, t.providerUserId] })],
+);
+
+// ログインのセッション。期限の判定と延長は src/server/services/session.ts
+export const sessions = sqliteTable("sessions", {
+  // セッショントークンの SHA-256（hex）。トークンそのものは保存しない
+  idHash: text("id_hash").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  // unixepoch の秒
+  expiresAt: integer("expires_at").notNull(),
+  // 絶対期限の起点。expires_at と同じ時計で比べるので、アプリが書く（既定値は手で入れた行のため）
+  createdAt: integer("created_at")
+    .notNull()
+    .default(sql`(unixepoch())`),
+});

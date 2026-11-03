@@ -15,6 +15,13 @@
       "when": 1793724389530,
       "tag": "0001_add-timelines-deleted-at",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793726455638,
+      "tag": "0002_create_users_and_sessions",
+      "breakpoints": true
     }
   ]
 }
