@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { getCookie, setCookie } from "hono/cookie";
@@ -44,6 +44,15 @@ const ownerToken = createMiddleware<RouteEnv>(async (c, next) => {
   const token = readOwnerToken(c) ?? generateOwnerToken();
   c.set("ownerHash", await hashOwnerToken(token));
   // 期限を延ばすため、既存のトークンでも毎回付け直す
+  setOwnerCookie(c, token);
+  await next();
+});
+
+// 削除用。トークンが無ければ、その持ち主の行も無いので、Cookie を発行せず DB にも触れずに「無い」と答える
+const requireOwnerToken = createMiddleware<RouteEnv>(async (c, next) => {
+  const token = readOwnerToken(c);
+  if (token === undefined) return c.json({ error: "not_found" }, 404);
+  c.set("ownerHash", await hashOwnerToken(token));
   setOwnerCookie(c, token);
   await next();
 });
@@ -126,17 +135,43 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
           title: timelines.title,
           contentId: timelines.contentId,
           createdAt: timelines.createdAt,
+          deletedAt: timelines.deletedAt,
         })
         .from(timelines)
         .where(eq(timelines.id, id))
         .limit(1);
       if (!row) return c.json({ error: "not_found" }, 404);
+      // 共有 URL を渡された人に、URL の誤りではなく保存した人が削除したと伝えるため、無い id と区別する
+      const { deletedAt, data, createdAt, ...rest } = row;
+      if (deletedAt !== null) return c.json({ error: "deleted" }, 410);
       return c.json({
-        ...row,
-        data: JSON.parse(row.data) as unknown,
+        ...rest,
+        data: JSON.parse(data) as unknown,
         // DB は unixepoch() の秒
-        createdAt: new Date(row.createdAt * 1000).toISOString(),
+        createdAt: new Date(createdAt * 1000).toISOString(),
       } satisfies TimelineResponse);
+    },
+  )
+  // 行は消さずに削除の印を付ける（#832）。保存と同じく csrf とレート制限を掛ける。Turnstile は掛けない（新しい内容を作らず、消せるのは自分の行だけ）
+  .delete(
+    "/:id",
+    csrf(),
+    requireOwnerToken,
+    // POST と同じく、不正な id の連投も数えるため、検証より前に置く
+    rateLimit,
+    zValidator("param", timelineIdParamSchema, (result, c) => {
+      if (!result.success) return c.json({ error: "not_found" }, 404);
+    }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const deleted = await getDb(c.env)
+        .update(timelines)
+        .set({ deletedAt: sql`(unixepoch())` })
+        .where(and(eq(timelines.id, id), eq(timelines.ownerHash, c.get("ownerHash")), isNull(timelines.deletedAt)))
+        .returning({ id: timelines.id });
+      // ほかの人の行・無い行・削除済みの行を区別しない（ほかの人の行があるかを外から分からないようにする）
+      if (deleted.length === 0) return c.json({ error: "not_found" }, 404);
+      return c.body(null, 204);
     },
   );
 }
@@ -159,6 +194,7 @@ export function selectMyTimelines(db: AppDb, ownerHash: string, cursor?: { creat
     .where(
       and(
         eq(timelines.ownerHash, ownerHash),
+        isNull(timelines.deletedAt),
         // 「created_at < ? OR (created_at = ? AND id < ?)」と同じ条件。その OR だけで書くと、値をパラメータで渡したときに
         // created_at がインデックスの範囲検索に使われず、持ち主の行を新しい方から全部たどることになる
         cursor && lte(timelines.createdAt, cursor.createdAt),

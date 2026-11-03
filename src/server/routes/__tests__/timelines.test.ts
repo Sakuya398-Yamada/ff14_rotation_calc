@@ -468,6 +468,33 @@ describe("GET /api/timelines/:id: 読み込み", () => {
     expect(await res.json()).toEqual({ error: "not_found" });
   });
 
+  it("削除した行 → 410 で、中身は返さない", async () => {
+    await insertRow({ title: "零式4層 2分", deletedAt: 1700000100 });
+    const res = await get(SAVED_ID);
+
+    expect(res.status).toBe(410);
+    expect(await res.json()).toEqual({ error: "deleted" });
+  });
+
+  it("削除した行を複製元にした行は、そのまま読み込める", async () => {
+    const childId = "child_StGXR8_Z5jdHi6B";
+    await insertRow({ deletedAt: 1700000100 });
+    await insertRow({ id: childId, parentId: SAVED_ID, ownerHash: sha256Hex("other-token") });
+    const res = await get(childId);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ id: childId, parentId: SAVED_ID });
+  });
+
+  it("削除した行を parentId にしても保存できる（開いているタブが削除した ID を複製元に持ったまま保存することがある）", async () => {
+    await insertRow({ deletedAt: 1700000100 });
+    const res = await post({ data: validData(), parentId: SAVED_ID });
+
+    expect(res.status).toBe(201);
+    const { id } = (await res.json()) as { id: string };
+    expect(await (await get(id)).json()).toMatchObject({ id, parentId: SAVED_ID });
+  });
+
   it.each([
     ["20 文字", "A".repeat(20)],
     ["22 文字", "A".repeat(22)],
@@ -496,6 +523,182 @@ describe("GET /api/timelines/:id: 読み込み", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Set-Cookie")).toBeNull();
     expect(limit).not.toHaveBeenCalled();
+  });
+});
+
+describe("DELETE /api/timelines/:id: 削除", () => {
+  const SAVED_ID = "V1StGXR8_Z5jdHi6B-myT";
+  const TOKEN = "A".repeat(43);
+  const OTHER_TOKEN = "B".repeat(43);
+
+  // headers の値を undefined にすると、そのヘッダを送らない
+  function del(id: string, headers: Record<string, string | undefined> = {}) {
+    const requestHeaders = new Headers({ Origin: "http://localhost", Cookie: `__Host-owner=${TOKEN}` });
+    for (const [name, value] of Object.entries(headers)) {
+      if (value === undefined) requestHeaders.delete(name);
+      else requestHeaders.set(name, value);
+    }
+    return app.request(
+      `${URL_BASE}/${id}`,
+      { method: "DELETE", headers: requestHeaders },
+      { DB: undefined, TIMELINE_RATE_LIMITER: { limit } },
+    );
+  }
+
+  async function insertRow(overrides: Partial<typeof timelines.$inferInsert> = {}) {
+    await db.insert(timelines).values({
+      id: SAVED_ID,
+      schemaVer: 1,
+      data: JSON.stringify(validData()),
+      job: "blm",
+      level: 100,
+      ownerHash: sha256Hex(TOKEN),
+      createdAt: 1700000000,
+      ...overrides,
+    });
+  }
+
+  async function deletedAtOf(id: string) {
+    const [row] = await db.select({ deletedAt: timelines.deletedAt }).from(timelines).where(eq(timelines.id, id));
+    return row?.deletedAt;
+  }
+
+  it("持ち主のトークンなら 204 で、行を残して削除の印（時刻）を付ける", async () => {
+    await insertRow();
+    const before = Math.floor(Date.now() / 1000);
+    const res = await del(SAVED_ID);
+
+    expect(res.status).toBe(204);
+    expect(await res.text()).toBe("");
+    expect(await rows()).toHaveLength(1);
+    expect(await deletedAtOf(SAVED_ID)).toBeGreaterThanOrEqual(before);
+  });
+
+  it("持ち主の有効な Cookie は、同じトークンで期限を延ばす", async () => {
+    await insertRow();
+    const res = await del(SAVED_ID);
+
+    const setCookie = res.headers.get("Set-Cookie") ?? "";
+    expect(TOKEN_RE.exec(setCookie)?.[1]).toBe(TOKEN);
+    expect(setCookie).toContain("Max-Age=34560000");
+  });
+
+  it("ほかの人のトークン → 404 で、削除の印を付けない", async () => {
+    await insertRow();
+    const res = await del(SAVED_ID, { Cookie: `__Host-owner=${OTHER_TOKEN}` });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
+    expect(await deletedAtOf(SAVED_ID)).toBeNull();
+  });
+
+  it.each([
+    ["無い", undefined],
+    ["不正な形の", "__Host-owner=short"],
+  ])("Cookie が%sとき → DB に問い合わせずに 404 で、Cookie を発行せず、レート制限も数えない", async (_label, cookie) => {
+    await insertRow();
+    const update = vi.spyOn(db, "update");
+    const res = await del(SAVED_ID, { Cookie: cookie });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
+    expect(res.headers.get("Set-Cookie")).toBeNull();
+    expect(update).not.toHaveBeenCalled();
+    expect(limit).not.toHaveBeenCalled();
+    expect(await deletedAtOf(SAVED_ID)).toBeNull();
+  });
+
+  it("存在しない id → 404", async () => {
+    const res = await del(SAVED_ID);
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
+  });
+
+  it("削除済みの行をもう一度削除 → 404 で、削除の時刻は変えない", async () => {
+    await insertRow({ deletedAt: 1700000100 });
+    const res = await del(SAVED_ID);
+
+    expect(res.status).toBe(404);
+    expect(await deletedAtOf(SAVED_ID)).toBe(1700000100);
+  });
+
+  it("形式が不正な id → DB に問い合わせずに 404", async () => {
+    const update = vi.spyOn(db, "update");
+    const res = await del(`${"A".repeat(20)}!`);
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("削除した行の複製（parent_id で参照する、ほかの人の行）は変えない", async () => {
+    const childId = "child_StGXR8_Z5jdHi6B";
+    await insertRow();
+    await insertRow({ id: childId, parentId: SAVED_ID, ownerHash: sha256Hex(OTHER_TOKEN) });
+    const res = await del(SAVED_ID);
+
+    expect(res.status).toBe(204);
+    const [child] = await db.select().from(timelines).where(eq(timelines.id, childId));
+    expect(child).toMatchObject({ parentId: SAVED_ID, deletedAt: null });
+  });
+
+  it("削除すると一覧に出ず、共有 URL の読み込みは 410 になる", async () => {
+    await insertRow();
+    await del(SAVED_ID);
+
+    const mine = await app.request("http://localhost/api/me/timelines", { headers: { Cookie: `__Host-owner=${TOKEN}` } }, {
+      DB: undefined,
+      TIMELINE_RATE_LIMITER: { limit },
+    });
+    expect(await mine.json()).toEqual({ items: [], nextCursor: null });
+    const shared = await app.request(`${URL_BASE}/${SAVED_ID}`, {}, { DB: undefined, TIMELINE_RATE_LIMITER: { limit } });
+    expect(shared.status).toBe(410);
+  });
+
+  it("別オリジンからの削除 → 403 で削除の印を付けず、同じ要求でもオリジンが同じなら削除する", async () => {
+    await insertRow();
+    const crossOrigin = await del(SAVED_ID, { Origin: "https://evil.example" });
+
+    expect(crossOrigin.status).toBe(403);
+    expect(await deletedAtOf(SAVED_ID)).toBeNull();
+    expect((await del(SAVED_ID, { Origin: "http://localhost" })).status).toBe(204);
+  });
+
+  it("別オリジンのプリフライトに Access-Control-Allow-Origin を返さない（別オリジンの DELETE はブラウザが送らない）", async () => {
+    const res = await app.request(
+      `${URL_BASE}/${SAVED_ID}`,
+      { method: "OPTIONS", headers: { Origin: "https://evil.example", "Access-Control-Request-Method": "DELETE" } },
+      { DB: undefined, TIMELINE_RATE_LIMITER: { limit } },
+    );
+
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
+  it("制限を超えたら 429 で削除せず、保存と同じく owner_hash をキーに数える", async () => {
+    await insertRow();
+    limit.mockResolvedValue({ success: false });
+    const res = await del(SAVED_ID);
+
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({ error: "rate_limited" });
+    expect(limit).toHaveBeenCalledWith({ key: sha256Hex(TOKEN) });
+    expect(await deletedAtOf(SAVED_ID)).toBeNull();
+  });
+
+  it("制限を超えていれば、形式が不正な id でも 429 を返す（不正な要求の連投も数える）", async () => {
+    limit.mockResolvedValue({ success: false });
+    const res = await del(`${"A".repeat(20)}!`);
+
+    expect(res.status).toBe(429);
+  });
+
+  it("Turnstile は確かめない（siteverify を呼ばない）", async () => {
+    await insertRow();
+    const res = await del(SAVED_ID);
+
+    expect(res.status).toBe(204);
+    expect(siteverify).not.toHaveBeenCalled();
   });
 });
 
@@ -604,6 +807,15 @@ describe("GET /api/me/timelines: 自分のタイムラインの一覧", () => {
     for (let n = 1; n <= 20; n++) await insertRow(n, 1000 + n);
 
     expect(await (await getMine()).json()).toMatchObject({ nextCursor: null });
+  });
+
+  it("削除した行は出さず、ページの件数にも数えない", async () => {
+    for (let n = 1; n <= 21; n++) await insertRow(n, 1000 + n, n === 10 ? { deletedAt: 2000 } : {});
+    const res = await getMine();
+
+    const body = (await res.clone().json()) as { nextCursor: string | null };
+    expect(await ids(res)).toEqual(Array.from({ length: 21 }, (_, i) => idOf(21 - i)).filter((id) => id !== idOf(10)));
+    expect(body.nextCursor).toBeNull();
   });
 
   it.each([
