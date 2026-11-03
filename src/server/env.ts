@@ -17,6 +17,10 @@ export type Bindings = {
   TIMELINE_RATE_LIMITER: RateLimiter;
   // Worker の secret。ローカルは .dev.vars、PR プレビューは wrangler.jsonc の previews.vars（どちらもテスト用）から読む
   TURNSTILE_SECRET_KEY?: string;
+  // Discord のログイン。ID は wrangler.jsonc の vars、secret は Worker の secret（ローカルはどちらも .dev.vars に書ける）。
+  // ID が無い環境（PR のプレビュー）ではログインの API が 404 になる（#876）
+  DISCORD_CLIENT_ID?: string;
+  DISCORD_CLIENT_SECRET?: string;
 };
 
 // 本番の D1（async）とテストの better-sqlite3（sync）のどちらも入る。await で使えるクエリビルダーだけを呼ぶ
