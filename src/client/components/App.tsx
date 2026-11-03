@@ -91,11 +91,25 @@ export function App() {
     entriesRef.current = entries;
   }, [entries]);
 
+  // 「戻る」で bfcache から戻ったページの状態は、離れていたあいだに移り先（言語のリンクの先など）で保存した内容より古い。
+  // 保存すると移り先で編集した分を上書きするので、保存を止めて読み込み直す
+  const restoredFromBfcacheRef = useRef(false);
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      restoredFromBfcacheRef.current = true;
+      window.location.reload();
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   // 状態変更を debounce しつつ LocalStorage へ保存。
   // debounce 待ち中（直前 500ms 以内）のリロード・タブクローズでも取りこぼさないよう、
   // pagehide で即時フラッシュする
   useEffect(() => {
     const flush = () => {
+      if (restoredFromBfcacheRef.current) return;
       saveAppState({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows });
     };
     const timer = window.setTimeout(flush, SAVE_DEBOUNCE_MS);
