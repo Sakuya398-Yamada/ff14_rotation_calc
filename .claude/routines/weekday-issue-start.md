@@ -1,7 +1,7 @@
 ---
 taskId: weekday-issue-start
 title: 【平日】Issue 自動着手ルーティン
-schedule: "30 19 * * *"
+schedule: "30 8 * * *"
 description: routine-ok の付いた Open Issue を 1 件選び、/issue-start の手順で実装して PR を作る（マージはしない）。任意の機能で、登録したプロジェクトでだけ動く
 ---
 

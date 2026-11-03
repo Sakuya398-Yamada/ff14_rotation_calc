@@ -13,9 +13,9 @@ Claude Code のクラウドのスケジュールタスク（claude.ai/code の R
 
 | taskId | スケジュールタスク ID | タイトル | 実行 | 定義 |
 |--------|---------------------|---------|------|------|
-| `daily-triage` | `trig_01WDcE3373n9xzeVmxezPkGT` | 【毎日】Issue トリアージルーティン | 毎日 19:00（`CRON_TZ=Asia/Tokyo 0 19 * * *`） | `.claude/routines/daily-triage.md` |
-| `weekly` | `trig_01UGYMPDENKPMarxxPoNaJUy` | 【毎週日曜】Issue 起票ルーティン | 毎週日曜 22:00（`CRON_TZ=Asia/Tokyo 0 22 * * 0`） | `.claude/routines/weekly.md` |
-| `weekday-issue-start`（任意） | `trig_01NZxoPENhC3YpRXu2dojgpc` | 【平日】Issue 自動着手ルーティン | 毎日 19:30（`CRON_TZ=Asia/Tokyo 30 19 * * *`。`daily-triage` より後に走らせ、付けた priority をその日の選定に効かせる。名前に反して土日も実行する） | `.claude/routines/weekday-issue-start.md` |
+| `daily-triage` | `trig_01WDcE3373n9xzeVmxezPkGT` | 【毎日】Issue トリアージルーティン | 毎日 8:00（`CRON_TZ=Asia/Tokyo 0 8 * * *`） | `.claude/routines/daily-triage.md` |
+| `weekly` | `trig_01UGYMPDENKPMarxxPoNaJUy` | 【毎週日曜】Issue 起票ルーティン | 毎週日曜 9:00（`CRON_TZ=Asia/Tokyo 0 9 * * 0`。同じ日の `daily-triage`・`weekday-issue-start` より後に走らせ、同じくバックログを数えて起票する `daily-triage` と重ならないようにする） | `.claude/routines/weekly.md` |
+| `weekday-issue-start`（任意） | `trig_01NZxoPENhC3YpRXu2dojgpc` | 【平日】Issue 自動着手ルーティン | 毎日 8:30（`CRON_TZ=Asia/Tokyo 30 8 * * *`。`daily-triage` より後に走らせ、付けた priority をその日の選定に効かせる。名前に反して土日も実行する） | `.claude/routines/weekday-issue-start.md` |
 
 - 動くのは、スケジュールタスクに登録したものだけ。手順書を置いてあっても、登録していないルーティンは動かない
 - `weekday-issue-start` は任意の機能。使うのは、人が `routine-ok` ラベルを付けた Issue を無人で PR まで進めたいプロジェクトだけ（ラベル `routine-ok` / `needs-decision` を作ってから登録する。テンプレート元の `routines-guide.md`「`weekday-issue-start` を使う場合」）

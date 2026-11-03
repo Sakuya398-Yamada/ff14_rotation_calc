@@ -1,7 +1,7 @@
 ---
 taskId: weekly
 title: 【毎週日曜】Issue 起票ルーティン
-schedule: "0 22 * * 0"
+schedule: "0 9 * * 0"
 description: コードスキャン（と、プロジェクト固有の系統）から Issue を起票し、priority の付け直しの案を実行ログに出す週次ルーティン（ラベルは変えない）
 ---
 
