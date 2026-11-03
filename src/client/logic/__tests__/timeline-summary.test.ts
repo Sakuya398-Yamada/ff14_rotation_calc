@@ -28,7 +28,9 @@ const edgeDot = makeSkill({ id: "edge-dot", potency: 50, dotPotency: 60, dotDura
 const gcd = makeSkill({ id: "gcd", potency: 300 });
 const ogcdA = makeSkill({ id: "ogcd-a", type: "ogcd", potency: 200 });
 const ogcdB = makeSkill({ id: "ogcd-b", type: "ogcd", potency: 150 });
-const skillMap = new Map([longDot, edgeDot, gcd, ogcdA, ogcdB].map((s) => [s.id, s]));
+// GCD を使わずに DoT を付ける oGCD（学者の禍性のインパクションと同じ形）
+const ogcdDot = makeSkill({ id: "ogcd-dot", type: "ogcd", potency: 0, dotPotency: 140, dotDuration: 15 });
+const skillMap = new Map([longDot, edgeDot, gcd, ogcdA, ogcdB, ogcdDot].map((s) => [s.id, s]));
 const stats = DEFAULT_STATS;
 
 const resolve = (ids: string[]) => resolveTimeline(ids.map(makeEntry), skillMap, [], stats);
@@ -54,11 +56,12 @@ function previousSummary(result: TimelineResult) {
 }
 
 describe("calcTimelineSummary: DoT が最後の GCD より後まで続くタイムライン（#835）", () => {
-  const result = resolve(["long-dot", "gcd", "gcd"]);
+  const result = resolve(["long-dot", "gcd", "gcd", "gcd", "gcd", "gcd"]);
   const summary = calcTimelineSummary(result, skillMap, stats);
 
-  it("前提: 最後の DoT ティックが最後の GCD のリキャスト完了より後にある", () => {
-    expect(result.lastGcdEndTime).toBeGreaterThan(0);
+  it("前提: 最後の GCD のリキャスト完了ちょうどにティックがあり、最後の DoT ティックはそれより後にある", () => {
+    expect(result.lastGcdEndTime).toBe(15);
+    expect(result.dotTicks.some((t) => t.time === result.lastGcdEndTime)).toBe(true);
     expect(result.timelineEndTime).toBeGreaterThan(result.lastGcdEndTime);
   });
 
@@ -114,21 +117,24 @@ describe("calcTimelineSummary: DoT が最後の GCD より後まで続かない�
   });
 });
 
-describe("calcTimelineSummary: GCD が無いタイムライン（#835）", () => {
-  const result = resolve(["ogcd-a", "ogcd-b"]);
+describe.each([
+  { name: "oGCD だけ", ids: ["ogcd-a", "ogcd-b"], hasDot: false },
+  { name: "oGCD の DoT がある", ids: ["ogcd-a", "ogcd-dot"], hasDot: true },
+])("calcTimelineSummary: GCD が無いタイムライン（$name）（#835）", ({ ids, hasDot }) => {
+  const result = resolve(ids);
   const summary = calcTimelineSummary(result, skillMap, stats);
 
   it("前提: GCD が無いので最後の GCD のリキャスト完了は 0", () => {
     expect(result.lastGcdEndTime).toBe(0);
     expect(result.entries.every((e) => !e.recastError)).toBe(true);
+    expect(result.dotTicks.length > 0).toBe(hasDot);
   });
 
-  it("PPS 全体・所要時間は出さず、合計期待威力は変更前と同じくすべてのエントリを数える", () => {
-    expect(summary.overallPps).toBeNull();
-    expect(summary.duration).toBe(0);
+  it("集計行の値は変更前と同じ（すべてのエントリ・ティックを数える）で、所要時間の注記は出さない", () => {
+    const { overallPps, totalExpectedPotency, dotExpectedPotency, duration } = summary;
+    expect(totalExpectedPotency).toBeGreaterThan(0);
+    expect({ overallPps, totalExpectedPotency, dotExpectedPotency, duration }).toEqual(previousSummary(result));
+    expect(overallPps === null).toBe(!hasDot);
     expect(summary.lastDotTickTime).toBeNull();
-    expect(summary.totalExpectedPotency).toBeGreaterThan(0);
-    expect(summary.totalExpectedPotency).toBe(previousSummary(result).totalExpectedPotency);
-    expect(summary.dotExpectedPotency).toBe(previousSummary(result).dotExpectedPotency);
   });
 });

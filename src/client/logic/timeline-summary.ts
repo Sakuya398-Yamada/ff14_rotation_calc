@@ -39,10 +39,10 @@ export function calcTimelineSummary(
   stats: CharacterStats
 ): TimelineSummary {
   const { lastGcdEndTime, timelineEndTime } = result;
-  const lastDotTickTime = timelineEndTime > lastGcdEndTime ? timelineEndTime : null;
 
   if (lastGcdEndTime <= 0) {
-    // GCD が無いと範囲が 0 秒になり PPS が決まらない。合計は置いたエントリとティックをすべて数える
+    // GCD が無いと範囲が 0 秒になり PPS が決まらないので、#835 より前の集計のまま
+    // （0 〜 最後の DoT ティック、すべてのエントリとティックを数える。oGCD の DoT だけのタイムラインがある）
     const direct = result.entries.reduce(
       (sum, entry) => sum + calcEntryExpectedPotency(entry, skillMap.get(entry.resolvedSkillId), stats),
       0
@@ -51,7 +51,17 @@ export function calcTimelineSummary(
       (sum, tick) => sum + Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus)),
       0
     );
-    return { overallPps: null, totalExpectedPotency: direct + dot, dotExpectedPotency: dot, duration: 0, lastDotTickTime };
+    const overallPps =
+      timelineEndTime > 0
+        ? calcPps(result.entries, skillMap, result.dotTicks, 0, timelineEndTime, stats, { includeEnd: true })
+        : null;
+    return {
+      overallPps,
+      totalExpectedPotency: direct + dot,
+      dotExpectedPotency: dot,
+      duration: timelineEndTime,
+      lastDotTickTime: null,
+    };
   }
 
   const overallPps = calcRangePps(result, skillMap, { startTime: 0, endTime: lastGcdEndTime }, stats);
@@ -60,6 +70,6 @@ export function calcTimelineSummary(
     totalExpectedPotency: overallPps.totalPotency,
     dotExpectedPotency: overallPps.dotPotency,
     duration: lastGcdEndTime,
-    lastDotTickTime,
+    lastDotTickTime: timelineEndTime > lastGcdEndTime ? timelineEndTime : null,
   };
 }

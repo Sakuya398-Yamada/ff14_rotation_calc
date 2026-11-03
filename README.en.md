@@ -72,11 +72,11 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 
 | Item | Description |
 |------|------|
-| Total expected potency | Expected potency from 0s until the end of the last GCD's recast (including DoTs; DoT ticks after that are not counted). Without GCDs, the expected potency of all placed actions |
+| Total expected potency | Expected potency from 0s until the end of the last GCD's recast (including DoTs; DoT ticks after that are not counted). Without GCDs, the expected potency of all placed actions and DoTs |
 | PPS (overall) | Total expected potency ÷ duration (the PPS of the same range as "All" in "PPS range") |
 | PPS (range) | PPS of the range set with "PPS range" |
 | DoT expected potency | The DoT part of the total expected potency |
-| Duration | Time until the end of the last GCD's recast. When DoTs tick after that, the time of the last DoT tick is shown next to it |
+| Duration | Time until the end of the last GCD's recast. When DoTs tick after that, the time of the last DoT tick is shown next to it (without GCDs, the time of the last DoT tick) |
 
 ### Job palette (left side)
 

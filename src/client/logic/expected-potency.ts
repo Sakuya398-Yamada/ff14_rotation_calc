@@ -3,7 +3,7 @@ import { calcExpectedMultiplier } from "./stat-calc";
 
 /**
  * 1 エントリ分の期待威力（クリ/DH 期待値・バフ倍率・複数体合計を全て反映した値）。
- * App.tsx の `totalExpectedPotency` と `calcPps` の `directPotency` の重複計算を一本化するためのヘルパー。
+ * 集計行の合計期待威力（`calcTimelineSummary`）と `calcPps` の `directPotency` で共有するヘルパー。
  *
  * 計算規則:
  * - `hasError`（resourceErrors / comboErrors / untargetableError / recastError）のエントリは 0
