@@ -149,6 +149,16 @@ describe("PLD: ロイヤルアソリティのあとのロイエ系", () => {
     expect(riot.wsComboError).toBe(false);
     expect(riot.resolvedPotency).toBe(330);
   });
+
+  it("詠唱するホーリースピリット・ホーリーサークル（神聖魔法効果アップ無し）を挟んでも WS コンボは途切れない", () => {
+    const result = setup(100).resolve(["fast-blade", "holy-spirit", "holy-circle", "riot-blade"]);
+    const [, spirit, circle, riot] = result.entries;
+    expect([spirit.resolvedSkillId, circle.resolvedSkillId]).toEqual(["holy-spirit", "holy-circle"]);
+    expect([spirit.castTime, circle.castTime]).toEqual([1.5, 1.5]);
+    expectNoError(riot);
+    expect(riot.wsComboError).toBe(false);
+    expect(riot.resolvedPotency).toBe(330);
+  });
 });
 
 describe("PLD: レクイエスカット・インペラトルのあとのコンフィテオル系", () => {
