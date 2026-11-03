@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, sqliteTable, text, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 
-// 中身は書き換えない（UPDATE する API を作らない）。設計の根拠は #462 の結論コメント「テーブル設計」
+// 中身は書き換えない（UPDATE するのは削除の印の deleted_at だけ。#832）。設計の根拠は #462 の結論コメント「テーブル設計」
 export const timelines = sqliteTable(
   "timelines",
   {
@@ -24,6 +24,9 @@ export const timelines = sqliteTable(
     createdAt: integer("created_at")
       .notNull()
       .default(sql`(unixepoch())`),
+    // 論理削除した時刻（unixepoch() の秒）。NULL なら削除していない。行を消さないのは、
+    // parent_id で参照する子（ほかの人の保存も）があると外部キーで消せず、削除したことも共有 URL で伝えるため（#832）
+    deletedAt: integer("deleted_at"),
   },
   (t) => [
     // 「自分のタイムライン」一覧用。インデックスは 1 本ごとに保存 1 件あたりの D1 の書き込み行数が 1 増えるので、今使うものだけ張る。

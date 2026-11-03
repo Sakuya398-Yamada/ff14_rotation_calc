@@ -16,7 +16,7 @@ export interface TimelineResponse {
   createdAt: string;
 }
 
-export type SharedLoadError = "not_found" | "unsupported_version" | "invalid_data" | "network";
+export type SharedLoadError = "not_found" | "deleted" | "unsupported_version" | "invalid_data" | "network";
 
 export type SharedLoadOutcome =
   | { kind: "apply"; id: string; state: PersistedAppState; title: string | null; contentId: string | null }
@@ -48,6 +48,8 @@ export async function loadSharedTimeline(
   try {
     const res = await fetch(`/api/timelines/${encodeURIComponent(id)}`, { signal: deps.signal });
     if (res.status === 404) return failed("not_found");
+    // 保存した人が削除した（#832）
+    if (res.status === 410) return failed("deleted");
     if (!res.ok) return failed("network");
     text = await res.text();
   } catch {

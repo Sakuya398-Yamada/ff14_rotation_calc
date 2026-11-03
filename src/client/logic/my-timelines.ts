@@ -42,3 +42,26 @@ export async function fetchMyTimelines(
     return deps.signal?.aborted ? { kind: "cancelled" } : FAILED;
   }
 }
+
+export type DeleteMyTimelineError = "rate_limited" | "network";
+
+export type DeleteMyTimelineOutcome =
+  | { kind: "deleted" }
+  | { kind: "cancelled" }
+  | { kind: "error"; error: DeleteMyTimelineError };
+
+/** この Cookie（匿名トークン）で保存したタイムラインを削除する */
+export async function deleteMyTimeline(
+  id: string,
+  deps: { signal?: AbortSignal } = {},
+): Promise<DeleteMyTimelineOutcome> {
+  try {
+    const res = await fetch(`/api/timelines/${encodeURIComponent(id)}`, { method: "DELETE", signal: deps.signal });
+    // 404 は、別のタブで削除済みのときなど。どちらにしても、もう開けないので一覧から外す
+    if (res.status === 204 || res.status === 404) return { kind: "deleted" };
+    if (res.status === 429) return { kind: "error", error: "rate_limited" };
+    return { kind: "error", error: "network" };
+  } catch {
+    return deps.signal?.aborted ? { kind: "cancelled" } : { kind: "error", error: "network" };
+  }
+}

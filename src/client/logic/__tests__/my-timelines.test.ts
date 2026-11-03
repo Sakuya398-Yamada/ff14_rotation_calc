@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchMyTimelines, type MyTimelinesResponse } from "../my-timelines";
+import { deleteMyTimeline, fetchMyTimelines, type MyTimelinesResponse } from "../my-timelines";
 
 const RESPONSE: MyTimelinesResponse = {
   items: [
@@ -60,6 +60,57 @@ describe("fetchMyTimelines", () => {
     );
     const controller = new AbortController();
     const pending = fetchMyTimelines(null, { signal: controller.signal });
+    controller.abort();
+
+    expect(await pending).toEqual({ kind: "cancelled" });
+  });
+});
+
+describe("deleteMyTimeline", () => {
+  const ID = "V1StGXR8_Z5jdHi6B-myT";
+
+  it("DELETE /api/timelines/<id> を送り、204 なら deleted を返す", async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+    const controller = new AbortController();
+    const outcome = await deleteMyTimeline(ID, { signal: controller.signal });
+
+    expect(outcome).toEqual({ kind: "deleted" });
+    expect(fetchMock).toHaveBeenCalledWith(`/api/timelines/${ID}`, { method: "DELETE", signal: controller.signal });
+  });
+
+  it("id を URL エンコードする", async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+    await deleteMyTimeline("a/b");
+
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/timelines/a%2Fb");
+  });
+
+  it("404（別のタブで削除済みなど）も、一覧から外せるよう deleted を返す", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ error: "not_found" }, 404));
+
+    expect(await deleteMyTimeline(ID)).toEqual({ kind: "deleted" });
+  });
+
+  it.each([
+    ["429", "rate_limited", () => Promise.resolve(jsonResponse({ error: "rate_limited" }, 429))],
+    ["403", "network", () => Promise.resolve(new Response("Forbidden", { status: 403 }))],
+    ["500", "network", () => Promise.resolve(jsonResponse({ error: "internal" }, 500))],
+    ["通信断（fetch が reject する）", "network", () => Promise.reject(new TypeError("Failed to fetch"))],
+  ] as const)("%s → エラー（%s）", async (_label, error, respond) => {
+    fetchMock.mockImplementation(respond);
+
+    expect(await deleteMyTimeline(ID)).toEqual({ kind: "error", error });
+  });
+
+  it("送信中に中断されたら、通信エラーにしない", async () => {
+    fetchMock.mockImplementation(
+      (_url, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+        }),
+    );
+    const controller = new AbortController();
+    const pending = deleteMyTimeline(ID, { signal: controller.signal });
     controller.abort();
 
     expect(await pending).toEqual({ kind: "cancelled" });
