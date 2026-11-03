@@ -160,7 +160,7 @@ npm run db:migrate                        # ローカルの D1 に適用
    await fetch("/api/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
    ```
 
-- ID だけを書いて secret を書き忘れると、`/api/auth/discord` が 500 になります（Turnstile と同じく、設定の誤りを黙って通さない）
+- `DISCORD_CLIENT_ID=` の行を消して（または行が無いまま）secret を書かずに起動すると、`/api/me` は `loginAvailable:true` を返し、`/api/auth/discord` が 500 になります（Turnstile と同じく、設定の誤りを黙って通さない）
 - テストは Discord を呼ばず、`fetch` を差し替えて確かめます（`src/server/routes/__tests__/auth.test.ts`）
 
 ---
@@ -256,7 +256,7 @@ PR のプレビューは手順 2・3 の値を使いません（#581）。プレ
 
 ### Discord のアプリ（初回のみ）
 
-ログイン（#876）は Discord のアプリのクライアント ID と secret を使います。ID を入れるまでは、本番でもログインの API が 404 を返すだけで、ほかの機能には影響しません。secret が無いまま ID を入れると、ログインが 500 になるので、secret を先に入れます。本番のアプリは登録済みで、ID は #892 で `wrangler.jsonc` に書きました。アプリを作り直すとき（secret を Reset Secret で作り直すときは手順 3 だけ）に、この手順を使います。
+ログイン（#876）は Discord のアプリのクライアント ID と secret を使います。本番のアプリは登録済みで、ID は #892 で `wrangler.jsonc` に書きました。この手順は、アプリを作り直すときに使います（secret を Reset Secret で作り直すだけなら手順 3 だけ）。secret が無いまま ID を入れる・置き換えると、ログインが 500 になるので、secret を先に入れます。
 
 1. [Discord Developer Portal](https://discord.com/developers/applications) で **New Application** を選び、アプリ名（Discord の認可画面に出る）を入れて作る
 2. **OAuth2** → **Redirects** に次の 2 つを足して保存する。リダイレクト URI は完全一致で照合されるので、スキーム（`https` / `http`）・ポート・末尾の `/` の有無まで揃える
@@ -269,7 +269,7 @@ PR のプレビューは手順 2・3 の値を使いません（#581）。プレ
    ```
 
    ダッシュボードなら Worker の **Settings** → **Variables and Secrets** → **Add**（Type: **Secret**）。**Settings** → **Build** の **Build variables and secrets** ではない（そこの値はビルドの間しか読めず、Worker からは読めないので、ログインが 500 になる。Turnstile の sitekey とは入れる場所が違う）。ローカルで試すなら、同じ値を `.dev.vars` にも書く（前述「Discord でのログイン」）
-4. 同じページの **Client ID**（公開値）を、`wrangler.jsonc` の最上位に `"vars": { "DISCORD_CLIENT_ID": "<Client ID>" }` として書き、PR にする。`previews` には書かない（下記）。ダッシュボードの **Variables and Secrets** に入れても、次のデプロイ（`wrangler deploy`）が `wrangler.jsonc` の `vars` で置き換えるので、ファイルに書く
+4. 同じページの **Client ID**（公開値）で、`wrangler.jsonc` の最上位の `vars` にある `DISCORD_CLIENT_ID` の値を置き換え、PR にする（`"vars"` を書き足さない。JSONC はキーが重複してもエラーにならず、後の方が使われる）。`previews` には書かない（下記）。ダッシュボードの **Variables and Secrets** に入れても、次のデプロイ（`wrangler deploy`）が `wrangler.jsonc` の `vars` で置き換えるので、ファイルに書く
 5. マージ後、本番で `/api/auth/discord` を開いて Discord の認可画面に移り、承認するとトップに戻って `/api/me` の `loggedIn` が `true` になることを確かめる
 
 PR のプレビューではログインを出しません。リダイレクト URI は完全一致でしか登録できず、プレビューの URL はブランチごとに変わるためです。プレビューのバインディングは `previews` に書いたものだけで、最上位の `vars` は付かないので、プレビューにはクライアント ID が無く、ログインの API は 404 になります。
