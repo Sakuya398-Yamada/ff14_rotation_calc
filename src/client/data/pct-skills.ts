@@ -521,6 +521,8 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 30,
+    // 変化先のマディーンレトリビューションとリキャストを共有する（#871）
+    cooldownGroup: "pct-mog-of-the-ages",
     acquiredLevel: 30,
     requiredBuff: "moogle-symbol",
     buffConsumptions: [{ buffId: "moogle-symbol", stacks: 1 }],
@@ -542,6 +544,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
     recastTime: DEFAULT_ANIMATION_LOCK,
     animationLock: DEFAULT_ANIMATION_LOCK,
     cooldown: 30,
+    cooldownGroup: "pct-mog-of-the-ages",
     acquiredLevel: 96,
     requiredBuff: "madeen-symbol",
     buffConsumptions: [{ buffId: "madeen-symbol", stacks: 1 }],
