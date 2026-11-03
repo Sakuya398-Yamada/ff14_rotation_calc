@@ -59,11 +59,11 @@ FF14 Rotation Calculator に新しいジョブを追加するときの手順書�
 
 | フィールド | 用途 | 実例 |
 |---|---|---|
-| `initialStacks` | 戦闘開始時の保有量 | `whm-resources.ts:16`（H.リリー = 3 で開始） |
-| `autoGenerateInterval` + `autoGenerateAmount` | 時間経過で自動生成 | `whm-resources.ts:17`（20 秒ごと +1） |
+| `initialStacks` | 戦闘開始時の保有量 | `whm-resources.ts` の `healing-lily`（H.リリー = 3 で開始） |
+| `autoGenerateInterval` + `autoGenerateAmount` | 時間経過で自動生成 | `whm-resources.ts` の `healing-lily`（20 秒ごと +1） |
 | `autoGenerateWhileBuff` | 特定バフ中のみ自動生成 | （PCT 等） |
-| `acquiredLevel` | 解放レベル | `whm-resources.ts:26` |
-| `displayGroup` + `groupMaxStacks` + `displayGroupPriority` | 複数リソースを 1 レーンに統合表示・合計キャップ | `sam-resources.ts:34-36, 45-47, 56-58`（雪/月/花 → `"sen"` レーン統合、合計 3 まで） |
+| `acquiredLevel` | 解放レベル | `whm-resources.ts` の `blood-lily` |
+| `displayGroup` + `groupMaxStacks` + `displayGroupPriority` | 複数リソースを 1 レーンに統合表示・合計キャップ | `sam-resources.ts` の `setsu`・`getsu`・`ka`（雪/月/花 → `"sen"` レーン統合、合計 3 まで） |
 | `stacksPerRow` | ドット表示の折り返し | |
 | `displayAsGauge` | ドットではなく塗り＋数字のゲージで描く。上限の大きいリソース（100 等）は必ず付ける（無いとドットが上限の数だけ並ぶ） | `brd-resources.ts`（ソウルボイス・詩心） |
 
@@ -86,7 +86,7 @@ export const XXX_RESOURCES: ResourceDefinition[] = [
 
 ### 複数リソースを 1 レーンに統合（SAM の閃方式）
 
-`displayGroup` を同じ値にし、`groupMaxStacks` で合計上限を、`displayGroupPriority` で先頭埋め順を指定する。実装は `src/client/data/sam-resources.ts:34-58` を参照。
+`displayGroup` を同じ値にし、`groupMaxStacks` で合計上限を、`displayGroupPriority` で先頭埋め順を指定する。実装は `src/client/data/sam-resources.ts` の `setsu`・`getsu`・`ka` を参照。
 
 ---
 
@@ -100,23 +100,23 @@ export const XXX_RESOURCES: ResourceDefinition[] = [
 
 | `type` | `value` の意味 | 実例 |
 |---|---|---|
-| `speed` | GCD 乗算（0.8 = 20% 短縮） | `whm-buffs.ts:18-21`（神速魔）、`sam-buffs.ts:65-68`（風花） |
-| `potency` | 威力乗算（1.13 = +13%） | `sam-buffs.ts:49-52`（風月） |
-| `instantCast` | 詠唱 0 化、GCD 使用時に自動消費 | `whm-buffs.ts:42`（迅速魔） |
+| `speed` | GCD 乗算（0.8 = 20% 短縮） | `whm-buffs.ts` の `presence-of-mind`（神速魔）、`sam-buffs.ts` の `fuka`（風花） |
+| `potency` | 威力乗算（1.13 = +13%） | `sam-buffs.ts` の `fugetsu`（風月） |
+| `instantCast` | 詠唱 0 化、GCD 使用時に自動消費 | `whm-buffs.ts` の `swiftcast`（迅速魔） |
 | `critRate` / `dhRate` | クリ率／DH 率の加算 | |
 | `guaranteedCrit` / `guaranteedDh` | 次の WS で確定クリ／DH | |
-| `consumeOnGcd` | 対象 GCD で 1 スタック自動消費 | `sam-buffs.ts:88-91` |
-| `bypassCombo` | `appliesToSkillIds` の WS をコンボ成立扱い（`comboFrom` / `comboFromBuff` のどちらも） | `sam-buffs.ts:98-102`（明鏡止水）、`mnk-buffs.ts:120, 137`（踏鳴・零の型） |
-| `applyBuffOnSkill` | 対象スキル使用時に `appliedBuffId` を追加付与 | `sam-buffs.ts:94-99`（明鏡止水中の月光→風月等） |
+| `consumeOnGcd` | 対象 GCD で 1 スタック自動消費 | `sam-buffs.ts` の `meikyo-shisui` |
+| `bypassCombo` | `appliesToSkillIds` の WS をコンボ成立扱い（`comboFrom` / `comboFromBuff` のどちらも） | `sam-buffs.ts` の `meikyo-shisui`（明鏡止水）、`mnk-buffs.ts` の `perfect-balance`・`formless-fist`（踏鳴・零の型） |
+| `applyBuffOnSkill` | 対象スキル使用時に `appliedBuffId` を追加付与 | `sam-buffs.ts` の `meikyo-shisui`（明鏡止水中の月光→風月等） |
 | `resourceCostMultiplier` | 指定リソース消費の倍率 | BLM AF/UI |
 | `resourceGainOnSkill` | スキル使用時に追加リソース獲得 | |
-| 効果なしフラグ | `effects: []`（条件分岐のシグナル用） | `whm-buffs.ts:31`（sacred-sight）、`sam-buffs.ts:122`（tendo） |
+| 効果なしフラグ | `effects: []`（条件分岐のシグナル用） | `whm-buffs.ts` の `sacred-sight`、`sam-buffs.ts` の `tendo` |
 
 ### 主要な任意フィールド
 
 | フィールド | 用途 | 実例 |
 |---|---|---|
-| `maxStacks` | スタック付きバフ | `whm-buffs.ts:33`, `sam-buffs.ts:109` |
+| `maxStacks` | スタック付きバフ | `whm-buffs.ts` の `sacred-sight`, `sam-buffs.ts` の `meikyo-shisui` |
 | `acquiredLevel` | 解放レベル | |
 | `exclusiveGroup` | 同グループは 1 つだけ。新規付与で旧バフを解除 | `sam-buffs.ts`（燕返し系 5 種） |
 | `appliesToSkillIds`（`BuffEffect` 内） | 対象スキル限定 | AF3 のファイア系/ブリザド系で異なる倍率 等 |
@@ -149,34 +149,34 @@ export const XXX_BUFFS: BuffDefinition[] = [
 `id`, `potency`, `type`（`"gcd"` or `"ogcd"`）, `target`（`"enemy"` / `"party"` / `"self"`）, `icon`, `recastTime`, `animationLock`, `acquiredLevel`
 
 - GCD は `recastTime: 2.5`
-- oGCD は `recastTime: DEFAULT_ANIMATION_LOCK`（`const DEFAULT_ANIMATION_LOCK = 0.65` をファイル冒頭に定義）で全ジョブ統一する。oGCD の `recastTime` は計算に使われず、タイムライン上のブロック表示幅（`Timeline.tsx` の `getRecastTime`）にのみ使われるため、ジョブ固有値にするとアビリティの見た目がジョブ間で揃わなくなる（#350。`ogcd-recast-time.test.ts` が検証）。実際の再使用間隔は `cooldown` で表し、**必ず**指定する（`whm-skills.ts:265, 277`）
+- oGCD は `recastTime: DEFAULT_ANIMATION_LOCK`（`const DEFAULT_ANIMATION_LOCK = 0.65` をファイル冒頭に定義）で全ジョブ統一する。oGCD の `recastTime` は計算に使われず、タイムライン上のブロック表示幅（`Timeline.tsx` の `getRecastTime`）にのみ使われるため、ジョブ固有値にするとアビリティの見た目がジョブ間で揃わなくなる（#350。`ogcd-recast-time.test.ts` が検証）。実際の再使用間隔は `cooldown` で表し、**必ず**指定する（`whm-skills.ts` の `assize`・`presence-of-mind`）
 - 命名規則: ファイル名は `kebab-case`、エクスポートは `<JOB>_ATTACK_SKILLS`
 
 ### よく使う任意フィールド
 
 | 用途 | フィールド | 実例 |
 |---|---|---|
-| レベル進化でアイコン置換 | `replacesSkillId` | `whm-skills.ts:59, 72, 85, 98, 111` |
-| 特性による威力上書き | `traitPotencyOverrides` | `whm-skills.ts:112-114, 158-160` |
-| 詠唱 | `castTime` | `whm-skills.ts:44`, `sam-skills.ts:254` |
-| DoT | `dotPotency` + `dotDuration` | `whm-skills.ts:127-128`, `sam-skills.ts:342-343` |
-| リソース増減 | `resourceChanges[]` | `whm-skills.ts:217-220`, `sam-skills.ts:72` |
-| バフ付与 | `buffApplications[]` | `whm-skills.ts:279, 292` |
-| バフ消費 | `buffConsumptions[]` | `whm-skills.ts:201-203` |
-| WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges`。コンボの起点・継続でない GCD には `keepsCombo: true` を付ける（付けないと、その GCD を挟んだときにコンボが途切れる。`ws-combo-keeps-combo.test.ts` が付け忘れを検出する） | `sam-skills.ts:98-101, 113-115`、`sam-skills.ts:700`（燕飛。`keepsCombo`） |
-| 付与バフで表すコンボ（型など。直前の GCD ではなく、前の段が付けたバフでつながる） | 前の段の `buffApplications` で次の段のバフを付け、次の段は `comboFromBuff`（発動条件なら `required: true`）。段のバフに同じ `exclusiveGroup` と `duration` を付ける。成立時の効果は WS コンボと同じ `nonComboPotency` / `comboResourceChanges`。次の段を付けない最終段は `removesBuffs` で段のバフを外す | `mnk-skills.ts:99-103, 274-276`（双掌打）、`mnk-buffs.ts:81-108`（型のバフ）、`pct-skills.ts:113-114`（ブルーウォータ。最終段） |
-| 全消費＋集計獲得 | `consumeAllResources` + `resourceGainByConsumedCount` | `sam-skills.ts:647-652`（葉隠 = 雪/月/花を全消費し剣気獲得） |
-| チャージ式・共有CD | `maxCharges` + `cooldownGroup` | `sam-skills.ts:584-586, 599-601` |
-| バフ必須スキル | `requiredBuff` | `sam-skills.ts:447, 462, 633` |
-| 確定クリ | `guaranteedCrit: true` | `sam-skills.ts:373, 461, 490` |
-| 自動変化 | `autoTransform: AutoTransformEntry[]` + `hidden: true` | `sam-skills.ts:244-328`（居合術 → 6 種に変化）／変化先は `hidden: true` |
-| AoE 威力減衰 | `maxTargets` + `falloffRate` + `falloffStartTarget` | `src/client/types/skill.ts:176-191` |
+| レベル進化でアイコン置換 | `replacesSkillId` | `whm-skills.ts` の `stone2`・`stone3`・`stone4`・`glare`・`glare3` |
+| 特性による威力上書き | `traitPotencyOverrides` | `whm-skills.ts` の `glare3`・`dia` |
+| 詠唱 | `castTime` | `whm-skills.ts` の `stone`, `sam-skills.ts` の `iaijutsu` |
+| DoT | `dotPotency` + `dotDuration` | `whm-skills.ts` の `aero`, `sam-skills.ts` の `higanbana` |
+| リソース増減 | `resourceChanges[]` | `whm-skills.ts` の `heart-of-solace`, `sam-skills.ts` の `hakaze` |
+| バフ付与 | `buffApplications[]` | `whm-skills.ts` の `presence-of-mind`・`swiftcast` |
+| バフ消費 | `buffConsumptions[]` | `whm-skills.ts` の `glare4` |
+| WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges`。コンボの起点・継続でない GCD には `keepsCombo: true` を付ける（付けないと、その GCD を挟んだときにコンボが途切れる。`ws-combo-keeps-combo.test.ts` が付け忘れを検出する） | `sam-skills.ts` の `jinpu`・`shifu`、`sam-skills.ts` の `enpi`（燕飛。`keepsCombo`） |
+| 付与バフで表すコンボ（型など。直前の GCD ではなく、前の段が付けたバフでつながる） | 前の段の `buffApplications` で次の段のバフを付け、次の段は `comboFromBuff`（発動条件なら `required: true`）。段のバフに同じ `exclusiveGroup` と `duration` を付ける。成立時の効果は WS コンボと同じ `nonComboPotency` / `comboResourceChanges`。次の段を付けない最終段は `removesBuffs` で段のバフを外す | `mnk-skills.ts` の `FROM_RAPTOR_FORM` などの定数と `twin-snakes`（双掌打）、`mnk-buffs.ts` の `opo-form`・`raptor-form`・`coeurl-form`（型のバフ）、`pct-skills.ts` の `water-in-blue`（ブルーウォータ。最終段） |
+| 全消費＋集計獲得 | `consumeAllResources` + `resourceGainByConsumedCount` | `sam-skills.ts` の `hagakure`（葉隠 = 雪/月/花を全消費し剣気獲得） |
+| チャージ式・共有CD | `maxCharges` + `cooldownGroup` | `brd-skills.ts` の `bloodletter`・`rain-of-death`・`heartbreak-shot` |
+| バフ必須スキル | `requiredBuff` | `sam-skills.ts` の `kaeshi-goken`・`kaeshi-setsugekka`・`ogi-namikiri` |
+| 確定クリ | `guaranteedCrit: true` | `sam-skills.ts` の `midare-setsugekka`・`kaeshi-setsugekka`・`tendo-kaeshi-setsugekka` |
+| 自動変化 | `autoTransform: AutoTransformEntry[]` + `hidden: true` | `sam-skills.ts` の `iaijutsu`（居合術 → 6 種に変化）／変化先は `hidden: true` |
+| AoE 威力減衰 | `maxTargets` + `falloffRate` + `falloffStartTarget` | `src/client/types/skill.ts` の `Skill`（同名のフィールドのコメント） |
 
 ### 共有リキャストグループ（`cooldownGroup`）の注意
 
 同一 `cooldownGroup` のスキル間で `cooldown` と `maxCharges` は揃える前提。
 不一致時は「最後に使用したスキルの値」が採用されるため、グループ全体で一意にする
-（`src/client/types/skill.ts:100-107` のコメント参照）。
+（`src/client/types/skill.ts` の `Skill` の `cooldownGroup` のコメント参照）。
 
 ### 最小例
 
