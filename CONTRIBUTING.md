@@ -146,6 +146,23 @@ npm run db:migrate                        # ローカルの D1 に適用
   - ウィジェットのエラー: `$env:VITE_TURNSTILE_SITE_KEY="2x00000000000000000000AB"; npm run dev`。この値は止めた後もその端末に残るので、戻すときは `Remove-Item Env:VITE_TURNSTILE_SITE_KEY` してから起動し直す（または端末を閉じる）
 - `.dev.vars` が無い（`TURNSTILE_SECRET_KEY` が未設定）と、保存は 500 になります。テスト用の secret には自動で切り替えません（本番で設定し忘れたときに、検証が黙って外れないようにするため）
 
+### Discord でのログイン
+
+ログインは Discord の OAuth 2.0（認可コード + PKCE）で、API は `GET /api/auth/discord`（Discord の認可画面へ移る。`?returnTo=<パス>` でログイン後に戻るパスを渡せる）・`GET /api/auth/discord/callback`・`POST /api/auth/logout`・`GET /api/me`（ログインできる環境か・ログイン中か）です（#876）。クライアント ID（`DISCORD_CLIENT_ID`）が無い環境では、ログインの API が 404 を返し、`/api/me` は `{"loginAvailable":false,"loggedIn":false}` を返します。`.dev.vars.example` のままなら、ローカルもこの状態です。
+
+ローカルでログインを試すとき:
+
+1. 後述「Discord のアプリ（初回のみ）」で登録したアプリのクライアント ID と secret を、`.dev.vars` に書く（`.dev.vars.example` のコメントにある 2 行）。`wrangler.jsonc` の `vars` に ID を書いた後は、`.dev.vars` には secret だけでよい
+2. `npm run dev` を起動し直し、`http://localhost:5173/api/auth/discord` を開く。Discord で承認するとトップに戻り、`http://localhost:5173/api/me` が `{"loginAvailable":true,"loggedIn":true}` を返す
+3. ログアウトの UI はまだ無い（#880）。ブラウザの開発者ツールのコンソールで次を実行すると、`/api/me` の `loggedIn` が `false` に戻る
+
+   ```js
+   await fetch("/api/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+   ```
+
+- ID だけを書いて secret を書き忘れると、`/api/auth/discord` が 500 になります（Turnstile と同じく、設定の誤りを黙って通さない）
+- テストは Discord を呼ばず、`fetch` を差し替えて確かめます（`src/server/routes/__tests__/auth.test.ts`）
+
 ---
 
 ## CI / Cloudflare Workers 配信
@@ -237,6 +254,26 @@ PR のプレビューは手順 2・3 の値を使いません（#581）。プレ
 
 - プレビューのビルドにも `VITE_TURNSTILE_SITE_KEY` が渡るように変えると、本番の sitekey のトークンをテスト用 secret が拒否し、プレビューの保存が 403 になります。その場合は、`previews.vars` の値を本番の secret にせず（設定ファイルに書くと公開される）、`previews.vars` から外して `npx wrangler preview base-config secret put TURNSTILE_SECRET_KEY` で入れ、手順 1 のホスト名にプレビューも通る `forestry-for.workers.dev` を入れる。Previews Base の secret は入れた後に新しく作るプレビューにだけ付くので、すでにあるプレビューには `npx wrangler preview secret put TURNSTILE_SECRET_KEY --name <プレビュー名>`（プレビュー URL の `-ff14-rotation-calc.` より前）で入れる
 
+### Discord のアプリ（初回のみ）
+
+ログイン（#876）は Discord のアプリのクライアント ID と secret を使います。ID を入れるまでは、本番でもログインの API が 404 を返すだけで、ほかの機能には影響しません。secret が無いまま ID を入れると、ログインが 500 になるので、secret を先に入れます。
+
+1. [Discord Developer Portal](https://discord.com/developers/applications) で **New Application** を選び、アプリ名（Discord の認可画面に出る）を入れて作る
+2. **OAuth2** → **Redirects** に次の 2 つを足して保存する。リダイレクト URI は完全一致で照合されるので、スキーム（`https` / `http`）・ポート・末尾の `/` の有無まで揃える
+   - `https://ff14-rotation-calc.forestry-for.workers.dev/api/auth/discord/callback`
+   - `http://localhost:5173/api/auth/discord/callback`
+3. 同じページの **Client Secret**（**Reset Secret** で表示される）を Worker の secret に入れる（どちらか）:
+
+   ```powershell
+   npx wrangler secret put DISCORD_CLIENT_SECRET   # 値を聞かれたら貼り付ける
+   ```
+
+   ダッシュボードなら Worker の **Settings** → **Variables and Secrets** → **Add**（Type: **Secret**）。ローカルで試すなら、同じ値を `.dev.vars` にも書く（前述「Discord でのログイン」）
+4. 同じページの **Client ID**（公開値）を、`wrangler.jsonc` の最上位に `"vars": { "DISCORD_CLIENT_ID": "<Client ID>" }` として書き、PR にする。`previews` には書かない（下記）。ダッシュボードの **Variables and Secrets** に入れても、次のデプロイ（`wrangler deploy`）が `wrangler.jsonc` の `vars` で置き換えるので、ファイルに書く
+5. マージ後、本番で `/api/auth/discord` を開いて Discord の認可画面に移り、承認するとトップに戻って `/api/me` の `loggedIn` が `true` になることを確かめる
+
+PR のプレビューではログインを出しません。リダイレクト URI は完全一致でしか登録できず、プレビューの URL はブランチごとに変わるためです。プレビューのバインディングは `previews` に書いたものだけで、最上位の `vars` は付かないので、プレビューにはクライアント ID が無く、ログインの API は 404 になります。
+
 ### 動作確認手順
 
 1. 初回ビルドが成功し、本番 URL でフロントエンドが表示され、`/api/health` が `{"status":"ok"}` を返すことを確認
@@ -258,6 +295,9 @@ PR のプレビューは手順 2・3 の値を使いません（#581）。プレ
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す
 - **本番の保存がいつも「ボット対策の確認ができませんでした」（403）になる**: ビルド変数 `VITE_TURNSTILE_SITE_KEY` が無いと、フロントはテスト用の sitekey で動き（ウィジェットにテスト用の表示が出る）、そのダミートークンを本番の secret が拒否する。上記「Turnstile」の手順 2 のとおり足して、ビルドし直す（ビルド変数は次のビルドから効く）。テスト用の表示が出ていなければ、sitekey と secret が別のウィジェットのものになっていないか確かめる
 - **本番の保存がいつも「保存できませんでした」（500）になる**: Worker の secret `TURNSTILE_SECRET_KEY` が無い。`npx wrangler tail` で保存すると `TURNSTILE_SECRET_KEY is not set` が出る。上記「Turnstile」の手順 3 のとおり入れる
+- **`/api/auth/discord` が 500 になる**: `wrangler.jsonc` に `DISCORD_CLIENT_ID` があるのに、Worker の secret `DISCORD_CLIENT_SECRET` が無い（`npx wrangler tail` に `DISCORD_CLIENT_SECRET is not set` が出る）。上記「Discord のアプリ」の手順 3 のとおり入れる
+- **Discord の認可画面に、redirect_uri が無効という旨のエラーが出る**: 開いたオリジンのコールバックが Discord のアプリに登録されていない。上記「Discord のアプリ」の手順 2 の URI と、スキーム・ポートまで一致しているか確かめる
+- **Discord で承認した後、500 になる**: トークンの交換か `/users/@me` が 200 以外を返している。`npx wrangler tail` に `Discord token endpoint returned <ステータス>` が出るなら、secret が別のアプリのものでないか、Reset Secret で古くなっていないかを確かめる
 - **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される
 
 ---

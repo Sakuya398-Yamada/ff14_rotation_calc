@@ -11,8 +11,10 @@ interface SummaryBarProps {
   overallPps: PpsResult | null;
   rangePps: PpsResult | null;
   ppsRange: PpsRange | null;
-  /** 全体 PPS の分母と同じ、タイムライン全体の終了時刻（DoT 最終ティック含む） */
+  /** 全体 PPS の分母と同じ、最後の GCD のリキャスト完了時刻 */
   duration: number;
+  /** DoT が所要時間より後まで続くときの、最後の DoT ティックの時刻（所要時間の注記に出す） */
+  lastDotTickTime: number | null;
 }
 
 const EMPTY = "—";
@@ -25,6 +27,7 @@ export function SummaryBar({
   rangePps,
   ppsRange,
   duration,
+  lastDotTickTime,
 }: SummaryBarProps) {
   const { t } = useTranslation();
   const lang = useLanguage();
@@ -46,7 +49,14 @@ export function SummaryBar({
       label: t("summaryBar.dotExpectedPotency"),
       value: hasResult ? dotExpectedPotency.toLocaleString(lang) : EMPTY,
     },
-    { label: t("summaryBar.duration"), value: duration > 0 ? `${duration.toFixed(1)}s` : EMPTY },
+    {
+      label: t("summaryBar.duration"),
+      value: duration > 0 ? `${duration.toFixed(1)}s` : EMPTY,
+      note:
+        lastDotTickTime !== null
+          ? t("summaryBar.durationLastDotTick", { time: lastDotTickTime.toFixed(1) })
+          : undefined,
+    },
   ];
 
   return (

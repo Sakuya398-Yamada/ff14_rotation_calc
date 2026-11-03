@@ -377,6 +377,52 @@ describe("Timeline: リソースのゲージ表示 (#632)", () => {
   });
 });
 
+describe("Timeline: PPS 範囲選択を開いたときの初期区間 (#884)", () => {
+  // dnd-kit の MouseSensor は、ドラッグの開始で document にクリックの伝播を止めるリスナーを付け、
+  // 終了の 50ms 後に外す。このファイルの削除 D&D のテストの後は、それまでクリックが React に届かない
+  beforeEach(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
+
+  /** PPS 範囲選択を開いた直後の区間と、続けて「全体」ボタンを押した後の区間を返す */
+  function openPpsRangeAndReset(entries: TimelineEntry[]) {
+    const result = resolveTimeline(entries, jobASkillMap, [], defaultStats, [], []);
+    const { props } = renderTimeline({
+      resolvedEntries: result.entries,
+      lastGcdEndTime: result.lastGcdEndTime,
+    });
+
+    fireEvent.click(screen.getByTitle("PPS範囲選択"));
+    fireEvent.click(screen.getByTitle("全体範囲にリセット"));
+
+    const calls = vi.mocked(props.onPpsRangeChange).mock.calls;
+    expect(calls).toHaveLength(2);
+    return { lastGcdEndTime: result.lastGcdEndTime, opened: calls[0][0], reset: calls[1][0] };
+  }
+
+  it("最後の GCD のリキャスト完了が 10 秒未満なら、0 〜 最後の GCD のリキャスト完了にし、「全体」ボタンと同じ区間にする", () => {
+    const { lastGcdEndTime, opened, reset } = openPpsRangeAndReset([
+      makeEntry(gcdSkill.id),
+      makeEntry(gcdSkill.id),
+      makeEntry(gcdSkill.id),
+    ]);
+
+    expect(lastGcdEndTime).toBeGreaterThan(0);
+    expect(lastGcdEndTime).toBeLessThan(10);
+    expect(opened).toEqual({ startTime: 0, endTime: lastGcdEndTime });
+    expect(opened).toEqual(reset);
+  });
+
+  it.each([
+    ["エントリが無い", []],
+    ["GCD リキャストを発生させない oGCD だけの", [makeEntry(ogcdSkill.id)]],
+  ])("%sタイムラインでは、「全体」ボタンと同じ 0 〜 0 にする", (_, entries) => {
+    const { lastGcdEndTime, opened, reset } = openPpsRangeAndReset(entries);
+
+    expect(lastGcdEndTime).toBe(0);
+    expect(opened).toEqual({ startTime: 0, endTime: 0 });
+    expect(opened).toEqual(reset);
+  });
+});
+
 describe("Timeline（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));

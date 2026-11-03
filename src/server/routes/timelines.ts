@@ -12,6 +12,7 @@ import { timelines } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
 import { generateOwnerToken, hashOwnerToken, isOwnerToken } from "../services/owner-token";
 import { MAX_TURNSTILE_TOKEN_LENGTH, verifyTurnstileToken } from "../services/turnstile";
+import { requireJson } from "./require-json";
 import { myTimelinesQuerySchema, saveTimelineRequestSchema, timelineIdParamSchema } from "./timelines-schema";
 
 type RouteEnv = { Bindings: Bindings; Variables: { ownerHash: string } };
@@ -21,13 +22,6 @@ const OWNER_COOKIE_MAX_AGE = 400 * 24 * 60 * 60;
 // #462 の実測で、最悪ケースの 1200 エントリが約 100KB
 const MAX_BODY_BYTES = 256 * 1024;
 const MY_TIMELINES_PAGE_SIZE = 20;
-
-const requireJson = createMiddleware(async (c, next) => {
-  if (!/^application\/json\s*(;|$)/i.test(c.req.header("Content-Type") ?? "")) {
-    return c.json({ error: "unsupported_media_type" }, 415);
-  }
-  await next();
-});
 
 /** Cookie の匿名トークン。無いか、形が不正なら undefined */
 function readOwnerToken(c: Context): string | undefined {

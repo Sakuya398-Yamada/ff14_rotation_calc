@@ -77,3 +77,17 @@ describe("共有 URL（/t/*・/en/t/*）を検索結果から外す", () => {
     expect(await res.text()).toBe("<html></html>");
   });
 });
+
+describe("ログインの API（#876）", () => {
+  it("/api/auth/discord と /api/me を登録している（クライアント ID が無ければ 404・ログインできない）", async () => {
+    const { env } = envWithAssets();
+    const login = await app.request("http://localhost/api/auth/discord", {}, env);
+    const me = await app.request("http://localhost/api/me", {}, env);
+
+    // 未登録のパスの 404（Hono の既定は text）と見分けるため、本文まで見る
+    expect(login.status).toBe(404);
+    expect(await login.json()).toEqual({ error: "not_found" });
+    expect(me.status).toBe(200);
+    expect(await me.json()).toEqual({ loginAvailable: false, loggedIn: false });
+  });
+});

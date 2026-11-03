@@ -5,12 +5,16 @@ export function isOwnerToken(value: string): boolean {
   return OWNER_TOKEN_RE.test(value);
 }
 
-export function generateOwnerToken(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
+/** base64url（パディング無し） */
+export function encodeBase64Url(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
+}
+
+export function generateOwnerToken(): string {
+  return encodeBase64Url(crypto.getRandomValues(new Uint8Array(32)));
 }
 
 export async function hashOwnerToken(token: string): Promise<string> {
