@@ -30,6 +30,7 @@ ff14_rotation_calc/
 │   │   ├── en/          # 英語版の HTML（/en/ で配信する index.html）
 │   │   ├── locales/     # i18n の辞書（{ja,en}/<名前空間>.json。後述「多言語化（i18n）」）
 │   │   ├── logic/       # 画面に依らない処理（タイムラインの解決・期待値の計算・保存・言語の判定など）
+│   │   ├── public/      # そのまま配信する静的ファイル（robots.txt・sitemap.xml・OGP 画像の ogp.png）
 │   │   ├── styles/      # CSS（デザイントークンの tokens.css）
 │   │   ├── types/       # スキル・バフ・リソースなどのデータの型（skill.ts）
 │   │   ├── i18n.ts      # i18next の初期化
