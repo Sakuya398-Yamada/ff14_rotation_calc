@@ -128,7 +128,7 @@ export function TimelineHeader({
             const next = !showPpsRange;
             setShowPpsRange(next);
             if (next && !ppsRange) {
-              onPpsRangeChange({ startTime: 0, endTime: Math.max(lastGcdEndTime, 10) });
+              onPpsRangeChange({ startTime: 0, endTime: lastGcdEndTime });
             }
             if (!next) {
               onPpsRangeChange(null);
