@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import { useLanguage } from "../i18n";
-import { fetchMyTimelines, type MyTimelineItem } from "../logic/my-timelines";
+import { deleteMyTimeline, fetchMyTimelines, type DeleteMyTimelineError, type MyTimelineItem } from "../logic/my-timelines";
 import { buildShareUrl } from "../logic/shared-timeline";
 import { jobName } from "../logic/display-names";
 import "./my-timelines-dialog.css";
@@ -21,6 +21,9 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
   // 取得中の一覧。閉じたときに中断する
   const loadControllerRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  // 送信中の削除。閉じたときに中断する
+  const deleteControllerRef = useRef<AbortController | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   // 「もっと見る」で足した先頭の行の id。最後のページでは押したボタンが消えてフォーカスが外れるので、足した行へ移す
   const focusIdRef = useRef<string | null>(null);
   // 1 ページ目を読み込むまでは null
@@ -28,6 +31,9 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  // 削除の送信中の行の id。送信中は、ほかの行も削除させない
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<DeleteMyTimelineError | null>(null);
 
   const load = useCallback(async (cursor: string | null) => {
     const controller = new AbortController();
@@ -48,6 +54,30 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     }
   }, []);
 
+  const handleDelete = async (item: MyTimelineItem) => {
+    if (!window.confirm(t("myTimelinesDialog.confirmDelete", { title: item.title ?? t("myTimelinesDialog.untitled") }))) return;
+    const controller = new AbortController();
+    deleteControllerRef.current = controller;
+    setDeletingId(item.id);
+    setDeleteError(null);
+    const outcome = await deleteMyTimeline(item.id, { signal: controller.signal });
+    // 閉じて中断された削除の結果は捨てる（状態は閉じたときに戻してある）
+    if (controller.signal.aborted) return;
+    deleteControllerRef.current = null;
+    setDeletingId(null);
+    if (outcome.kind === "error") {
+      setDeleteError(outcome.error);
+      return;
+    }
+    if (outcome.kind !== "deleted" || items === null) return;
+    // 押したボタンは行ごと消えるので、次の行（無ければ前の行）へ、行が無くなれば閉じるボタンへフォーカスを移す
+    const index = items.findIndex((i) => i.id === item.id);
+    const neighbor = items[index + 1] ?? items[index - 1];
+    if (neighbor) focusIdRef.current = neighbor.id;
+    else closeButtonRef.current?.focus();
+    setItems((prev) => prev?.filter((i) => i.id !== item.id) ?? prev);
+  };
+
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -58,10 +88,14 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     } else if (!open && dialog.open) {
       loadControllerRef.current?.abort();
       loadControllerRef.current = null;
+      deleteControllerRef.current?.abort();
+      deleteControllerRef.current = null;
       setItems(null);
       setNextCursor(null);
       setLoading(false);
       setError(false);
+      setDeletingId(null);
+      setDeleteError(null);
       dialog.close();
       // モーダル中は外側の要素にフォーカスできないため、close() の後で戻す
       returnFocusRef.current?.focus();
@@ -113,7 +147,7 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
         ) : (
           <ul ref={listRef} style={styles.list}>
             {items.map((item) => (
-              <li key={item.id}>
+              <li key={item.id} style={styles.item}>
                 {/* ページを移動して共有 URL の読み込み（作業中の置き換えの確認を含む）に任せる。リンクなので新しいタブでも開ける */}
                 <a href={buildShareUrl(window.location.origin, item.id, lang)} data-timeline-id={item.id} style={styles.link}>
                   <span style={styles.itemTitle}>{item.title ?? t("myTimelinesDialog.untitled")}</span>
@@ -124,6 +158,15 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
                     </time>
                   </span>
                 </a>
+                <button
+                  type="button"
+                  aria-label={t("myTimelinesDialog.deleteLabel", { title: item.title ?? t("myTimelinesDialog.untitled") })}
+                  onClick={() => void handleDelete(item)}
+                  disabled={deletingId !== null}
+                  style={styles.deleteButton}
+                >
+                  {deletingId === item.id ? t("myTimelinesDialog.deleting") : t("myTimelinesDialog.delete")}
+                </button>
               </li>
             ))}
           </ul>
@@ -133,6 +176,11 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
             {t("myTimelines.loadError")}
           </p>
         )}
+        {deleteError !== null && (
+          <p role="alert" style={styles.error}>
+            {t(`myTimelinesDialog.deleteErrors.${deleteError}` as const)}
+          </p>
+        )}
       </div>
       <div style={styles.footer}>
         {nextCursor !== null && (
@@ -140,7 +188,7 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
             {loading ? t("myTimelinesDialog.loading") : t("myTimelinesDialog.loadMore")}
           </button>
         )}
-        <button type="button" onClick={onClose} style={styles.primaryButton}>
+        <button ref={closeButtonRef} type="button" onClick={onClose} style={styles.primaryButton}>
           {t("myTimelinesDialog.closeButton")}
         </button>
       </div>
@@ -221,14 +269,23 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: "auto",
     listStyle: "none",
   },
+  item: {
+    display: "flex",
+    alignItems: "center",
+    gap: "var(--space-2)",
+    paddingRight: "var(--space-3)",
+    border: "1px solid var(--color-line-soft)",
+    borderRadius: "var(--radius-lg)",
+    background: "var(--color-raised)",
+  },
   link: {
+    flex: "1 1 auto",
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     gap: "var(--space-1)",
     padding: "var(--space-3)",
-    border: "1px solid var(--color-line-soft)",
     borderRadius: "var(--radius-lg)",
-    background: "var(--color-raised)",
     color: "var(--color-text)",
     textDecoration: "none",
   },
@@ -264,5 +321,13 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid var(--color-field)",
     background: "var(--color-raised)",
     color: "var(--color-text)",
+  },
+  deleteButton: {
+    ...buttonBase,
+    minHeight: "32px",
+    padding: "0 var(--space-3)",
+    border: "1px solid var(--color-field)",
+    background: "transparent",
+    color: "var(--color-error)",
   },
 };
