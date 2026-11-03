@@ -23,7 +23,7 @@ import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillM
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
 import { getSharedTimelineId, loadSharedTimeline } from "../logic/shared-timeline";
-import { languageBasePath } from "../logic/language-path";
+import { alternateLanguagePath, languageBasePath } from "../logic/language-path";
 import { useLanguage } from "../i18n";
 import type { SharedLoadError } from "../logic/shared-timeline";
 import type { JobId } from "../data/job-registry";
@@ -40,6 +40,7 @@ const SAVE_DEBOUNCE_MS = 500;
 export function App() {
   const { t } = useTranslation();
   const lang = useLanguage();
+  const otherLang = lang === "en" ? "ja" : "en";
   const [settings, setSettings] = useState(loadSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -82,17 +83,33 @@ export function App() {
   const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
   // 共有 URL から開いたタイムラインのタイトルとコンテンツ。ジョブを変えるか保存すると、別のタイムラインになるので外す
   const [sharedInfo, setSharedInfo] = useState<{ title: string | null; contentId: string | null } | null>(null);
+  // 言語のリンクの移り先を作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
+  const [pathname, setPathname] = useState(() => window.location.pathname);
   // 共有タイムラインの取得が終わった時点のエントリで上書きの確認を判定するため、最新の値を持っておく
   const entriesRef = useRef(entries);
   useEffect(() => {
     entriesRef.current = entries;
   }, [entries]);
 
+  // 「戻る」で bfcache から戻ったページの状態は、離れていたあいだに移り先（言語のリンクの先など）で保存した内容より古い。
+  // 保存すると移り先で編集した分を上書きするので、保存を止めて読み込み直す
+  const restoredFromBfcacheRef = useRef(false);
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      restoredFromBfcacheRef.current = true;
+      window.location.reload();
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   // 状態変更を debounce しつつ LocalStorage へ保存。
   // debounce 待ち中（直前 500ms 以内）のリロード・タブクローズでも取りこぼさないよう、
   // pagehide で即時フラッシュする
   useEffect(() => {
     const flush = () => {
+      if (restoredFromBfcacheRef.current) return;
       saveAppState({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows });
     };
     const timer = window.setTimeout(flush, SAVE_DEBOUNCE_MS);
@@ -157,6 +174,7 @@ export function App() {
       }
       // 残すと、リロードのたびに読み込み直して、編集した内容を置き換えようとする
       window.history.replaceState(null, "", languageBasePath(lang));
+      setPathname(languageBasePath(lang));
       if (outcome.kind === "apply") {
         applyAppState(outcome.state);
         setSourceTimelineId(outcome.id);
@@ -396,6 +414,14 @@ export function App() {
         >
           {t("app.myTimelines")}
         </button>
+        <a
+          href={alternateLanguagePath(pathname)}
+          hrefLang={otherLang}
+          lang={otherLang}
+          style={styles.languageLink}
+        >
+          {t("app.languageLink")}
+        </a>
         <button
           ref={settingsButtonRef}
           type="button"
@@ -603,6 +629,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "inherit",
     fontSize: "13px",
     cursor: "pointer",
+  },
+  languageLink: {
+    boxSizing: "border-box",
+    display: "inline-flex",
+    alignItems: "center",
+    height: "40px",
+    padding: "0 var(--space-3)",
+    border: "1px solid var(--color-field)",
+    borderRadius: "var(--radius-lg)",
+    background: "var(--color-raised)",
+    color: "var(--color-text)",
+    fontSize: "13px",
+    textDecoration: "none",
   },
   settingsButton: {
     width: "40px",

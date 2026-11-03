@@ -11,3 +11,11 @@ export function languageFromPath(pathname: string): Language {
 export function languageBasePath(lang: Language): string {
   return lang === "en" ? "/en/" : "/";
 }
+
+/** 同じパスの別の言語版（"/" ↔ "/en/"、"/t/<id>" ↔ "/en/t/<id>"） */
+export function alternateLanguagePath(pathname: string): string {
+  if (languageFromPath(pathname) === "en") {
+    return pathname.replace(/^\/en/, "") || "/";
+  }
+  return `/en${pathname}`;
+}
