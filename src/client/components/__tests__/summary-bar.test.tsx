@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { render, screen, cleanup, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import i18next from "i18next";
 import { SummaryBar } from "../SummaryBar";
 
 afterEach(cleanup);
@@ -59,5 +60,23 @@ describe("SummaryBar", () => {
     rerender(<SummaryBar {...baseProps} totalExpectedPotency={350} />);
     expect(screen.getByText("350")).toBeInTheDocument();
     expect(screen.queryByText("500")).not.toBeInTheDocument();
+  });
+});
+
+describe("SummaryBar（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("見出しと案内を英語で出し、数値を英語の書式で出す", () => {
+    render(
+      <SummaryBar {...baseProps} totalExpectedPotency={5377} dotExpectedPotency={1120} overallPps={PPS(100)} duration={5} />
+    );
+    expect(screen.getByRole("region", { name: "Summary" })).toBeInTheDocument();
+    expect(within(cellOf("Total expected potency")).getByText("5,377")).toBeInTheDocument();
+    expect(within(cellOf("DoT expected potency")).getByText("1,120")).toBeInTheDocument();
+    expect(within(cellOf("PPS (overall)")).getByText("100.00")).toBeInTheDocument();
+    expect(within(cellOf("PPS (range)")).getByText("Set via PPS range")).toBeInTheDocument();
+    expect(within(cellOf("Duration")).getByText("5.0s")).toBeInTheDocument();
+    expect(screen.queryByText("合計期待威力")).not.toBeInTheDocument();
   });
 });

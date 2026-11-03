@@ -21,6 +21,8 @@ import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillM
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
 import { getSharedTimelineId, loadSharedTimeline, SHARED_LOAD_ERROR_MESSAGES } from "../logic/shared-timeline";
+import { languageBasePath } from "../logic/language-path";
+import { useLanguage } from "../i18n";
 import type { SharedLoadError } from "../logic/shared-timeline";
 import type { JobId } from "../data/job-registry";
 import type { Skill, TimelineEntry, CharacterStats, BossUntargetableWindow, MultiTargetWindow, PpsRange, PlayerLevel } from "../types/skill";
@@ -34,6 +36,7 @@ let nextUid = 1;
 const SAVE_DEBOUNCE_MS = 500;
 
 export function App() {
+  const lang = useLanguage();
   const [settings, setSettings] = useState(loadSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -150,7 +153,7 @@ export function App() {
         return;
       }
       // 残すと、リロードのたびに読み込み直して、編集した内容を置き換えようとする
-      window.history.replaceState(null, "", "/");
+      window.history.replaceState(null, "", languageBasePath(lang));
       if (outcome.kind === "apply") {
         applyAppState(outcome.state);
         setSourceTimelineId(outcome.id);
@@ -159,7 +162,7 @@ export function App() {
       }
     });
     return () => controller.abort();
-  }, [applyAppState]);
+  }, [applyAppState, lang]);
 
   // レベルに応じたバフ・リソースをフィルタ
   const levelBuffs = useMemo(

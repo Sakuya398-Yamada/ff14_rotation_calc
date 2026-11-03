@@ -1,0 +1,11 @@
+{
+  "summaryBar": {
+    "regionLabel": "Summary",
+    "totalExpectedPotency": "Total expected potency",
+    "ppsOverall": "PPS (overall)",
+    "ppsRange": "PPS (range)",
+    "ppsRangeUnset": "Set via PPS range",
+    "dotExpectedPotency": "DoT expected potency",
+    "duration": "Duration"
+  }
+}

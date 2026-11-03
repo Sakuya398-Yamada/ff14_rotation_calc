@@ -154,7 +154,7 @@ npm run db:migrate                        # ローカルの D1 に適用
 
 - **CI (GitHub Actions)**: `.github/workflows/ci.yml` が `main` への push / PR / `workflow_dispatch` で起動し、常駐量と skill の md の大きさの予算検査（`.claude/scripts/check-context-budget.py`。CLAUDE.md と `paths:` なし rules の合計が 1000 行以内か、`.claude/skills/` の md がどれも 30,000 バイト未満か。外部の `skill-creator/` は除く）→ 依存インストール → `tsc --noEmit` → `npm test` → `npm run build` → `npx wrangler deploy --config dist/ff14_rotation_calc/wrangler.json --dry-run` を実行（`npm run deploy` は本番 D1 へのマイグレーション適用を含むので、CI はデプロイの部分だけを dry-run する）
 - **デプロイ (Workers Builds の Git 連携)**: Cloudflare の Workers Builds がリポジトリの push / PR を検知し、Cloudflare 上でビルドしてデプロイ（GitHub Secrets は不要。本番 D1 とプレビュー用 D1 にマイグレーションを当てるため、Cloudflare 側のビルド用 API トークンに D1 の編集権限が要る。後述「本番 D1 とビルド用トークン」）。`main` は本番に、PR のブランチはプレビュー URL にデプロイされる
-- フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す（`wrangler.jsonc`）
+- フロント（Static Assets）と Hono の API は同じ Worker `ff14-rotation-calc` から配信する。`/api/*` は Worker が先に処理し、それ以外は `dist/client` の静的ファイル（未知のパスは `index.html`）を返す。英語のページの `/en/*` も Worker が先に処理し、`/en/t/<id>` のような未知のパスにも英語の `en/index.html` を返す（`wrangler.jsonc`）
 
 ### Workers Builds の設定（初回のみ）
 

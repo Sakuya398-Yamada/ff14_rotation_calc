@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { CONTENT_CATALOG, CONTENT_CATEGORIES } from "../data/content-catalog";
+import { useLanguage } from "../i18n";
 import {
   MAX_TITLE_LENGTH,
   SAVE_ERROR_MESSAGES,
@@ -25,6 +26,7 @@ interface SaveTimelineDialogProps {
 }
 
 export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose, returnFocusRef }: SaveTimelineDialogProps) {
+  const lang = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -90,7 +92,7 @@ export function SaveTimelineDialog({ open, snapshot, parentId, onSaved, onClose,
     saveControllerRef.current = null;
     setSaving(false);
     if (outcome.kind === "saved") {
-      setShareUrl(buildShareUrl(window.location.origin, outcome.id));
+      setShareUrl(buildShareUrl(window.location.origin, outcome.id, lang));
       onSaved(outcome.id);
     } else if (outcome.kind === "error") {
       setError(outcome.error);

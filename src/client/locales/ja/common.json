@@ -1,0 +1,11 @@
+{
+  "summaryBar": {
+    "regionLabel": "集計",
+    "totalExpectedPotency": "合計期待威力",
+    "ppsOverall": "PPS 全体",
+    "ppsRange": "PPS 区間",
+    "ppsRangeUnset": "PPS範囲で指定",
+    "dotExpectedPotency": "DoT 期待威力",
+    "duration": "所要時間"
+  }
+}
