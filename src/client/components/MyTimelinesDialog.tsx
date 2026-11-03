@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import { JOB_CATALOG } from "../data/job-catalog";
 import { useLanguage } from "../i18n";
-import { MY_TIMELINES_ERROR_MESSAGE, fetchMyTimelines, type MyTimelineItem } from "../logic/my-timelines";
+import { fetchMyTimelines, type MyTimelineItem } from "../logic/my-timelines";
 import { buildShareUrl } from "../logic/shared-timeline";
 import "./my-timelines-dialog.css";
 
@@ -18,6 +19,7 @@ function jobName(job: string): string {
 }
 
 export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelinesDialogProps) {
+  const { t } = useTranslation();
   const lang = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
   // 取得中の一覧。閉じたときに中断する
@@ -95,9 +97,9 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     >
       <div style={styles.header}>
         <h2 id="my-timelines-dialog-title" style={styles.title}>
-          保存したタイムライン
+          {t("myTimelinesDialog.title")}
         </h2>
-        <button type="button" aria-label="保存したタイムラインを閉じる" onClick={onClose} style={styles.iconButton}>
+        <button type="button" aria-label={t("myTimelinesDialog.close")} onClick={onClose} style={styles.iconButton}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <path d="M3 3l10 10M13 3L3 13" />
           </svg>
@@ -106,21 +108,21 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
 
       <div style={styles.body}>
         <p style={styles.note}>
-          このブラウザで保存したタイムラインを、新しい順に表示します。ブラウザのサイトデータを消すと、ここには表示されなくなります（共有 URL からは開けます）。
+          {t("myTimelinesDialog.intro")}
         </p>
         {items === null ? (
-          !error && <p style={styles.text}>読み込み中…</p>
+          !error && <p style={styles.text}>{t("myTimelinesDialog.loading")}</p>
         ) : items.length === 0 ? (
-          <p style={styles.text}>このブラウザで保存したタイムラインはありません。</p>
+          <p style={styles.text}>{t("myTimelinesDialog.empty")}</p>
         ) : (
           <ul ref={listRef} style={styles.list}>
             {items.map((item) => (
               <li key={item.id}>
                 {/* ページを移動して共有 URL の読み込み（作業中の置き換えの確認を含む）に任せる。リンクなので新しいタブでも開ける */}
                 <a href={buildShareUrl(window.location.origin, item.id, lang)} data-timeline-id={item.id} style={styles.link}>
-                  <span style={styles.itemTitle}>{item.title ?? "（無題）"}</span>
+                  <span style={styles.itemTitle}>{item.title ?? t("myTimelinesDialog.untitled")}</span>
                   <span style={styles.itemMeta}>
-                    {jobName(item.job)} Lv{item.level}・
+                    {t("myTimelinesDialog.jobLevel", { job: jobName(item.job), level: item.level })}
                     <time dateTime={item.createdAt}>
                       {new Date(item.createdAt).toLocaleString(lang, { dateStyle: "medium", timeStyle: "short" })}
                     </time>
@@ -132,18 +134,18 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
         )}
         {error && (
           <p role="alert" style={styles.error}>
-            {MY_TIMELINES_ERROR_MESSAGE}
+            {t("myTimelines.loadError")}
           </p>
         )}
       </div>
       <div style={styles.footer}>
         {nextCursor !== null && (
           <button type="button" onClick={() => void load(nextCursor)} disabled={loading} style={styles.secondaryButton}>
-            {loading ? "読み込み中…" : "もっと見る"}
+            {loading ? t("myTimelinesDialog.loading") : t("myTimelinesDialog.loadMore")}
           </button>
         )}
         <button type="button" onClick={onClose} style={styles.primaryButton}>
-          閉じる
+          {t("myTimelinesDialog.closeButton")}
         </button>
       </div>
     </dialog>

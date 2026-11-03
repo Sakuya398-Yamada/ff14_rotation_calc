@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterEach, beforeEach } from "vitest";
+import i18next from "i18next";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
@@ -73,5 +74,21 @@ describe("SettingsDialog", () => {
     rerender(<SettingsDialog {...props} open={false} />);
     expect(document.activeElement).toBe(button);
     button.remove();
+  });
+});
+
+describe("SettingsDialog（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("見出しと選択肢を英語で出し、選んだ値はコードのまま渡す", () => {
+    const { props } = renderDialog();
+
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Match OS"));
+    expect(props.onChange).toHaveBeenCalledWith({ theme: "system", accent: "blue" });
+    expect(screen.getByLabelText("Green")).toBeInTheDocument();
+    expect(screen.getByLabelText("Compact")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Close settings" })).toBeInTheDocument();
   });
 });

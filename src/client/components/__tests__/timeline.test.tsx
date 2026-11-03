@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import i18next from "i18next";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import type { ReactNode } from "react";
@@ -370,5 +371,28 @@ describe("Timeline: リソースのゲージ表示 (#632)", () => {
     renderBrd(SONGS_ROTATION);
 
     expect(readGauge(screen.getAllByTitle(/^ソウルボイス: 5\/100$/)[0])).toEqual({ label: "5", width: "5%" });
+  });
+});
+
+describe("Timeline（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("見出し・切り替えボタン・案内を英語で出す", () => {
+    renderTimeline();
+
+    expect(screen.getByRole("heading", { name: "Timeline" })).toBeInTheDocument();
+    expect(screen.getByText("Drag and drop actions from the palette to add them")).toBeInTheDocument();
+    expect(screen.getByText(/^Drag actions on the timeline to reorder them/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Untargetable ▶" })).toHaveAttribute("title", "Boss untargetable windows");
+    expect(screen.getByRole("button", { name: "Multi-target ▶" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PPS range ▶" })).toHaveAttribute("title", "Select PPS range");
+  });
+
+  it("スキルのツールチップを英語で出す（スキル名は日本語のまま）", () => {
+    renderTimeline({ resolvedEntries: resolve([makeEntry(gcdSkill.id)]) });
+
+    expect(screen.getByTitle(/^テストGCD \(Potency: 300 \/ Expected: \d+\) \[0\.00s\] (Cast: [\d.]+s|Instant)$/)).toBeInTheDocument();
+    expect(screen.getByTitle(/^Recast: [\d.]+s$/)).toBeInTheDocument();
   });
 });

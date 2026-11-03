@@ -7,5 +7,277 @@
     "ppsRangeUnset": "PPS範囲で指定",
     "dotExpectedPotency": "DoT 期待威力",
     "duration": "所要時間"
+  },
+  "app": {
+    "confirmOpenShared": "共有タイムラインを開くと、作業中のタイムラインは置き換えられます。開きますか？",
+    "saveAndShare": "保存・共有",
+    "myTimelines": "保存したタイムライン",
+    "settings": "設定",
+    "closeSharedLoadError": "閉じる",
+    "sharedInfo": "開いた共有タイムライン",
+    "closeSharedInfo": "共有タイムラインの情報を閉じる",
+    "contactLabel": "不具合・要望:",
+    "mailLabel": "メール:"
+  },
+  "sharedTimeline": {
+    "loadErrors": {
+      "not_found": "共有タイムラインが見つかりませんでした。URL が正しいか確認してください。作業中のタイムラインはそのまま残っています。",
+      "unsupported_version": "この共有タイムラインは、今のバージョンでは読み込めない形式で保存されています。作業中のタイムラインはそのまま残っています。",
+      "invalid_data": "共有タイムラインのデータを読み込めませんでした。作業中のタイムラインはそのまま残っています。",
+      "network": "共有タイムラインを読み込めませんでした。通信状況を確かめて、ページを再読み込みしてください。作業中のタイムラインはそのまま残っています。"
+    },
+    "saveErrors": {
+      "invalid": "タイムラインに保存できない内容が含まれているため、保存できませんでした。",
+      "too_large": "タイムラインが大きすぎて保存できません。エントリを減らしてから保存してください。",
+      "rate_limited": "短時間に続けて保存したため、保存できませんでした。1 分ほど待ってから、もう一度保存してください。",
+      "verification_failed": "ボット対策の確認ができませんでした。確認が終わってから保存してください（続くときは、ページを再読み込みしてください）。",
+      "network": "保存できませんでした。通信状況を確かめて、もう一度保存してください。"
+    }
+  },
+  "myTimelines": {
+    "loadError": "保存したタイムラインを読み込めませんでした。通信状況を確かめて、もう一度試してください。"
+  },
+  "saveTimelineDialog": {
+    "title": "タイムラインを保存して共有",
+    "close": "保存・共有を閉じる",
+    "intro": "保存すると共有 URL を発行します。URL を知っている人は誰でも、このタイムラインを開けます。",
+    "titleLabel": "タイトル（任意）",
+    "titleNote": "{{max}} 文字まで。タイトルとタイムラインの内容は、保存後は変更できません（編集して保存し直すと、別の URL になります）",
+    "contentLabel": "コンテンツ（任意）",
+    "noContent": "指定なし",
+    "closeButton": "閉じる",
+    "saving": "保存中…",
+    "save": "保存",
+    "saved": "保存しました。この URL で、保存したタイムラインを開けます。",
+    "shareUrl": "共有 URL",
+    "copied": "コピーしました",
+    "copy": "コピー",
+    "copyFailed": "コピーできませんでした。URL を選択してコピーしてください。"
+  },
+  "myTimelinesDialog": {
+    "title": "保存したタイムライン",
+    "close": "保存したタイムラインを閉じる",
+    "intro": "このブラウザで保存したタイムラインを、新しい順に表示します。ブラウザのサイトデータを消すと、ここには表示されなくなります（共有 URL からは開けます）。",
+    "loading": "読み込み中…",
+    "empty": "このブラウザで保存したタイムラインはありません。",
+    "untitled": "（無題）",
+    "jobLevel": "{{job}} Lv{{level}}・",
+    "loadMore": "もっと見る",
+    "closeButton": "閉じる"
+  },
+  "settingsDialog": {
+    "title": "設定",
+    "close": "設定を閉じる",
+    "theme": "テーマ",
+    "themes": {
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "OS に合わせる"
+    },
+    "accent": "アクセントカラー",
+    "accents": {
+      "blue": "青",
+      "pink": "ピンク",
+      "purple": "紫",
+      "green": "緑"
+    },
+    "density": "タイムラインの表示密度",
+    "unsupported": "未対応",
+    "densities": {
+      "standard": "標準",
+      "compact": "コンパクト"
+    },
+    "savedNote": "変更はこのブラウザに保存されます",
+    "closeButton": "閉じる"
+  },
+  "jobPicker": {
+    "triggerLabel": "ジョブとレベルを選択（現在: {{job}} Lv{{level}}）",
+    "panelLabel": "ジョブとレベルを選択",
+    "level": "レベル",
+    "levelNote": "Lv100 以外のスキルの有無・威力は参考値（α版）",
+    "levelWarning": "Lv{{level}}の威力値は正確でない可能性があります",
+    "search": "ジョブを検索",
+    "searchPlaceholder": "ジョブ名・略称で絞り込み（例: 黒, BLM）",
+    "recent": "最近使ったジョブ",
+    "noMatch": "該当するジョブがありません",
+    "unsupportedTitle": "{{job}}（未対応）",
+    "unsupported": "未対応"
+  },
+  "skillPalette": {
+    "title": "ジョブパレット",
+    "cardTitle": "{{name}} (威力: {{potency}})",
+    "potency": "威力 {{potency}}",
+    "statsSection": "ステータス",
+    "stats": {
+      "critical": "クリティカル",
+      "directHit": "ダイレクトヒット",
+      "determination": "意思力",
+      "speed": "スピード"
+    },
+    "rate": "発生率 {{rate}}%",
+    "multiplier": "倍率 x{{multiplier}}"
+  },
+  "buffFormat": {
+    "effects": {
+      "potency": "威力×{{value}}",
+      "guaranteedCrit": "確定CRT",
+      "guaranteedDh": "確定DH",
+      "instantCast": "即時詠唱"
+    },
+    "someSkills": "{{effect}}（一部スキル）",
+    "consumedProc": "{{name}}発動確率 {{rate}}",
+    "consumedProcWithFallback": "{{name}}発動確率 {{rate}}（不発時は{{skill}}）",
+    "wastedProc": "{{name}}上書き確率 {{rate}}",
+    "procOccurred": "{{name}}: 発生",
+    "procNotOccurred": "{{name}}: 不発"
+  },
+  "comboErrorFormat": {
+    "labels": {
+      "missing": "バフ条件未達成",
+      "forbidden": "バフ効果中"
+    },
+    "anyOf": "{{names}} のいずれか",
+    "anyOfSeparator": "・"
+  },
+  "resourceErrorFormat": {
+    "labels": {
+      "insufficient": "リソース不足",
+      "overMax": "リソース超過"
+    }
+  },
+  "skillDetailPanel": {
+    "label": "スキル詳細パネル",
+    "startTime": "開始時刻",
+    "resetStartTimeLabel": "自動計算に戻す",
+    "resetStartTime": "自動に戻す",
+    "autoStartTime": "（自動計算値: {{time}}s）",
+    "procOutcome": "{{name}}の発生",
+    "procOutcomes": {
+      "expected": "期待値",
+      "occurred": "発生",
+      "notOccurred": "不発"
+    },
+    "close": "閉じる",
+    "basePotency": "基本威力",
+    "buffMultiplier": "バフ倍率",
+    "noContributions": "適用なし",
+    "critRateBonus": "CRT率ボーナス",
+    "guaranteedCrit": "確定CRT",
+    "dhRateBonus": "DH率ボーナス",
+    "guaranteedDh": "確定DH",
+    "expected": "期待値",
+    "expectedMultiTarget": "期待値 (×{{targets}}体 合算)",
+    "firstTarget": "1体: {{potency}}",
+    "nthTarget": "{{n}}体目: {{potency}}",
+    "combo": "コンボ",
+    "comboOk": "成立",
+    "comboBroken": "不成立",
+    "warning": "警告",
+    "unconfirmedProcBuffs": "{{names}}（確率付与。発動しない場合あり）",
+    "error": "エラー",
+    "noErrors": "なし",
+    "errors": {
+      "untargetable": "ボス離脱中",
+      "recast": "リキャスト中"
+    },
+    "appliedBuffs": "適用中のバフ",
+    "noAppliedBuffs": "なし",
+    "remaining": "残 {{time}}"
+  },
+  "timelineHeader": {
+    "title": "タイムライン",
+    "untargetableTitle": "ボス離脱タイミング設定",
+    "untargetable": "離脱",
+    "multiTargetTitle": "複数体ウィンドウ設定（敵の数を指定する時間帯）",
+    "multiTarget": "複数体",
+    "hideDots": "DoT表示を非表示",
+    "showDots": "DoT表示を表示",
+    "hideBuffs": "バフ表示を非表示",
+    "showBuffs": "バフ表示を表示",
+    "buffs": "バフ",
+    "hideRecasts": "リキャスト表示を非表示",
+    "showRecasts": "リキャスト表示を表示",
+    "recasts": "リキャスト",
+    "hideResources": "リソースゲージを非表示",
+    "showResources": "リソースゲージを表示",
+    "resources": "リソース",
+    "ppsRangeTitle": "PPS範囲選択",
+    "ppsRange": "PPS範囲"
+  },
+  "ppsRangeEditor": {
+    "title": "PPS範囲選択",
+    "start": "開始:",
+    "end": "終了:",
+    "resetTitle": "全体範囲にリセット",
+    "reset": "全体",
+    "rangePps": "範囲PPS:",
+    "breakdown": "(威力: {{total}} = 直接{{direct}} + DoT{{dot}})"
+  },
+  "multiTargetWindowEditor": {
+    "title": "複数体ウィンドウ",
+    "add": "+ 追加",
+    "empty": "複数体ウィンドウが未設定です",
+    "start": "開始:",
+    "end": "終了:",
+    "targetCount": "敵の数:",
+    "delete": "削除"
+  },
+  "untargetableWindowEditor": {
+    "title": "ボス離脱タイミング",
+    "add": "+ 追加",
+    "empty": "離脱タイミングが未設定です",
+    "start": "開始:",
+    "end": "終了:",
+    "delete": "削除"
+  },
+  "timeline": {
+    "placeholder": "スキルパレットからドラッグ＆ドロップしてスキルを追加",
+    "hint": "タイムライン上のスキルをドラッグで並び替え／画面下部のエリアにドロップで削除"
+  },
+  "timelineOverlays": {
+    "untargetableTitle": "ボス離脱 ({{start}}s - {{end}}s)",
+    "untargetable": "離脱",
+    "multiTargetTitle": "複数体 ×{{targets}} ({{start}}s - {{end}}s)",
+    "ppsRangeTitle": "PPS範囲 ({{start}}s - {{end}}s)"
+  },
+  "recastLanes": {
+    "laneTitle": "{{name}} リキャスト",
+    "spanTitle": "{{name}} リキャスト ({{start}}s - {{end}}s / {{cooldown}}s)"
+  },
+  "manualStartTimeBadge": {
+    "title": "開始時刻を手動設定中"
+  },
+  "deleteZone": {
+    "label": "ここにドロップして削除"
+  },
+  "skillLanes": {
+    "recast": "リキャスト: {{time}}s",
+    "castTime": "詠唱時間: {{time}}s",
+    "animationLock": "アニメーションロック: {{time}}s",
+    "potency": "威力: {{potency}}",
+    "expected": "期待値: {{value}}",
+    "manual": "手動",
+    "cast": "詠唱: {{time}}s",
+    "instant": "インスタント",
+    "comboBroken": "コンボ不成立",
+    "unconfirmedProc": "確率付与のバフを消費",
+    "untargetable": "ボス離脱中",
+    "recastError": "リキャスト中"
+  },
+  "helpers": {
+    "targetBreakdown": "×{{targets}}体 (1体: {{single}})",
+    "targetBreakdownReduced": "×{{targets}}体 (1体: {{single}} / 減衰時: {{reduced}})"
+  },
+  "dotLanes": {
+    "potencyPerTick": "{{potency}}威力/tick",
+    "tick": "DoTティック: {{potency}}威力",
+    "expected": "期待値: {{value}}"
+  },
+  "buffLanes": {
+    "procRate": "発動確率 {{rate}}（付与時点）"
+  },
+  "resourceLanes": {
+    "total": "(合計 {{total}}/{{max}})",
+    "insufficient": "(不足)"
   }
 }

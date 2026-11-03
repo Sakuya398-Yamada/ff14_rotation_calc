@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import i18next from "i18next";
 import { render, screen, fireEvent, cleanup, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { JobPicker } from "../JobPicker";
@@ -104,5 +105,20 @@ describe("JobPicker", () => {
     fireEvent.keyDown(within(dialog).getByRole("searchbox"), { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ジョブとレベルを選択/ })).toHaveFocus();
+  });
+});
+
+describe("JobPicker（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("ボタン・パネル・警告・案内を英語で出す（ジョブ名は日本語のまま）", () => {
+    renderPicker({ level: 90 });
+    fireEvent.click(screen.getByRole("button", { name: "Select job and level (current: 白魔道士 Lv90)" }));
+    const dialog = screen.getByRole("dialog", { name: "Select job and level" });
+
+    expect(within(dialog).getByText("Potencies at Lv90 may not be accurate")).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByRole("searchbox", { name: "Search jobs" }), { target: { value: "zzz" } });
+    expect(within(dialog).getByText("No matching jobs")).toBeInTheDocument();
   });
 });

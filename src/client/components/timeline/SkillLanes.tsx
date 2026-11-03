@@ -1,4 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
+import { useTranslation } from "react-i18next";
 import type { Skill, ResolvedTimelineEntry, CharacterStats, BuffDefinition } from "../../types/skill";
 import type { DisplayEntry } from "./types";
 import { calcEntryPotencyBreakdown } from "../../logic/expected-potency";
@@ -81,6 +82,7 @@ export function SkillLanes({
   labelBg,
   onSelectEntry,
 }: SkillLanesProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* GCD行 */}
@@ -96,7 +98,7 @@ export function SkillLanes({
               ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
               : null;
             const expectedPot = breakdown ? breakdown.total : null;
-            const targetBreakdown = formatTargetBreakdown(breakdown);
+            const targetBreakdown = formatTargetBreakdown(breakdown, t);
             const consumedProcLabel = entry.consumedProc
               ? ` / ${formatConsumedProc(entry.consumedProc, buffDefMap)}`
               : "";
@@ -126,12 +128,12 @@ export function SkillLanes({
                     ...styles.recastBar,
                     width: (recast / blockDuration) * 100 + "%",
                   }}
-                  title={`リキャスト: ${recast}s`}
+                  title={t("skillLanes.recast", { time: recast })}
                 />
                 {castTime > 0 && (
                   <div
                     style={styles.castTimeBar}
-                    title={`詠唱時間: ${castTime}s`}
+                    title={t("skillLanes.castTime", { time: castTime })}
                   >
                     <div
                       style={{
@@ -143,7 +145,7 @@ export function SkillLanes({
                 )}
                 <div
                   style={styles.animLockBar}
-                  title={`アニメーションロック: ${entry.skill.animationLock}s`}
+                  title={t("skillLanes.animationLock", { time: entry.skill.animationLock })}
                 >
                   <div
                     style={{
@@ -164,7 +166,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${castTime > 0 ? ` 詠唱: ${castTime}s` : " インスタント"}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? " ⚠ コンボ不成立" : ""}${entry.unconfirmedProcBuffs ? " ⚠ 確率付与のバフを消費" : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                  title={`${entry.displaySkill.name}${isAutoTransformed ? ` (← ${entry.skill.name})` : ""} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${castTime > 0 ? ` ${t("skillLanes.cast", { time: castTime })}` : ` ${t("skillLanes.instant")}`}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? ` ⚠ ${t("skillLanes.comboBroken")}` : ""}${entry.unconfirmedProcBuffs ? ` ⚠ ${t("skillLanes.unconfirmedProc")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
@@ -203,7 +205,7 @@ export function SkillLanes({
               ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
               : null;
             const expectedPot = breakdown ? breakdown.total : null;
-            const targetBreakdown = formatTargetBreakdown(breakdown);
+            const targetBreakdown = formatTargetBreakdown(breakdown, t);
             return (
               <div
                 key={entry.uid}
@@ -222,7 +224,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                   }}
-                  title={`${entry.displaySkill.name} (威力: ${buffedPotency}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / 期待値: ${expectedPot}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? " 手動" : ""}]${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? " ⚠ ボス離脱中" : ""}${entry.recastError ? " ⚠ リキャスト中" : ""}`}
+                  title={`${entry.displaySkill.name} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { JobId } from "../data/job-registry";
 import type { PlayerLevel } from "../types/skill";
 import { JOB_CATALOG, JOB_ROLES, isImplementedJob } from "../data/job-catalog";
@@ -26,6 +27,7 @@ function roleOf(job: CatalogJob) {
 
 /** ヘッダーのジョブ・レベル選択（ボタン＋ロール別パネル） */
 export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: JobPickerProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   // 狭い画面ではパネルを position: fixed で出すため、開いた時点のボタン下端を基準にする（layout.css の --job-picker-top）
   const [panelTop, setPanelTop] = useState(0);
@@ -76,7 +78,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        aria-label={`ジョブとレベルを選択（現在: ${current.name} Lv${level}）`}
+        aria-label={t("jobPicker.triggerLabel", { job: current.name, level })}
         onClick={() => (open ? close(false) : setOpen(true))}
         style={styles.trigger}
       >
@@ -98,7 +100,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
         <div
           id={panelId}
           role="dialog"
-          aria-label="ジョブとレベルを選択"
+          aria-label={t("jobPicker.panelLabel")}
           className="job-picker-panel"
           style={{ ...styles.panel, ["--job-picker-top" as string]: `${panelTop}px` }}
           onKeyDown={(e) => {
@@ -109,7 +111,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
           }}
         >
           <fieldset style={styles.levelFieldset}>
-            <legend style={styles.legend}>レベル</legend>
+            <legend style={styles.legend}>{t("jobPicker.level")}</legend>
             <div style={styles.segmented}>
               {SUPPORTED_LEVELS.map((lv) => {
                 const on = lv === level;
@@ -127,9 +129,9 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                 );
               })}
             </div>
-            <span style={styles.note}>Lv100 以外のスキルの有無・威力は参考値（α版）</span>
+            <span style={styles.note}>{t("jobPicker.levelNote")}</span>
             {level < 100 && (
-              <span style={styles.warning}>Lv{level}の威力値は正確でない可能性があります</span>
+              <span style={styles.warning}>{t("jobPicker.levelWarning", { level })}</span>
             )}
           </fieldset>
 
@@ -138,20 +140,20 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
               <circle cx="7" cy="7" r="4.5" />
               <path d="M10.5 10.5L14 14" />
             </svg>
-            <span style={styles.visuallyHidden}>ジョブを検索</span>
+            <span style={styles.visuallyHidden}>{t("jobPicker.search")}</span>
             <input
               ref={searchRef}
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="ジョブ名・略称で絞り込み（例: 黒, BLM）"
+              placeholder={t("jobPicker.searchPlaceholder")}
               style={styles.searchInput}
             />
           </label>
 
           {query.trim() === "" && recent.length > 0 && (
             <div style={styles.group}>
-              <span style={styles.groupLabel}>最近使ったジョブ</span>
+              <span style={styles.groupLabel}>{t("jobPicker.recent")}</span>
               <div style={styles.recentRow}>
                 {recent.map((id) => {
                   const job = JOB_CATALOG.find((j) => j.id === id)!;
@@ -165,7 +167,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
             </div>
           )}
 
-          {filtered.length === 0 && <p style={styles.empty}>該当するジョブがありません</p>}
+          {filtered.length === 0 && <p style={styles.empty}>{t("jobPicker.noMatch")}</p>}
 
           {JOB_ROLES.map((role) => {
             const jobs = filtered.filter((j) => j.role === role.id);
@@ -187,7 +189,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                         disabled={!implemented}
                         aria-pressed={on}
                         onClick={() => implemented && pickJob(job.id as JobId)}
-                        title={implemented ? job.name : `${job.name}（未対応）`}
+                        title={implemented ? job.name : t("jobPicker.unsupportedTitle", { job: job.name })}
                         style={{
                           ...styles.jobButton,
                           ...(on ? styles.jobButtonOn : {}),
@@ -199,7 +201,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                         </span>
                         <span style={styles.jobText}>
                           {job.name}
-                          {!implemented && <span style={styles.unsupported}>未対応</span>}
+                          {!implemented && <span style={styles.unsupported}>{t("jobPicker.unsupported")}</span>}
                         </span>
                       </button>
                     );

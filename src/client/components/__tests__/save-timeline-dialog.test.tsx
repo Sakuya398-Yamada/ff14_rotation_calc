@@ -5,7 +5,8 @@ import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
 import { SaveTimelineDialog } from "../SaveTimelineDialog";
 import { CONTENT_CATALOG } from "../../data/content-catalog";
-import { SAVE_ERROR_MESSAGES, type SaveError } from "../../logic/shared-timeline";
+import i18next from "i18next";
+import type { SaveError } from "../../logic/shared-timeline";
 import type { AppStateSnapshot } from "../../logic/timeline-storage";
 
 // jsdom は HTMLDialogElement の showModal / close を実装していないため最小限の代替を入れる
@@ -135,7 +136,7 @@ describe("SaveTimelineDialog", () => {
     const { props } = renderDialog();
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(SAVE_ERROR_MESSAGES[error]);
+    expect(await screen.findByRole("alert")).toHaveTextContent(i18next.t(`sharedTimeline.saveErrors.${error}` as const));
     // 使ったトークンの代わりを取ってから押せるようになる
     await waitFor(() => expect(screen.getByRole("button", { name: "保存" })).toBeEnabled());
     expect(props.onSaved).not.toHaveBeenCalled();
@@ -308,7 +309,7 @@ describe("SaveTimelineDialog: Turnstile", () => {
     renderDialog();
     act(() => renderedOptions()["error-callback"]());
 
-    expect(screen.getByRole("alert")).toHaveTextContent(SAVE_ERROR_MESSAGES.verification_failed);
+    expect(screen.getByRole("alert")).toHaveTextContent(i18next.t("sharedTimeline.saveErrors.verification_failed"));
     expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
   });
 
@@ -320,7 +321,7 @@ describe("SaveTimelineDialog: Turnstile", () => {
     expect(scripts()[0].getAttribute("src")).toContain("render=explicit");
 
     fireEvent.error(scripts()[0]);
-    expect(await screen.findByRole("alert")).toHaveTextContent(SAVE_ERROR_MESSAGES.verification_failed);
+    expect(await screen.findByRole("alert")).toHaveTextContent(i18next.t("sharedTimeline.saveErrors.verification_failed"));
     expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
 
     rerender(<SaveTimelineDialog {...props} open={false} />);
@@ -328,5 +329,33 @@ describe("SaveTimelineDialog: Turnstile", () => {
     expect(scripts()).toHaveLength(1);
     fireEvent.error(scripts()[0]);
     await screen.findByRole("alert");
+  });
+});
+
+describe("SaveTimelineDialog（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("見出し・ラベル・ボタン・保存後の案内を英語で出す", async () => {
+    renderDialog();
+
+    expect(screen.getByRole("heading", { name: "Save and share the timeline" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Content (optional)")).toHaveDisplayValue("None");
+    fireEvent.change(screen.getByLabelText("Title (optional)"), { target: { value: "Savage M4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByLabelText("Share URL")).toHaveValue(`${window.location.origin}/en/t/${ID}`);
+    expect(screen.getByRole("status")).toHaveTextContent("Saved. You can open the saved timeline with this URL.");
+    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+  });
+
+  it("保存のエラーを英語で出す", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "rate_limited" }, 429));
+    renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "You saved too many times in a short period, so the timeline was not saved. Wait about a minute and save again."
+    );
   });
 });

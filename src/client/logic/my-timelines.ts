@@ -20,9 +20,6 @@ export type MyTimelinesOutcome =
   | { kind: "cancelled" }
   | { kind: "error" };
 
-export const MY_TIMELINES_ERROR_MESSAGE =
-  "保存したタイムラインを読み込めませんでした。通信状況を確かめて、もう一度試してください。";
-
 const FAILED: MyTimelinesOutcome = { kind: "error" };
 
 /**

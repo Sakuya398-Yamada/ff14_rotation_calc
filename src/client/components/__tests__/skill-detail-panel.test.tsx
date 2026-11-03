@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import i18next from "i18next";
+import { render, screen, cleanup, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { SkillDetailPanel } from "../SkillDetailPanel";
 import { resolveTimeline } from "../../logic/resolve-timeline";
@@ -229,5 +230,27 @@ describe("SkillDetailPanel: OR 条件のバフが未達のとき、候補をす�
     expect(
       screen.getByText(/バフ条件未達成: 光神のアンコールレディ（3種）・光神のアンコールレディ（2種）・光神のアンコールレディ（1種） のいずれか/)
     ).toBeInTheDocument();
+  });
+});
+
+describe("SkillDetailPanel（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("見出しと発生の指定を英語で出す（バフ名は日本語のまま）", () => {
+    renderLastEntry(["burst-shot"]);
+
+    expect(screen.getByRole("complementary", { name: "Action details panel" })).toBeInTheDocument();
+    expect(screen.getByText("Base potency")).toBeInTheDocument();
+    const group = screen.getByRole("group", { name: "ホークアイ proc" });
+    expect(within(group).getAllByRole("button").map((b) => b.textContent)).toEqual(["Expected", "Proc", "No proc"]);
+    expect(screen.queryByText("基本威力")).not.toBeInTheDocument();
+  });
+
+  it("エラーの文言を英語で出す", () => {
+    renderLastEntry(["pitch-perfect"]);
+
+    expect(screen.getByText(/Buff condition not met: 旅神のメヌエット/)).toBeInTheDocument();
+    expect(screen.getByText(/Insufficient resources: 詩心/)).toBeInTheDocument();
   });
 });

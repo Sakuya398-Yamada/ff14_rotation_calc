@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats, ResourceDefinition } from "../types/skill";
 import { calcExpectedMultiplier } from "../logic/stat-calc";
 import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
@@ -28,10 +29,10 @@ interface SkillDetailPanelProps {
   onProcOccurredChange: (uid: string, procOccurred: boolean | undefined) => void;
 }
 
-const PROC_OUTCOME_OPTIONS: { value: boolean | undefined; label: string }[] = [
-  { value: undefined, label: "期待値" },
-  { value: true, label: "発生" },
-  { value: false, label: "不発" },
+const PROC_OUTCOME_OPTIONS: { id: "expected" | "occurred" | "notOccurred"; value: boolean | undefined }[] = [
+  { id: "expected", value: undefined },
+  { id: "occurred", value: true },
+  { id: "notOccurred", value: false },
 ];
 
 export function SkillDetailPanel({
@@ -44,6 +45,7 @@ export function SkillDetailPanel({
   onManualStartTimeChange,
   onProcOccurredChange,
 }: SkillDetailPanelProps) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // 入力中の文字列を別途保持（小数点や空文字を許容するため、数値直結ではなく文字列管理）。
@@ -150,8 +152,8 @@ export function SkillDetailPanel({
   const errorMessages: string[] = [];
   errorMessages.push(...formatResourceErrors(entry.resourceErrors, resourceDefMap));
   errorMessages.push(...formatComboErrors(entry.comboErrors, buffDefMap));
-  if (entry.untargetableError) errorMessages.push("ボス離脱中");
-  if (entry.recastError) errorMessages.push("リキャスト中");
+  if (entry.untargetableError) errorMessages.push(t("skillDetailPanel.errors.untargetable"));
+  if (entry.recastError) errorMessages.push(t("skillDetailPanel.errors.recast"));
 
 
   // 使用時点で有効なバフを全件表示する（威力に関係しないバフも含む）。寄与の内訳と違いエラー時も表示する
@@ -161,12 +163,12 @@ export function SkillDetailPanel({
   });
 
   return (
-    <aside ref={panelRef} style={styles.panel} aria-label="スキル詳細パネル">
+    <aside ref={panelRef} style={styles.panel} aria-label={t("skillDetailPanel.label")}>
       <div style={styles.header}>
         <img src={resolvedSkill.icon} alt={resolvedSkill.name} style={styles.headerIcon} />
         <div style={styles.headerName}>{resolvedSkill.name}</div>
         <div style={styles.headerStartTimeRow}>
-          <label style={styles.headerStartTimeLabel} htmlFor="manual-start-time-input">開始時刻</label>
+          <label style={styles.headerStartTimeLabel} htmlFor="manual-start-time-input">{t("skillDetailPanel.startTime")}</label>
           <input
             id="manual-start-time-input"
             type="number"
@@ -191,7 +193,7 @@ export function SkillDetailPanel({
               }
             }}
             style={isManual ? { ...styles.startTimeInput, ...styles.startTimeInputManual } : styles.startTimeInput}
-            aria-label="開始時刻"
+            aria-label={t("skillDetailPanel.startTime")}
           />
           <span style={styles.startTimeUnit}>s</span>
           {isManual && (
@@ -199,31 +201,31 @@ export function SkillDetailPanel({
               type="button"
               onClick={handleResetStartTime}
               style={styles.resetButton}
-              aria-label="自動計算に戻す"
+              aria-label={t("skillDetailPanel.resetStartTimeLabel")}
             >
-              自動に戻す
+              {t("skillDetailPanel.resetStartTime")}
             </button>
           )}
           {isManual && (
             <span className="num" style={styles.headerAutoHint}>
-              （自動計算値: {entry.autoStartTime.toFixed(2)}s）
+              {t("skillDetailPanel.autoStartTime", { time: entry.autoStartTime.toFixed(2) })}
             </span>
           )}
         </div>
         {isProcOutcomeSource(resolvedSkill) && (
-          <div role="group" aria-label={`${procBuffName}の発生`} style={styles.procOutcomeRow}>
+          <div role="group" aria-label={t("skillDetailPanel.procOutcome", { name: procBuffName })} style={styles.procOutcomeRow}>
             <span style={styles.headerStartTimeLabel}>{procBuffName}</span>
-            {PROC_OUTCOME_OPTIONS.map(({ value, label }) => {
+            {PROC_OUTCOME_OPTIONS.map(({ id, value }) => {
               const selected = entry.procOccurred === value;
               return (
                 <button
-                  key={label}
+                  key={id}
                   type="button"
                   aria-pressed={selected}
                   onClick={() => onProcOccurredChange(entry.uid, value)}
                   style={selected ? { ...styles.procOutcomeButton, ...styles.procOutcomeButtonSelected } : styles.procOutcomeButton}
                 >
-                  {label}
+                  {t(`skillDetailPanel.procOutcomes.${id}` as const)}
                 </button>
               );
             })}
@@ -235,7 +237,7 @@ export function SkillDetailPanel({
             {formatWastedProc(entry.wastedProc, buffDefMap)}
           </span>
         )}
-        <button type="button" onClick={onClose} style={styles.closeButton} aria-label="閉じる">
+        <button type="button" onClick={onClose} style={styles.closeButton} aria-label={t("skillDetailPanel.close")}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <path d="M3 3l10 10M13 3L3 13" />
           </svg>
@@ -244,7 +246,7 @@ export function SkillDetailPanel({
 
       <div style={styles.metrics}>
         <div style={styles.cell}>
-          <div style={styles.cellLabel}>基本威力</div>
+          <div style={styles.cellLabel}>{t("skillDetailPanel.basePotency")}</div>
           <div className="num" style={styles.cellValue}>{entry.resolvedPotency}</div>
           {entry.consumedProc && (
             <div className="num" style={styles.expectedFormula}>
@@ -253,9 +255,9 @@ export function SkillDetailPanel({
           )}
         </div>
 
-        <Section label="バフ倍率" value={`×${entry.buffMultiplier.toFixed(2)}`}>
+        <Section label={t("skillDetailPanel.buffMultiplier")} value={`×${entry.buffMultiplier.toFixed(2)}`}>
           {potencyContribs.length === 0 ? (
-            <div style={styles.emptyContrib}>適用なし</div>
+            <div style={styles.emptyContrib}>{t("skillDetailPanel.noContributions")}</div>
           ) : (
             potencyContribs.map((c) => (
               <ContribRow
@@ -268,16 +270,16 @@ export function SkillDetailPanel({
           )}
         </Section>
 
-        <Section label="CRT率ボーナス" value={formatPercent(entry.critRateBonus)}>
+        <Section label={t("skillDetailPanel.critRateBonus")} value={formatPercent(entry.critRateBonus)}>
           {critContribs.length === 0 ? (
-            <div style={styles.emptyContrib}>適用なし</div>
+            <div style={styles.emptyContrib}>{t("skillDetailPanel.noContributions")}</div>
           ) : (
             critContribs.map((c) => (
               <ContribRow
                 key={c.buffId}
                 name={c.name}
                 value={c.guaranteedCrit
-                  ? "確定CRT"
+                  ? t("skillDetailPanel.guaranteedCrit")
                   : formatPercent(c.critRateBonus ?? 0)}
                 color={c.color}
               />
@@ -285,16 +287,16 @@ export function SkillDetailPanel({
           )}
         </Section>
 
-        <Section label="DH率ボーナス" value={formatPercent(entry.dhRateBonus)}>
+        <Section label={t("skillDetailPanel.dhRateBonus")} value={formatPercent(entry.dhRateBonus)}>
           {dhContribs.length === 0 ? (
-            <div style={styles.emptyContrib}>適用なし</div>
+            <div style={styles.emptyContrib}>{t("skillDetailPanel.noContributions")}</div>
           ) : (
             dhContribs.map((c) => (
               <ContribRow
                 key={c.buffId}
                 name={c.name}
                 value={c.guaranteedDh
-                  ? "確定DH"
+                  ? t("skillDetailPanel.guaranteedDh")
                   : formatPercent(c.dhRateBonus ?? 0)}
                 color={c.color}
               />
@@ -304,7 +306,9 @@ export function SkillDetailPanel({
 
         <div style={styles.cell}>
           <div style={styles.cellLabel}>
-            期待値{isMultiTargetHit && breakdown ? ` (×${breakdown.targets.length}体 合算)` : ""}
+            {isMultiTargetHit && breakdown
+              ? t("skillDetailPanel.expectedMultiTarget", { targets: breakdown.targets.length })
+              : t("skillDetailPanel.expected")}
           </div>
           <div className="num" style={styles.expectedValue}>
             {expectedValue !== null ? expectedValue : "—"}
@@ -316,8 +320,8 @@ export function SkillDetailPanel({
           )}
           {isMultiTargetHit && breakdown && (
             <div className="num" style={styles.expectedFormula}>
-              1体: {breakdown.singleTargetPotency}
-              {breakdown.targets.slice(1).map((t, i) => ` / ${i + 2}体目: ${t}`).join("")}
+              {t("skillDetailPanel.firstTarget", { potency: breakdown.singleTargetPotency })}
+              {breakdown.targets.slice(1).map((potency, i) => ` / ${t("skillDetailPanel.nthTarget", { n: i + 2, potency })}`).join("")}
               {" = "}{breakdown.total}
             </div>
           )}
@@ -325,23 +329,25 @@ export function SkillDetailPanel({
 
         <div style={styles.cell}>
           <div style={styles.metaRow}>
-            <span style={styles.cellLabel}>コンボ</span>
+            <span style={styles.cellLabel}>{t("skillDetailPanel.combo")}</span>
             <span style={entry.wsComboError ? styles.metaWarning : styles.metaOk}>
-              {entry.wsComboError ? "不成立" : "成立"}
+              {entry.wsComboError ? t("skillDetailPanel.comboBroken") : t("skillDetailPanel.comboOk")}
             </span>
           </div>
           {entry.unconfirmedProcBuffs && (
             <div style={styles.metaRow}>
-              <span style={{ ...styles.cellLabel, flexShrink: 0 }}>警告</span>
+              <span style={{ ...styles.cellLabel, flexShrink: 0 }}>{t("skillDetailPanel.warning")}</span>
               <span style={styles.metaWarning}>
-                {entry.unconfirmedProcBuffs.map((id) => buffDefMap.get(id)?.name ?? id).join(", ")}（確率付与。発動しない場合あり）
+                {t("skillDetailPanel.unconfirmedProcBuffs", {
+                  names: entry.unconfirmedProcBuffs.map((id) => buffDefMap.get(id)?.name ?? id).join(", "),
+                })}
               </span>
             </div>
           )}
           <div style={styles.metaRow}>
-            <span style={{ ...styles.cellLabel, flexShrink: 0 }}>エラー</span>
+            <span style={{ ...styles.cellLabel, flexShrink: 0 }}>{t("skillDetailPanel.error")}</span>
             {errorMessages.length === 0 ? (
-              <span style={styles.metaOk}>なし</span>
+              <span style={styles.metaOk}>{t("skillDetailPanel.noErrors")}</span>
             ) : (
               <span style={styles.metaError}>{errorMessages.join(" / ")}</span>
             )}
@@ -350,11 +356,11 @@ export function SkillDetailPanel({
       </div>
 
       <div style={styles.appliedRow}>
-        <span style={styles.cellLabel}>適用中のバフ</span>
+        <span style={styles.cellLabel}>{t("skillDetailPanel.appliedBuffs")}</span>
         {appliedBuffs.length === 0 ? (
-          <span style={styles.emptyContrib}>なし</span>
+          <span style={styles.emptyContrib}>{t("skillDetailPanel.noAppliedBuffs")}</span>
         ) : (
-          <ul style={styles.appliedList} aria-label="適用中のバフ">
+          <ul style={styles.appliedList} aria-label={t("skillDetailPanel.appliedBuffs")}>
             {appliedBuffs.map(({ activeBuff, def }) => {
               const effects = describeBuffEffects(def);
               return (
@@ -366,7 +372,7 @@ export function SkillDetailPanel({
                   {def.maxStacks !== undefined && activeBuff.stacks !== undefined && (
                     <span className="num" style={styles.appliedMeta}>×{activeBuff.stacks}</span>
                   )}
-                  <span className="num" style={styles.appliedMeta}>残 {formatBuffRemaining(activeBuff, entry.startTime)}</span>
+                  <span className="num" style={styles.appliedMeta}>{t("skillDetailPanel.remaining", { time: formatBuffRemaining(activeBuff, entry.startTime) })}</span>
                 </li>
               );
             })}

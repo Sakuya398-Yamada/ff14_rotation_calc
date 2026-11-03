@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { PpsRange } from "../../types/skill";
 import { styles } from "./styles";
 import { zoneEditorStyles } from "./zone-editor-styles";
@@ -18,14 +19,15 @@ export function PpsRangeEditor({
   lastGcdEndTime,
   rangePps,
 }: PpsRangeEditorProps) {
+  const { t } = useTranslation();
   return (
     <div style={zoneStyles.editor}>
       <div style={zoneStyles.header}>
-        <span style={zoneStyles.title}>PPS範囲選択</span>
+        <span style={zoneStyles.title}>{t("ppsRangeEditor.title")}</span>
       </div>
       <div style={zoneStyles.row}>
         <label style={zoneStyles.label}>
-          開始:
+          {t("ppsRangeEditor.start")}
           <input
             type="number"
             step="0.5"
@@ -44,7 +46,7 @@ export function PpsRangeEditor({
           s
         </label>
         <label style={zoneStyles.label}>
-          終了:
+          {t("ppsRangeEditor.end")}
           <input
             type="number"
             step="0.5"
@@ -65,18 +67,22 @@ export function PpsRangeEditor({
         <button
           style={zoneStyles.actionButton}
           onClick={() => onPpsRangeChange({ startTime: 0, endTime: lastGcdEndTime })}
-          title="全体範囲にリセット"
+          title={t("ppsRangeEditor.resetTitle")}
         >
-          全体
+          {t("ppsRangeEditor.reset")}
         </button>
       </div>
       {rangePps !== null && (
         <div style={styles.ppsRangeResult}>
           <span>
-            範囲PPS: <span style={styles.ppsValue}>{rangePps.pps.toFixed(2)}</span>
+            {t("ppsRangeEditor.rangePps")} <span style={styles.ppsValue}>{rangePps.pps.toFixed(2)}</span>
           </span>
           <span style={styles.ppsRangeDetail}>
-            (威力: {rangePps.totalPotency} = 直接{rangePps.directPotency} + DoT{rangePps.dotPotency})
+            {t("ppsRangeEditor.breakdown", {
+              total: rangePps.totalPotency,
+              direct: rangePps.directPotency,
+              dot: rangePps.dotPotency,
+            })}
           </span>
         </div>
       )}

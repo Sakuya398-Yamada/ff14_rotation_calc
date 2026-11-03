@@ -1,11 +1,12 @@
+import i18next from "i18next";
 import type { BuffDefinition, ComboError, ComboErrorKind } from "../types/skill";
 
-const COMBO_ERROR_LABELS: Record<ComboErrorKind, string> = {
-  missing: "バフ条件未達成",
-  forbidden: "バフ効果中",
-};
+/** 表示する順番 */
+const KINDS: ComboErrorKind[] = ["missing", "forbidden"];
 
-const KINDS = Object.keys(COMBO_ERROR_LABELS) as ComboErrorKind[];
+function label(kind: ComboErrorKind): string {
+  return i18next.t(`comboErrorFormat.labels.${kind}` as const);
+}
 
 /**
  * 詳細パネル用。種類ごとに「ラベル: バフ名, …」の 1 行にする。定義の無いバフは ID のまま出す。
@@ -16,14 +17,18 @@ export function formatComboErrors(errors: ComboError[], buffDefMap: Map<string, 
   return KINDS.flatMap((kind) => {
     const names = errors
       .filter((e) => e.kind === kind)
-      .map((e) => (e.anyOf ? `${e.anyOf.map(nameOf).join("・")} のいずれか` : nameOf(e.buffId)));
-    return names.length > 0 ? [`${COMBO_ERROR_LABELS[kind]}: ${names.join(", ")}`] : [];
+      .map((e) =>
+        e.anyOf
+          ? i18next.t("comboErrorFormat.anyOf", { names: e.anyOf.map(nameOf).join(i18next.t("comboErrorFormat.anyOfSeparator")) })
+          : nameOf(e.buffId)
+      );
+    return names.length > 0 ? [`${label(kind)}: ${names.join(", ")}`] : [];
   });
 }
 
 /** タイムラインのアイコンの title 用。含まれる種類ごとに「 ⚠ ラベル」をつなぐ */
 export function formatComboErrorWarnings(errors: ComboError[]): string {
   return KINDS.filter((kind) => errors.some((e) => e.kind === kind))
-    .map((kind) => ` ⚠ ${COMBO_ERROR_LABELS[kind]}`)
+    .map((kind) => ` ⚠ ${label(kind)}`)
     .join("");
 }

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { BossUntargetableWindow } from "../../types/skill";
 import { zoneEditorStyles } from "./zone-editor-styles";
 
@@ -13,10 +14,11 @@ export function UntargetableWindowEditor({
   untargetableWindows,
   onUntargetableWindowsChange,
 }: UntargetableWindowEditorProps) {
+  const { t } = useTranslation();
   return (
     <div style={zoneStyles.editor}>
       <div style={zoneStyles.header}>
-        <span style={zoneStyles.title}>ボス離脱タイミング</span>
+        <span style={zoneStyles.title}>{t("untargetableWindowEditor.title")}</span>
         <button
           style={zoneStyles.actionButton}
           onClick={() => {
@@ -29,16 +31,16 @@ export function UntargetableWindowEditor({
             ]);
           }}
         >
-          + 追加
+          {t("untargetableWindowEditor.add")}
         </button>
       </div>
       {untargetableWindows.length === 0 && (
-        <div style={zoneStyles.empty}>離脱タイミングが未設定です</div>
+        <div style={zoneStyles.empty}>{t("untargetableWindowEditor.empty")}</div>
       )}
       {untargetableWindows.map((w, i) => (
         <div key={i} style={zoneStyles.row}>
           <label style={zoneStyles.label}>
-            開始:
+            {t("untargetableWindowEditor.start")}
             <input
               type="number"
               step="0.5"
@@ -56,7 +58,7 @@ export function UntargetableWindowEditor({
             s
           </label>
           <label style={zoneStyles.label}>
-            終了:
+            {t("untargetableWindowEditor.end")}
             <input
               type="number"
               step="0.5"
@@ -78,7 +80,7 @@ export function UntargetableWindowEditor({
             onClick={() => {
               onUntargetableWindowsChange(untargetableWindows.filter((_, idx) => idx !== i));
             }}
-            title="削除"
+            title={t("untargetableWindowEditor.delete")}
           >
             x
           </button>

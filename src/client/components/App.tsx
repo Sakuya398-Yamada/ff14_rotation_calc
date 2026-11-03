@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, pointerWithin } from "@dnd-kit/core";
 import type { DragStartEvent } from "@dnd-kit/core";
 import type { TimelineDragData } from "./timeline/dnd-types";
@@ -20,7 +22,7 @@ import { calcEntryExpectedPotency } from "../logic/expected-potency";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../logic/skill-level";
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
-import { getSharedTimelineId, loadSharedTimeline, SHARED_LOAD_ERROR_MESSAGES } from "../logic/shared-timeline";
+import { getSharedTimelineId, loadSharedTimeline } from "../logic/shared-timeline";
 import { languageBasePath } from "../logic/language-path";
 import { useLanguage } from "../i18n";
 import type { SharedLoadError } from "../logic/shared-timeline";
@@ -36,6 +38,7 @@ let nextUid = 1;
 const SAVE_DEBOUNCE_MS = 500;
 
 export function App() {
+  const { t } = useTranslation();
   const lang = useLanguage();
   const [settings, setSettings] = useState(loadSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -144,7 +147,7 @@ export function App() {
       signal: controller.signal,
       hasWorkingEntries: () => entriesRef.current.length > 0,
       confirmOverwrite: () =>
-        window.confirm("共有タイムラインを開くと、作業中のタイムラインは置き換えられます。開きますか？"),
+        window.confirm(i18next.t("app.confirmOpenShared")),
     }).then((outcome) => {
       if (controller.signal.aborted) return;
       if (outcome.kind === "error") {
@@ -386,7 +389,7 @@ export function App() {
           onClick={() => setSaveOpen(true)}
           style={styles.saveButton}
         >
-          保存・共有
+          {t("app.saveAndShare")}
         </button>
         <button
           ref={myTimelinesButtonRef}
@@ -395,13 +398,13 @@ export function App() {
           onClick={() => setMyTimelinesOpen(true)}
           style={styles.saveButton}
         >
-          保存したタイムライン
+          {t("app.myTimelines")}
         </button>
         <button
           ref={settingsButtonRef}
           type="button"
-          aria-label="設定"
-          title="設定"
+          aria-label={t("app.settings")}
+          title={t("app.settings")}
           aria-haspopup="dialog"
           onClick={() => setSettingsOpen(true)}
           style={styles.settingsButton}
@@ -434,10 +437,10 @@ export function App() {
       />
       {sharedLoadError !== null && (
         <div style={styles.sharedLoadError}>
-          <span role="alert">{SHARED_LOAD_ERROR_MESSAGES[sharedLoadError]}</span>
+          <span role="alert">{t(`sharedTimeline.loadErrors.${sharedLoadError}` as const)}</span>
           <button
             type="button"
-            aria-label="閉じる"
+            aria-label={t("app.closeSharedLoadError")}
             onClick={() => setSharedLoadError(null)}
             style={styles.sharedLoadErrorClose}
           >
@@ -446,14 +449,14 @@ export function App() {
         </div>
       )}
       {sharedInfo !== null && (
-        <section aria-label="開いた共有タイムライン" style={styles.sharedInfo}>
+        <section aria-label={t("app.sharedInfo")} style={styles.sharedInfo}>
           <div style={styles.sharedInfoText}>
             {sharedInfo.contentId !== null && <span>{contentName(sharedInfo.contentId)}</span>}
             {sharedInfo.title !== null && <span style={styles.sharedInfoTitle}>{sharedInfo.title}</span>}
           </div>
           <button
             type="button"
-            aria-label="共有タイムラインの情報を閉じる"
+            aria-label={t("app.closeSharedInfo")}
             onClick={() => setSharedInfo(null)}
             style={styles.sharedLoadErrorClose}
           >
@@ -538,7 +541,7 @@ export function App() {
       </DndContext>
       <footer style={styles.footer}>
         <small style={styles.contact}>
-          不具合・要望:{" "}
+          {t("app.contactLabel")}{" "}
           <a
             style={styles.contactLink}
             href="https://github.com/Sakuya398-Yamada/ff14_rotation_calc"
@@ -556,7 +559,7 @@ export function App() {
           >
             Issue
           </a>{" "}
-          | メール:{" "}
+          | {t("app.mailLabel")}{" "}
           <a style={styles.contactLink} href="mailto:forestry.for@gmail.com">
             forestry.for@gmail.com
           </a>

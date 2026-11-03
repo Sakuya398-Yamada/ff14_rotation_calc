@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import i18next from "i18next";
 import { formatComboErrors, formatComboErrorWarnings } from "../combo-error-format";
 import { BLM_BUFFS } from "../../data/blm-buffs";
 import type { ComboError } from "../../types/skill";
@@ -63,5 +64,25 @@ describe("formatComboErrorWarnings (#666)", () => {
 
   it("エラーが無ければ空文字", () => {
     expect(formatComboErrorWarnings([])).toBe("");
+  });
+});
+
+describe("combo-error-format（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("種類のラベルを英語にし、OR 条件の候補は or でつなぐ", () => {
+    const anyOf = ["astral-fire-1", "astral-fire-2"];
+    const errors: ComboError[] = [
+      { buffId: anyOf[0], kind: "missing", anyOf },
+      { buffId: "thunderhead", kind: "missing" },
+      { buffId: "ley-lines", kind: "forbidden" },
+    ];
+
+    expect(formatComboErrors(errors, buffDefMap)).toEqual([
+      "Buff condition not met: アストラルファイア I or アストラルファイア II, サンダーヘッド",
+      "Buff active: 黒魔紋",
+    ]);
+    expect(formatComboErrorWarnings(errors)).toBe(" ⚠ Buff condition not met ⚠ Buff active");
   });
 });

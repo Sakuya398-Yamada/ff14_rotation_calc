@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { Skill, ResolvedTimelineEntry } from "../../types/skill";
 import { PX_PER_SEC, LANE_LABEL_WIDTH } from "./constants";
 
@@ -8,12 +9,17 @@ import { PX_PER_SEC, LANE_LABEL_WIDTH } from "./constants";
  * - 複数体（減衰あり）: ` ×N体 (1体: X / 減衰時: Y)`
  */
 export function formatTargetBreakdown(
-  breakdown: { total: number; targets: number[]; singleTargetPotency: number } | null
+  breakdown: { total: number; targets: number[]; singleTargetPotency: number } | null,
+  t: TFunction
 ): string {
   if (!breakdown || breakdown.targets.length <= 1) return "";
-  const reduced = breakdown.targets.find((t) => t !== breakdown.singleTargetPotency);
-  const reducedSuffix = reduced !== undefined ? ` / 減衰時: ${reduced}` : "";
-  return ` ×${breakdown.targets.length}体 (1体: ${breakdown.singleTargetPotency}${reducedSuffix})`;
+  const reduced = breakdown.targets.find((potency) => potency !== breakdown.singleTargetPotency);
+  const options = { targets: breakdown.targets.length, single: breakdown.singleTargetPotency };
+  return ` ${
+    reduced !== undefined
+      ? t("helpers.targetBreakdownReduced", { ...options, reduced })
+      : t("helpers.targetBreakdown", options)
+  }`;
 }
 
 /**

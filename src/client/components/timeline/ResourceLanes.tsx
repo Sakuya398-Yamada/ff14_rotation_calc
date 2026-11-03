@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ActiveBuff, ResolvedTimelineEntry, ResourceSnapshot, ResourceTick } from "../../types/skill";
 import type { ResourceGroup } from "./types";
 import { styles } from "./styles";
@@ -58,6 +59,7 @@ interface ResourceLanesProps {
 
 /** リソースゲージ行（displayGroup 単位で1行ずつ描画） */
 export function ResourceLanes({ resourceGroups, resolvedEntries, resourceTicks, labelBg }: ResourceLanesProps) {
+  const { t } = useTranslation();
   return (
     <>
       {resourceGroups.map((group) => (
@@ -78,10 +80,13 @@ export function ResourceLanes({ resourceGroups, resolvedEntries, resourceTicks, 
                   title={
                     group.groupMaxStacks !== undefined
                       ? group.resources.map((r) => `${r.name}: ${m.snapshot[r.id] ?? 0}`).join(" / ") +
-                        ` (合計 ${group.resources.reduce((s, r) => s + (m.snapshot[r.id] ?? 0), 0)}/${group.groupMaxStacks})` +
-                        (hasError ? " (不足)" : "")
+                        ` ${t("resourceLanes.total", {
+                          total: group.resources.reduce((s, r) => s + (m.snapshot[r.id] ?? 0), 0),
+                          max: group.groupMaxStacks,
+                        })}` +
+                        (hasError ? ` ${t("resourceLanes.insufficient")}` : "")
                       : group.resources.map((r) => `${r.name}: ${m.snapshot[r.id] ?? 0}/${getEffectiveMaxStacks(r, m.activeBuffs)}`).join(", ") +
-                        (hasError ? " (不足)" : "")
+                        (hasError ? ` ${t("resourceLanes.insufficient")}` : "")
                   }
                 >
                   <div style={styles.resourceDots}>

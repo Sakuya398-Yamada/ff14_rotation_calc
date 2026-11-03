@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
+import { useTranslation } from "react-i18next";
 import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, CharacterStats, DoTTick, ResourceTick, ActiveDoT, BossUntargetableWindow, MultiTargetWindow, PpsRange } from "../types/skill";
 import { TIMELINE_DROPZONE_ID } from "./timeline/dnd-types";
 import { calcGcd } from "../logic/stat-calc";
@@ -70,6 +71,7 @@ export function Timeline({
   selectedEntryUid,
   onSelectEntry,
 }: TimelineProps) {
+  const { t } = useTranslation();
   const [showResources, setShowResources] = useState(true);
 
   // リソースをdisplayGroupでグループ化（同じグループは1行にまとめる）
@@ -379,7 +381,7 @@ export function Timeline({
       >
         {resolvedEntries.length === 0 ? (
           <div style={styles.placeholder}>
-            スキルパレットからドラッグ＆ドロップしてスキルを追加
+            {t("timeline.placeholder")}
           </div>
         ) : (
           <div ref={scrollRef} className="timeline-scroll" style={styles.scrollContainer}>
@@ -461,7 +463,7 @@ export function Timeline({
       </div>
 
       <div style={styles.hint}>
-        タイムライン上のスキルをドラッグで並び替え／画面下部のエリアにドロップで削除
+        {t("timeline.hint")}
       </div>
 
       {draggingEntryUid !== null && (

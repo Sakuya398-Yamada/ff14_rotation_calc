@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
 import type { Skill, CharacterStats } from "../types/skill";
 import type { PaletteDragData } from "./timeline/dnd-types";
@@ -32,6 +33,7 @@ function CollapsibleSection({ title, defaultOpen = true, children }: Collapsible
 
 /** dnd-kit のドラッグ元となるスキルカード（タッチ・マウス両対応） */
 function PaletteSkillCard({ skill }: { skill: Skill }) {
+  const { t } = useTranslation();
   const data: PaletteDragData = { source: "palette", skillId: skill.id, skillType: skill.type };
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: `palette-${skill.id}`,
@@ -52,7 +54,7 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
         touchAction: "manipulation",
         ...(isDragging ? { opacity: 0.5 } : {}),
       }}
-      title={`${skill.name} (威力: ${skill.potency})`}
+      title={t("skillPalette.cardTitle", { name: skill.name, potency: skill.potency })}
     >
       <img
         src={skill.icon}
@@ -62,7 +64,7 @@ function PaletteSkillCard({ skill }: { skill: Skill }) {
       />
       <div style={styles.skillInfo}>
         <div style={styles.skillName}>{skill.name}</div>
-        <div className="num" style={styles.skillPotency}>威力 {skill.potency}</div>
+        <div className="num" style={styles.skillPotency}>{t("skillPalette.potency", { potency: skill.potency })}</div>
       </div>
     </div>
   );
@@ -82,39 +84,36 @@ export function SkillPalette({
   const gcdSkills = skills.filter((s) => s.type === "gcd" && !s.hidden);
   const ogcdSkills = skills.filter((s) => s.type === "ogcd" && !s.hidden);
 
+  const { t } = useTranslation();
   const handleStatChange = (key: keyof CharacterStats, value: string) => {
     const num = parseInt(value, 10);
     if (isNaN(num)) return;
     onStatsChange({ ...stats, [key]: num });
   };
 
-  const statFields: { key: keyof CharacterStats; label: string; abbr: string; min: number; detail: string }[] = [
-    {
-      key: "critical",
-      label: "クリティカル",
-      abbr: "CRT",
-      min: 420,
-      detail: `発生率 ${(calcCritRate(stats) * 100).toFixed(1)}% / 倍率 x${calcCritMultiplier(stats).toFixed(3)}`,
-    },
-    { key: "directHit", label: "ダイレクトヒット", abbr: "DH", min: 420, detail: `発生率 ${(calcDhRate(stats) * 100).toFixed(1)}%` },
-    { key: "determination", label: "意思力", abbr: "DET", min: 440, detail: `倍率 x${calcDetMultiplier(stats).toFixed(3)}` },
-    { key: "speed", label: "スピード", abbr: "SS", min: 420, detail: `GCD ${calcGcd(2.5, stats).toFixed(2)}s` },
+  const rate = (value: number) => t("skillPalette.rate", { rate: (value * 100).toFixed(1) });
+  const multiplier = (value: number) => t("skillPalette.multiplier", { multiplier: value.toFixed(3) });
+  const statFields: { key: keyof CharacterStats; abbr: string; min: number; detail: string }[] = [
+    { key: "critical", abbr: "CRT", min: 420, detail: `${rate(calcCritRate(stats))} / ${multiplier(calcCritMultiplier(stats))}` },
+    { key: "directHit", abbr: "DH", min: 420, detail: rate(calcDhRate(stats)) },
+    { key: "determination", abbr: "DET", min: 440, detail: multiplier(calcDetMultiplier(stats)) },
+    { key: "speed", abbr: "SS", min: 420, detail: `GCD ${calcGcd(2.5, stats).toFixed(2)}s` },
   ];
 
   return (
     <div className="custom-scrollbar skill-palette" style={styles.container}>
       <div style={styles.titleRow}>
-        <h2 style={styles.title}>ジョブパレット</h2>
+        <h2 style={styles.title}>{t("skillPalette.title")}</h2>
       </div>
 
       {/* ステータス入力セクション */}
-      <CollapsibleSection title="ステータス">
+      <CollapsibleSection title={t("skillPalette.statsSection")}>
         <div style={styles.statTable}>
           {statFields.map((field, i) => (
             <div key={field.key} style={i === statFields.length - 1 ? styles.statItemLast : styles.statItem}>
               <label style={styles.statRow}>
                 <span style={styles.statLabel}>
-                  {field.label}
+                  {t(`skillPalette.stats.${field.key}` as const)}
                   <span style={styles.statAbbr}>{field.abbr}</span>
                 </span>
                 <input
