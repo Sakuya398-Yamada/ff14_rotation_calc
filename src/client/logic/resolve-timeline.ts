@@ -40,6 +40,20 @@ function computeBuffEndTime(startTime: number, duration: number | null): number 
 }
 
 /**
+ * startTime に付与したバフの終了時刻。maxDuration のあるバフ（戦嵐）が効果中なら、付け直さずに残り時間へ duration を足し、
+ * 付与時刻から maxDuration までで止める（重ねがけの延長）。それ以外は付与時刻から duration（付け直し）
+ */
+function computeAppliedEndTime(activeBuffs: ActiveBuff[], buffDef: BuffDefinition, startTime: number): number {
+  const refreshed = computeBuffEndTime(startTime, buffDef.duration);
+  const existing = activeBuffs.find((ab) => ab.buffId === buffDef.id);
+  if (buffDef.maxDuration === undefined || buffDef.duration === null || !existing) return refreshed;
+  return Math.min(
+    computeBuffEndTime(existing.endTime, buffDef.duration),
+    computeBuffEndTime(startTime, buffDef.maxDuration),
+  );
+}
+
+/**
  * 確率付きで付与したバフが time 時点で1回以上発動している確率 1 − Π(1 − p_i)。
  * 効果時間内の付与元だけを数え、付与元が無ければ undefined を返す。
  */
@@ -320,96 +334,53 @@ function getDhRateBonus(
 }
 
 /**
- * アクティブなバフに確定クリティカル（guaranteedCrit）効果があるか判定する。
+ * アクティブなバフに、skillId に効く（appliesToSkillIds が無いか、skillId を含む）type の効果があるか判定する。
+ * type は確定クリティカル（guaranteedCrit）か確定ダイレクトヒット（guaranteedDh）
  */
-function hasGuaranteedCrit(
+function hasGuaranteedHit(
   activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
+  buffDefMap: Map<string, BuffDefinition>,
+  skillId: string,
+  type: "guaranteedCrit" | "guaranteedDh"
 ): boolean {
-  for (const ab of activeBuffs) {
-    const def = buffDefMap.get(ab.buffId);
-    if (!def) continue;
-    for (const effect of def.effects) {
-      if (effect.type === "guaranteedCrit") {
-        return true;
-      }
-    }
-  }
-  return false;
+  return activeBuffs.some((ab) =>
+    buffDefMap.get(ab.buffId)?.effects.some(
+      (e) => e.type === type && (!e.appliesToSkillIds || e.appliesToSkillIds.includes(skillId))
+    )
+  );
 }
 
 /**
- * アクティブなバフからguaranteedCrit効果を持つバフを自動消費する。
- * スタック付きバフの場合はスタックを1減算し、0になったら除去する。
- * スタックなしバフの場合は直接除去する。
+ * skillId に効いた確定クリティカル・確定ダイレクトヒットのバフを自動消費する（crit / dh は、それぞれ確定になったか）。
+ * 両方の効果を持つバフでも 1 回の使用で 1 スタックだけ減らす。スタック付きは 0 になったら、スタックなしは直接除去する。
+ * skipBuffIds のバフ（buffConsumptions・consumeOnGcd で消費するもの）は消費しない
  */
-function consumeGuaranteedCritBuffs(
+function consumeGuaranteedHitBuffs(
   activeBuffs: ActiveBuff[],
   buffDefMap: Map<string, BuffDefinition>,
-  skipBuffIds?: Set<string>
+  skillId: string,
+  crit: boolean,
+  dh: boolean,
+  skipBuffIds: Set<string>
 ): void {
   for (let i = activeBuffs.length - 1; i >= 0; i--) {
     const def = buffDefMap.get(activeBuffs[i].buffId);
     if (!def) continue;
-    if (skipBuffIds?.has(activeBuffs[i].buffId)) continue;
-    if (def.effects.some((e) => e.type === "guaranteedCrit")) {
-      const ab = activeBuffs[i];
-      if (ab.stacks !== undefined) {
-        ab.stacks = Math.max(0, ab.stacks - 1);
-        if (ab.stacks === 0) {
-          activeBuffs.splice(i, 1);
-        }
-      } else {
+    if (skipBuffIds.has(activeBuffs[i].buffId)) continue;
+    const applies = def.effects.some(
+      (e) =>
+        ((crit && e.type === "guaranteedCrit") || (dh && e.type === "guaranteedDh")) &&
+        (!e.appliesToSkillIds || e.appliesToSkillIds.includes(skillId))
+    );
+    if (!applies) continue;
+    const ab = activeBuffs[i];
+    if (ab.stacks !== undefined) {
+      ab.stacks = Math.max(0, ab.stacks - 1);
+      if (ab.stacks === 0) {
         activeBuffs.splice(i, 1);
       }
-    }
-  }
-}
-
-
-/**
- * アクティブなバフに確定ダイレクトヒット（guaranteedDh）効果があるか判定する。
- */
-function hasGuaranteedDh(
-  activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>
-): boolean {
-  for (const ab of activeBuffs) {
-    const def = buffDefMap.get(ab.buffId);
-    if (!def) continue;
-    for (const effect of def.effects) {
-      if (effect.type === "guaranteedDh") {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-/**
- * アクティブなバフからguaranteedDh効果を持つバフを自動消費する。
- * スタック付きバフの場合はスタックを1減算し、0になったら除去する。
- * スタックなしバフの場合は直接除去する。
- */
-function consumeGuaranteedDhBuffs(
-  activeBuffs: ActiveBuff[],
-  buffDefMap: Map<string, BuffDefinition>,
-  skipBuffIds?: Set<string>
-): void {
-  for (let i = activeBuffs.length - 1; i >= 0; i--) {
-    const def = buffDefMap.get(activeBuffs[i].buffId);
-    if (!def) continue;
-    if (skipBuffIds?.has(activeBuffs[i].buffId)) continue;
-    if (def.effects.some((e) => e.type === "guaranteedDh")) {
-      const ab = activeBuffs[i];
-      if (ab.stacks !== undefined) {
-        ab.stacks = Math.max(0, ab.stacks - 1);
-        if (ab.stacks === 0) {
-          activeBuffs.splice(i, 1);
-        }
-      } else {
-        activeBuffs.splice(i, 1);
-      }
+    } else {
+      activeBuffs.splice(i, 1);
     }
   }
 }
@@ -539,7 +510,7 @@ function applyBuffsOnDeplete(
     const newBuff: ActiveBuff = {
       buffId: buffDef.id,
       startTime,
-      endTime: computeBuffEndTime(startTime, buffDef.duration),
+      endTime: computeAppliedEndTime(activeBuffs, buffDef, startTime),
       stacks: buffDef.maxStacks,
     };
     const existingIdx = activeBuffs.findIndex((ab) => ab.buffId === buffDef.id);
@@ -564,7 +535,7 @@ function applyBuffAt(
   const newBuff: ActiveBuff = {
     buffId: buffDef.id,
     startTime,
-    endTime: computeBuffEndTime(startTime, buffDef.duration),
+    endTime: computeAppliedEndTime(activeBuffs, buffDef, startTime),
     stacks: buffDef.maxStacks,
   };
   const existingIdx = activeBuffs.findIndex((ab) => ab.buffId === buffDef.id);
@@ -1479,8 +1450,8 @@ export function resolveTimeline(
     // 威力倍率・クリティカル判定をバフ適用前に計算（スキル自身が付与するバフは自分には適用されない）
     // 解決後のスキルIDを渡すことで、対象スキル限定バフ（appliesToSkillIds）を正しくフィルタする
     const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap, resolvedSkillId);
-    const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedCrit === true || hasGuaranteedCrit(currentActiveBuffs, buffDefMap));
-    const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedDh === true || hasGuaranteedDh(currentActiveBuffs, buffDefMap));
+    const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedCrit === true || hasGuaranteedHit(currentActiveBuffs, buffDefMap, resolvedSkillId, "guaranteedCrit"));
+    const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedDh === true || hasGuaranteedHit(currentActiveBuffs, buffDefMap, resolvedSkillId, "guaranteedDh"));
     // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
     const baseCritRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
     // 直接ダメージ用: guaranteedCritの場合は100%に上書き
@@ -1648,7 +1619,7 @@ export function resolveTimeline(
             const newBuff: ActiveBuff = {
               buffId,
               startTime,
-              endTime: computeBuffEndTime(startTime, buffDef.duration),
+              endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
               stacks: buffDef.maxStacks,
             };
             if (existingIdx >= 0) {
@@ -1672,7 +1643,7 @@ export function resolveTimeline(
             const newBuff: ActiveBuff = {
               buffId,
               startTime,
-              endTime: computeBuffEndTime(startTime, buffDef.duration),
+              endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
               stacks: buffDef.maxStacks,
             };
             if (existingIdx >= 0) {
@@ -1714,7 +1685,7 @@ export function resolveTimeline(
           const newBuff: ActiveBuff = {
             buffId,
             startTime,
-            endTime: computeBuffEndTime(startTime, buffDef.duration),
+            endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
             stacks: buffDef.maxStacks,
           };
           if (existingIdx >= 0) {
@@ -1746,6 +1717,19 @@ export function resolveTimeline(
         }
       }
 
+      // buffExtensions: 効果中のバフだけを延長する（原初の解放の戦嵐 +10 秒。上限は maxDuration）。
+      // 付け直しと同じく startTime を使用時刻にし、延長前の区間はこの時刻で表示を区切る
+      for (const ext of skill.buffExtensions ?? []) {
+        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === ext.buffId);
+        if (idx < 0) continue;
+        const maxDuration = buffDefMap.get(ext.buffId)?.maxDuration;
+        const extended = computeBuffEndTime(currentActiveBuffs[idx].endTime, ext.seconds);
+        const endTime = maxDuration === undefined
+          ? extended
+          : Math.min(extended, computeBuffEndTime(startTime, maxDuration));
+        currentActiveBuffs[idx] = { ...currentActiveBuffs[idx], startTime, endTime };
+      }
+
       // コンボ成立時のみのバフ適用
       if (!wsComboError && skill.comboBuffApplications) {
         for (const buffId of skill.comboBuffApplications) {
@@ -1757,7 +1741,7 @@ export function resolveTimeline(
           const newBuff: ActiveBuff = {
             buffId,
             startTime,
-            endTime: computeBuffEndTime(startTime, buffDef.duration),
+            endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
             stacks: buffDef.maxStacks,
           };
           if (existingIdx >= 0) {
@@ -1790,7 +1774,7 @@ export function resolveTimeline(
         const newBuff: ActiveBuff = {
           buffId,
           startTime,
-          endTime: computeBuffEndTime(startTime, buffDef.duration),
+          endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
           stacks: buffDef.maxStacks,
         };
         if (existingIdx >= 0) {
@@ -1819,6 +1803,10 @@ export function resolveTimeline(
             nextChargeAt: Math.round((startTime + skill.cooldown) * 1000) / 1000,
           });
         }
+      }
+
+      for (const r of skill.cooldownReductionsOnUse ?? []) {
+        reduceChargeCooldown(r.chargeKey, r.seconds, startTime);
       }
 
       // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
@@ -1891,14 +1879,17 @@ export function resolveTimeline(
       skill.buffConsumptions?.map((c) => c.buffId) ?? []
     );
 
-    // GCDスキル実行後、確定クリティカルバフを自動消費（buffConsumptionsで消費済みのバフはスキップ）
-    if (!hasError && skill.type === "gcd" && guaranteedCrit) {
-      consumeGuaranteedCritBuffs(currentActiveBuffs, buffDefMap, consumedByBuffConsumptions);
-    }
-
-    // GCDスキル実行後、確定ダイレクトヒットバフを自動消費（buffConsumptionsで消費済みのバフはスキップ）
-    if (!hasError && skill.type === "gcd" && guaranteedDhBeforeApply) {
-      consumeGuaranteedDhBuffs(currentActiveBuffs, buffDefMap, consumedByBuffConsumptions);
+    // GCDスキル実行後、このスキルに効いた確定クリティカル・ダイレクトヒットのバフを自動消費する。
+    // buffConsumptions と consumeOnGcd で消費するバフは、そちらで 1 回だけ減らす（applyBuffOnDeplete もそちらで発火する）
+    if (!hasError && skill.type === "gcd" && (guaranteedCrit || guaranteedDhBeforeApply)) {
+      consumeGuaranteedHitBuffs(
+        currentActiveBuffs,
+        buffDefMap,
+        resolvedSkillId,
+        guaranteedCrit,
+        guaranteedDhBeforeApply,
+        new Set([...consumedByBuffConsumptions, ...consumeBuffTargets])
+      );
     }
 
     // GCDスキル実行後、スキル実行前にアクティブだった消費対象バフを 1 ループで消費する。

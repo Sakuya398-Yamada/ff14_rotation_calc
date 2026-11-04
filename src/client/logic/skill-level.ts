@@ -18,6 +18,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   let potencyScaling = skill.potencyScaling;
   let buffApplications = skill.buffApplications;
   let comboBuffApplications = skill.comboBuffApplications;
+  let comboResourceChanges = skill.comboResourceChanges;
   let buffConsumptionAnyOf = skill.buffConsumptionAnyOf;
   let conditionalPotencyBuffs = skill.conditionalPotencyBuffs;
 
@@ -35,6 +36,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
       if (override.potencyScaling !== undefined) potencyScaling = override.potencyScaling;
       if (override.buffApplications !== undefined) buffApplications = override.buffApplications;
       if (override.comboBuffApplications !== undefined) comboBuffApplications = override.comboBuffApplications;
+      if (override.comboResourceChanges !== undefined) comboResourceChanges = override.comboResourceChanges;
       if (override.buffConsumptionAnyOf !== undefined) buffConsumptionAnyOf = override.buffConsumptionAnyOf;
       if (override.conditionalPotencyBuffs !== undefined) conditionalPotencyBuffs = override.conditionalPotencyBuffs;
     }
@@ -51,6 +53,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     potencyScaling === skill.potencyScaling &&
     buffApplications === skill.buffApplications &&
     comboBuffApplications === skill.comboBuffApplications &&
+    comboResourceChanges === skill.comboResourceChanges &&
     buffConsumptionAnyOf === skill.buffConsumptionAnyOf &&
     conditionalPotencyBuffs === skill.conditionalPotencyBuffs
   ) {
@@ -69,6 +72,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     potencyScaling,
     buffApplications,
     comboBuffApplications,
+    comboResourceChanges,
     buffConsumptionAnyOf,
     conditionalPotencyBuffs,
   };

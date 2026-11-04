@@ -13,6 +13,7 @@ import enJobPld from "./locales/en/job-pld.json";
 import enJobSam from "./locales/en/job-sam.json";
 import enJobSch from "./locales/en/job-sch.json";
 import enJobSge from "./locales/en/job-sge.json";
+import enJobWar from "./locales/en/job-war.json";
 import enJobWhm from "./locales/en/job-whm.json";
 import jaCatalog from "./locales/ja/catalog.json";
 import jaCommon from "./locales/ja/common.json";
@@ -26,6 +27,7 @@ import jaJobPld from "./locales/ja/job-pld.json";
 import jaJobSam from "./locales/ja/job-sam.json";
 import jaJobSch from "./locales/ja/job-sch.json";
 import jaJobSge from "./locales/ja/job-sge.json";
+import jaJobWar from "./locales/ja/job-war.json";
 import jaJobWhm from "./locales/ja/job-whm.json";
 
 export const defaultNS = "common";
@@ -45,6 +47,7 @@ export const resources = {
     "job-sam": jaJobSam,
     "job-sch": jaJobSch,
     "job-sge": jaJobSge,
+    "job-war": jaJobWar,
     "job-whm": jaJobWhm,
   },
   en: {
@@ -60,6 +63,7 @@ export const resources = {
     "job-sam": enJobSam satisfies typeof jaJobSam,
     "job-sch": enJobSch satisfies typeof jaJobSch,
     "job-sge": enJobSge satisfies typeof jaJobSge,
+    "job-war": enJobWar satisfies typeof jaJobWar,
     "job-whm": enJobWhm satisfies typeof jaJobWhm,
   },
 } as const;

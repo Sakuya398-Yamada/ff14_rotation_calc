@@ -56,6 +56,8 @@ export interface TraitPotencyOverride {
   buffApplications?: string[];
   /** 変更後のコンボ成立時の付与バフIDリスト（undefinedの場合は変更なし。例: プロミネンスの神聖魔法効果アップは Lv72 から） */
   comboBuffApplications?: string[];
+  /** 変更後のコンボ成立時のリソース変動（配列ごと置き換える。undefinedの場合は変更なし） */
+  comboResourceChanges?: Skill["comboResourceChanges"];
   /** 変更後のバフ消費のOR条件（配列ごと置き換える。undefinedの場合は変更なし） */
   buffConsumptionAnyOf?: Skill["buffConsumptionAnyOf"];
   /** 変更後のバフ有効時の威力上書き（配列ごと置き換える。undefinedの場合は変更なし） */
@@ -133,6 +135,16 @@ export interface Skill {
    * 不一致時は「最後に使用したスキルの値」が採用されるため、グループ全体で一意になるように設定すること。
    */
   cooldownGroup?: string;
+  /**
+   * 使ったときに、列挙したリキャストを seconds 秒短縮する（戦士のフェルクリーヴ等でウォークライを 5 秒）。
+   * chargeKey は短縮対象スキルの cooldownGroup（未設定ならスキル ID）。未使用・チャージ満タンなら何もしない
+   */
+  cooldownReductionsOnUse?: { chargeKey: string; seconds: number }[];
+  /**
+   * 使ったときに、効果中のバフだけを seconds 秒延長する（戦士の原初の解放で戦嵐を 10 秒）。
+   * 効果中でなければ何もしない。上限はそのバフの BuffDefinition.maxDuration（付与時刻から数える。未設定なら上限なし）
+   */
+  buffExtensions?: { buffId: string; seconds: number }[];
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
@@ -399,8 +411,8 @@ export interface BuffEffect {
    * - potency: 威力乗算倍率（1.1 = 威力×1.1）
    * - critRate: クリティカル発生率加算値（0.1 = +10%）
    * - dhRate: ダイレクトヒット発生率加算値（0.1 = +10%）
-   * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用）
-   * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用）
+   * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用、appliesToSkillIds で対象限定。確定になった WS でスタックを 1 消費）
+   * - guaranteedDh: 次のWS使用時にダイレクトヒット率を100%にする（値は未使用、appliesToSkillIds で対象限定。guaranteedCrit と併せ持っても消費は 1 スタック。consumeOnGcd も持つバフはそちらでだけ消費）
    * - consumeOnGcd: GCDスキル使用時に自動消費される（値は未使用）
    * - consumeOnAction: 付与した後の次のアクション（GCD/oGCD を問わない）の実行で消える（値は未使用、黙想等）
    * - instantCast: 詠唱時間を0にする（値は未使用、詠唱時間を持つGCDスキル使用時に自動消費。castTimeMultiplier で詠唱が 0 になる GCD では消費しない）
@@ -448,6 +460,11 @@ export interface BuffDefinition {
   color: string;
   /** スタック付きバフの最大スタック数（未設定の場合はスタックなし） */
   maxStacks?: number;
+  /**
+   * 重ねがけで延長する上限（秒。戦士の戦嵐は 60）。設定すると、効果中に付与し直したとき付け直さずに残り時間へ
+   * duration を足し、付与時刻から maxDuration までで止める。Skill.buffExtensions の延長の上限にも使う
+   */
+  maxDuration?: number;
   /** 習得レベル（特性により解放されるレベル。未設定の場合は常に利用可能） */
   acquiredLevel?: number;
   /** 排他グループ名（同グループのバフは1つだけアクティブ。新規適用時に既存を解除） */

@@ -36,15 +36,15 @@ describe("JobPicker", () => {
     expect(button).toHaveTextContent("遠隔魔法DPS · Lv90");
   });
 
-  it("実装済み11ジョブは選べ、未実装ジョブは「未対応」で選べない", () => {
+  it("実装済み12ジョブは選べ、未実装ジョブは「未対応」で選べない", () => {
     renderPicker();
     const dialog = openPicker();
-    for (const name of ["白魔道士", "竜騎士", "詩人", "ピクトマンサー", "黒魔道士", "侍", "モンク", "学者", "占星術師", "賢者", "ナイト"]) {
+    for (const name of ["白魔道士", "竜騎士", "詩人", "ピクトマンサー", "黒魔道士", "侍", "モンク", "学者", "占星術師", "賢者", "ナイト", "戦士"]) {
       expect(within(dialog).getByRole("button", { name: new RegExp(`^[A-Z]{3}\\s?${name}$`) })).toBeEnabled();
     }
-    const warrior = within(dialog).getByRole("button", { name: /戦士/ });
-    expect(warrior).toBeDisabled();
-    expect(warrior).toHaveTextContent("未対応");
+    const darkKnight = within(dialog).getByRole("button", { name: /暗黒騎士/ });
+    expect(darkKnight).toBeDisabled();
+    expect(darkKnight).toHaveTextContent("未対応");
   });
 
   it("ジョブを選ぶと onJobChange が選んだジョブIDで呼ばれ、パネルが閉じる", () => {
@@ -132,7 +132,7 @@ describe("JobPicker（英語）", () => {
     expect(within(dialog).getByText("Potencies at Lv90 may not be accurate")).toBeInTheDocument();
     expect(within(dialog).getByText("Magical Ranged DPS")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /^[A-Z]{3}\s?Black Mage$/ })).toBeEnabled();
-    expect(within(dialog).getByRole("button", { name: /Warrior/ })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: /Dark Knight/ })).toBeDisabled();
     expect(within(dialog).getByRole("searchbox", { name: "Search jobs" })).toHaveAttribute(
       "placeholder",
       "Filter by job name or abbreviation (e.g. Black Mage, BLM)"
