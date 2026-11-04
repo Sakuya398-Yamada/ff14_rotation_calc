@@ -161,9 +161,10 @@ Saving a timeline to the server with "Save & share" at the top of the screen cre
 
 ### Q. I want to find a saved timeline later
 
-With "Saved timelines" at the top of the screen, you can list the timelines saved in this browser, newest first. Even if you forgot to note a share URL, you can choose the timeline from the list and open it. Each row of the list is a link to its share URL, so you can also open it in a new tab or copy the URL.
+With "Saved timelines" at the top of the screen, you can list the timelines saved in this browser, newest first. Even if you forgot to note a share URL, you can choose the timeline from the list and open it. Each row of the list is a link to its share URL, so you can also open it in a new tab.
 
 - Only timelines saved in the same browser appear in the list (there is no login; your browser is identified by a cookie). Timelines saved in other browsers or on other devices do not appear
+- With "Copy" on each row of the list, you can copy the share URL of that row
 - With "Delete" on each row of the list, you can delete a saved timeline. Once deleted, it can no longer be opened from its share URL, even by people you shared the URL with. This cannot be undone
 - If you clear the browser's browsing data (site data), or 400 days pass without saving or viewing the list, the timelines saved until then no longer appear in the list and can no longer be deleted. The timelines themselves remain on the server, so they can still be opened from their share URLs
 
