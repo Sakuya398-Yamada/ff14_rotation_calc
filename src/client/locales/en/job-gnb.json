@@ -1,0 +1,145 @@
+{
+  "skills": {
+    "keen-edge": {
+      "name": "Keen Edge"
+    },
+    "brutal-shell": {
+      "name": "Brutal Shell"
+    },
+    "solid-barrel": {
+      "name": "Solid Barrel"
+    },
+    "demon-slice": {
+      "name": "Demon Slice"
+    },
+    "demon-slaughter": {
+      "name": "Demon Slaughter"
+    },
+    "burst-strike": {
+      "name": "Burst Strike"
+    },
+    "fated-circle": {
+      "name": "Fated Circle"
+    },
+    "double-down": {
+      "name": "Double Down"
+    },
+    "gnashing-fang": {
+      "name": "Gnashing Fang"
+    },
+    "savage-claw": {
+      "name": "Savage Claw"
+    },
+    "wicked-talon": {
+      "name": "Wicked Talon"
+    },
+    "continuation": {
+      "name": "Continuation"
+    },
+    "jugular-rip": {
+      "name": "Jugular Rip"
+    },
+    "abdomen-tear": {
+      "name": "Abdomen Tear"
+    },
+    "eye-gouge": {
+      "name": "Eye Gouge"
+    },
+    "hypervelocity": {
+      "name": "Hypervelocity"
+    },
+    "fated-brand": {
+      "name": "Fated Brand"
+    },
+    "no-mercy": {
+      "name": "No Mercy"
+    },
+    "sonic-break": {
+      "name": "Sonic Break"
+    },
+    "bloodfest": {
+      "name": "Bloodfest"
+    },
+    "reign-of-beasts": {
+      "name": "Reign of Beasts"
+    },
+    "noble-blood": {
+      "name": "Noble Blood"
+    },
+    "lion-heart": {
+      "name": "Lion Heart"
+    },
+    "lightning-shot": {
+      "name": "Lightning Shot"
+    },
+    "danger-zone": {
+      "name": "Danger Zone"
+    },
+    "blasting-zone": {
+      "name": "Blasting Zone"
+    },
+    "bow-shock": {
+      "name": "Bow Shock"
+    }
+  },
+  "buffs": {
+    "no-mercy": {
+      "name": "No Mercy",
+      "shortName": "No\nMercy"
+    },
+    "ready-to-break": {
+      "name": "Ready to Break",
+      "shortName": "Ready to\nBreak"
+    },
+    "bloodfest": {
+      "name": "Bloodfest",
+      "shortName": "Blood-\nfest"
+    },
+    "ready-to-reign": {
+      "name": "Ready to Reign",
+      "shortName": "Ready to\nReign"
+    },
+    "ready-to-rip": {
+      "name": "Ready to Rip",
+      "shortName": "Ready\nto Rip"
+    },
+    "ready-to-tear": {
+      "name": "Ready to Tear",
+      "shortName": "Ready\nto Tear"
+    },
+    "ready-to-gouge": {
+      "name": "Ready to Gouge",
+      "shortName": "Ready to\nGouge"
+    },
+    "ready-to-blast": {
+      "name": "Ready to Blast",
+      "shortName": "Ready to\nBlast"
+    },
+    "ready-to-raze": {
+      "name": "Ready to Raze",
+      "shortName": "Ready to\nRaze"
+    },
+    "savage-claw-ready": {
+      "name": "Savage Claw Ready",
+      "shortName": "Savage\nReady"
+    },
+    "wicked-talon-ready": {
+      "name": "Wicked Talon Ready",
+      "shortName": "Wicked\nReady"
+    },
+    "noble-blood-ready": {
+      "name": "Noble Blood Ready",
+      "shortName": "Noble\nReady"
+    },
+    "lion-heart-ready": {
+      "name": "Lion Heart Ready",
+      "shortName": "Lion\nReady"
+    }
+  },
+  "resources": {
+    "cartridge": {
+      "name": "Cartridge",
+      "shortName": "Cart-\nridge"
+    }
+  }
+}

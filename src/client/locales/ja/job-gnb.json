@@ -1,0 +1,145 @@
+{
+  "skills": {
+    "keen-edge": {
+      "name": "キーンエッジ"
+    },
+    "brutal-shell": {
+      "name": "ブルータルシェル"
+    },
+    "solid-barrel": {
+      "name": "ソリッドバレル"
+    },
+    "demon-slice": {
+      "name": "デーモンスライス"
+    },
+    "demon-slaughter": {
+      "name": "デーモンスローター"
+    },
+    "burst-strike": {
+      "name": "バーストストライク"
+    },
+    "fated-circle": {
+      "name": "フェイテッドサークル"
+    },
+    "double-down": {
+      "name": "ダブルダウン"
+    },
+    "gnashing-fang": {
+      "name": "ビートファング"
+    },
+    "savage-claw": {
+      "name": "サベッジクロウ"
+    },
+    "wicked-talon": {
+      "name": "ウィケッドタロン"
+    },
+    "continuation": {
+      "name": "コンティニュエーション"
+    },
+    "jugular-rip": {
+      "name": "ジャギュラーリップ"
+    },
+    "abdomen-tear": {
+      "name": "アブドメンテアー"
+    },
+    "eye-gouge": {
+      "name": "アイガウジ"
+    },
+    "hypervelocity": {
+      "name": "ハイパーヴェロシティ"
+    },
+    "fated-brand": {
+      "name": "フェイテッドブランド"
+    },
+    "no-mercy": {
+      "name": "ノー・マーシー"
+    },
+    "sonic-break": {
+      "name": "ソニックブレイク"
+    },
+    "bloodfest": {
+      "name": "ブラッドソイル"
+    },
+    "reign-of-beasts": {
+      "name": "ライズ・オブ・ハート"
+    },
+    "noble-blood": {
+      "name": "ルーラー・オブ・ハート"
+    },
+    "lion-heart": {
+      "name": "エンド・オブ・ハート"
+    },
+    "lightning-shot": {
+      "name": "サンダーバレット"
+    },
+    "danger-zone": {
+      "name": "デンジャーゾーン"
+    },
+    "blasting-zone": {
+      "name": "ブラスティングゾーン"
+    },
+    "bow-shock": {
+      "name": "バウショック"
+    }
+  },
+  "buffs": {
+    "no-mercy": {
+      "name": "ノー・マーシー",
+      "shortName": "ﾉｰ\nﾏｰｼｰ"
+    },
+    "ready-to-break": {
+      "name": "ソニックブレイク実行可",
+      "shortName": "ｿﾆｯｸ\n実行可"
+    },
+    "bloodfest": {
+      "name": "ブラッドソイル",
+      "shortName": "ﾌﾞﾗｯﾄﾞ\nｿｲﾙ"
+    },
+    "ready-to-reign": {
+      "name": "ハートコンボ実行可",
+      "shortName": "ﾊｰﾄ\n実行可"
+    },
+    "ready-to-rip": {
+      "name": "ジャギュラーリップ実行可",
+      "shortName": "ｼﾞｬｷﾞｭ\n実行可"
+    },
+    "ready-to-tear": {
+      "name": "アブドメンテアー実行可",
+      "shortName": "ｱﾌﾞﾄﾞ\n実行可"
+    },
+    "ready-to-gouge": {
+      "name": "アイガウジ実行可",
+      "shortName": "ｱｲｶﾞｳｼﾞ\n実行可"
+    },
+    "ready-to-blast": {
+      "name": "ハイパーヴェロシティ実行可",
+      "shortName": "ﾊｲﾊﾟｰ\n実行可"
+    },
+    "ready-to-raze": {
+      "name": "フェイテッドブランド実行可",
+      "shortName": "ﾌﾞﾗﾝﾄﾞ\n実行可"
+    },
+    "savage-claw-ready": {
+      "name": "サベッジクロウ実行可",
+      "shortName": "ｻﾍﾞｯｼﾞ\n実行可"
+    },
+    "wicked-talon-ready": {
+      "name": "ウィケッドタロン実行可",
+      "shortName": "ｳｨｹｯﾄﾞ\n実行可"
+    },
+    "noble-blood-ready": {
+      "name": "ルーラー・オブ・ハート実行可",
+      "shortName": "ﾙｰﾗｰ\n実行可"
+    },
+    "lion-heart-ready": {
+      "name": "エンド・オブ・ハート実行可",
+      "shortName": "ｴﾝﾄﾞ\n実行可"
+    }
+  },
+  "resources": {
+    "cartridge": {
+      "name": "ソイル",
+      "shortName": "ソイル"
+    }
+  }
+}
