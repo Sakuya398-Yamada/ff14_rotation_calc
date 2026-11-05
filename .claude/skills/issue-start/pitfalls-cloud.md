@@ -58,16 +58,23 @@
 
 ## クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない
 
-- **条件**: Claude Code のクラウドセッション（Web のセッション・ルーティン）で、push・リモートのブランチの削除・古いブランチの取り込みをするとき
+- **条件**: Claude Code のクラウドセッション（Web のセッション・ルーティン）で、push・リモートのブランチの削除をするとき
 - **症状**:
   - 割り当て以外のブランチ（`claude/*` 以外の名前も）への push は、git のプロキシとしては通る。止めるのは、セッションの指示と、リポジトリに GitHub のブランチ保護・ルールセットがあればそれで、ルーティンの公式ドキュメントも "Claude pushes its work to a branch prefixed with `claude/` unless your prompt directs it to push to another branch" と書いている
-  - リモートのブランチの削除は拒まれる。`git push --delete` は `send-pack: unexpected disconnect while reading sideband packet` → `fatal: the remote end hung up unexpectedly` で終わり、ブランチは残る。REST の refs の DELETE も、ブランチ名の `#` を `%23` にすると `Request path could not be canonicalized` で拒まれる
-  - clone が shallow（既定ブランチの直近数十コミット）のことがある。古いブランチと既定ブランチの merge-base が見つからず、`git merge` が `refusing to merge unrelated histories` で止まる
+  - リモートのブランチの削除は拒まれる。`git push --delete` は `send-pack: unexpected disconnect while reading sideband packet` → `fatal: the remote end hung up unexpectedly` で終わり、ブランチは残る。REST の refs の DELETE も、名前に `#` が無くても `Write access to this GitHub API path is not permitted through this proxy. (HTTP 403)` で拒まれる（`#` を `%23` にすると `Request path could not be canonicalized`）
 - **回避**:
   - push 先は、セッションの指示にあるブランチか、割り当てられたブランチにする。プロキシが通しても、指示に無いブランチへは push しない
-  - ブランチの削除は、実行するコマンドを示してユーザーに頼む（`phases/01-no-repo-change.md`「GitHub 上の操作だけで終わる Issue」手順 2）
-  - shallow かどうかは `git rev-parse --is-shallow-repository` で見る。`true` なら、取り込む前に `git fetch --unshallow origin` で全履歴を取る（還元元では数秒・約 20MiB）
-- **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#132。別ブランチへの push が通ることは、還元元の報告とルーティンの公式ドキュメントに拠る（このテンプレート元では試していない）。`git push --delete` の拒否は、このテンプレート元のセッションでも同じメッセージで確かめた。REST の DELETE と shallow clone は還元元の報告で、このテンプレート元のセッションの clone は shallow ではなかった（環境やリポジトリの大きさで変わる）
+  - ブランチの削除は、試さずに、実行するコマンドを示してユーザーに頼む（`phases/01-no-repo-change.md`「GitHub 上の操作だけで終わる Issue」手順 2）
+- **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#132、2026-11 / issue-driven-dev-starter#290。別ブランチへの push が通ることは、還元元の報告とルーティンの公式ドキュメントに拠る（このテンプレート元では試していない）。`git push --delete` の拒否は、このテンプレート元のセッションでも同じメッセージで確かめた。REST の DELETE は還元元の報告
+
+## クラウドセッションの clone は shallow のことがあり、履歴を遡る git がエラー無しで途中で止まる
+
+- **条件**: Claude Code のクラウドセッションで、`git rev-parse --is-shallow-repository` が `true`（既定ブランチの直近数十コミットだけの clone）のとき
+- **症状**:
+  - `git blame` は、境目より古い行をすべて境目のコミットのものとして返す（行頭に `^` が付く）。`git log -S '<文字列>'` は、境目のコミットを文字列を入れたコミットとして返す。`git log --since=<日時>` は、境目より前の分を黙って落とす。どれもエラーにならない
+  - 古いブランチと既定ブランチの merge-base が見つからず、`git merge` が `refusing to merge unrelated histories` で止まる
+- **回避**: 履歴を遡る調査や古いブランチの取り込みの前に `git rev-parse --is-shallow-repository` を見て、`true` なら `git fetch --unshallow origin <既定ブランチ>` で全履歴を取る（拒まれたら `git fetch --depth=<N> origin <既定ブランチ>`。還元元では数秒・約 20MiB）
+- **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#132、2026-11 / issue-driven-dev-starter#291（このテンプレート元のセッションの clone も 54 コミットで、`git blame` が `^` 付きの境目のコミットを、`git log -S` が境目のコミットを返し、`git log --since` は境目より前を落とした。`--depth=<N>` は確かめていない）
 
 ## クラウドセッションの auto mode では、allow に当たる Bash も分類器が判定する
 
