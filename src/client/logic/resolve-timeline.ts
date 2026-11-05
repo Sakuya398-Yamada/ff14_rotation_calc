@@ -1489,6 +1489,20 @@ export function resolveTimeline(
         }
       };
 
+      // このスキルが付与するバフで上限が上がるリソースは、上がった上限で獲得を数える
+      // （ブラッドソイルはソイルの上限を 6 に上げて 3 付与する。バフの付与はリソース変動より後なので、ここで先に反映する）
+      const appliedBuffIds = skill.buffApplications ?? [];
+      if (appliedBuffIds.length > 0) {
+        const buffsWithApplied: ActiveBuff[] = [
+          ...currentActiveBuffs,
+          ...appliedBuffIds.map((buffId) => ({ buffId, startTime, endTime: startTime })),
+        ];
+        for (const res of resources) {
+          if (!res.whileBuffModifiers?.some((m) => appliedBuffIds.includes(m.buffId))) continue;
+          resourceDefMap.set(res.id, { ...res, maxStacks: getEffectiveMaxStacks(res, buffsWithApplied) });
+        }
+      }
+
       // リソース変動を適用（buffSkippableResource でスキップ対象になった負の変動は除外）
       // 上で計算済みの effectiveResourceChanges（バフによるコスト倍率を反映済み）を使う
       if (effectiveResourceChanges) {

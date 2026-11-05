@@ -58,6 +58,8 @@ export interface TraitPotencyOverride {
   comboBuffApplications?: string[];
   /** 変更後のコンボ成立時のリソース変動（配列ごと置き換える。undefinedの場合は変更なし） */
   comboResourceChanges?: Skill["comboResourceChanges"];
+  /** 変更後のリソース変動（配列ごと置き換える。undefinedの場合は変更なし。例: ブラッドソイルのソイル獲得は Lv88 で 2 → 3） */
+  resourceChanges?: Skill["resourceChanges"];
   /** 変更後のバフ消費のOR条件（配列ごと置き換える。undefinedの場合は変更なし） */
   buffConsumptionAnyOf?: Skill["buffConsumptionAnyOf"];
   /** 変更後のバフ有効時の威力上書き（配列ごと置き換える。undefinedの場合は変更なし） */
@@ -355,6 +357,11 @@ export interface ResourceDefinition {
   showAutoGenerateTicks?: boolean;
   /** 指定バフの効果中だけ変わる性質（例: 軍神のパイオン中の詩心最大 4・ヘイスト） */
   whileBuffModifiers?: ResourceBuffModifier[];
+  /**
+   * 特性で変わる性質。traitLevel 以上のレベルで maxStacks・whileBuffModifiers（配列ごと）を置き換え、traitLevel の昇順に重ねる。
+   * 例: ガンブレイカーのソイルは Lv88 で最大 2 → 3、ブラッドソイル中の最大 4 → 6
+   */
+  traitOverrides?: { traitLevel: number; maxStacks?: number; whileBuffModifiers?: ResourceBuffModifier[] }[];
   /** 指定バフのいずれかが時間切れ・排他グループの上書きで消えたときに 0 に戻す（例: 歌が終わると詩心が消える） */
   resetOnBuffEnd?: string[];
   /** 表示色 */

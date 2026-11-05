@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getSkillsForLevel } from "../skill-level";
-import type { Skill, PlayerLevel } from "../../types/skill";
+import { getSkillsForLevel, getResourcesForLevel } from "../skill-level";
+import type { Skill, PlayerLevel, ResourceDefinition } from "../../types/skill";
 
 function makeSkill(overrides: Partial<Skill> & { id: string }): Skill {
   return {
@@ -112,5 +112,46 @@ describe("getSkillsForLevel", () => {
 
       expect(result.comboBuffApplications).toEqual(expected);
     });
+  });
+
+  describe("traitPotencyOverrides の resourceChanges", () => {
+    it.each([
+      { level: 80, amount: 2 },
+      { level: 90, amount: 3 },
+    ])("Lv88 で 2 → 3 になる獲得量は Lv$level で $amount", ({ level, amount }) => {
+      const skills: Skill[] = [
+        makeSkill({
+          id: "bloodfest",
+          type: "ogcd",
+          resourceChanges: [{ resourceId: "cartridge", amount: 2 }],
+          traitPotencyOverrides: [{ traitLevel: 88, resourceChanges: [{ resourceId: "cartridge", amount: 3 }] }],
+        }),
+      ];
+
+      const [result] = getSkillsForLevel(skills, level as PlayerLevel, new Set(), new Set(["cartridge"]));
+
+      expect(result.resourceChanges).toEqual([{ resourceId: "cartridge", amount }]);
+    });
+  });
+});
+
+describe("getResourcesForLevel の traitOverrides", () => {
+  const cartridge: ResourceDefinition = {
+    id: "cartridge",
+    maxStacks: 2,
+    color: "",
+    acquiredLevel: 30,
+    whileBuffModifiers: [{ buffId: "bloodfest", maxStacks: 4 }],
+    traitOverrides: [{ traitLevel: 88, maxStacks: 3, whileBuffModifiers: [{ buffId: "bloodfest", maxStacks: 6 }] }],
+  };
+
+  it.each([
+    { level: 80, maxStacks: 2, whileBuff: 4 },
+    { level: 90, maxStacks: 3, whileBuff: 6 },
+  ])("Lv$level の上限は $maxStacks、バフ中は $whileBuff", ({ level, maxStacks, whileBuff }) => {
+    const [result] = getResourcesForLevel([cartridge], level as PlayerLevel);
+
+    expect(result.maxStacks).toBe(maxStacks);
+    expect(result.whileBuffModifiers).toEqual([{ buffId: "bloodfest", maxStacks: whileBuff }]);
   });
 });

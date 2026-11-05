@@ -19,6 +19,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   let buffApplications = skill.buffApplications;
   let comboBuffApplications = skill.comboBuffApplications;
   let comboResourceChanges = skill.comboResourceChanges;
+  let resourceChanges = skill.resourceChanges;
   let buffConsumptionAnyOf = skill.buffConsumptionAnyOf;
   let conditionalPotencyBuffs = skill.conditionalPotencyBuffs;
 
@@ -37,6 +38,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
       if (override.buffApplications !== undefined) buffApplications = override.buffApplications;
       if (override.comboBuffApplications !== undefined) comboBuffApplications = override.comboBuffApplications;
       if (override.comboResourceChanges !== undefined) comboResourceChanges = override.comboResourceChanges;
+      if (override.resourceChanges !== undefined) resourceChanges = override.resourceChanges;
       if (override.buffConsumptionAnyOf !== undefined) buffConsumptionAnyOf = override.buffConsumptionAnyOf;
       if (override.conditionalPotencyBuffs !== undefined) conditionalPotencyBuffs = override.conditionalPotencyBuffs;
     }
@@ -54,6 +56,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     buffApplications === skill.buffApplications &&
     comboBuffApplications === skill.comboBuffApplications &&
     comboResourceChanges === skill.comboResourceChanges &&
+    resourceChanges === skill.resourceChanges &&
     buffConsumptionAnyOf === skill.buffConsumptionAnyOf &&
     conditionalPotencyBuffs === skill.conditionalPotencyBuffs
   ) {
@@ -73,6 +76,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     buffApplications,
     comboBuffApplications,
     comboResourceChanges,
+    resourceChanges,
     buffConsumptionAnyOf,
     conditionalPotencyBuffs,
   };
@@ -200,5 +204,22 @@ export function getBuffsForLevel(allBuffs: BuffDefinition[], level: PlayerLevel)
  * プレイヤーレベルに応じたリソース一覧を返す
  */
 export function getResourcesForLevel(allResources: ResourceDefinition[], level: PlayerLevel): ResourceDefinition[] {
-  return allResources.filter((r) => !r.acquiredLevel || r.acquiredLevel <= level);
+  return allResources
+    .filter((r) => !r.acquiredLevel || r.acquiredLevel <= level)
+    .map((r) => applyResourceTraitOverrides(r, level));
+}
+
+/**
+ * 特性による上限の変動（traitOverrides）を適用したリソースを返す
+ */
+function applyResourceTraitOverrides(resource: ResourceDefinition, level: number): ResourceDefinition {
+  if (!resource.traitOverrides) return resource;
+  let adjusted = resource;
+  const sorted = [...resource.traitOverrides].sort((a, b) => a.traitLevel - b.traitLevel);
+  for (const override of sorted) {
+    if (level < override.traitLevel) continue;
+    if (override.maxStacks !== undefined) adjusted = { ...adjusted, maxStacks: override.maxStacks };
+    if (override.whileBuffModifiers !== undefined) adjusted = { ...adjusted, whileBuffModifiers: override.whileBuffModifiers };
+  }
+  return adjusted;
 }
