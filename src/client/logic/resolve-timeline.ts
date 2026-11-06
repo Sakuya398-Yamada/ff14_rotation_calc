@@ -1399,6 +1399,8 @@ export function resolveTimeline(
     //   複数の instantCast バフが同時アクティブな場合は 1 発につき 1 つだけ消費する
     //   （例: 迅速魔 + 三連魔 → 迅速魔のみ消費、三連魔は据え置き）
     const consumeBuffTargets = new Set<string>();
+    // 実行前に効いていたバフそのもの。このスキルの付与・延長で置き換わったバフ（付け直したもの）は消費しない
+    const buffsBeforeUse = new Set(currentActiveBuffs);
     if (skill.type === "gcd") {
       // castTimeMultiplier で詠唱が 0 になった魔法（ライトスピード中）では、実機どおり迅速魔等を消費しない
       const isCastingGcd = !!skill.castTime && skill.castTime > 0
@@ -1916,7 +1918,7 @@ export function resolveTimeline(
     if (!hasError && consumeBuffTargets.size > 0) {
       for (const buffId of consumeBuffTargets) {
         const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
-        if (idx >= 0) {
+        if (idx >= 0 && buffsBeforeUse.has(currentActiveBuffs[idx])) {
           if (unconfirmedProcBuffs.has(buffId)) consumedUnconfirmed.push(buffId);
           const ab = currentActiveBuffs[idx];
           if (ab.stacks !== undefined) {

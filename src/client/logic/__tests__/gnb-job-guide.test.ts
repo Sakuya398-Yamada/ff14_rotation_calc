@@ -41,7 +41,8 @@ function expectNoError(e: ResolvedTimelineEntry) {
 }
 
 const cartridges = (e: ResolvedTimelineEntry) => e.resourceSnapshot["cartridge"];
-const hasBuff = (e: ResolvedTimelineEntry, buffId: string) => e.activeBuffs.some((b) => b.buffId === buffId);
+const buffOf = (e: ResolvedTimelineEntry, buffId: string) => e.activeBuffs.find((b) => b.buffId === buffId);
+const hasBuff = (e: ResolvedTimelineEntry, buffId: string) => buffOf(e, buffId) !== undefined;
 const missingBuffIds = (e: ResolvedTimelineEntry) =>
   e.comboErrors.filter((c) => c.kind === "missing").map((c) => c.buffId);
 const last = <T>(xs: T[]) => xs[xs.length - 1];
@@ -290,6 +291,17 @@ describe("GNB: ビートファング系とコンティニュエーション", ()
     const third = last(e);
     expect(third.startTime).toBeLessThan(30);
     expect(third.recastError).toBe(true);
+  });
+
+  it.each([
+    ["burst-strike", "hypervelocity", "ready-to-blast"],
+    ["fated-circle", "fated-brand", "ready-to-raze"],
+  ])("%s を続けて使うと、2 回目で付け直した「〜実行可」は残り、コンティニュエーションは %s に変化する", (gcd, resolved, buffId) => {
+    const e = setup(100).resolve(["bloodfest", gcd, gcd, "continuation"]).entries;
+    e.forEach(expectNoError);
+    expect(hasBuff(e[2], buffId)).toBe(true);
+    expect(buffOf(e[2], buffId)!.startTime).toBe(e[2].startTime);
+    expect(last(e).resolvedSkillId).toBe(resolved);
   });
 
   it.each<[PlayerLevel, string, string, number | null]>([
