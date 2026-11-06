@@ -15,5 +15,7 @@ export const GNB_RESOURCES: ResourceDefinition[] = [
     acquiredLevel: 30,
     whileBuffModifiers: [{ buffId: "bloodfest", maxStacks: 4 }],
     traitOverrides: [{ traitLevel: 88, maxStacks: 3, whileBuffModifiers: [{ buffId: "bloodfest", maxStacks: 6 }] }],
+    // ブラッドソイル中の 6 ドットを横一列にすると、アビリティを挟んだときに隣のドットと重なるため 3×2 で並べる
+    stacksPerRow: 3,
   },
 ];
