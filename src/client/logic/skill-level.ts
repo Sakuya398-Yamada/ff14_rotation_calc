@@ -219,6 +219,7 @@ function applyResourceTraitOverrides(resource: ResourceDefinition, level: number
   for (const override of sorted) {
     if (level < override.traitLevel) continue;
     if (override.maxStacks !== undefined) adjusted = { ...adjusted, maxStacks: override.maxStacks };
+    if (override.displayMaxStacks !== undefined) adjusted = { ...adjusted, displayMaxStacks: override.displayMaxStacks };
     if (override.whileBuffModifiers !== undefined) adjusted = { ...adjusted, whileBuffModifiers: override.whileBuffModifiers };
   }
   return adjusted;

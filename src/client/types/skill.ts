@@ -358,10 +358,10 @@ export interface ResourceDefinition {
   /** 指定バフの効果中だけ変わる性質（例: 軍神のパイオン中の詩心最大 4・ヘイスト） */
   whileBuffModifiers?: ResourceBuffModifier[];
   /**
-   * 特性で変わる性質。traitLevel 以上のレベルで maxStacks・whileBuffModifiers（配列ごと）を置き換え、traitLevel の昇順に重ねる。
-   * 例: ガンブレイカーのソイルは Lv88 で最大 2 → 3、ブラッドソイル中の最大 4 → 6
+   * 特性で変わる性質。traitLevel 以上のレベルで maxStacks・displayMaxStacks・whileBuffModifiers（配列ごと）を置き換え、traitLevel の昇順に重ねる。
+   * 例: ガンブレイカーのソイルは Lv88 で最大 2 → 3（表示のドットも 2 → 3）、ブラッドソイル中の最大 4 → 6
    */
-  traitOverrides?: { traitLevel: number; maxStacks?: number; whileBuffModifiers?: ResourceBuffModifier[] }[];
+  traitOverrides?: { traitLevel: number; maxStacks?: number; displayMaxStacks?: number; whileBuffModifiers?: ResourceBuffModifier[] }[];
   /** 指定バフのいずれかが時間切れ・排他グループの上書きで消えたときに 0 に戻す（例: 歌が終わると詩心が消える） */
   resetOnBuffEnd?: string[];
   /** 表示色 */

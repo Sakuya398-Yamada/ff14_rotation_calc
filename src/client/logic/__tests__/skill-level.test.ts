@@ -139,19 +139,23 @@ describe("getResourcesForLevel の traitOverrides", () => {
   const cartridge: ResourceDefinition = {
     id: "cartridge",
     maxStacks: 2,
+    displayMaxStacks: 2,
     color: "",
     acquiredLevel: 30,
     whileBuffModifiers: [{ buffId: "bloodfest", maxStacks: 4 }],
-    traitOverrides: [{ traitLevel: 88, maxStacks: 3, whileBuffModifiers: [{ buffId: "bloodfest", maxStacks: 6 }] }],
+    traitOverrides: [
+      { traitLevel: 88, maxStacks: 3, displayMaxStacks: 3, whileBuffModifiers: [{ buffId: "bloodfest", maxStacks: 6 }] },
+    ],
   };
 
   it.each([
     { level: 80, maxStacks: 2, whileBuff: 4 },
     { level: 90, maxStacks: 3, whileBuff: 6 },
-  ])("Lv$level の上限は $maxStacks、バフ中は $whileBuff", ({ level, maxStacks, whileBuff }) => {
+  ])("Lv$level の上限とドットの数は $maxStacks、バフ中の上限は $whileBuff", ({ level, maxStacks, whileBuff }) => {
     const [result] = getResourcesForLevel([cartridge], level as PlayerLevel);
 
     expect(result.maxStacks).toBe(maxStacks);
+    expect(result.displayMaxStacks).toBe(maxStacks);
     expect(result.whileBuffModifiers).toEqual([{ buffId: "bloodfest", maxStacks: whileBuff }]);
   });
 });
