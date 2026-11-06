@@ -1,8 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq, isNull, lt, lte, or, sql } from "drizzle-orm";
-import { Hono, type Context } from "hono";
+import { and, desc, eq, inArray, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
+import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { getCookie, setCookie } from "hono/cookie";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
 import { nanoid } from "nanoid";
@@ -10,49 +9,43 @@ import type { MyTimelinesResponse } from "../../client/logic/my-timelines";
 import type { TimelineResponse } from "../../client/logic/shared-timeline";
 import { timelines } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
-import { generateOwnerToken, hashOwnerToken, isOwnerToken } from "../services/owner-token";
+import { generateOwnerToken, hashOwnerToken } from "../services/owner-token";
 import { MAX_TURNSTILE_TOKEN_LENGTH, verifyTurnstileToken } from "../services/turnstile";
+import { linkOwner, selectOwnerHashesOf } from "../services/user-owners";
+import { currentUserId } from "./auth";
+import { readOwnerToken, setOwnerCookie } from "./owner-cookie";
 import { requireJson } from "./require-json";
 import { myTimelinesQuerySchema, saveTimelineRequestSchema, timelineIdParamSchema } from "./timelines-schema";
 
-type RouteEnv = { Bindings: Bindings; Variables: { ownerHash: string } };
+type RouteEnv = {
+  Bindings: Bindings;
+  Variables: {
+    // 保存する行の持ち主
+    ownerHash: string;
+    // 削除できる行の持ち主。匿名トークンの owner_hash と、ログイン中ならユーザー（に紐づいた owner_hash）
+    deleter: { ownerHash?: string; userId?: string };
+    // 保存・削除のレート制限のキー。匿名トークンの owner_hash で、トークンの無いログイン中の削除ではユーザーの ID
+    rateLimitKey: string;
+  };
+};
 
-// RFC 6265bis の上限の 400 日
-const OWNER_COOKIE_MAX_AGE = 400 * 24 * 60 * 60;
 // #462 の実測で、最悪ケースの 1200 エントリが約 100KB
 const MAX_BODY_BYTES = 256 * 1024;
 const MY_TIMELINES_PAGE_SIZE = 20;
 
-/** Cookie の匿名トークン。無いか、形が不正なら undefined */
-function readOwnerToken(c: Context): string | undefined {
-  const token = getCookie(c, "owner", "host");
-  return token !== undefined && isOwnerToken(token) ? token : undefined;
-}
-
-function setOwnerCookie(c: Context, token: string) {
-  setCookie(c, "owner", token, { prefix: "host", httpOnly: true, sameSite: "Lax", maxAge: OWNER_COOKIE_MAX_AGE });
-}
-
 const ownerToken = createMiddleware<RouteEnv>(async (c, next) => {
   // 形の不正な値は無いものとして扱い、作り直す
   const token = readOwnerToken(c) ?? generateOwnerToken();
-  c.set("ownerHash", await hashOwnerToken(token));
+  const ownerHash = await hashOwnerToken(token);
+  c.set("ownerHash", ownerHash);
+  c.set("rateLimitKey", ownerHash);
   // 期限を延ばすため、既存のトークンでも毎回付け直す
   setOwnerCookie(c, token);
   await next();
 });
 
-// 削除用。トークンが無ければ、その持ち主の行も無いので、Cookie を発行せず DB にも触れずに「無い」と答える
-const requireOwnerToken = createMiddleware<RouteEnv>(async (c, next) => {
-  const token = readOwnerToken(c);
-  if (token === undefined) return c.json({ error: "not_found" }, 404);
-  c.set("ownerHash", await hashOwnerToken(token));
-  setOwnerCookie(c, token);
-  await next();
-});
-
 const rateLimit = createMiddleware<RouteEnv>(async (c, next) => {
-  const { success } = await c.env.TIMELINE_RATE_LIMITER.limit({ key: c.get("ownerHash") });
+  const { success } = await c.env.TIMELINE_RATE_LIMITER.limit({ key: c.get("rateLimitKey") });
   if (!success) return c.json({ error: "rate_limited" }, 429);
   await next();
 });
@@ -70,6 +63,21 @@ const turnstile = createMiddleware<RouteEnv>(async (c, next) => {
 });
 
 export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
+  // 削除用。匿名トークンもログインも無ければ、消せる行も無いので、Cookie を発行せず DB にも触れずに「無い」と答える
+  const requireDeleter = createMiddleware<RouteEnv>(async (c, next) => {
+    const token = readOwnerToken(c);
+    // 別の端末で保存した行も、ログイン中なら消せる。この端末に匿名トークンが無くてもよい
+    const userId = await currentUserId(c, getDb(c.env));
+    const ownerHash = token === undefined ? undefined : await hashOwnerToken(token);
+    // 保存と同じく匿名トークンで数える。トークンの無い端末では、ユーザーで数える（ID の形が owner_hash と違うので、キーはぶつからない）
+    const rateLimitKey = ownerHash ?? userId;
+    if (rateLimitKey === undefined) return c.json({ error: "not_found" }, 404);
+    if (token !== undefined) setOwnerCookie(c, token);
+    c.set("deleter", { ownerHash, userId });
+    c.set("rateLimitKey", rateLimitKey);
+    await next();
+  });
+
   return new Hono<RouteEnv>().post(
     "/",
     // csrf はフォームから送れる Content-Type だけを検査する。JSON の別オリジン送信は、CORS ヘッダを返さないのでプリフライトでブラウザが止める
@@ -95,6 +103,10 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
           .limit(1);
         if (!parent) return c.json({ error: "parent_not_found" }, 400);
       }
+      // ログイン中に保存したら、この匿名トークンもアカウントに紐づける（ログインの後に初めて保存した端末など）。
+      // すでに紐づいていれば書かない。別のユーザーに紐づいていても付け替えない
+      const userId = await currentUserId(c, db);
+      if (userId !== undefined) await linkOwner(db, c.get("ownerHash"), userId);
       const id = nanoid();
       await db.insert(timelines).values({
         id,
@@ -150,7 +162,7 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
   .delete(
     "/:id",
     csrf(),
-    requireOwnerToken,
+    requireDeleter,
     // POST と同じく、不正な id の連投も数えるため、検証より前に置く
     rateLimit,
     zValidator("param", timelineIdParamSchema, (result, c) => {
@@ -158,10 +170,23 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
     }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const deleted = await getDb(c.env)
+      const db = getDb(c.env);
+      const deleter = c.get("deleter");
+      const deleted = await db
         .update(timelines)
         .set({ deletedAt: sql`(unixepoch())` })
-        .where(and(eq(timelines.id, id), eq(timelines.ownerHash, c.get("ownerHash")), isNull(timelines.deletedAt)))
+        .where(
+          and(
+            eq(timelines.id, id),
+            or(
+              deleter.ownerHash === undefined ? undefined : eq(timelines.ownerHash, deleter.ownerHash),
+              deleter.userId === undefined
+                ? undefined
+                : inArray(timelines.ownerHash, selectOwnerHashesOf(db, deleter.userId)),
+            ),
+            isNull(timelines.deletedAt),
+          ),
+        )
         .returning({ id: timelines.id });
       // ほかの人の行・無い行・削除済みの行を区別しない（ほかの人の行があるかを外から分からないようにする）
       if (deleted.length === 0) return c.json({ error: "not_found" }, 404);
@@ -170,11 +195,25 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
   );
 }
 
+type MyTimelinesCursor = { createdAt: number; id: string };
+
 /**
  * 持ち主の行を新しい順に、次のページがあるか分かるよう 1 件多く選ぶ。
  * 同じ秒の行は id の降順に並べ、cursor（前のページの最後の行）より後ろだけを選ぶ
  */
-export function selectMyTimelines(db: AppDb, ownerHash: string, cursor?: { createdAt: number; id: string }) {
+export function selectMyTimelines(db: AppDb, ownerHash: string, cursor?: MyTimelinesCursor) {
+  return selectTimelinesOf(db, eq(timelines.ownerHash, ownerHash), cursor);
+}
+
+/**
+ * ログイン中の一覧。ユーザーに紐づいたすべての owner_hash の行を、selectMyTimelines と同じ順・同じ cursor で選ぶ。
+ * 順は owner_hash に依らない (created_at, id) なので、持ち主をまたいでもページの境界で重複も欠落もしない
+ */
+export function selectAccountTimelines(db: AppDb, userId: string, cursor?: MyTimelinesCursor) {
+  return selectTimelinesOf(db, inArray(timelines.ownerHash, selectOwnerHashesOf(db, userId)), cursor);
+}
+
+function selectTimelinesOf(db: AppDb, owner: SQL, cursor?: MyTimelinesCursor) {
   return db
     .select({
       id: timelines.id,
@@ -187,7 +226,7 @@ export function selectMyTimelines(db: AppDb, ownerHash: string, cursor?: { creat
     .from(timelines)
     .where(
       and(
-        eq(timelines.ownerHash, ownerHash),
+        owner,
         isNull(timelines.deletedAt),
         // 「created_at < ? OR (created_at = ? AND id < ?)」と同じ条件。その OR だけで書くと、値をパラメータで渡したときに
         // created_at がインデックスの範囲検索に使われず、持ち主の行を新しい方から全部たどることになる
@@ -207,12 +246,21 @@ export function createMyTimelinesRoute(getDb: (env: Bindings) => AppDb) {
       if (!result.success) return c.json({ error: "invalid_request" }, 400);
     }),
     async (c) => {
+      const db = getDb(c.env);
       const token = readOwnerToken(c);
-      // 一覧を見ただけでは Cookie を発行しない。トークンが無ければ、その持ち主の行も無い
-      if (token === undefined) return c.json({ items: [], nextCursor: null } satisfies MyTimelinesResponse);
-      setOwnerCookie(c, token);
+      const userId = await currentUserId(c, db);
       const { cursor } = c.req.valid("query");
-      const rows = await selectMyTimelines(getDb(c.env), await hashOwnerToken(token), cursor);
+      // ログイン中は、この端末の匿名トークンではなくアカウントで引く（この端末の匿名トークンも、ログインか保存で紐づいている）
+      const query =
+        userId !== undefined
+          ? selectAccountTimelines(db, userId, cursor)
+          : token !== undefined
+            ? selectMyTimelines(db, await hashOwnerToken(token), cursor)
+            : undefined;
+      // 一覧を見ただけでは Cookie を発行しない。トークンもログインも無ければ、その持ち主の行も無い
+      if (query === undefined) return c.json({ items: [], nextCursor: null } satisfies MyTimelinesResponse);
+      if (token !== undefined) setOwnerCookie(c, token);
+      const rows = await query;
       const page = rows.slice(0, MY_TIMELINES_PAGE_SIZE);
       const last = page[page.length - 1];
       return c.json({

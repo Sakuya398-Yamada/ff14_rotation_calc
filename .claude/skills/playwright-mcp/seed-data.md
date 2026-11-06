@@ -45,7 +45,7 @@ async (page) => {
 
 ### 匿名トークンの Cookie を入れる
 
-保存したタイムラインの持ち主は、Cookie `__Host-owner` の匿名トークンで見分ける（`src/server/routes/timelines.ts` の `readOwnerToken`）。決まったトークンの持ち主として確かめたいときは、アプリのページを開いた状態から `browser_run_code_unsafe` で Cookie を入れる（クラウドセッションの Chromium 153 + playwright 1.63 で動作検証済、2026-10-26、Issue #626）：
+保存したタイムラインの持ち主は、Cookie `__Host-owner` の匿名トークンで見分ける（`src/server/routes/owner-cookie.ts` の `readOwnerToken`）。決まったトークンの持ち主として確かめたいときは、アプリのページを開いた状態から `browser_run_code_unsafe` で Cookie を入れる（クラウドセッションの Chromium 153 + playwright 1.63 で動作検証済、2026-10-26、Issue #626）：
 
 ```js
 async (page) => {

@@ -78,3 +78,21 @@ export const sessions = sqliteTable("sessions", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+// 匿名トークンとユーザーの対応。ログインしたら、その匿名トークンで保存したタイムラインもアカウントから見えるようにする。
+// timelines は書き換えず、ここに行を足すだけで紐づける（#651 の結論コメント「データモデル」「匿名データの移行」）
+export const userOwners = sqliteTable(
+  "user_owners",
+  {
+    // timelines.owner_hash と同じ値。1 つの匿名トークンは 1 人のユーザーにだけ紐づく
+    ownerHash: text("owner_hash").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    linkedAt: integer("linked_at")
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  // ログイン中の一覧・削除で、ユーザーの owner_hash を引く
+  (t) => [index("idx_user_owners_user").on(t.userId)],
+);

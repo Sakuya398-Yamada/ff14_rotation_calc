@@ -7,8 +7,10 @@ import { z } from "zod";
 import { userIdentities, users } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
 import { buildAuthorizeUrl, createPkce, fetchDiscordUserId } from "../services/discord-oauth";
-import { generateOwnerToken, isOwnerToken } from "../services/owner-token";
+import { generateOwnerToken, hashOwnerToken, isOwnerToken } from "../services/owner-token";
 import { createSession, deleteSession, validateSession } from "../services/session";
+import { linkOwner } from "../services/user-owners";
+import { clearOwnerCookie, readOwnerToken, setOwnerCookie } from "./owner-cookie";
 import { requireJson } from "./require-json";
 
 type RouteEnv = { Bindings: Bindings };
@@ -75,6 +77,23 @@ function clearSessionCookie(c: Context) {
   deleteCookie(c, SESSION_COOKIE, { prefix: "host", httpOnly: true, sameSite: "Lax" });
 }
 
+/**
+ * ログイン中ならユーザーの ID（/api/me の loggedIn と同じ判定）。延長したら Cookie を付け直し、無効なセッションの Cookie は消す。
+ * ID が無い環境ではログインできないので、セッションの Cookie が残っていてもログインしていないものとし、DB を読まない
+ */
+export async function currentUserId<E extends { Bindings: Bindings }>(c: Context<E>, db: AppDb): Promise<string | undefined> {
+  if (!c.env.DISCORD_CLIENT_ID) return undefined;
+  const token = readSessionToken(c);
+  if (token === undefined) return undefined;
+  const session = await validateSession(db, token);
+  if (!session) {
+    clearSessionCookie(c);
+    return undefined;
+  }
+  if (session.refreshed) setSessionCookie(c, token, session.expiresAt);
+  return session.userId;
+}
+
 async function findOrCreateUser(db: AppDb, discordUserId: string): Promise<string> {
   const [identity] = await db
     .select({ userId: userIdentities.userId })
@@ -135,6 +154,13 @@ export function createAuthRoute(getDb: (env: Bindings) => AppDb) {
       });
       const db = getDb(c.env);
       const userId = await findOrCreateUser(db, discordUserId);
+      // このブラウザで匿名のまま保存したタイムラインも、アカウントから見えるようにする。確認は挟まない（#651）
+      const ownerToken = readOwnerToken(c);
+      if (ownerToken !== undefined && (await linkOwner(db, await hashOwnerToken(ownerToken), userId)) !== userId) {
+        // 別のユーザーに紐づいた匿名トークン（共用の PC で前の人が使っていたものなど）。前の人の保存は取り込まず、
+        // このブラウザには新しい匿名トークンを渡す。新しいトークンは、ログイン中に保存したときに紐づく
+        setOwnerCookie(c, generateOwnerToken());
+      }
       // ログインのたびに新しいトークンにする（セッション固定攻撃の対策）。前のセッションは使わなくなるので消す
       const previousToken = readSessionToken(c);
       if (previousToken !== undefined) await deleteSession(db, previousToken);
@@ -145,7 +171,13 @@ export function createAuthRoute(getDb: (env: Bindings) => AppDb) {
     // 保存の API と同じ CSRF 対策。ID が無い環境でも、残ったセッションを消せるように 404 にしない
     .post("/logout", csrf(), requireJson, async (c) => {
       const token = readSessionToken(c);
-      if (token !== undefined) await deleteSession(getDb(c.env), token);
+      if (token !== undefined) {
+        await deleteSession(getDb(c.env), token);
+        // 匿名トークンはログインで（その後の保存でも）アカウントに紐づいているので、消しても保存はアカウントに残る。
+        // 共用の PC で、次の人にこのブラウザの一覧を見せないために消す。セッションの Cookie が無ければ、ログインしていない人の
+        // 匿名トークン（どのアカウントにも紐づいていないことがある）なので消さない
+        clearOwnerCookie(c);
+      }
       clearSessionCookie(c);
       return c.body(null, 204);
     });
@@ -155,14 +187,7 @@ export function createAuthRoute(getDb: (env: Bindings) => AppDb) {
 export function createMeRoute(getDb: (env: Bindings) => AppDb) {
   return new Hono<RouteEnv>().get("/", async (c) => {
     if (!c.env.DISCORD_CLIENT_ID) return c.json({ loginAvailable: false, loggedIn: false } satisfies MeResponse);
-    const token = readSessionToken(c);
-    if (token === undefined) return c.json({ loginAvailable: true, loggedIn: false } satisfies MeResponse);
-    const session = await validateSession(getDb(c.env), token);
-    if (!session) {
-      clearSessionCookie(c);
-      return c.json({ loginAvailable: true, loggedIn: false } satisfies MeResponse);
-    }
-    if (session.refreshed) setSessionCookie(c, token, session.expiresAt);
-    return c.json({ loginAvailable: true, loggedIn: true } satisfies MeResponse);
+    const userId = await currentUserId(c, getDb(c.env));
+    return c.json({ loginAvailable: true, loggedIn: userId !== undefined } satisfies MeResponse);
   });
 }
