@@ -12,4 +12,16 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://ff14-rotation-calc.forestry-for.workers.dev/en/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://ff14-rotation-calc.forestry-for.workers.dev/en/" />
   </url>
+  <url>
+    <loc>https://ff14-rotation-calc.forestry-for.workers.dev/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ff14-rotation-calc.forestry-for.workers.dev/privacy" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ff14-rotation-calc.forestry-for.workers.dev/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ff14-rotation-calc.forestry-for.workers.dev/en/privacy" />
+  </url>
+  <url>
+    <loc>https://ff14-rotation-calc.forestry-for.workers.dev/en/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ff14-rotation-calc.forestry-for.workers.dev/privacy" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ff14-rotation-calc.forestry-for.workers.dev/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ff14-rotation-calc.forestry-for.workers.dev/en/privacy" />
+  </url>
 </urlset>

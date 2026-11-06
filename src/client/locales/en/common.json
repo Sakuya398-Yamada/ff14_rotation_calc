@@ -20,7 +20,88 @@
     "sharedInfo": "Opened shared timeline",
     "closeSharedInfo": "Close the shared timeline info",
     "contactLabel": "Bugs & requests:",
-    "mailLabel": "Email:"
+    "mailLabel": "Email:",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "privacyPolicyPage": {
+    "siteName": "FFXIV Rotation Calculator",
+    "documentTitle": "Privacy Policy | FFXIV Rotation Calculator",
+    "languageLink": "日本語",
+    "title": "Privacy Policy",
+    "intro": "This page explains what information FFXIV Rotation Calculator (\"this tool\") handles, how it is used, how long it is kept and how to request its deletion.",
+    "enactedOn": "Effective date: {{date}}",
+    "operator": {
+      "heading": "Operator",
+      "body": "This tool is run by {{name}}, an individual developer."
+    },
+    "stored": {
+      "heading": "Information stored on the server",
+      "intro": "The following information is stored in a Cloudflare database (D1).",
+      "timelinesLabel": "Saved timelines",
+      "timelines": "The content you save with \"Save & share\" (job, level, placed skills, stats and so on) and its title. Anyone with the share URL can view it.",
+      "ownerHashLabel": "Hash of the anonymous token",
+      "ownerHash": "A value that identifies the browser that saved a timeline. The token itself is not stored.",
+      "discordIdLabel": "Discord user ID",
+      "discordId": "Stored when you log in with Discord. This tool asks Discord only for the identify scope, and of the information it receives, it stores only your user ID (your username and avatar are not stored, and your email address is not received).",
+      "accountLinkLabel": "Links to your account",
+      "accountLink": "When you log in, timelines saved in that browser are linked to your account, so they also appear in your list when you log in from another browser.",
+      "sessionsLabel": "Login sessions",
+      "sessions": "A hash of the value that keeps you logged in, and its expiry."
+    },
+    "cookies": {
+      "heading": "Cookies",
+      "intro": "This tool sets the following three cookies. They are used only for saving and logging in, not for advertising or analytics.",
+      "owner": "Identifies the owner of saved timelines. Its expiry is extended each time you save, view your list or delete, and it expires 400 days after it was last used. It is also deleted when you log out.",
+      "session": "Keeps you logged in. It expires after 30 days (extended while you use the tool, up to 1 year). It is deleted when you log out.",
+      "discordOauth": "Used only while you log in with Discord. It holds values that verify the login (state and code_verifier) and the page to return to after logging in. It expires after 10 minutes and is deleted when you return from Discord."
+    },
+    "browserStorage": {
+      "heading": "Information kept only in your browser",
+      "body": "The timeline you are editing, your settings and recently used jobs are kept in your browser's localStorage. The only thing sent to the server is a timeline you save with \"Save & share\"."
+    },
+    "external": {
+      "heading": "External services",
+      "cloudflareLabel": "Cloudflare",
+      "cloudflare": "Hosts this tool and its database. When you open a page or save, your IP address and browser information are passed to Cloudflare.",
+      "cloudflarePolicy": "Cloudflare Privacy Policy",
+      "turnstileLabel": "Cloudflare Turnstile",
+      "turnstile": "Used for bot protection when you open the save dialog. Your IP address, browser information and similar data are passed to Cloudflare.",
+      "turnstilePolicy": "Turnstile Privacy Addendum",
+      "discordLabel": "Discord",
+      "discord": "Used for logging in. When you log in, this tool receives your user information from Discord (only your user ID is stored).",
+      "discordPolicy": "Discord Privacy Policy",
+      "googleFontsLabel": "Google Fonts",
+      "googleFonts": "Used to display text. When you open a page, your IP address and browser information are passed to Google.",
+      "googleFontsPolicy": "Google Privacy Policy"
+    },
+    "use": {
+      "heading": "How information is used",
+      "body": "The information is used only to save, share, list and delete timelines and to log you in. It is not used for advertising or analytics, and it is not sold or given to third parties (except where required by law)."
+    },
+    "retention": {
+      "heading": "Retention",
+      "timelines": "Saved timelines have no expiry. When you delete one, it no longer appears in your list or at its share URL, but the data remains on the server. To erase it completely, send a request as described in \"Deletion requests\" below.",
+      "account": "Your Discord user ID and the links to your account also have no expiry and are kept until you request their deletion.",
+      "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and are deleted when you log out.",
+      "backup": "So that the database can be restored if it breaks, it is backed up daily and 30 days of backups are kept on a device the operator manages. Erased data also disappears from the backups after 30 days."
+    },
+    "deletion": {
+      "heading": "Deletion requests",
+      "how": "Send a friend request to {{discord}} on Discord, then send your request by DM.",
+      "accountLabel": "Account information",
+      "account": "The user ID, links and sessions of the Discord account that sent the request are erased. If you also want the timelines linked to your account erased, say so in your request.",
+      "anonymousLabel": "Timelines saved without logging in",
+      "anonymous": "First delete the timeline from \"Saved timelines\" in this tool, then send your request with its share URL. Only timelines that have already been deleted are erased completely (only the owner can delete a timeline in this tool, so this confirms that you are the owner)."
+    },
+    "contact": {
+      "heading": "Contact",
+      "body": "Questions about this page are accepted at:",
+      "issuesLink": "GitHub Issues"
+    },
+    "changes": {
+      "heading": "Changes",
+      "body": "If this policy changes, this page will be updated."
+    }
   },
   "sharedTimeline": {
     "loadErrors": {

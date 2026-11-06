@@ -24,3 +24,20 @@ describe("App の見出し", () => {
     });
   });
 });
+
+describe("App のフッター", () => {
+  it("日本語では日本語のプライバシーポリシーにリンクする", () => {
+    render(<App />);
+    expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
+  });
+
+  describe("英語", () => {
+    beforeEach(() => i18next.changeLanguage("en"));
+    afterEach(() => i18next.changeLanguage("ja"));
+
+    it("英語のプライバシーポリシーにリンクする", () => {
+      render(<App />);
+      expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/en/privacy");
+    });
+  });
+});
