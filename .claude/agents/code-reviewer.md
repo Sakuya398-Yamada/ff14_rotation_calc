@@ -42,7 +42,7 @@ Rate each potential issue from 0 to 100 and verify it against the code before re
 - **75**: verified as likely real and impactful
 - **100**: certain; will happen in practice, or a verified violation of a rule that `CLAUDE.md` or `.claude/rules/*.md` states explicitly (quote the rule)
 
-**Only report issues with confidence >= 80.** Quality over quantity: a review with zero findings is a valid result.
+**Only report issues with confidence >= 80.** Quality over quantity: a review with zero findings is a valid result. Exception: when the caller passes decided specifications together with the premises they were decided on (current behavior, which data exists), report any code or data that contradicts a premise whatever its confidence, even if it is within the decided specification.
 
 ## Output Guidance
 

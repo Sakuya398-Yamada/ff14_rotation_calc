@@ -59,7 +59,3 @@
      1. まず `ToolSearch query: "select:mcp__github__subscribe_pr_activity"` でスキーマロードを試みる
      2. **見つかった場合のみ**「このPRを購読して、CIエラーやレビューコメントを自動対応しますか？」と尋ね、Y なら `subscribe_pr_activity` を呼ぶ
      3. **見つからない場合**（`No matching deferred tools found`）は購読の提案自体を省略し、Phase 7 の完了報告に「CI/レビュー結果は手動で確認してください」と明記する
-
-## ワークフロー改善余地のメモ（Phase 8 向け）
-
-PR 作成フロー自体への気づき（`closes #N` の付け忘れ誘因、push 周りのハマりどころ、本文テンプレートに足したい項目など）があれば短文メモで控え、Phase 8 で知見ボード（#195）に書く（ユーザー確認を挟む。詳細は `phases/08-issue-recording.md`）。

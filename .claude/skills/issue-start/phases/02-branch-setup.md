@@ -96,7 +96,7 @@ git merge origin/main                 # ファストフォワード or 3-way mer
 git stash pop                         # stash した場合のみ
 ```
 
-クラウドセッションで `git merge` が `refusing to merge unrelated histories` で止まったら、clone が shallow で merge-base が見つかっていないことがある（`git rev-parse --is-shallow-repository` で見る）。`--allow-unrelated-histories` で押し通さず、shallow なら `git fetch --unshallow origin` で全履歴を取ってから取り込み直す（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない」）
+クラウドセッションで `git merge` が `refusing to merge unrelated histories` で止まったら、clone が shallow で merge-base が見つかっていないことがある（`git rev-parse --is-shallow-repository` で見る）。`--allow-unrelated-histories` で押し通さず、shallow なら `git fetch --unshallow origin` で全履歴を取ってから取り込み直す（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの clone は shallow のことがあり、履歴を遡る git がエラー無しで途中で止まる」）
 
 `git merge origin/main` で `Merge branch 'main' into <branch>` コミットが入るのは正常な挙動で、PR を squash merge する運用なら最終履歴には影響しない。
 

@@ -1,6 +1,6 @@
 ---
 name: template-update
-description: テンプレート元（.claude/template-version の repo）でリリースされた新しい版を、このプロジェクトのカスタマイズを壊さずに取り込む手順（3-way マージ → 残差確認 → テンプレート外の参照確認 → template-version 更新 → バナー確認）。「refactor: テンプレートを vX.Y.Z に更新」Issue を /issue-start した Phase 5 で使う。更新の検知と更新用 Issue の起票の手順は /issue-start Phase 1 手順 0.5 が正本。更新用 Issue の外から呼ばれたら取り込まず、その手順で更新用 Issue に誘導する。
+description: "テンプレート元（.claude/template-version の repo）でリリースされた新しい版を、このプロジェクトのカスタマイズを壊さずに取り込む手順（3-way マージ → 残差確認 → テンプレート外の参照確認 → template-version 更新 → バナー確認）。「refactor: テンプレートを vX.Y.Z に更新」Issue を /issue-start した Phase 5 で使う。更新の検知と更新用 Issue の起票の手順は /issue-start Phase 1 手順 0.5 が正本。更新用 Issue の外から呼ばれたら取り込まず、その手順で更新用 Issue に誘導する。"
 argument-hint: "[vNEW]"
 ---
 
@@ -37,7 +37,7 @@ argument-hint: "[vNEW]"
    - [ ] カスタマイズ済みファイルのプロジェクト固有記述が失われていない
    - [ ] 新しく置いた・テンプレートの版に置き換えたファイルが、プロジェクトがカスタマイズした規約（命名・ラベル・パス・コマンドなど）に反していない（後述「3-way マージの定型手順」4）
    - [ ] テンプレートが持ち込んだ印・規約を、テンプレート外のファイルやプロジェクト固有の記述が参照していないか、旧形式の印が Issue コメントや Open Issue の本文に残っていないかを確かめた（後述「テンプレート外の参照の確認」）
-   - [ ] テンプレートの差分に出た skill・ルーティンのファイルがどれも 30,000 バイト未満（`git -C "$SRC" diff --name-only vOLD vNEW -- template/.claude/skills template/.claude/routines | sed 's|^template/||' | while read -r p; do [ -f "$p" ] && [ "$(wc -c < "$p")" -ge 30000 ] && echo "$p" || :; done` をプロジェクトのルートで打って何も出ない。`$SRC` は「3-way マージの定型手順」のクローン）。プロジェクト固有の追記とテンプレートの追記が合わさって超えることがある。差分に出たファイルだけを見るのは、プロジェクトが外から取り込んだ skill（30,000 バイトを超えるもの）を `.claude/skills/` に置いていても、この取り込みと関係なく満たせなくならないため。超えたら、切り出す Issue を起票する（`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）
+   - [ ] テンプレートの差分に出た skill・ルーティンのファイルがどれも 30,000 バイト未満（`git -C "$SRC" diff --name-only vOLD vNEW -- template/.claude/skills template/.claude/routines | sed 's|^template/||' | while read -r p; do [ -f "$p" ] && [ "$(wc -c < "$p")" -ge 30000 ] && echo "$p" || :; done` をプロジェクトのルートで打って何も出ない。`$SRC` は「3-way マージの定型手順」のクローン）。プロジェクト固有の追記とテンプレートの追記が合わさって超えることがある。差分に出たファイルだけを見るのは、プロジェクトが外から取り込んだ skill（30,000 バイトを超えるもの）を `.claude/skills/` に置いていても、この取り込みと関係なく満たせなくならないため。超えたら、プロジェクト固有の節に削れる箇所が無いかを先に見て、それでも超えるなら切り出す Issue を起票する（`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）
    - [ ] `.claude/template-version` の `version` を更新した
    - [ ] hooks テストが通る
    - [ ] SessionStart バナーが `up to date` になる（上記の直接実行で確認）
@@ -48,7 +48,7 @@ argument-hint: "[vNEW]"
 
 ```bash
 SRC=<scratchpad>/template-src   # テンプレート元のクローン（作業ツリー無し）
-W=<scratchpad>/template-merge   # 作業ディレクトリ
+W=<scratchpad>/template-merge-vNEW   # 作業ディレクトリ（版ごとに新しく作る。前の分は消さずに残す。rm -rf は auto mode に止められることがある）
 git clone -q --no-checkout -c core.longpaths=true https://github.com/<repo>.git "$SRC"
 
 git -C "$SRC" diff --name-only vOLD vNEW -- template/ | while read -r t; do
@@ -65,7 +65,7 @@ done
 `bytes` は書き戻したときの大きさ（コンフリクトがあれば印の分も入る）。`.claude/skills/` の md で 30,000 以上のものは、テンプレート版では上限内でもプロジェクト固有の節と合わさって超えている。書き戻す前に、切り出す Issue を起票するかをユーザーに聞く（Phase 5 の末尾のスコープ外の提案にまとめず、ここで聞く。断られたら、完了条件の大きさの項目は満たせないので、その旨を PR 本文に書く。`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）。完了条件の大きさの確認で後から気付くと、取り込みの途中で確認が増える
 
 1. `conflicts=0` のファイルは `$W/<path>.merged` の内容をそのままプロジェクト側に書き戻す。書き戻しは Edit ツールで、`diff "$W/<path>.ours" "$W/<path>.merged"` に出た変更箇所を当てる（ほとんどの行が変わるなら、Read してから Write で置き換える）。`cp` やリダイレクトでまとめて上書きしない。書き戻し先の `CLAUDE.md` と `.claude/` 配下は、auto mode の分類器が `[Self-Modification]` の対象にするエージェント自身の設定・指示ファイルで、シェルからの上書きは書き込む中身が分類器に見えないので止められる。当てたら `cmp "$W/<path>.merged" <(tr -d '\r' < <path>)` で一致を確かめる（`tr` は作業ツリーが CRLF のときの改行コードの差を除くため。手順 5。macOS の `sed` は `\r` を CR として扱わないので使わない）
-   - **Edit の組の作り方**: ハンクが多いと、組を手で作る手間とずれが大きい。組は scratchpad のスクリプトで機械的に作る。`diff` のハンクごとに、`.ours` の変わる行を `old_string`、`.merged` の対応する行を `new_string` にする（行を足すだけのハンクは、隣の変わらない行を両方に入れる）。`old_string` がファイル内の 1 か所にしか当たらなくなるまで（Edit に渡す文字列そのもので数える。最後の行の改行を外すと、別の長い行の途中にも当たる）、前後の変わらない行を 1 行ずつ両方に足す（足した範囲が隣のハンクと重なれば、1 つの組にまとめる）。組は行単位で作り、行の途中で切らない（Edit は `.md` 以外のファイルで `new_string` の行末の空白を落とし、行の途中の空白で終わる組では前後の語がつながる。`.claude/skills/issue-start/pitfalls.md`「Edit / Write は、`.md` 以外のファイルで行末の空白を落とす」）。Edit で当てる前に、同じスクリプトで `.ours` の写しに組を上から順に当て、どの組も当てる時点で 1 か所にしか当たらないことと、当て終えた結果が `.merged` と一致することを確かめる。Edit はその順のまま当てる
+   - **Edit の組の作り方**: ハンクが多ければ、組は scratchpad のスクリプトで機械的に作る。`diff` のハンクごとに、`.ours` の変わる部分を `old_string`、`.merged` の対応する部分を `new_string` にし、`old_string` がファイル内の 1 か所にしか当たらなくなるまで前後を広げる（数えるのは Edit に渡す文字列そのもの。隣の組と重なればまとめる）。`.md` / `.mdx` 以外のファイルでは、組を行単位で作り、行の途中で切らない（Edit が `new_string` の行末の空白を落とし、行の途中の空白で終わる組では前後の語がつながる。`.claude/skills/issue-start/pitfalls.md`「Edit / Write は、`.md` 以外のファイルで行末の空白を落とす」）。`.md` は、変わる部分を含む短い一意の文字列で切ってよい（1 行が長い段落で組が膨らまない）。Edit で当てる前に、同じスクリプトで `.ours` の写しに組を上から順に当て、どの組も当てる時点で 1 か所にしか当たらないことと、当て終えた結果が `.merged` と一致することを確かめ、その順のまま当てる
    - `settings.json` の `allow` や hooks の登録、`.claude/hooks/` のスクリプトのように権限やガードを変える差分は、Edit で当てても止められることがある（この分類器の規則は、ユーザーが明示的に求めていない権限・ガードの変更を対象にしている）。止められたら差分をユーザーに示し、その変更を取り込むことをユーザー自身のメッセージで伝えてもらってから当て直す
    - `settings.json` の hooks に、`vNEW` で追加された hook のスクリプト（ループが「project にない」と出した `.claude/hooks/` のファイル。新しいファイルはプロジェクトに無いので、「vNEW で追加」ではなくこう出る）の登録が入るときは、先に手順 4 でそのスクリプトを置いてから `settings.json` を書き戻す。hooks の変更は実行中のセッションにもすぐ効くので、登録だけが先に入ると、`"onFailure": "block"` の hook が起動に失敗して Bash の呼び出しがすべて止まる（`... failed; blocking because onFailure is "block"`）。止まったら、Edit で登録を外し、Write でスクリプトを置いてから登録し直す（Edit / Write は Bash を通らないので、Bash が止まっていても戻せる）
 2. `conflicts=N`（N > 0）のファイルは、`$W/<path>.merged` の `<<<<<<< ours` 〜 `>>>>>>> vNEW` の箇所だけを上記の方針で解消し、マーカーが残っていないことを `grep -n '^<<<<<<<\|^>>>>>>>' "$W/<path>.merged"` で確かめてから、手順 1 と同じ方法で書き戻す
