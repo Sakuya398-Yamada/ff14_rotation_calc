@@ -39,8 +39,8 @@ describe("PrivacyPolicyPage", () => {
 
     it("英語の見出しと <title> を出し、日本語版とトップへリンクする", () => {
       render(<PrivacyPolicyPage />);
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Privacy Policy");
-      expect(document.title).toBe("Privacy Policy | FFXIV Rotation Calculator");
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Privacy policy");
+      expect(document.title).toBe("Privacy policy | FFXIV Rotation Calculator");
       expect(screen.getByRole("link", { name: "日本語" })).toHaveAttribute("href", "/privacy");
       expect(screen.getByRole("link", { name: "FFXIV Rotation Calculator" })).toHaveAttribute("href", "/en/");
     });

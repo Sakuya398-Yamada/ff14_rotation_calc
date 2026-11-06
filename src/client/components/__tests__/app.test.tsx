@@ -37,7 +37,7 @@ describe("App のフッター", () => {
 
     it("英語のプライバシーポリシーにリンクする", () => {
       render(<App />);
-      expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/en/privacy");
+      expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/en/privacy");
     });
   });
 });

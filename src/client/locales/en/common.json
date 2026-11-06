@@ -21,13 +21,13 @@
     "closeSharedInfo": "Close the shared timeline info",
     "contactLabel": "Bugs & requests:",
     "mailLabel": "Email:",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy policy"
   },
   "privacyPolicyPage": {
     "siteName": "FFXIV Rotation Calculator",
-    "documentTitle": "Privacy Policy | FFXIV Rotation Calculator",
+    "documentTitle": "Privacy policy | FFXIV Rotation Calculator",
     "languageLink": "日本語",
-    "title": "Privacy Policy",
+    "title": "Privacy policy",
     "intro": "This page explains what information FFXIV Rotation Calculator (\"this tool\") handles, how it is used, how long it is kept and how to request its deletion.",
     "enactedOn": "Effective date: {{date}}",
     "operator": {
@@ -82,8 +82,8 @@
       "heading": "Retention",
       "timelines": "Saved timelines have no expiry. When you delete one, it no longer appears in your list or at its share URL, but the data remains on the server. To erase it completely, send a request as described in \"Deletion requests\" below.",
       "account": "Your Discord user ID and the links to your account also have no expiry and are kept until you request their deletion.",
-      "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and are deleted when you log out.",
-      "backup": "So that the database can be restored if it breaks, it is backed up daily and 30 days of backups are kept on a device the operator manages. Erased data also disappears from the backups after 30 days."
+      "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and can no longer be used. Their records are deleted when you log out. Records of sessions that expired without logging out may be kept until you request deletion of your account.",
+      "backup": "So that the database can be restored if it breaks, it is backed up daily, and the newest 30 backups (normally 30 days' worth) are kept on a device the operator manages. Erased data normally disappears from the backups after about 30 days."
     },
     "deletion": {
       "heading": "Deletion requests",
@@ -91,7 +91,8 @@
       "accountLabel": "Account information",
       "account": "The user ID, links and sessions of the Discord account that sent the request are erased. If you also want the timelines linked to your account erased, say so in your request.",
       "anonymousLabel": "Timelines saved without logging in",
-      "anonymous": "First delete the timeline from \"Saved timelines\" in this tool, then send your request with its share URL. Only timelines that have already been deleted are erased completely (only the owner can delete a timeline in this tool, so this confirms that you are the owner)."
+      "anonymous": "First delete the timeline from \"Saved timelines\" in this tool, then send your request with its share URL. Only timelines that have already been deleted are erased completely (only the owner can delete a timeline in this tool, so this confirms that you are the owner).",
+      "copies": "Copies that other people saved from your timeline (by opening its share URL and saving) are their own saves and are not erased."
     },
     "contact": {
       "heading": "Contact",

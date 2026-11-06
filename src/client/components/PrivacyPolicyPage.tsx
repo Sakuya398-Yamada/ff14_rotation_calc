@@ -136,6 +136,7 @@ export function PrivacyPolicyPage() {
               </div>
             ))}
           </dl>
+          <p>{t("privacyPolicyPage.deletion.copies")}</p>
         </section>
 
         <section>
