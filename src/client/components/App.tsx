@@ -23,7 +23,7 @@ import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillM
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
 import { getSharedTimelineId, loadSharedTimeline } from "../logic/shared-timeline";
-import { alternateLanguagePath, languageBasePath } from "../logic/language-path";
+import { alternateLanguagePath, languageBasePath, privacyPolicyPath } from "../logic/language-path";
 import { useLanguage } from "../i18n";
 import type { SharedLoadError } from "../logic/shared-timeline";
 import type { JobId } from "../data/job-registry";
@@ -554,6 +554,10 @@ export function App() {
           | {t("app.mailLabel")}{" "}
           <a style={styles.contactLink} href="mailto:forestry.for@gmail.com">
             forestry.for@gmail.com
+          </a>{" "}
+          |{" "}
+          <a style={styles.contactLink} href={privacyPolicyPath(lang)}>
+            {t("app.privacyPolicy")}
           </a>
         </small>
         <small style={styles.copyright}>

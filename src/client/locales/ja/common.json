@@ -20,7 +20,89 @@
     "sharedInfo": "開いた共有タイムライン",
     "closeSharedInfo": "共有タイムラインの情報を閉じる",
     "contactLabel": "不具合・要望:",
-    "mailLabel": "メール:"
+    "mailLabel": "メール:",
+    "privacyPolicy": "プライバシーポリシー"
+  },
+  "privacyPolicyPage": {
+    "siteName": "FF14 Rotation Calculator",
+    "documentTitle": "プライバシーポリシー | FF14 Rotation Calculator",
+    "languageLink": "English",
+    "title": "プライバシーポリシー",
+    "intro": "FF14 Rotation Calculator（以下「このツール」）が扱う情報と、その使い道・保存期間・削除の依頼の方法を説明します。",
+    "enactedOn": "制定日: {{date}}",
+    "operator": {
+      "heading": "運営者",
+      "body": "個人の開発者 {{name}} が運営しています。"
+    },
+    "stored": {
+      "heading": "サーバーに保存する情報",
+      "intro": "次の情報を、Cloudflare のデータベース（D1）に保存します。",
+      "timelinesLabel": "保存したタイムライン",
+      "timelines": "「保存・共有」で保存した内容（ジョブ・レベル・並べたスキル・ステータスなど）とタイトル。共有 URL を知っている人は、誰でも見られます。",
+      "ownerHashLabel": "匿名トークンのハッシュ",
+      "ownerHash": "保存したブラウザを見分けるための値。トークンそのものは保存しません。",
+      "discordIdLabel": "Discord のユーザー ID",
+      "discordId": "Discord でログインしたときに保存します。Discord に求める権限は identify だけで、受け取った情報のうち保存するのはユーザー ID だけです（ユーザー名・アイコンは保存せず、メールアドレスは受け取りません）。",
+      "accountLinkLabel": "アカウントとの紐づけ",
+      "accountLink": "ログインすると、そのブラウザで保存したタイムラインをアカウントに紐づけ、ほかのブラウザでもログインすれば一覧に出るようにします。",
+      "sessionsLabel": "ログインのセッション",
+      "sessions": "ログイン状態を保つための値のハッシュと、その有効期限。"
+    },
+    "cookies": {
+      "heading": "Cookie",
+      "intro": "このツールが設定する Cookie は次の 3 つです。どれも保存とログインのためだけに使い、広告やアクセス解析には使いません。",
+      "owner": "保存したタイムラインの持ち主を見分けます。保存・一覧の表示・削除のたびに期限を延ばし、最後に使ってから 400 日で消えます。ログアウトしたときにも消します。",
+      "session": "ログインしていることを覚えておきます。30 日で切れます（使っているあいだは延び、最長で 1 年）。ログアウトすると消します。",
+      "discordOauth": "Discord でログインする途中だけ使い、ログインを確かめるための値（state・code_verifier）と、ログインしたあとに戻るページを持ちます。10 分で切れ、Discord から戻ったときに消します。"
+    },
+    "browserStorage": {
+      "heading": "ブラウザの中だけに置く情報",
+      "body": "編集中のタイムライン・設定・最近使ったジョブは、ブラウザの localStorage に置きます。サーバーに送るのは、「保存・共有」で保存したタイムラインだけです。"
+    },
+    "external": {
+      "heading": "外部のサービス",
+      "cloudflareLabel": "Cloudflare",
+      "cloudflare": "このツールの配信とデータベースに使います。ページを開いたり保存したりすると、IP アドレスやブラウザの情報が Cloudflare に渡ります。",
+      "cloudflarePolicy": "Cloudflare のプライバシーポリシー",
+      "turnstileLabel": "Cloudflare Turnstile",
+      "turnstile": "保存画面を開いたときに、ボット対策の確認に使います。IP アドレス・ブラウザの情報などが Cloudflare に渡ります。",
+      "turnstilePolicy": "Turnstile Privacy Addendum",
+      "discordLabel": "Discord",
+      "discord": "ログインに使います。ログインすると、このツールが Discord からユーザーの情報を受け取ります（保存するのはユーザー ID だけです）。",
+      "discordPolicy": "Discord のプライバシーポリシー",
+      "googleFontsLabel": "Google Fonts",
+      "googleFonts": "文字の表示に使います。ページを開くと、IP アドレスやブラウザの情報が Google に渡ります。",
+      "googleFontsPolicy": "Google のプライバシーポリシー"
+    },
+    "use": {
+      "heading": "情報の使い道",
+      "body": "集めた情報は、タイムラインの保存・共有・一覧・削除と、ログインのためだけに使います。広告やアクセス解析には使わず、第三者に売ったり渡したりもしません（法令で求められたときを除きます）。"
+    },
+    "retention": {
+      "heading": "保存期間",
+      "timelines": "保存したタイムラインに期限はありません。削除すると、一覧と共有 URL からは見えなくなりますが、データはサーバーに残ります。完全に消したいときは、下の「削除の依頼」のとおり依頼してください。",
+      "account": "Discord のユーザー ID とアカウントとの紐づけにも期限はなく、削除の依頼を受けるまで残します。",
+      "sessions": "ログインのセッションは 30 日で切れ（使っているあいだは延び、最長で 1 年）、使えなくなります。記録はログアウトしたときに消します。ログアウトせずに期限が切れたものは、アカウントの削除の依頼を受けるまで残ることがあります。",
+      "backup": "壊れたときに戻せるよう、データベースのバックアップを毎日取り、運営者が管理する機器に新しい 30 世代（ふつうは 30 日分）を残します。消したデータも、ふつうは 30 日ほどでバックアップから消えます。"
+    },
+    "deletion": {
+      "heading": "削除の依頼",
+      "how": "Discord で {{discord}} にフレンド申請をしてから、DM で依頼してください。",
+      "accountLabel": "アカウントの情報",
+      "account": "依頼を送った Discord アカウントのユーザー ID・紐づけ・セッションを消します。アカウントに紐づくタイムラインも消したいときは、そう書いてください。",
+      "anonymousLabel": "ログインせずに保存したタイムライン",
+      "anonymous": "先にこのツールの「保存したタイムライン」から削除し、その共有 URL を添えて依頼してください。削除済みのものだけを完全に消します（このツールで削除できるのは持ち主だけなので、持ち主であることの確認になります）。",
+      "copies": "ほかの人がそのタイムラインを元に保存したもの（共有 URL から開いて保存した複製）は、その人の保存なので消えません。"
+    },
+    "contact": {
+      "heading": "問い合わせ",
+      "body": "このページについての問い合わせは、次で受け付けます。",
+      "issuesLink": "GitHub の Issue"
+    },
+    "changes": {
+      "heading": "改定",
+      "body": "内容を変えるときは、このページを更新します。"
+    }
   },
   "sharedTimeline": {
     "loadErrors": {

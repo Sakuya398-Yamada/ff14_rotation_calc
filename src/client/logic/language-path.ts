@@ -19,3 +19,15 @@ export function alternateLanguagePath(pathname: string): string {
   }
   return `/en${pathname}`;
 }
+
+/** その言語のプライバシーポリシーのパス（"/privacy" か "/en/privacy"） */
+export function privacyPolicyPath(lang: Language): string {
+  return lang === "en" ? "/en/privacy" : "/privacy";
+}
+
+const PRIVACY_POLICY_PATH_RE = /^(?:\/en)?\/privacy\/?$/;
+
+/** プライバシーポリシーのページか（"/privacy"・"/en/privacy"。末尾の "/" は付いていてもよい） */
+export function isPrivacyPolicyPath(pathname: string): boolean {
+  return PRIVACY_POLICY_PATH_RE.test(pathname);
+}

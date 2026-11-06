@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { alternateLanguagePath, languageBasePath, languageFromPath } from "../language-path";
+import {
+  alternateLanguagePath,
+  isPrivacyPolicyPath,
+  languageBasePath,
+  languageFromPath,
+  privacyPolicyPath,
+} from "../language-path";
 
 describe("languageFromPath", () => {
   it.each(["/en", "/en/", "/en/t/abc", "/en/t/abc/"])("%s は en", (pathname) => {
@@ -28,6 +34,8 @@ describe("alternateLanguagePath", () => {
     ["/en", "/"],
     ["/t/abc", "/en/t/abc"],
     ["/en/t/abc", "/t/abc"],
+    ["/privacy", "/en/privacy"],
+    ["/en/privacy", "/privacy"],
   ])("%s の別の言語版は %s", (pathname, expected) => {
     expect(alternateLanguagePath(pathname)).toBe(expected);
     expect(languageFromPath(expected)).not.toBe(languageFromPath(pathname));
@@ -36,4 +44,28 @@ describe("alternateLanguagePath", () => {
   it.each(["/", "/en/", "/t/abc", "/en/t/abc"])("%s に 2 回かけると元に戻る", (pathname) => {
     expect(alternateLanguagePath(alternateLanguagePath(pathname))).toBe(pathname);
   });
+});
+
+describe("privacyPolicyPath", () => {
+  it.each([
+    ["ja", "/privacy"],
+    ["en", "/en/privacy"],
+  ] as const)("%s のプライバシーポリシーは %s で、同じ言語のプライバシーポリシーのパスと判定される", (lang, path) => {
+    expect(privacyPolicyPath(lang)).toBe(path);
+    expect(languageFromPath(path)).toBe(lang);
+    expect(isPrivacyPolicyPath(path)).toBe(true);
+  });
+});
+
+describe("isPrivacyPolicyPath", () => {
+  it.each(["/privacy", "/privacy/", "/en/privacy", "/en/privacy/"])("%s はプライバシーポリシー", (pathname) => {
+    expect(isPrivacyPolicyPath(pathname)).toBe(true);
+  });
+
+  it.each(["/", "/en/", "/privacyx", "/privacy/x", "/t/privacy", "/en/t/privacy", "/fr/privacy"])(
+    "%s はプライバシーポリシーではない",
+    (pathname) => {
+      expect(isPrivacyPolicyPath(pathname)).toBe(false);
+    }
+  );
 });
