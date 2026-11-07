@@ -15,10 +15,19 @@ import { Timeline } from "../Timeline";
 import { DELETE_ZONE_ID } from "../timeline/dnd-types";
 import { resolveTimeline } from "../../logic/resolve-timeline";
 import { calcEntryExpectedPotency } from "../../logic/expected-potency";
-import { getAllSkillMapForLevel, getSkillsForLevel } from "../../logic/skill-level";
+import {
+  getAllSkillMapForLevel,
+  getBuffsForLevel,
+  getResourcesForLevel,
+  getSkillsForLevel,
+} from "../../logic/skill-level";
 import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
 import { BRD_BUFFS } from "../../data/brd-buffs";
 import { BRD_RESOURCES } from "../../data/brd-resources";
+import { WAR_ATTACK_SKILLS } from "../../data/war-skills";
+import { WAR_BUFFS } from "../../data/war-buffs";
+import { WAR_RESOURCES } from "../../data/war-resources";
+import { PX_PER_SEC } from "../timeline/constants";
 import type {
   Skill,
   TimelineEntry,
@@ -420,6 +429,30 @@ describe("Timeline: PPS 範囲選択を開いたときの初期区間 (#884)", (
     expect(lastGcdEndTime).toBe(0);
     expect(opened).toEqual({ startTime: 0, endTime: 0 });
     expect(opened).toEqual(reset);
+  });
+});
+
+describe("Timeline: リキャストのレーンの区間は、リキャストの短縮を反映して終わる (#898)", () => {
+  it("戦士 Lv70 でフェルクリーヴ 2 回で縮めると、最初のウォークライの区間は 50 秒で終わり、次の区間は変わらない", () => {
+    const level = 70;
+    const buffs = getBuffsForLevel(WAR_BUFFS, level);
+    const resources = getResourcesForLevel(WAR_RESOURCES, level);
+    const buffIds = new Set(buffs.map((b) => b.id));
+    const resourceIds = new Set(resources.map((r) => r.id));
+    const skills = getSkillsForLevel(WAR_ATTACK_SKILLS, level, buffIds, resourceIds);
+    const skillMap = getAllSkillMapForLevel(WAR_ATTACK_SKILLS, skills, level, buffIds, resourceIds);
+    const resolvedEntries = resolveTimeline(
+      ["infuriate", "infuriate", "fell-cleave", "fell-cleave"].map(makeEntry),
+      skillMap,
+      resources,
+      defaultStats,
+      buffs
+    ).entries;
+    renderTimeline({ jobId: "war", skills, allSkillMap: skillMap, resolvedEntries, resources, buffs });
+
+    const first = screen.getByTitle("ウォークライ リキャスト (0.00s - 50.00s / 60s)");
+    expect(first.style.width).toBe(`${50 * PX_PER_SEC}px`);
+    expect(screen.getByTitle("ウォークライ リキャスト (0.65s - 60.65s / 60s)")).toBeInTheDocument();
   });
 });
 

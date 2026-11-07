@@ -263,6 +263,16 @@ describe("WAR: ウォークライと原初の混沌", () => {
     expect(control[4].recastError).toBe(true);
   });
 
+  it("フェルクリーヴ 2 回で縮めると、最初のウォークライのリキャストのレーンの区間は 50 秒で終わる (#898)", () => {
+    const { resolve } = setup(70);
+    const reduced = resolve(["infuriate", "infuriate", "fell-cleave", "fell-cleave", entry("infuriate", 51)]);
+    reduced.forEach(expectNoError);
+    expect(reduced[0].cooldownEndTime).toBe(50);
+
+    const control = resolve(["infuriate", "infuriate", "heavy-swing", "heavy-swing"]);
+    expect(control[0].cooldownEndTime).toBe(60);
+  });
+
   it("インナーカオスもウォークライのリキャストを 5 秒縮める", () => {
     const { resolve } = setup(100);
     // ゲージ 100 からインナーカオス（-50）→ フェルクリーヴ（-50）で、次のチャージは 60 秒から 50 秒になる
