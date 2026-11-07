@@ -24,9 +24,9 @@ describe("PrivacyPolicyPage", () => {
     expect(screen.getByText(name)).toBeInTheDocument();
   });
 
-  it("削除の依頼先に Discord の Sakuyuno、問い合わせ先に GitHub の Issue を書いている", () => {
+  it("削除の依頼先に Discord の sakuyuno、問い合わせ先に GitHub の Issue を書いている", () => {
     render(<PrivacyPolicyPage />);
-    expect(screen.getByText(/Sakuyuno/)).toBeInTheDocument();
+    expect(screen.getByText(/sakuyuno/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "GitHub の Issue" })).toHaveAttribute(
       "href",
       "https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues"
@@ -50,9 +50,9 @@ describe("PrivacyPolicyPage", () => {
       expect(screen.getByText(name)).toBeInTheDocument();
     });
 
-    it("削除の依頼先に Discord の Sakuyuno、問い合わせ先に GitHub の Issue を書いている", () => {
+    it("削除の依頼先に Discord の sakuyuno、問い合わせ先に GitHub の Issue を書いている", () => {
       render(<PrivacyPolicyPage />);
-      expect(screen.getByText(/Sakuyuno/)).toBeInTheDocument();
+      expect(screen.getByText(/sakuyuno/)).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "GitHub Issues" })).toHaveAttribute(
         "href",
         "https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues"
