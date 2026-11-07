@@ -218,7 +218,7 @@ export function Timeline({
       }
       spans.get(skill.id)!.push({
         startTime: entry.startTime,
-        endTime: Math.round((entry.startTime + skill.cooldown) * 1000) / 1000,
+        endTime: entry.cooldownEndTime ?? Math.round((entry.startTime + skill.cooldown) * 1000) / 1000,
         icon: skill.icon,
       });
     }

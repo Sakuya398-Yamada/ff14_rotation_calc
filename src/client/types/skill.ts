@@ -657,6 +657,11 @@ export interface ResolvedTimelineEntry {
   untargetableError: boolean;
   /** リキャスト中に使用したエラー */
   recastError: boolean;
+  /**
+   * リキャストのレーンに描く区間の終わり（秒）。固有リキャストのあるスキルを、エラー無しで使ったときだけ持つ。
+   * 開始 + リキャストから、リキャストの短縮（reduceChargeCooldown）で引いた分を反映済み（#898）
+   */
+  cooldownEndTime?: number;
   /** WSコンボ不成立（エラーではないがコンボ威力が適用されない） */
   wsComboError: boolean;
   /** 1 未満の確率付与（buffApplicationProcRates）だけで付いたバフを自動消費したときのバフID。警告でありハードエラーではない（威力・効果はそのまま） */

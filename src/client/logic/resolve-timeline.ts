@@ -888,6 +888,30 @@ export function resolveTimeline(
   const dotStreams: Map<string, DoTStream> = new Map();
   // チャージ状態追跡: skillId → { charges: 残りチャージ数, nextChargeAt: 次のチャージ回復時刻 }
   const skillChargeState: Map<string, { charges: number; nextChargeAt: number | null }> = new Map();
+  // リキャストのレーンに描く区間（chargeKey ごと）。index は resolved の添字。使うたびに「開始 + リキャスト」で積む。
+  // 計算はチャージを順番に戻すが、レーンは使うたびの区間を描くので、続けて使った 2 本目以降は計算と一致しない（#924）
+  const cooldownSpans: Map<string, { index: number; endTime: number }[]> = new Map();
+
+  /**
+   * chargeKey の区間を time 時点で seconds 秒短縮する。計算のタイマーはいちばん古いチャージを数えているので、
+   * いちばん早く終わる区間から引く。time より前には戻さず、余りは次に早く終わる区間から引く
+   */
+  const shortenCooldownSpans = (chargeKey: string, seconds: number, time: number) => {
+    const running = (cooldownSpans.get(chargeKey) ?? [])
+      .filter((s) => s.endTime > time)
+      .sort((a, b) => a.endTime - b.endTime);
+    let rest = seconds;
+    for (const span of running) {
+      const remaining = span.endTime - time;
+      if (rest < remaining) {
+        span.endTime = Math.round((span.endTime - rest) * 1000) / 1000;
+        return;
+      }
+      span.endTime = time;
+      rest = Math.round((rest - remaining) * 1000) / 1000;
+      if (rest <= 0) return;
+    }
+  };
 
   /**
    * chargeKey のリキャストを time 時点で seconds 秒短縮する（賢人のバラード中の詩心付与等）。
@@ -903,6 +927,7 @@ export function resolveTimeline(
     recoverCharges(state, time, groupSkill.cooldown, groupSkill.maxCharges ?? 1);
     if (state.nextChargeAt === null) return;
     state.nextChargeAt = Math.round((state.nextChargeAt - seconds) * 1000) / 1000;
+    shortenCooldownSpans(chargeKey, seconds, time);
   };
 
   // コンボ状態追跡
@@ -1819,6 +1844,9 @@ export function resolveTimeline(
             nextChargeAt: Math.round((startTime + skill.cooldown) * 1000) / 1000,
           });
         }
+        const spans = cooldownSpans.get(chargeKey) ?? [];
+        spans.push({ index: resolved.length, endTime: Math.round((startTime + skill.cooldown) * 1000) / 1000 });
+        cooldownSpans.set(chargeKey, spans);
       }
 
       for (const r of skill.cooldownReductionsOnUse ?? []) {
@@ -1977,6 +2005,11 @@ export function resolveTimeline(
       castTime: resolvedCastTime,
       targetCount,
     });
+  }
+
+  // 区間は後のエントリの短縮でも縮むので、全エントリを解決してから持たせる
+  for (const spans of cooldownSpans.values()) {
+    for (const span of spans) resolved[span.index].cooldownEndTime = span.endTime;
   }
 
   // 段差を描く自動生成（黙想）は、最後のエントリの後も条件バフが切れるまで数える。

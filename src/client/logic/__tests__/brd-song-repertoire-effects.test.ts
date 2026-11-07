@@ -70,8 +70,8 @@ describe("BRD: 軍神のパイオン中の詩心最大 4 とヘイスト (#419)"
 describe("BRD: 賢人のバラード中の詩心付与でブラッドレッター系のリキャストが 7.5 秒短縮される (#419)", () => {
   // 歌 → ハートブレイクショット 3 回でチャージを使い切り、最後のハートブレイクショットを指定時刻に置く。
   // 詩心の自動生成は歌の実行時刻から 3.75 秒ごと（#524）
-  function chargesUsedUp(song: string) {
-    return [entry(song), entry("heartbreak-shot"), entry("heartbreak-shot"), entry("heartbreak-shot")];
+  function chargesUsedUp(song: string, skillId = "heartbreak-shot") {
+    return [entry(song), entry(skillId), entry(skillId), entry(skillId)];
   }
   const { entries: base } = resolve(chargesUsedUp("mages-ballad"));
   const songTime = base[0].startTime;
@@ -84,6 +84,28 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
 
     const after = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", songTime + 7.5)]);
     expect(after.entries[4].recastError).toBe(false);
+  });
+
+  // ブラッドレッターは Lv92 でハートブレイクショットに置き換わる。レインオブデスも同じリキャストを共有する
+  it.each(["heartbreak-shot", "rain-of-death"])(
+    "%s のリキャストのレーンの区間は、短縮でチャージが戻る時刻（2 回目の付与）で終わる (#898)",
+    (skillId) => {
+      // 付与を計算に進めさせるため、2 回目の付与より後にエントリを置く
+      const after = (song: string) =>
+        resolve([...chargesUsedUp(song, skillId), entry("burst-shot", songTime + 8)]).entries;
+      const ballad = after("mages-ballad");
+      expect(ballad[1].resolvedSkillId).toBe(skillId);
+      expect(ballad[4].recastError).toBe(false);
+      expect(ballad[1].cooldownEndTime).toBe(Math.round((songTime + 7.5) * 1000) / 1000);
+
+      // 旅神のメヌエット中は短縮されないので、使ってから 15 秒で終わる
+      const minuet = after("wanderers-minuet");
+      expect(minuet[1].cooldownEndTime).toBe(Math.round((minuet[1].startTime + 15) * 1000) / 1000);
+    }
+  );
+
+  it("最後のエントリより後の付与による短縮は、レーンの区間に入らない（計算が最後のエントリより先に進まないため。#898）", () => {
+    expect(base[1].cooldownEndTime).toBe(Math.round((firstUse + 15) * 1000) / 1000);
   });
 
   it("旅神のメヌエット中は短縮されず、15 秒後まで回復しない", () => {
