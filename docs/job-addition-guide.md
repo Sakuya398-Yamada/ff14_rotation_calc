@@ -12,7 +12,7 @@ FF14 Rotation Calculator に新しいジョブを追加するときの手順書�
 
 ## 全体像
 
-新規ジョブを追加するために触る場所は **5 ファイル新規作成（データ 3・名前の辞書 2）+ 2 ファイル追記 + アイコン配置** に集約されている。
+新規ジョブを追加するために触る場所は **5 ファイル新規作成（データ 3・名前の辞書 2）+ 5 ファイル追記（登録 2・既存テスト 1・README 2）+ アイコン配置** に集約されている。ジョブによっては、ほかの既存テストにも追記する（表の「条件付き」の行）。
 
 | 区分 | パス | 操作 |
 |------|------|------|
@@ -22,6 +22,10 @@ FF14 Rotation Calculator に新しいジョブを追加するときの手順書�
 | 名前の辞書 | `src/client/locales/{ja,en}/job-<job>.json` | 新規作成（スキル・バフ・リソースの日英の名前） |
 | 登録 | `src/client/i18n.ts` | 名前の辞書を `resources` に追記 |
 | 登録 | `src/client/data/job-registry.ts` | `JobId` Union と `JOB_DATA` レコードに追記 |
+| 既存テスト | `src/client/components/__tests__/job-picker.test.tsx` | 選べるジョブの固定配列に表示名を追記（ステップ 6） |
+| README | `README.md`・`README.en.md` | 対応ジョブの表と FAQ のジョブ一覧・ジョブ数に追記（チェックリスト） |
+| 既存テスト（条件付き） | `src/client/logic/__tests__/ws-combo-keeps-combo.test.ts` | WS コンボ（`comboFrom`）を持つジョブなら、対象ジョブの集合にジョブ ID を追記（ステップ 4） |
+| 既存テスト（条件付き） | `src/client/logic/__tests__/recent-jobs.test.ts` | 未実装 ID の例に使っているジョブを足すなら、例を差し替え（ステップ 6） |
 | アイコン | `src/client/assets/icons/<job>/*.png` | スキルアイコン配置 |
 | テスト（推奨） | `src/client/logic/__tests__/<job>-*.test.ts` | 新規作成 |
 
@@ -163,7 +167,7 @@ export const XXX_BUFFS: BuffDefinition[] = [
 | リソース増減 | `resourceChanges[]` | `whm-skills.ts` の `heart-of-solace`, `sam-skills.ts` の `hakaze` |
 | バフ付与 | `buffApplications[]` | `whm-skills.ts` の `presence-of-mind`・`swiftcast` |
 | バフ消費 | `buffConsumptions[]` | `whm-skills.ts` の `glare4` |
-| WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges`。コンボの起点・継続でない GCD には `keepsCombo: true` を付ける（付けないと、その GCD を挟んだときにコンボが途切れる。`ws-combo-keeps-combo.test.ts` が付け忘れを検出する） | `sam-skills.ts` の `jinpu`・`shifu`、`sam-skills.ts` の `enpi`（燕飛。`keepsCombo`） |
+| WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges`。コンボの起点・継続でない GCD には `keepsCombo: true` を付ける（付けないと、その GCD を挟んだときにコンボが途切れる。`ws-combo-keeps-combo.test.ts` が付け忘れを検出する）。同じテストの「対象のジョブがある」は対象ジョブを固定の集合で持つので、`comboFrom` を持つジョブを足したら集合にジョブ ID を足す（足さないと赤になる） | `sam-skills.ts` の `jinpu`・`shifu`、`sam-skills.ts` の `enpi`（燕飛。`keepsCombo`） |
 | 付与バフで表すコンボ（型など。直前の GCD ではなく、前の段が付けたバフでつながる） | 前の段の `buffApplications` で次の段のバフを付け、次の段は `comboFromBuff`（発動条件なら `required: true`）。段のバフに同じ `exclusiveGroup` と `duration` を付ける。成立時の効果は WS コンボと同じ `nonComboPotency` / `comboResourceChanges`。次の段を付けない最終段は `removesBuffs` で段のバフを外す | `mnk-skills.ts` の `FROM_RAPTOR_FORM` などの定数と `twin-snakes`（双掌打）、`mnk-buffs.ts` の `opo-form`・`raptor-form`・`coeurl-form`（型のバフ）、`pct-skills.ts` の `water-in-blue`（ブルーウォータ。最終段） |
 | 全消費＋集計獲得 | `consumeAllResources` + `resourceGainByConsumedCount` | `sam-skills.ts` の `hagakure`（葉隠 = 雪/月/花を全消費し剣気獲得） |
 | チャージ式・共有CD | `maxCharges` + `cooldownGroup` | `brd-skills.ts` の `bloodletter`・`rain-of-death`・`heartbreak-shot` |
@@ -258,7 +262,7 @@ import { XXX_RESOURCES } from "./<job>-resources";
 import { XXX_BUFFS } from "./<job>-buffs";
 
 // 2. JobId Union に追加
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "<job>";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge" | "pld" | "war" | "gnb" | "<job>";
 
 // 3. JOB_DATA に追加
 export const JOB_DATA: Record<JobId, JobData> = {
