@@ -5,7 +5,7 @@ import { languageBasePath, privacyPolicyPath } from "../logic/language-path";
 
 const OPERATOR_NAME = "Sakuya398-Yamada";
 // 削除の依頼を受ける Discord のアカウント（DM の送り主の ID で、削除する Discord ID の持ち主か確かめられる。#879）
-const DISCORD_CONTACT = "Sakuyuno";
+const DISCORD_CONTACT = "sakuyuno";
 const ISSUES_URL = "https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues";
 // 制定日。内容を変えたら書き換える
 const ENACTED_ON = new Date(Date.UTC(2026, 10, 6));
