@@ -1971,6 +1971,7 @@ export function resolveTimeline(
     // スキル実行後のリソーススナップショット（UI表示・最終状態計算用）
     // エラー時は resourceState が変動していないため snapshot と同値になる
     const snapshotAfter: ResourceSnapshot = { ...resourceState };
+    const hitDelay = hitDelays && Object.hasOwn(hitDelays, resolvedSkillId) ? hitDelays[resolvedSkillId] : undefined;
 
     resolved.push({
       uid: entry.uid,
@@ -1990,9 +1991,9 @@ export function resolveTimeline(
       consumedProc,
       wastedProc,
       ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
-      // 詠唱のあるスキルは詠唱完了から遅れを数える（実機のスナップショットは詠唱完了時）
-      ...(hitDelays && Object.hasOwn(hitDelays, resolvedSkillId)
-        ? { hitTime: Math.round((startTime + resolvedCastTime + hitDelays[resolvedSkillId]) * 1000) / 1000 }
+      // 詠唱のあるスキルは詠唱完了から遅れを数える（実機のスナップショットは詠唱完了時）。遅れが未設定なら 0 秒として扱う
+      ...(hitDelay !== undefined || resolvedCastTime > 0
+        ? { hitTime: Math.round((startTime + resolvedCastTime + (hitDelay ?? 0)) * 1000) / 1000 }
         : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),
@@ -2089,13 +2090,15 @@ export function resolveTimeline(
   // ティックを時刻順にソート
   dotTicks.sort((a, b) => a.time - b.time);
 
-  // 最後のGCDのリキャスト完了時刻を算出（GCD リキャストを発生させる oGCD（黙想・鉄山闘気等）も含める）
+  // 最後のGCDのリキャスト完了時刻を算出（GCD リキャストを発生させる oGCD（黙想・鉄山闘気等）も含める）。
+  // 詠唱がリキャストより長いスキル（ファイガ等）は、詠唱完了（遅れを除いた着弾）まで延ばす（#901）
   let lastGcdEndTime = 0;
   for (const entry of resolved) {
     const skill = skillMap.get(entry.resolvedSkillId);
     if (!skill || (skill.type !== "gcd" && !skill.triggersGcdRecast)) continue;
     // gcdAvailableAt は実行前バフ（recastOverride / speed）で算出済みの値をそのまま使う
-    const endTime = entry.gcdAvailableAt;
+    const castEndTime = Math.round((entry.startTime + entry.castTime) * 1000) / 1000;
+    const endTime = Math.max(entry.gcdAvailableAt, castEndTime);
     if (endTime > lastGcdEndTime) lastGcdEndTime = endTime;
   }
 
@@ -2122,6 +2125,8 @@ export function resolveTimeline(
  * - 範囲は既定で [rangeStart, rangeEnd) の半開区間（隣り合う区間で境界を二重に数えない）。
  *   includeEnd を指定すると rangeEnd ちょうども含める。タイムライン終端（= 最終 DoT ティック時刻に
  *   なり得る）までを数えるときに使う。半開区間のままだと最終ティックが漏れる（#400）。
+ *   includeEndEntries はスキルの着弾だけ rangeEnd ちょうどを含める。最後の GCD の詠唱完了は集計の終端と同じ時刻になり、
+ *   DoT がその後も続くと includeEnd が付かず漏れるため（#901）。
  */
 export function calcPps(
   resolvedEntries: ResolvedTimelineEntry[],
@@ -2130,15 +2135,15 @@ export function calcPps(
   rangeStart: number,
   rangeEnd: number,
   stats: CharacterStats,
-  options: { includeEnd?: boolean } = {}
+  options: { includeEnd?: boolean; includeEndEntries?: boolean } = {}
 ): { pps: number; totalPotency: number; directPotency: number; dotPotency: number } {
   const duration = rangeEnd - rangeStart;
   if (duration <= 0) return { pps: 0, totalPotency: 0, directPotency: 0, dotPotency: 0 };
-  const inRange = (t: number) => t >= rangeStart && (t < rangeEnd || (options.includeEnd === true && t === rangeEnd));
+  const inRange = (t: number, includeEnd = options.includeEnd === true) => t >= rangeStart && (t < rangeEnd || (includeEnd && t === rangeEnd));
 
   let directPotency = 0;
   for (const entry of resolvedEntries) {
-    if (inRange(entry.hitTime ?? entry.startTime)) {
+    if (inRange(entry.hitTime ?? entry.startTime, options.includeEnd === true || options.includeEndEntries === true)) {
       const skill = skillMap.get(entry.resolvedSkillId);
       directPotency += calcEntryExpectedPotency(entry, skill, stats);
     }

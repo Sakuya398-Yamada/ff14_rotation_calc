@@ -52,8 +52,14 @@ const ogcd = makeSkill({ id: "ogcd", type: "ogcd", potency: 150, recastTime: 60 
 const buffOgcd = makeSkill({ id: "buff-ogcd", type: "ogcd", potency: 0, recastTime: 120, buffApplications: ["damage-up", "transform-ready"] });
 const before = makeSkill({ id: "before", potency: 250, autoTransform: { buffId: "transform-ready", skillId: "after" } });
 const after = makeSkill({ id: "after", potency: 500, hidden: true });
+// 詠唱がリキャストより長い（黒魔のファイガなど）・詠唱とリキャストが同じ（ホーリジャなど）
+const longCast = makeSkill({ id: "long-cast", potency: 600, castTime: 3.5 });
+const evenCast = makeSkill({ id: "even-cast", potency: 700, castTime: 2.5 });
+const dotGcd = makeSkill({ id: "dot-gcd", potency: 50, dotPotency: 60, dotDuration: 30 });
 
-const skillMap = new Map([gcdA, gcdB, gcdC, spell, ogcd, buffOgcd, before, after].map((s) => [s.id, s]));
+const skillMap = new Map(
+  [gcdA, gcdB, gcdC, spell, ogcd, buffOgcd, before, after, longCast, evenCast, dotGcd].map((s) => [s.id, s])
+);
 
 function resolve(entries: TimelineEntry[], hitDelays?: Record<string, number>) {
   return resolveTimeline(entries, skillMap, [], stats, buffs, undefined, undefined, hitDelays);
@@ -64,10 +70,16 @@ function expectedPotency(entry: ResolvedTimelineEntry): number {
 }
 
 describe("着弾時刻（hitTime）", () => {
-  it("遅れを設定していないスキルには着弾時刻が無い", () => {
+  it("詠唱が無く遅れも設定していないスキルには着弾時刻が無い（開始時刻で判定する）", () => {
     const result = resolve([makeEntry("gcd-a"), makeEntry("gcd-b")], { "gcd-a": 0.6 });
     expect(result.entries[0].hitTime).toBe(0.6);
     expect(result.entries[1].hitTime).toBeUndefined();
+  });
+
+  it("詠唱のあるスキルは、遅れを設定していなくても詠唱完了の時刻に着弾する", () => {
+    const spellEntry = resolve([makeEntry("gcd-a"), makeEntry("spell")]).entries[1];
+    expect(spellEntry.castTime).toBeGreaterThan(0);
+    expect(spellEntry.hitTime).toBeCloseTo(spellEntry.startTime + spellEntry.castTime, 6);
   });
 
   it("詠唱の無いスキルは、開始 + 遅れで着弾する", () => {
@@ -112,7 +124,8 @@ describe("着弾時刻（hitTime）", () => {
       const { hitTime: _hitTime, ...rest } = e;
       return rest;
     };
-    expect(delayed.map(withoutHitTime)).toEqual(plain);
+    // 詠唱のある spell は遅れが無くても着弾時刻を持つので、両方から除いて比べる
+    expect(delayed.map(withoutHitTime)).toEqual(plain.map(withoutHitTime));
     expect(delayed.map(expectedPotency)).toEqual(plain.map(expectedPotency));
   });
 });
@@ -136,6 +149,20 @@ describe("PPS 区間への算入（calcPps）", () => {
     const pps = calcPps(result.entries, skillMap, result.dotTicks, 1, 5, stats);
     expect(pps.directPotency).toBe(expectedPotency(result.entries[0]));
   });
+
+  it("詠唱のあるスキルは、遅れを設定していなくても詠唱完了の時刻で区間に入るかを判定する", () => {
+    const result = resolve([makeEntry("gcd-a"), makeEntry("spell")]);
+    const spellEntry = result.entries[1];
+    const hitTime = spellEntry.hitTime!;
+    // 前提: 詠唱開始は 1s より後で、詠唱完了より前で区間が終わる
+    expect(spellEntry.startTime).toBeGreaterThan(1);
+    expect(hitTime).toBeGreaterThan(spellEntry.startTime);
+
+    expect(calcPps(result.entries, skillMap, result.dotTicks, 1, hitTime, stats).directPotency).toBe(0);
+    expect(calcPps(result.entries, skillMap, result.dotTicks, hitTime, hitTime + 1, stats).directPotency).toBe(
+      expectedPotency(spellEntry)
+    );
+  });
 });
 
 describe("全体の集計（calcTimelineSummary）", () => {
@@ -157,5 +184,30 @@ describe("全体の集計（calcTimelineSummary）", () => {
     const summary = calcTimelineSummary(result, skillMap, stats);
     expect(summary.duration).toBe(2.5);
     expect(summary.totalExpectedPotency).toBe(expectedPotency(result.entries[0]));
+  });
+
+  it("最後の GCD の詠唱完了がリキャスト完了より遅いと、終端（所要時間）を詠唱完了まで延ばし、その着弾も集計に入れる", () => {
+    const result = resolve([makeEntry("gcd-a"), makeEntry("long-cast")]);
+    const cast = result.entries[1];
+    // 前提: 詠唱完了がリキャスト完了より遅い
+    expect(cast.hitTime!).toBeGreaterThan(cast.gcdAvailableAt);
+
+    expect(result.lastGcdEndTime).toBe(cast.hitTime);
+    const summary = calcTimelineSummary(result, skillMap, stats);
+    expect(summary.duration).toBe(cast.hitTime);
+    expect(summary.totalExpectedPotency).toBe(expectedPotency(result.entries[0]) + expectedPotency(cast));
+  });
+
+  it("DoT が終端より後まで続いていても、終端ちょうどに着弾した最後の詠唱スキルは集計に入れる", () => {
+    const result = resolve([makeEntry("dot-gcd"), makeEntry("even-cast")]);
+    const cast = result.entries[1];
+    // 前提: 詠唱完了とリキャスト完了が同じ時刻で、DoT のティックはその後も続く
+    expect(cast.hitTime).toBe(cast.gcdAvailableAt);
+    expect(result.lastGcdEndTime).toBe(cast.hitTime);
+    expect(result.timelineEndTime).toBeGreaterThan(result.lastGcdEndTime);
+
+    const summary = calcTimelineSummary(result, skillMap, stats);
+    const dotUntilEnd = calcPps(result.entries, skillMap, result.dotTicks, 0, result.lastGcdEndTime, stats).dotPotency;
+    expect(summary.totalExpectedPotency).toBe(expectedPotency(result.entries[0]) + expectedPotency(cast) + dotUntilEnd);
   });
 });

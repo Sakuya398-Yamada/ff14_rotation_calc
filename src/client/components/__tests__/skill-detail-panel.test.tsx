@@ -236,11 +236,18 @@ describe("SkillDetailPanel: 着弾までの遅れ (#901)", () => {
     expect(input).toHaveValue(0.6);
   });
 
-  it("未設定なら入力欄は空で、解除ボタンと着弾時刻は出ない", () => {
-    const { input } = renderSecondFire3();
+  it("未設定なら入力欄は空で解除ボタンは出ず、詠唱のあるスキルには詠唱完了の着弾時刻を出す", () => {
+    const { entry, input } = renderSecondFire3();
 
     expect(input).toHaveValue(null);
     expect(screen.queryByRole("button", { name: "着弾までの遅れを解除" })).not.toBeInTheDocument();
+    expect(screen.getByText(`（着弾: ${(entry.startTime + entry.castTime).toFixed(2)}s）`)).toBeInTheDocument();
+  });
+
+  it("詠唱の無いスキルで未設定なら、着弾時刻は出ない", () => {
+    renderLastEntry(["burst-shot"]);
+
+    expect(screen.getByRole("spinbutton", { name: "着弾までの遅れ" })).toHaveValue(null);
     expect(screen.queryByText(/着弾:/)).not.toBeInTheDocument();
   });
 });

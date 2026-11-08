@@ -15,6 +15,8 @@ export function calcRangePps(
 ): PpsResult {
   return calcPps(result.entries, skillMap, result.dotTicks, range.startTime, range.endTime, stats, {
     includeEnd: range.endTime >= result.timelineEndTime,
+    // 最後の GCD の詠唱完了は終端と同じ時刻なので、DoT が終端より後まで続いても、終端ちょうどの着弾は数える（#901）
+    includeEndEntries: range.endTime >= result.lastGcdEndTime,
   });
 }
 
@@ -23,15 +25,15 @@ export interface TimelineSummary {
   overallPps: PpsResult | null;
   totalExpectedPotency: number;
   dotExpectedPotency: number;
-  /** 所要時間（最後の GCD のリキャスト完了） */
+  /** 所要時間（最後の GCD のリキャスト完了。詠唱がリキャストより長ければ詠唱完了） */
   duration: number;
   /** DoT が所要時間より後まで続くときの、最後の DoT ティックの時刻。続かなければ null */
   lastDotTickTime: number | null;
 }
 
 /**
- * 集計行の値。範囲は PPS 区間の「全体」ボタンと同じ 0 〜 最後の GCD のリキャスト完了で、
- * それより後の DoT ティックとエントリは数えない（#835）
+ * 集計行の値。範囲は PPS 区間の「全体」ボタンと同じ 0 〜 最後の GCD のリキャスト完了（詠唱がリキャストより長ければ
+ * 詠唱完了。#901）で、それより後の DoT ティックと、それより後に着弾するエントリは数えない（#835）
  */
 export function calcTimelineSummary(
   result: SummarySource,

@@ -11,7 +11,7 @@ interface SummaryBarProps {
   overallPps: PpsResult | null;
   rangePps: PpsResult | null;
   ppsRange: PpsRange | null;
-  /** 全体 PPS の分母と同じ、最後の GCD のリキャスト完了時刻 */
+  /** 全体 PPS の分母と同じ、最後の GCD のリキャスト完了時刻（詠唱がリキャストより長ければ詠唱完了） */
   duration: number;
   /** DoT が所要時間より後まで続くときの、最後の DoT ティックの時刻（所要時間の注記に出す） */
   lastDotTickTime: number | null;
