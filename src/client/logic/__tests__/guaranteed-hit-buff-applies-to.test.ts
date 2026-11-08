@@ -77,7 +77,7 @@ describe("確定クリティカル・ダイレクトヒットのバフを applie
     expect(e[1].critRateBonus).toBe(0);
     expect(e[1].dhRateBonus).toBe(0);
     expect(stacksOf(e[1], "limited")).toBe(3);
-    expect(getBuffContributions(e[1].activeBuffsAtUse, buffDefMap, "other")).toEqual([]);
+    expect(getBuffContributions(e[1].activeBuffsAtUse, buffDefMap, "other", "gcd")).toEqual([]);
   });
 
   it("対象の GCD は確定になり、CRT・DH・consumeOnGcd を併せ持っても 1 スタックだけ減る", () => {
@@ -86,7 +86,7 @@ describe("確定クリティカル・ダイレクトヒットのバフを applie
     expect(e[1].critRateBonus).toBe(1);
     expect(e[1].dhRateBonus).toBe(1);
     expect(stacksOf(e[1], "limited")).toBe(2);
-    const [contribution] = getBuffContributions(e[1].activeBuffsAtUse, buffDefMap, "target");
+    const [contribution] = getBuffContributions(e[1].activeBuffsAtUse, buffDefMap, "target", "gcd");
     expect(contribution).toMatchObject({ buffId: "limited", guaranteedCrit: true, guaranteedDh: true });
   });
 
