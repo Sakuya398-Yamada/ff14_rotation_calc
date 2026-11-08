@@ -97,11 +97,6 @@ function setup(entries: TimelineEntry[], draggedUid: string) {
       useTimelineDnd({
         resolvedEntries,
         skillMap,
-        resources: [],
-        stats: DEFAULT_STATS,
-        buffs: [],
-        untargetableWindows: [],
-        multiTargetWindows: [],
         getResolvedEntryRecast,
         scrollRef,
         shouldAutoScrollRef,

@@ -192,11 +192,6 @@ export function Timeline({
   } = useTimelineDnd({
     resolvedEntries,
     skillMap,
-    resources,
-    stats,
-    buffs,
-    untargetableWindows,
-    multiTargetWindows,
     getResolvedEntryRecast,
     scrollRef,
     shouldAutoScrollRef,

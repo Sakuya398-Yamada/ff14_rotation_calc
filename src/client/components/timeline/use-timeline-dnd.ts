@@ -1,8 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useDndMonitor } from "@dnd-kit/core";
 import type { DragStartEvent, DragMoveEvent, DragEndEvent } from "@dnd-kit/core";
-import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, CharacterStats, BossUntargetableWindow, MultiTargetWindow } from "../../types/skill";
-import { resolveTimeline } from "../../logic/resolve-timeline";
+import type { Skill, ResolvedTimelineEntry } from "../../types/skill";
 import { calcInsertIndex } from "./helpers";
 import { PX_PER_SEC } from "./constants";
 import { TIMELINE_DROPZONE_ID, DELETE_ZONE_ID, getEventClientX } from "./dnd-types";
@@ -11,11 +10,6 @@ import type { TimelineDragData } from "./dnd-types";
 interface UseTimelineDndArgs {
   resolvedEntries: ResolvedTimelineEntry[];
   skillMap: Map<string, Skill>;
-  resources: ResourceDefinition[];
-  stats: CharacterStats;
-  buffs: BuffDefinition[];
-  untargetableWindows: BossUntargetableWindow[];
-  multiTargetWindows: MultiTargetWindow[];
   getResolvedEntryRecast: (entry: ResolvedTimelineEntry, skill: Skill) => number;
   scrollRef: React.RefObject<HTMLDivElement | null>;
   shouldAutoScrollRef: React.MutableRefObject<boolean>;
@@ -34,11 +28,6 @@ interface UseTimelineDndArgs {
 export function useTimelineDnd({
   resolvedEntries,
   skillMap,
-  resources,
-  stats,
-  buffs,
-  untargetableWindows,
-  multiTargetWindows,
   getResolvedEntryRecast,
   scrollRef,
   shouldAutoScrollRef,
@@ -72,63 +61,21 @@ export function useTimelineDnd({
   }, []);
 
   /**
-   * 挿入位置計算用の resolvedEntries。
-   * - パレットからのD&D（draggingEntryUid === null）: resolvedEntries をそのまま再利用。
-   *   既に App.tsx の resolveTimeline が計算した startTime / 各エントリの post-entry state
-   *   （gcdAvailableAt / actionAvailableAt）をそのまま使う。
-   * - タイムライン内D&D（draggingEntryUid !== null）: ドラッグ中エントリを除外した
-   *   生エントリ列で resolveTimeline を再実行する。これにより「ドロップ後の並び」における
-   *   各エントリの startTime と post-entry state が正確に得られ、パレットD&D時と
-   *   同一アルゴリズムで算出されるため、インジケーター位置が必ず一致する。
+   * 挿入位置の計算に使う「見えている並び」。タイムライン内D&D中は、ドラッグ中エントリだけを除く。
+   * ドラッグ中エントリを含めると、元の位置の近くでインデックスが 1 つずれ、ドロップ先が自分自身になり得る。
    *
-   * 再実行コストは draggingEntryUid 変化時のみ（ドラッグ開始/終了）で、
-   * drag move の rAF コールバック内では useMemo のキャッシュを参照するだけ。
-   */
-  const insertionResolvedEntries = useMemo(() => {
-    if (draggingEntryUid === null) return resolvedEntries;
-    const filteredRaw = resolvedEntries
-      .filter((e) => e.uid !== draggingEntryUid)
-      .map((e) => ({ uid: e.uid, skillId: e.skillId }));
-    return resolveTimeline(filteredRaw, skillMap, resources, stats, buffs, untargetableWindows, multiTargetWindows).entries;
-  }, [resolvedEntries, draggingEntryUid, skillMap, resources, stats, buffs, untargetableWindows, multiTargetWindows]);
-
-  /**
-   * マウス位置と突き合わせる用の「見えている並び」。
-   * タイムライン内D&D中は、画面に表示されているエントリは元の resolvedEntries の
-   * startTime で配置されている（ドラッグ中エントリは半透明で残り、他は動かない）。
-   * 一方 insertionResolvedEntries は「ドラッグ中エントリを除いた並びで再 resolve」した結果で、
-   * 後続エントリの startTime が前詰めで左に寄っている。
-   *
-   * マウス位置は「見えている並び」に対するユーザー操作なので、calcInsertIndex での
-   * 中央時刻判定は insertionResolvedEntries ではなくこの「見えている並び」で行う必要がある。
-   * （insertionResolvedEntries で判定すると、マウスが見えている C-D 間にある時に
-   *   論理上の D（=前詰めで C の右隣）より右と判定されてしまい、挿入位置が 1 つ右にズレる）
-   *
-   * 一方で uid 順序は insertionResolvedEntries と一致するため、calcInsertIndex が返す
-   * idx は insertionResolvedEntries にもそのまま使える（indicatorX / drop target 特定）。
+   * ここから使うのは、uid の並び（挿入インデックスとドロップ先）、スキルの種類（GCD か）、
+   * 画面に描かれている時刻（マウス位置の判定とインジケーターの位置）だけ。
+   * ドラッグ中もアイコンは元の resolvedEntries の時刻のまま動かない（ドラッグ中エントリは半透明で残る）ので、
+   * 時刻はこの並びの値をそのまま使う。ドラッグ中エントリを除いた並びで resolveTimeline をやり直すと、
+   * 後続の時刻が前詰めされて画面とずれる（#190）。並びとスキルの種類はやり直しても変わらないので、やり直さない（#962）。
    */
   const visibleEntriesForInsert = useMemo(() => {
     if (draggingEntryUid === null) return resolvedEntries;
     return resolvedEntries.filter((e) => e.uid !== draggingEntryUid);
   }, [resolvedEntries, draggingEntryUid]);
 
-  /**
-   * 挿入位置計算用の GCDエントリ（タイムライン内D&D中はドラッグ中エントリを除外）。
-   * ドラッグ中エントリを含めるとインデックス計算や no-op 判定でズレが生じるため、
-   * 挿入計算は必ずこの除外版を参照する。
-   */
-  const insertionGcdResolvedEntries = useMemo(
-    () => insertionResolvedEntries.filter((entry) => {
-      const skill = skillMap.get(entry.skillId);
-      return skill && skill.type === "gcd";
-    }),
-    [insertionResolvedEntries, skillMap]
-  );
-
-  /**
-   * マウス位置判定用 GCD-only エントリ（見えている並び準拠）。
-   * uid 順序は insertionGcdResolvedEntries と一致するため idx は互換。
-   */
+  /** 見えている並びの GCD だけ（GCD の挿入位置の判定用） */
   const visibleGcdEntriesForInsert = useMemo(
     () => visibleEntriesForInsert.filter((entry) => {
       const skill = skillMap.get(entry.skillId);
@@ -140,15 +87,15 @@ export function useTimelineDnd({
   /** GCDフィルタ済みインデックスを挿入用エントリリスト上のインデックスに変換 */
   const mapGcdIndexToInsertion = useCallback(
     (gcdIdx: number): number => {
-      if (gcdIdx >= insertionGcdResolvedEntries.length) {
+      if (gcdIdx >= visibleGcdEntriesForInsert.length) {
         // 末尾に追加: 最後のGCD以降のoGCDも含めた末尾
-        return insertionResolvedEntries.length;
+        return visibleEntriesForInsert.length;
       }
       // gcdIdx番目のGCDエントリの前に挿入
-      const targetEntry = insertionGcdResolvedEntries[gcdIdx];
-      return insertionResolvedEntries.findIndex((e) => e.uid === targetEntry.uid);
+      const targetEntry = visibleGcdEntriesForInsert[gcdIdx];
+      return visibleEntriesForInsert.findIndex((e) => e.uid === targetEntry.uid);
     },
-    [insertionResolvedEntries, insertionGcdResolvedEntries]
+    [visibleEntriesForInsert, visibleGcdEntriesForInsert]
   );
 
   /**
@@ -162,10 +109,7 @@ export function useTimelineDnd({
   );
 
   /**
-   * ドラッグ中のポインタ位置から挿入インデックス（insertionResolvedEntries上）を計算する。
-   * ポインタ位置は「見えている並び」（resolvedEntries の startTime 準拠）に対する操作なので、
-   * 中央時刻の比較は visibleEntriesForInsert / visibleGcdEntriesForInsert で行う。
-   * 返される idx は uid 順序を揃えてあるので insertionResolvedEntries にもそのまま使える。
+   * ドラッグ中のポインタ位置から挿入インデックス（visibleEntriesForInsert 上）を計算する。
    * GCD: GCDエントリのみで計算し、insertion変換（GCDリキャスト境界間に配置）
    * oGCD: 全エントリで計算、アニメーションロック基準の中央で判定（ウィービング対応）
    */
@@ -240,7 +184,7 @@ export function useTimelineDnd({
       dragRafRef.current = requestAnimationFrame(() => {
         dragRafRef.current = null;
         const clientX = pointerClientXRef.current;
-        if (clientX !== null && scrollRef.current && insertionResolvedEntries.length > 0) {
+        if (clientX !== null && scrollRef.current && visibleEntriesForInsert.length > 0) {
           const mouseX = clientX - scrollRef.current.getBoundingClientRect().left;
           setInsertIndex(calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, data.skillType));
         } else {
@@ -248,7 +192,7 @@ export function useTimelineDnd({
         }
       });
     },
-    [insertionResolvedEntries, calcCombinedInsertIndex, scrollRef]
+    [visibleEntriesForInsert, calcCombinedInsertIndex, scrollRef]
   );
 
   const handleDragEnd = useCallback(
@@ -278,24 +222,24 @@ export function useTimelineDnd({
       const clientX = pointerClientXRef.current;
 
       if (data.source === "timeline") {
-        if (scrollRef.current && clientX !== null && insertionResolvedEntries.length > 0) {
+        if (scrollRef.current && clientX !== null && visibleEntriesForInsert.length > 0) {
           const mouseX = clientX - scrollRef.current.getBoundingClientRect().left;
           const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, data.skillType);
-          // insertionResolvedEntries はドラッグ中エントリを除外しているため、
+          // visibleEntriesForInsert はドラッグ中エントリを除外しているため、
           // ここで得られる targetEntry が自分自身になることはない（= 不要な no-op 判定が消える）
-          const targetEntry = idx < insertionResolvedEntries.length ? insertionResolvedEntries[idx] : undefined;
+          const targetEntry = idx < visibleEntriesForInsert.length ? visibleEntriesForInsert[idx] : undefined;
           shouldAutoScrollRef.current = false;
           onMoveEntry(data.uid, targetEntry?.uid);
         }
       } else {
-        if (scrollRef.current && clientX !== null && insertionResolvedEntries.length > 0) {
+        if (scrollRef.current && clientX !== null && visibleEntriesForInsert.length > 0) {
           const mouseX = clientX - scrollRef.current.getBoundingClientRect().left;
           const idx = calcCombinedInsertIndex(mouseX, scrollRef.current.scrollLeft, data.skillType);
-          const isInsertMiddle = idx < insertionResolvedEntries.length;
+          const isInsertMiddle = idx < visibleEntriesForInsert.length;
           if (isInsertMiddle) {
             shouldAutoScrollRef.current = false;
           }
-          onAddEntry(data.skillId, isInsertMiddle ? insertionResolvedEntries[idx].uid : undefined);
+          onAddEntry(data.skillId, isInsertMiddle ? visibleEntriesForInsert[idx].uid : undefined);
         } else {
           onAddEntry(data.skillId);
         }
@@ -303,7 +247,7 @@ export function useTimelineDnd({
 
       clearDragState();
     },
-    [onAddEntry, onMoveEntry, onRemoveEntry, insertionResolvedEntries, calcCombinedInsertIndex, scrollRef, shouldAutoScrollRef, clearDragState]
+    [onAddEntry, onMoveEntry, onRemoveEntry, visibleEntriesForInsert, calcCombinedInsertIndex, scrollRef, shouldAutoScrollRef, clearDragState]
   );
 
   useDndMonitor({
@@ -315,18 +259,9 @@ export function useTimelineDnd({
 
   /**
    * 挿入インジケーターのX座標。
-   * 画面に描画されているエントリアイコンと同じ座標系で描画する必要があるため、
-   * 「見えている並び」(visibleEntriesForInsert) の post-entry state を使う。
-   *
-   * insertionResolvedEntries（= ドラッグ中エントリを除いて再 resolve した結果）は
-   * ドラッグ中エントリが抜けた分、後続エントリの startTime / gcdAvailableAt が前詰めされており、
-   * これを indicatorX に使うと画面上のアイコンより 1 スロット分左にズレてしまう
-   * （特に末尾側へドラッグした際に顕著で、最右スロットにインジケーターが出ない症状を引き起こす）。
-   *
-   * 一方 visibleEntriesForInsert は元 resolvedEntries をドラッグ中エントリだけフィルタした並びで、
-   * 各エントリの startTime / gcdAvailableAt / actionAvailableAt は画面描画に使われている値と同一。
-   * calcInsertIndex も visibleEntriesForInsert を基準に idx を決めているので、
-   * idx と indicatorX の座標系が完全に一致する。
+   * 画面に描画されているエントリアイコンと同じ座標系にするため、「見えている並び」(visibleEntriesForInsert) の
+   * post-entry state（gcdAvailableAt / actionAvailableAt）を使う。calcInsertIndex も同じ並びで idx を決めているので、
+   * idx と indicatorX の座標系が一致する。
    */
   const indicatorX = useMemo(() => {
     if (insertIndex === null || dragType === null) return null;
