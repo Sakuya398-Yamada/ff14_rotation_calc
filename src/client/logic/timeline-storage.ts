@@ -26,6 +26,8 @@ export interface PersistedAppState {
   stats: CharacterStats;
   untargetableWindows: BossUntargetableWindow[];
   multiTargetWindows: MultiTargetWindow[];
+  /** 実行されたスキルの ID → 実行から着弾までの遅れ（秒）。設定が無ければキーごと無い（#901） */
+  hitDelays?: Record<string, number>;
 }
 
 /** version を除いた保存入力（version は serialize 時に自動付与する） */
@@ -123,6 +125,16 @@ export function deserializeAppState(json: string | null): PersistedAppState | nu
     entries.push(entry);
   }
 
+  // エントリと同じく、選択ジョブに無いスキルと不正な値は黙って落とす
+  const hitDelays: Record<string, number> = {};
+  if (typeof obj.hitDelays === "object" && obj.hitDelays !== null && !Array.isArray(obj.hitDelays)) {
+    for (const [skillId, delay] of Object.entries(obj.hitDelays)) {
+      if (validSkillIds.has(skillId) && isFiniteNumber(delay) && delay >= 0) {
+        hitDelays[skillId] = delay;
+      }
+    }
+  }
+
   return {
     version: SCHEMA_VERSION,
     selectedJob: obj.selectedJob,
@@ -140,6 +152,7 @@ export function deserializeAppState(json: string | null): PersistedAppState | nu
       endTime: w.endTime,
       targetCount: w.targetCount,
     })),
+    ...(Object.keys(hitDelays).length > 0 ? { hitDelays } : {}),
   };
 }
 
