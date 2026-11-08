@@ -69,7 +69,7 @@ describe("BRD: 軍神のパイオン中の詩心最大 4 とヘイスト (#419)"
 
 describe("BRD: 賢人のバラード中の詩心付与でブラッドレッター系のリキャストが 7.5 秒短縮される (#419)", () => {
   // 歌 → ハートブレイクショット 3 回でチャージを使い切り、最後のハートブレイクショットを指定時刻に置く。
-  // 詩心の自動生成は歌の実行時刻から 3.75 秒ごと（#524）
+  // 詩心の判定は歌の実行時刻から 3 秒ごと（#524・#900）。未指定の判定は 3・8・13 回目が不発
   function chargesUsedUp(song: string, skillId = "heartbreak-shot") {
     return [entry(song), entry(skillId), entry(skillId), entry(skillId)];
   }
@@ -78,11 +78,11 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
   const firstUse = base[1].startTime;
 
   it("詩心の付与 2 回で、15 秒のリキャストが 1 チャージ分回復する", () => {
-    // 付与は songTime + 3.75 と songTime + 7.5。7.5 秒 × 2 回の短縮で、firstUse に使ったチャージが 2 回目の付与で戻る
-    const before = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", songTime + 7.4)]);
+    // 付与は songTime + 3 と songTime + 6。7.5 秒 × 2 回の短縮で、firstUse に使ったチャージが 2 回目の付与で戻る
+    const before = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", songTime + 5.9)]);
     expect(before.entries[4].recastError).toBe(true);
 
-    const after = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", songTime + 7.5)]);
+    const after = resolve([...chargesUsedUp("mages-ballad"), entry("heartbreak-shot", songTime + 6)]);
     expect(after.entries[4].recastError).toBe(false);
   });
 
@@ -96,7 +96,7 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
       const ballad = after("mages-ballad");
       expect(ballad[1].resolvedSkillId).toBe(skillId);
       expect(ballad[4].recastError).toBe(false);
-      expect(ballad[1].cooldownEndTime).toBe(Math.round((songTime + 7.5) * 1000) / 1000);
+      expect(ballad[1].cooldownEndTime).toBe(Math.round((songTime + 6) * 1000) / 1000);
 
       // 旅神のメヌエット中は短縮されないので、使ってから 15 秒で終わる
       const minuet = after("wanderers-minuet");
@@ -116,9 +116,9 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
     expect(after.entries[4].recastError).toBe(false);
   });
 
-  it("詩心が 0 のままでも、3.75 秒ごとの付与のたびに短縮される", () => {
-    // 付与は songTime + 3.75 × k。バラード中は詩心が溜まらない（上限 0）が、付与のたびに短縮が続く
-    const t = songTime + 3.75 * 6;
+  it("詩心が 0 のままでも、3 秒ごとの判定で付与されるたびに短縮される", () => {
+    // 付与は songTime + 3 × k（9 秒は既定で不発）で、22.5 秒までに 6 回。バラード中は詩心が溜まらない（上限 0）が、付与のたびに短縮が続く
+    const t = songTime + 22.5;
     const used = [
       entry("mages-ballad"),
       entry("heartbreak-shot"),
@@ -145,8 +145,8 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
     // 詩心は増えない（上限 0）が、付与は起きている
     expect(arrow.resourceSnapshot["repertoire"]).toBe(0);
     const t = arrow.startTime;
-    // 自動生成の付与（songTime + 3.75）とエンピリアルアローの付与で 15 秒短縮 → songTime + 3.75 時点で回復済み
-    expect(t).toBeLessThan(songTime + 3.75);
+    // 自動生成の付与（songTime + 3）とエンピリアルアローの付与で 15 秒短縮 → songTime + 3 時点で回復済み
+    expect(t).toBeLessThan(songTime + 3);
     const result = resolve([...withArrow, entry("heartbreak-shot", songTime + 3.8)]);
     expect(result.entries[5].recastError).toBe(false);
 
@@ -235,21 +235,21 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
 
   // 賢人のバラード中は詩心が溜まらない（#631）ので、付与の時刻はソウルボイスで見る
   it.each([["mages-ballad", 0], ["armys-paeon", 1], ["wanderers-minuet", 1]] as const)(
-    "%s の実行から 3.75 秒後に最初の付与（詩心 +%s・ソウルボイス +5）",
+    "%s の実行から 3 秒後に最初の付与（詩心 +%s・ソウルボイス +5）",
     (song, repertoireGain) => {
       // 次のエントリを付与の直前・直後に置く。付与の時刻が次のエントリの時刻に引きずられないことを見る
-      const before = resolve([entry(song), entry("burst-shot", 3.7)]).entries[1];
+      const before = resolve([entry(song), entry("burst-shot", 2.9)]).entries[1];
       expect(before.resourceSnapshot["repertoire"]).toBe(0);
       expect(before.resourceSnapshot["soul-voice"]).toBe(0);
 
-      const after = resolve([entry(song), entry("burst-shot", 3.75)]).entries[1];
+      const after = resolve([entry(song), entry("burst-shot", 3)]).entries[1];
       expect(after.resourceSnapshot["repertoire"]).toBe(repertoireGain);
       expect(after.resourceSnapshot["soul-voice"]).toBe(5);
     },
   );
 
   it("歌を別の歌で上書きすると、上書きした歌の実行時刻から数え直す", () => {
-    // 軍神のパイオンの付与は 3.75 × k（11.25 秒にも来る）。10 秒で上書きしたメヌエットの最初の付与は 13.75 秒
+    // 軍神のパイオンの判定は 3 × k（12 秒にも来る）。10 秒で上書きしたメヌエットの最初の付与は 13 秒
     const overwrite = (t: number) =>
       resolve([
         entry("armys-paeon"),
@@ -259,21 +259,21 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
         entry("burst-shot", t),
       ]).entries;
 
-    const before = overwrite(13.7);
+    const before = overwrite(12.9);
     expect(before[3].resolvedSkillId).toBe("wanderers-minuet");
     expect(before[4].recastError).toBe(false);
     expect(before[4].resourceSnapshot["repertoire"]).toBe(0);
 
-    const after = overwrite(13.75);
+    const after = overwrite(13);
     expect(after[4].recastError).toBe(false);
     expect(after[4].resourceSnapshot["repertoire"]).toBe(1);
   });
 
-  // 0.13 秒開始は、3.75 を丸めずに足し続けると 12 回目が終了時刻 45.13 の手前に寄る
+  // 0.13 秒開始は、3 を丸めずに足し続けると 15 回目が終了時刻 45.13 の手前に寄る（15 回目は既定の並びで発生する回なので、数えると 60 になる）
   it.each(SONGS.flatMap((song) => [[song, 0], [song, 0.13]] as const))(
     "%s を %s 秒に実行して、エントリの間で時間切れになっても、終了時刻の手前までの付与を数える",
     (song, songTime) => {
-      // 歌の効果 45 秒で 3.75 秒ごとに 11 回（終了時刻ちょうどの 12 回目は数えない）。ソウルボイスは歌が終わっても残る
+      // 歌の効果 45 秒で 3 秒ごとに 14 回の判定のうち、既定の並びで 11 回（終了時刻ちょうどの 15 回目は数えない）。ソウルボイスは歌が終わっても残る
       const after = resolve([entry(song, songTime), entry("burst-shot", 50)]).entries[1];
       expect(after.activeBuffs.some((ab) => ab.buffId === song)).toBe(false);
       expect(after.resourceSnapshot["soul-voice"]).toBe(55);
@@ -281,7 +281,7 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
   );
 
   it("賢人のバラードが切れる前の付与はリキャストを短縮し、終了時刻ちょうどの付与は短縮しない", () => {
-    // 39 秒からチャージを使い切ると次の回復は 54 秒。41.25 秒の付与で 46.5 秒に早まる。45 秒（終了時刻）の付与は数えない
+    // 39 秒からチャージを使い切ると次の回復は 54 秒。39 秒の判定（13 回目）は既定で不発、42 秒の付与で 46.5 秒に早まる。45 秒（終了時刻）の判定は数えない
     const withNext = (t: number) =>
       resolve([
         entry("mages-ballad"),
@@ -293,7 +293,7 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
 
     const before = withNext(46.4);
     expect(before.slice(1, 4).every((e) => !e.recastError)).toBe(true);
-    expect(before[3].startTime).toBeLessThan(41.25);
+    expect(before[3].startTime).toBeLessThan(42);
     expect(before[4].recastError).toBe(true);
 
     const after = withNext(46.5);
@@ -304,12 +304,12 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
 
 describe("BRD: 詩心・ソウルボイスが上限に達したあと消費しても、付与は歌の実行時刻からの刻みで続く (#557)", () => {
   it("メヌエット中に詩心 3 でピッチパーフェクトを撃っても、次の付与は歌の実行時刻からの 15 秒", () => {
-    // 付与は 3.75 × k。11.25 秒で詩心 3（上限）になり、12.2 秒のピッチパーフェクトで 0 に戻る
+    // 付与は 3 × k（9 秒は既定で不発）。12 秒で詩心 3（上限）になり、12.7 秒のピッチパーフェクトで 0 に戻る
     const withNext = (t: number) =>
       resolve([
         entry("wanderers-minuet", 0),
-        entry("burst-shot", 11.5),
-        entry("pitch-perfect", 12.2),
+        entry("burst-shot", 12),
+        entry("pitch-perfect", 12.7),
         entry("burst-shot", t),
       ]).entries;
 
@@ -328,8 +328,9 @@ describe("BRD: 詩心・ソウルボイスが上限に達したあと消費し�
   });
 
   it("ソウルボイス 100 でエイペックスアローを撃っても、次の付与は歌の実行時刻からの刻み", () => {
-    // バラードの 10 回で 50、40 秒の軍神のパイオンから 3.75 秒ごとに 10 回で 77.5 秒に 100（上限）。
-    // 78 秒のエイペックスアローで 0 に戻り、次の付与はパイオンの実行時刻から 11 回目の 81.25 秒
+    // 40 秒に上書きするまでのバラードの 13 回の判定のうち 10 回で 50、40 秒の軍神のパイオンの 12 回目の判定（76 秒）までの 10 回で 100（上限）。
+    // 78 秒のエイペックスアローで 0 に戻り、次の付与はパイオンの実行時刻からの 14 回目の 82 秒（13 回目の 79 秒は既定で不発。
+    // 消費した時刻から数え直すと 81 秒に付く）
     const withNext = (t: number) =>
       resolve([
         entry("mages-ballad", 0),
@@ -338,14 +339,14 @@ describe("BRD: 詩心・ソウルボイスが上限に達したあと消費し�
         entry("burst-shot", t),
       ]).entries;
 
-    const before = withNext(81.2);
+    const before = withNext(81.9);
     expect(before[2].resourceErrors).toEqual([]);
     expect(before[2].resolvedPotency).toBe(700);
     expect(before[2].resourceSnapshot["soul-voice"]).toBe(0);
     expect(before[3].recastError).toBe(false);
     expect(before[3].resourceSnapshot["soul-voice"]).toBe(0);
 
-    const after = withNext(81.25);
+    const after = withNext(82);
     expect(after[3].recastError).toBe(false);
     expect(after[3].resourceSnapshot["soul-voice"]).toBe(5);
   });

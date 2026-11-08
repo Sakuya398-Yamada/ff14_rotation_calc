@@ -70,6 +70,8 @@ function renderLastEntry(skillIds: string[], job = BRD) {
       onProcOccurredChange={vi.fn()}
       hitDelay={undefined}
       onHitDelayChange={vi.fn()}
+      resources={job.resources}
+      onAutoGenerateProcChange={vi.fn()}
     />
   );
 }
@@ -98,6 +100,8 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
         onProcOccurredChange={onProcOccurredChange}
         hitDelay={undefined}
         onHitDelayChange={vi.fn()}
+        resources={job.resources}
+        onAutoGenerateProcChange={vi.fn()}
       />
     );
     return onProcOccurredChange;
@@ -144,6 +148,83 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
   });
 });
 
+describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => {
+  function renderEntry(skillId: string, autoGenerateProcOccurred?: (boolean | null)[], job = BRD) {
+    const onAutoGenerateProcChange = vi.fn();
+    const [entry] = resolveTimeline(
+      [{ uid: "e-1", skillId, ...(autoGenerateProcOccurred ? { autoGenerateProcOccurred } : {}) }],
+      job.skillMap,
+      job.resources,
+      stats,
+      job.buffs
+    ).entries;
+    render(
+      <SkillDetailPanel
+        entry={entry}
+        resolvedSkill={job.skillMap.get(entry.resolvedSkillId)!}
+        jobId={job.jobId}
+        buffDefMap={job.buffDefMap}
+        stats={stats}
+        onClose={vi.fn()}
+        onManualStartTimeChange={vi.fn()}
+        onProcOccurredChange={vi.fn()}
+        hitDelay={undefined}
+        onHitDelayChange={vi.fn()}
+        resources={job.resources}
+        onAutoGenerateProcChange={onAutoGenerateProcChange}
+      />
+    );
+    return onAutoGenerateProcChange;
+  }
+
+  it.each([
+    ["wanderers-minuet", "旅神のメヌエット"],
+    ["mages-ballad", "賢人のバラード"],
+    ["armys-paeon", "軍神のパイオン"],
+  ])("%s には 3〜42 秒の 14 回の判定のボタンが並ぶ", (skillId, name) => {
+    renderEntry(skillId);
+
+    const group = screen.getByRole("group", { name: `${name}の判定` });
+    const buttons = within(group).getAllByRole("button");
+    expect(buttons).toHaveLength(14);
+    expect(buttons[0]).toHaveAccessibleName("3秒の判定: 未指定（発生として計算）");
+    expect(buttons[13]).toHaveAccessibleName("42秒の判定: 未指定（発生として計算）");
+  });
+
+  it.each([
+    ["歌ではないバーストショット", "burst-shot", BRD],
+    ["自動生成が確率の判定でないジョブ（ルーシッドドリームの MP）", "lucid-dreaming", BLM],
+  ])("%s には判定のボタンが出ない", (_label, skillId, job) => {
+    renderEntry(skillId, undefined, job);
+
+    expect(screen.queryByRole("group", { name: /の判定$/ })).not.toBeInTheDocument();
+  });
+
+  it("未指定の判定は既定の並びの結果を示し、指定した判定はその結果を示す", () => {
+    renderEntry("wanderers-minuet", [false, null, true]);
+
+    const group = screen.getByRole("group", { name: "旅神のメヌエットの判定" });
+    expect(within(group).getByRole("button", { name: "3秒の判定: 不発" })).toBeInTheDocument();
+    expect(within(group).getByRole("button", { name: "6秒の判定: 未指定（発生として計算）" })).toBeInTheDocument();
+    expect(within(group).getByRole("button", { name: "9秒の判定: 発生" })).toBeInTheDocument();
+    expect(within(group).getByRole("button", { name: "24秒の判定: 未指定（不発として計算）" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["未指定", null, true],
+    ["発生", true, false],
+    ["不発", false, undefined],
+  ])("%s の判定を押すと、未指定 → 発生 → 不発 → 未指定 の次の値で呼ぶ", (_label, current, next) => {
+    const onAutoGenerateProcChange = renderEntry("wanderers-minuet", [null, current]);
+
+    within(screen.getByRole("group", { name: "旅神のメヌエットの判定" }))
+      .getByRole("button", { name: /^6秒の判定/ })
+      .click();
+
+    expect(onAutoGenerateProcChange).toHaveBeenCalledWith("e-1", 2, next);
+  });
+});
+
 describe("SkillDetailPanel: 開始時刻の手動設定 (#953)", () => {
   function renderSecondBurstShot() {
     const onManualStartTimeChange = vi.fn();
@@ -170,6 +251,8 @@ describe("SkillDetailPanel: 開始時刻の手動設定 (#953)", () => {
         onProcOccurredChange={vi.fn()}
         hitDelay={undefined}
         onHitDelayChange={vi.fn()}
+        resources={BRD.resources}
+        onAutoGenerateProcChange={vi.fn()}
       />
     );
     return { entry, onManualStartTimeChange, input: screen.getByRole("spinbutton", { name: "開始時刻" }) };
@@ -237,6 +320,8 @@ describe("SkillDetailPanel: 着弾までの遅れ (#901)", () => {
         onProcOccurredChange={vi.fn()}
         hitDelay={hitDelay}
         onHitDelayChange={onHitDelayChange}
+        resources={BLM.resources}
+        onAutoGenerateProcChange={vi.fn()}
       />
     );
     return { entry, onHitDelayChange, input: screen.getByRole("spinbutton", { name: "着弾までの遅れ" }) };
@@ -431,6 +516,8 @@ function renderGhostFire3() {
       onProcOccurredChange={vi.fn()}
       hitDelay={undefined}
       onHitDelayChange={vi.fn()}
+      resources={BLM.resources}
+      onAutoGenerateProcChange={vi.fn()}
     />
   );
   return entry;

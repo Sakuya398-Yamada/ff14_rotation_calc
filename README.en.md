@@ -72,6 +72,10 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
   - Selecting **日本語** under Language opens the same page in Japanese. The timeline you are working on is kept (on the Japanese version, select **English** to come back)
   - Under **Account**, "Log in with Discord" logs you in with your Discord account. While you are logged in, a "Log out" button appears in the same place. Once logged in, you can see the list of saved timelines in other browsers and on other devices too (see "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ). The information handled for logging in is described in the "Privacy policy" in the same section
 - **Save & share**: Opens the list of saved timelines. To save the current timeline, use "Save current timeline" in this list. For how to use it, see "[I want to share a timeline or open it on another device](#q-i-want-to-share-a-timeline-or-open-it-on-another-device)" and "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ
+- **Export to Mint Leaf**: Turns the current timeline into text that you can paste into the "Import / Export" box on [Mint Leaf](https://mint-leaf.thebalanceffxiv.com/) (The Balance's rotation builder), and lets you copy it
+  - The job, level and title are not included in the text. Choose them at the top of the Mint Leaf page
+  - Only the order of actions and the GCD recast and cast times (as calculated by this tool, including skill speed and buffs) are exported. Manual start times, oGCD weave timing and buffs are not exported
+  - Currently only Black Mage is supported. Actions of other jobs are not exported, and the names of the actions that were not exported are shown
 
 ### Summary bar (below the header)
 

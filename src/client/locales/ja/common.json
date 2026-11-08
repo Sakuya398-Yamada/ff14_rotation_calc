@@ -13,6 +13,7 @@
     "siteName": "FF14 Rotation Calculator",
     "confirmOpenShared": "共有タイムラインを開くと、作業中のタイムラインは置き換えられます。開きますか？",
     "saveAndShare": "保存・共有",
+    "exportToMintLeaf": "Mint Leaf に書き出す",
     "settings": "設定",
     "closeSharedLoadError": "閉じる",
     "sharedInfo": "開いた共有タイムライン",
@@ -143,6 +144,21 @@
     "copied": "コピーしました",
     "copy": "コピー",
     "copyFailed": "コピーできませんでした。URL を選択してコピーしてください。"
+  },
+  "mintLeafExportDialog": {
+    "title": "Mint Leaf に書き出す",
+    "close": "Mint Leaf への書き出しを閉じる",
+    "closeButton": "閉じる",
+    "introBeforeLink": "下のテキストを ",
+    "introAfterLink": " の「Import / Export」欄に貼り、「Apply import」を押すと取り込めます。",
+    "headerNote": "ジョブ・レベル・タイトルはテキストに入りません。Mint Leaf の画面上部で選んでください。",
+    "scopeNote": "書き出すのは、スキルの並びと、GCD のリキャスト・詠唱時間（スキルスピードやバフを反映したこのツールの計算値）だけです。開始時刻の指定・oGCD を挟むタイミング・バフは書き出しません。",
+    "textLabel": "Mint Leaf に貼るテキスト",
+    "empty": "書き出せるスキルがありません。",
+    "skipped": "Mint Leaf のアクションとの対応が無いため、次のスキルは書き出していません: {{names}}",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "copyFailed": "コピーできませんでした。テキストを選択してコピーしてください。"
   },
   "myTimelinesDialog": {
     "title": "保存したタイムライン",
@@ -276,6 +292,14 @@
       "expected": "期待値",
       "occurred": "発生",
       "notOccurred": "不発"
+    },
+    "autoGenerateProcs": "{{name}}の判定",
+    "autoGenerateProcsHint": "押すと 未指定 → 発生 → 不発 の順に切り替わる（薄い色は未指定の判定の計算上の結果。緑は発生、赤は不発）",
+    "autoGenerateProcTick": {
+      "occurred": "{{seconds}}秒の判定: 発生",
+      "notOccurred": "{{seconds}}秒の判定: 不発",
+      "defaultOccurred": "{{seconds}}秒の判定: 未指定（発生として計算）",
+      "defaultNotOccurred": "{{seconds}}秒の判定: 未指定（不発として計算）"
     },
     "close": "閉じる",
     "basePotency": "基本威力",

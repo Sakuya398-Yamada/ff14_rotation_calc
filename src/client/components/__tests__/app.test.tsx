@@ -139,6 +139,19 @@ describe("App のヘッダーの保存・共有", () => {
   });
 });
 
+describe("App のヘッダーの Mint Leaf への書き出し", () => {
+  it("「Mint Leaf に書き出す」で書き出しのダイアログが開き、閉じるとボタンにフォーカスが戻る", () => {
+    render(<App />);
+    const button = screen.getByRole("button", { name: "Mint Leaf に書き出す" });
+    fireEvent.click(button);
+
+    const dialog = screen.getByRole("dialog", { name: "Mint Leaf に書き出す" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "閉じる" }));
+    expect(screen.queryByRole("dialog", { name: "Mint Leaf に書き出す" })).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
+});
+
 describe("App のフッター", () => {
   it("日本語では日本語のプライバシーポリシーにリンクする", () => {
     render(<App />);

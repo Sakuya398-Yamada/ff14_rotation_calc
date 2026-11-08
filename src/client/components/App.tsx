@@ -10,10 +10,12 @@ import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsButton } from "./SettingsButton";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
+import { MintLeafExportDialog } from "./MintLeafExportDialog";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
 import { resolveTimeline } from "../logic/resolve-timeline";
+import { normalizeAutoGenerateProcOccurred } from "../logic/auto-generate-proc";
 import { calcRangePps, calcTimelineSummary } from "../logic/timeline-summary";
 import { JOB_DATA } from "../data/job-registry";
 import { contentName, skillName } from "../logic/display-names";
@@ -51,6 +53,8 @@ export function App() {
   const [myTimelinesOpen, setMyTimelinesOpen] = useState(false);
   const myTimelinesButtonRef = useRef<HTMLButtonElement>(null);
   const [myTimelinesReloadKey, setMyTimelinesReloadKey] = useState(0);
+  const [mintLeafOpen, setMintLeafOpen] = useState(false);
+  const mintLeafButtonRef = useRef<HTMLButtonElement>(null);
   // 取得できるまでは、ログインできないものとして何も出さない
   const [accountStatus, setAccountStatus] = useState<AccountStatus>("unavailable");
 
@@ -335,6 +339,24 @@ export function App() {
     []
   );
 
+  const handleAutoGenerateProcChange = useCallback(
+    (uid: string, tickNumber: number, occurred: boolean | undefined) => {
+      setEntries((prev) =>
+        prev.map((e) => {
+          if (e.uid !== uid) return e;
+          const spec = [...(e.autoGenerateProcOccurred ?? [])];
+          while (spec.length < tickNumber) spec.push(null);
+          spec[tickNumber - 1] = occurred ?? null;
+          const normalized = normalizeAutoGenerateProcOccurred(spec);
+          const { autoGenerateProcOccurred: _drop, ...rest } = e;
+          void _drop;
+          return normalized ? { ...rest, autoGenerateProcOccurred: normalized } : rest;
+        })
+      );
+    },
+    []
+  );
+
   const handleHitDelayChange = useCallback((skillId: string, hitDelay: number | undefined) => {
     setHitDelays((prev) => {
       if (hitDelay === undefined) {
@@ -393,6 +415,15 @@ export function App() {
         >
           {t("app.saveAndShare")}
         </button>
+        <button
+          ref={mintLeafButtonRef}
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setMintLeafOpen(true)}
+          style={styles.saveButton}
+        >
+          {t("app.exportToMintLeaf")}
+        </button>
         <SettingsButton
           languageHref={alternateLanguagePath(pathname)}
           account={{ status: accountStatus, returnTo: pathname, onLoggedOut: () => setAccountStatus("loggedOut") }}
@@ -415,6 +446,14 @@ export function App() {
         reloadKey={myTimelinesReloadKey}
         accountStatus={accountStatus}
         returnTo={pathname}
+      />
+      <MintLeafExportDialog
+        open={mintLeafOpen}
+        onClose={() => setMintLeafOpen(false)}
+        returnFocusRef={mintLeafButtonRef}
+        jobId={selectedJob}
+        entries={resolvedEntries}
+        skillMap={allSkillMap}
       />
       {sharedLoadError !== null && (
         <div style={styles.sharedLoadError}>
@@ -508,6 +547,8 @@ export function App() {
               onProcOccurredChange={handleProcOccurredChange}
               hitDelay={hitDelays[selectedSkill.id]}
               onHitDelayChange={handleHitDelayChange}
+              resources={levelResources}
+              onAutoGenerateProcChange={handleAutoGenerateProcChange}
             />
           )}
         </div>

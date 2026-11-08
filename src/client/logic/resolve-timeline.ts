@@ -20,6 +20,7 @@ import type {
 } from "../types/skill";
 import { calcGcd, calcExpectedMultiplier } from "./stat-calc";
 import { calcEntryExpectedPotency } from "./expected-potency";
+import { isAutoGenerateProcOccurred } from "./auto-generate-proc";
 
 /** DoTティック間隔（秒） */
 const DOT_TICK_INTERVAL = 3;
@@ -81,6 +82,7 @@ interface AutoGenTimer {
  * keepTicking を true にすると、上限に達してもタイマーを止めずに刻みを進める（上限で値は増えない）。
  * onTick は付与ごとにその時刻で呼ぶ（keepTicking と併せて、上限で値が増えない付与でも効果を発生させる）。
  * excludeCurrentTime を true にすると、currentTime ちょうどの付与は数えない。
+ * shouldGain が false を返す刻みは不発として、値を増やさず onTick も呼ばない（刻みの時刻は進める。#900）。
  */
 function processAutoGen(
   currentTime: number,
@@ -91,7 +93,8 @@ function processAutoGen(
   amount: number = 1,
   keepTicking: boolean = false,
   onTick?: (tickTime: number, value: number) => void,
-  excludeCurrentTime: boolean = false
+  excludeCurrentTime: boolean = false,
+  shouldGain?: (tickTime: number) => boolean
 ): number {
   if (timer.startedAt === null) return currentValue;
 
@@ -102,8 +105,9 @@ function processAutoGen(
     // バフの終了時刻（小数 3 桁に丸めてある）と比べるので、足し続けた誤差を残さない
     const nextTick = Math.round((timerTime + interval) * 1000) / 1000;
     if (excludeCurrentTime ? nextTick >= currentTime : nextTick > currentTime) break;
-    value = Math.min(value + amount, maxStacks);
     timerTime = nextTick;
+    if (shouldGain && !shouldGain(nextTick)) continue;
+    value = Math.min(value + amount, maxStacks);
     onTick?.(nextTick, value);
   }
 
@@ -940,6 +944,8 @@ export function resolveTimeline(
   // 待たせて付けたバフの着弾時の複製と、着弾で重なって無駄になった確率付与（付けたエントリの添字ごと。全エントリを解決してから書き戻す）
   const hitAppliedBuffs: Map<number, ActiveBuff[]> = new Map();
   const hitWastedProcs: Map<number, NonNullable<ResolvedTimelineEntry["wastedProc"]>> = new Map();
+  // 自動生成の判定ごとの発生の指定（TimelineEntry.autoGenerateProcOccurred）。キーは「付けたバフの ID@付いた時刻」（#900）
+  const autoGenerateProcSpecs = new Map<string, (boolean | null)[]>();
 
   // リソース初期化
   for (const res of resources) {
@@ -1010,6 +1016,17 @@ export function resolveTimeline(
           timer.startedAt = time;
         }
       }
+      // 確率の判定（詩人の歌）: 条件バフが付いてから何回目の判定かで、指定か既定の並びを引く（#900）
+      const procRate = res.autoGenerateProcRate;
+      const gateBuff = timer.gateBuff;
+      const interval = res.autoGenerateInterval;
+      const shouldGain = procRate !== undefined && gateBuff !== null
+        ? (tickTime: number) => isAutoGenerateProcOccurred(
+            autoGenerateProcSpecs.get(`${gateBuff.buffId}@${gateBuff.startTime}`),
+            Math.round((tickTime - gateBuff.startTime) / interval),
+            procRate,
+          )
+        : undefined;
       resourceState[res.id] = processAutoGen(
         time,
         resourceState[res.id],
@@ -1019,7 +1036,8 @@ export function resolveTimeline(
         res.autoGenerateAmount ?? 1,
         keepTicking,
         onTick,
-        excludeTime && !res.autoGenerateIncludeBuffEnd
+        excludeTime && !res.autoGenerateIncludeBuffEnd,
+        shouldGain
       );
     }
   };
@@ -1189,6 +1207,11 @@ export function resolveTimeline(
      */
     const scheduleBuffApplication = (buffIds: string[], apply: (t: number) => void) => {
       if (hitsUntargetable) return;
+      // 判定ごとの発生の指定は、付けたバフ（自動生成の条件バフ）の ID と付いた時刻で引く（#900）
+      if (entry.autoGenerateProcOccurred) {
+        const appliedAt = hitTime === undefined || hitTime <= startTime ? startTime : hitTime;
+        for (const buffId of buffIds) autoGenerateProcSpecs.set(`${buffId}@${appliedAt}`, entry.autoGenerateProcOccurred);
+      }
       if (hitTime === undefined || hitTime <= startTime) {
         apply(startTime);
         return;
@@ -2019,6 +2042,7 @@ export function resolveTimeline(
       autoStartTime,
       manualStartTime: entry.manualStartTime,
       procOccurred: entry.procOccurred,
+      autoGenerateProcOccurred: entry.autoGenerateProcOccurred,
       resourceSnapshot: snapshotAfter,
       resourceErrors,
       comboErrors,
