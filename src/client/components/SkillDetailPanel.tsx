@@ -356,6 +356,7 @@ export function SkillDetailPanel({
           rate={autoGenerateProcSource.rate}
           interval={autoGenerateProcSource.interval}
           tickCount={autoGenerateProcSource.tickCount}
+          duration={autoGenerateProcSource.duration}
           onChange={onAutoGenerateProcChange}
         />
       )}
@@ -500,13 +501,17 @@ export function SkillDetailPanel({
   );
 }
 
-/** 歌の判定ごとの発生の指定（#900）。押すたびに 未指定 → 発生 → 不発 → 未指定 と切り替える */
+/**
+ * 歌の判定ごとの発生の指定（#900）。押すたびに 未指定 → 発生 → 不発 → 未指定 と切り替える。
+ * 秒数はプレイヤーが判定を数える歌の残り秒数で出す（#969）。並びは時系列のまま（左から 42s, 39s, …）
+ */
 function AutoGenerateProcRow({
   entry,
   name,
   rate,
   interval,
   tickCount,
+  duration,
   onChange,
 }: {
   entry: ResolvedTimelineEntry;
@@ -514,6 +519,7 @@ function AutoGenerateProcRow({
   rate: number;
   interval: number;
   tickCount: number;
+  duration: number;
   onChange: SkillDetailPanelProps["onAutoGenerateProcChange"];
 }) {
   const { t } = useTranslation();
@@ -530,7 +536,7 @@ function AutoGenerateProcRow({
             ? (specified ? "occurred" : "notOccurred")
             : (occurred ? "defaultOccurred" : "defaultNotOccurred");
           const next = specified === true ? false : specified === false ? undefined : true;
-          const seconds = tickNumber * interval;
+          const seconds = duration - tickNumber * interval;
           const tickLabel = t(`skillDetailPanel.autoGenerateProcTick.${state}` as const, { seconds });
           return (
             <button
