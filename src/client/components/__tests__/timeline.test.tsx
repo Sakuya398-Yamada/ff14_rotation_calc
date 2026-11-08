@@ -24,6 +24,9 @@ import {
 import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
 import { BRD_BUFFS } from "../../data/brd-buffs";
 import { BRD_RESOURCES } from "../../data/brd-resources";
+import { GNB_ATTACK_SKILLS } from "../../data/gnb-skills";
+import { GNB_BUFFS } from "../../data/gnb-buffs";
+import { GNB_RESOURCES } from "../../data/gnb-resources";
 import { WAR_ATTACK_SKILLS } from "../../data/war-skills";
 import { WAR_BUFFS } from "../../data/war-buffs";
 import { WAR_RESOURCES } from "../../data/war-resources";
@@ -386,6 +389,33 @@ describe("Timeline: リソースのゲージ表示 (#632)", () => {
     renderBrd(SONGS_ROTATION);
 
     expect(readGauge(screen.getAllByTitle(/^ソウルボイス: 5\/100$/)[0])).toEqual({ label: "5", width: "5%" });
+  });
+
+  // 計算はソイルの獲得（実行時）に合わせて上限を実行時から上げるので、表示も着弾を待つ間から上げた上限で出す（#948）
+  it("ブラッドファイアに遅れを設定しても、着弾前のソイルの上限は上げた上限（6）で出す", () => {
+    const level = 100;
+    const buffs = getBuffsForLevel(GNB_BUFFS, level);
+    const resources = getResourcesForLevel(GNB_RESOURCES, level);
+    const buffIds = new Set(buffs.map((b) => b.id));
+    const resourceIds = new Set(resources.map((r) => r.id));
+    const skills = getSkillsForLevel(GNB_ATTACK_SKILLS, level, buffIds, resourceIds);
+    const skillMap = getAllSkillMapForLevel(GNB_ATTACK_SKILLS, skills, level, buffIds, resourceIds);
+    const resolvedEntries = resolveTimeline(
+      ["bloodfest", "burst-strike"].map(makeEntry),
+      skillMap,
+      resources,
+      defaultStats,
+      buffs,
+      undefined,
+      undefined,
+      { bloodfest: 1 },
+    ).entries;
+    // 前提: バーストストライク（0.65 秒）は、ブラッドファイアの着弾（1 秒）より前
+    expect(resolvedEntries[1].startTime).toBeLessThan(resolvedEntries[0].hitTime!);
+    renderTimeline({ jobId: "gnb", skills, allSkillMap: skillMap, resolvedEntries, resources, buffs });
+
+    expect(screen.getByTitle("ソイル: 3/6")).toBeInTheDocument();
+    expect(screen.getByTitle("ソイル: 2/6")).toBeInTheDocument();
   });
 });
 
