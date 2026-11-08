@@ -160,14 +160,16 @@ function getResourceHasteMultiplier(
   return multiplier;
 }
 
-/** time までに回復するチャージを回復させる */
+/** time までに回復するチャージを回復させる。onRecover には回復した時刻を渡す */
 function recoverCharges(
   state: { charges: number; nextChargeAt: number | null },
   time: number,
   cooldown: number,
-  maxCharges: number
+  maxCharges: number,
+  onRecover?: (at: number) => void
 ): void {
   while (state.nextChargeAt !== null && state.charges < maxCharges && state.nextChargeAt <= time) {
+    onRecover?.(state.nextChargeAt);
     state.charges++;
     if (state.charges < maxCharges) {
       state.nextChargeAt = Math.round((state.nextChargeAt + cooldown) * 1000) / 1000;
@@ -888,29 +890,20 @@ export function resolveTimeline(
   const dotStreams: Map<string, DoTStream> = new Map();
   // チャージ状態追跡: skillId → { charges: 残りチャージ数, nextChargeAt: 次のチャージ回復時刻 }
   const skillChargeState: Map<string, { charges: number; nextChargeAt: number | null }> = new Map();
-  // リキャストのレーンに描く区間（chargeKey ごと）。index は resolved の添字。使うたびに「開始 + リキャスト」で積む。
-  // 計算はチャージを順番に戻すが、レーンは使うたびの区間を描くので、続けて使った 2 本目以降は計算と一致しない（#924）
-  const cooldownSpans: Map<string, { index: number; endTime: number }[]> = new Map();
+  // リキャストのレーンに描く区間（chargeKey ごと）。pending はチャージがまだ戻っていない区間（resolved の添字、使った順）。
+  // 計算がチャージを 1 つ戻すたびに、いちばん古い区間をその時刻で終える（#924）。reducedAt は最後に短縮した時刻
+  const chargeSpans: Map<string, { pending: number[]; reducedAt: number; cooldown: number; maxCharges: number }> = new Map();
+  // 区間の終わり（resolved の添字 → 時刻）
+  const cooldownEndTimes: Map<number, number> = new Map();
 
   /**
-   * chargeKey の区間を time 時点で seconds 秒短縮する。計算のタイマーはいちばん古いチャージを数えているので、
-   * いちばん早く終わる区間から引く。time より前には戻さず、余りは次に早く終わる区間から引く
+   * chargeKey のチャージが at に戻ったとき、いちばん古い区間を終える（recoverCharges の onRecover）。
+   * 短縮で戻る時刻が短縮した時刻より前になっても、チャージが戻るのは短縮した時刻
    */
-  const shortenCooldownSpans = (chargeKey: string, seconds: number, time: number) => {
-    const running = (cooldownSpans.get(chargeKey) ?? [])
-      .filter((s) => s.endTime > time)
-      .sort((a, b) => a.endTime - b.endTime);
-    let rest = seconds;
-    for (const span of running) {
-      const remaining = span.endTime - time;
-      if (rest < remaining) {
-        span.endTime = Math.round((span.endTime - rest) * 1000) / 1000;
-        return;
-      }
-      span.endTime = time;
-      rest = Math.round((rest - remaining) * 1000) / 1000;
-      if (rest <= 0) return;
-    }
+  const endOldestCooldownSpan = (chargeKey: string, at: number) => {
+    const spans = chargeSpans.get(chargeKey);
+    const index = spans?.pending.shift();
+    if (spans && index !== undefined) cooldownEndTimes.set(index, Math.max(at, spans.reducedAt));
   };
 
   /**
@@ -924,10 +917,11 @@ export function resolveTimeline(
       (s) => s.cooldown !== undefined && (s.cooldownGroup ?? s.id) === chargeKey
     );
     if (!groupSkill || groupSkill.cooldown === undefined) return;
-    recoverCharges(state, time, groupSkill.cooldown, groupSkill.maxCharges ?? 1);
+    recoverCharges(state, time, groupSkill.cooldown, groupSkill.maxCharges ?? 1, (at) => endOldestCooldownSpan(chargeKey, at));
     if (state.nextChargeAt === null) return;
     state.nextChargeAt = Math.round((state.nextChargeAt - seconds) * 1000) / 1000;
-    shortenCooldownSpans(chargeKey, seconds, time);
+    const spans = chargeSpans.get(chargeKey);
+    if (spans) spans.reducedAt = time;
   };
 
   // コンボ状態追跡
@@ -1399,7 +1393,7 @@ export function resolveTimeline(
       const state = skillChargeState.get(chargeKey);
       if (state) {
         // チャージ回復: nextChargeAtからcooldown間隔で回復
-        recoverCharges(state, startTime, skill.cooldown, maxCharges);
+        recoverCharges(state, startTime, skill.cooldown, maxCharges, (at) => endOldestCooldownSpan(chargeKey, at));
         recastError = state.charges <= 0;
       }
       // state未登録 = 初回使用 → エラーなし
@@ -1844,9 +1838,9 @@ export function resolveTimeline(
             nextChargeAt: Math.round((startTime + skill.cooldown) * 1000) / 1000,
           });
         }
-        const spans = cooldownSpans.get(chargeKey) ?? [];
-        spans.push({ index: resolved.length, endTime: Math.round((startTime + skill.cooldown) * 1000) / 1000 });
-        cooldownSpans.set(chargeKey, spans);
+        const spans = chargeSpans.get(chargeKey) ?? { pending: [], reducedAt: -Infinity, cooldown: skill.cooldown, maxCharges };
+        spans.pending.push(resolved.length);
+        chargeSpans.set(chargeKey, spans);
       }
 
       for (const r of skill.cooldownReductionsOnUse ?? []) {
@@ -2007,10 +2001,13 @@ export function resolveTimeline(
     });
   }
 
-  // 区間は後のエントリの短縮でも縮むので、全エントリを解決してから持たせる
-  for (const spans of cooldownSpans.values()) {
-    for (const span of spans) resolved[span.index].cooldownEndTime = span.endTime;
+  // 最後のエントリまでに戻らなかったチャージは、計算のタイマーを複製して先に進め、戻る時刻を求める。
+  // 区間の終わりは後のエントリの回復・短縮で決まるので、全エントリを解決してから持たせる
+  for (const [chargeKey, spans] of chargeSpans) {
+    const state = skillChargeState.get(chargeKey);
+    if (state) recoverCharges({ ...state }, Infinity, spans.cooldown, spans.maxCharges, (at) => endOldestCooldownSpan(chargeKey, at));
   }
+  for (const [index, endTime] of cooldownEndTimes) resolved[index].cooldownEndTime = endTime;
 
   // 段差を描く自動生成（黙想）は、最後のエントリの後も条件バフが切れるまで数える。
   // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない

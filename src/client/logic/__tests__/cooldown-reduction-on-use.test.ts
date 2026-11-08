@@ -30,7 +30,10 @@ function expectNoError(e: ResolvedTimelineEntry) {
 const charged = makeSkill({ id: "charged", type: "ogcd", recastTime: 0.65, cooldown: 60, maxCharges: 2 });
 const reducer = makeSkill({ id: "reducer", cooldownReductionsOnUse: [{ chargeKey: "charged", seconds: 5 }] });
 const plain = makeSkill({ id: "plain" });
-const skillMap = new Map([charged, reducer, plain].map((s) => [s.id, s]));
+// 1 チャージ・60 秒の oGCD と、そのリキャストを 5 秒縮める GCD
+const single = makeSkill({ id: "single", type: "ogcd", recastTime: 0.65, cooldown: 60 });
+const singleReducer = makeSkill({ id: "single-reducer", cooldownReductionsOnUse: [{ chargeKey: "single", seconds: 5 }] });
+const skillMap = new Map([charged, reducer, plain, single, singleReducer].map((s) => [s.id, s]));
 
 const resolve = (entries: TimelineEntry[]) => resolveTimeline(entries, skillMap, [], undefined, []).entries;
 
@@ -55,42 +58,62 @@ describe("cooldownReductionsOnUse（使ったときに別スキルのリキャ�
 });
 
 describe("cooldownEndTime（リキャストのレーンに描く区間の終わり。#898）", () => {
-  it("短縮が無ければ、開始 + リキャストで終わる", () => {
+  it("短縮が無ければ、1 本目は開始 + リキャストで、続けて使った 2 本目は 1 本目のチャージが戻ってからリキャスト分で終わる", () => {
     const e = resolve([entry("charged"), entry("charged"), entry("plain"), entry("plain")]);
     expect(e[0].cooldownEndTime).toBe(60);
-    expect(e[1].cooldownEndTime).toBe(Math.round((e[1].startTime + 60) * 1000) / 1000);
+    expect(e[1].cooldownEndTime).toBe(120);
     // リキャストの無いスキルには付かない
     expect(e[2].cooldownEndTime).toBeUndefined();
   });
 
-  it("短縮は、いちばん早く終わる区間から引く", () => {
-    // 次のチャージ（0 秒に使った分）は短縮 2 回で 50 秒に戻る。0.65 秒に使った区間は変わらない
+  it("短縮は次に戻るチャージ（いちばん古い区間）に効き、後のチャージはそこからリキャスト分で戻る", () => {
+    // 次のチャージ（0 秒に使った分）は短縮 2 回で 50 秒に戻り、0.65 秒に使った分は 110 秒、51 秒に使った分は 170 秒に戻る
     const e = resolve([entry("charged"), entry("charged"), entry("reducer"), entry("reducer"), entry("charged", 51)]);
     e.forEach(expectNoError);
     expect(e[0].cooldownEndTime).toBe(50);
-    expect(e[1].cooldownEndTime).toBe(Math.round((e[1].startTime + 60) * 1000) / 1000);
+    expect(e[1].cooldownEndTime).toBe(110);
+    expect(e[4].cooldownEndTime).toBe(170);
   });
 
-  it("残りより大きい短縮は、短縮した時刻で区間を終え、余りを次に早く終わる区間から引く", () => {
-    // 57 秒の短縮で、0 秒に使った区間（残り 3 秒）は 57 秒で終わり、余りの 2 秒を 0.65 秒に使った区間から引く
+  it("残りより大きい短縮は、短縮した時刻で区間を終え、余りは次のチャージの戻りを早める", () => {
+    // 57 秒の短縮で、0 秒に使った区間（残り 3 秒）は 57 秒で終わる。計算のタイマーは 55 秒に戻った扱いで次を数えるので、
+    // 0.65 秒に使った分は 55 + 60 = 115 秒に戻る
     const e = resolve([entry("charged"), entry("charged"), entry("reducer", 57)]);
     e.forEach(expectNoError);
     expect(e[0].cooldownEndTime).toBe(57);
-    expect(e[1].cooldownEndTime).toBe(Math.round((e[1].startTime + 60 - 2) * 1000) / 1000);
+    expect(e[1].cooldownEndTime).toBe(115);
   });
 
-  it("終わった区間には入らず、まだ走っている区間から引く", () => {
-    // 61 秒の時点で 0 秒に使った区間は 60 秒で終わっている。短縮は 30 秒に使った区間（90 秒まで）から引く。
-    // 計算では 2 つ目のチャージは 60 + 60 - 5 = 115 秒に戻る。区間は使うたびに描くので一致しない（#924）
+  it("終わった区間には入らず、まだ走っている区間に効く", () => {
+    // 61 秒の時点で 0 秒に使った区間は 60 秒で終わっている。30 秒に使った分は 60 秒から数え、短縮で 60 + 60 - 5 = 115 秒に戻る
     const e = resolve([entry("charged"), entry("charged", 30), entry("reducer", 61)]);
     e.forEach(expectNoError);
     expect(e[0].cooldownEndTime).toBe(60);
-    expect(e[1].cooldownEndTime).toBe(85);
+    expect(e[1].cooldownEndTime).toBe(115);
   });
 
   it("エラーで使えなかったエントリには付かない", () => {
     const e = resolve([entry("charged"), entry("charged"), entry("charged")]);
     expect(e[2].recastError).toBe(true);
     expect(e[2].cooldownEndTime).toBeUndefined();
+  });
+
+  it("続けて使ったチャージの区間は、計算でそのチャージが戻る時刻で終わる（#924）", () => {
+    // 計算はチャージを 1 本のタイマーで順番に戻す: 60 秒に 1 つ戻り、次は 120 秒、その次は 180 秒
+    const e = resolve([entry("charged"), entry("charged"), entry("charged", 61), entry("charged", 62)]);
+    [e[0], e[1], e[2]].forEach(expectNoError);
+    expect(e[3].recastError).toBe(true);
+    expect(e[0].cooldownEndTime).toBe(60);
+    expect(e[1].cooldownEndTime).toBe(120);
+    expect(e[2].cooldownEndTime).toBe(180);
+    // 62 秒の時点で走っている区間（使用中のチャージ）は 2 本
+    expect(e.filter((x) => x.startTime <= 62 && (x.cooldownEndTime ?? 0) > 62)).toHaveLength(2);
+  });
+
+  it("1 チャージのスキルは、使った時刻 + リキャストで終わり、残りより大きい短縮は短縮した時刻で終える", () => {
+    const e = resolve([entry("single"), entry("single-reducer", 57), entry("single", 60)]);
+    e.forEach(expectNoError);
+    expect(e[0].cooldownEndTime).toBe(57);
+    expect(e[2].cooldownEndTime).toBe(120);
   });
 });

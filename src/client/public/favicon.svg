@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="172 184 680 680">
+  <!-- favicon は 16px・32px で描かれるので、Discord のアイコンと同じ図柄・色のまま、余白だけを viewBox で詰めている（#891） -->
+  <!-- 背景はサイトのダークテーマの surface。Discord は丸く切り抜くので、端まで塗る -->
+  <rect width="1024" height="1024" fill="#191b1f"/>
+  <!-- 期待威力が積み上がる線 -->
+  <polyline points="292,528 432,470 572,404 712,316" fill="none" stroke="#e9e7e2" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="292" cy="528" r="30" fill="#a5d6a7" stroke="#191b1f" stroke-width="10"/>
+  <circle cx="432" cy="470" r="30" fill="#90caf9" stroke="#191b1f" stroke-width="10"/>
+  <circle cx="572" cy="404" r="30" fill="#c08ae6" stroke="#191b1f" stroke-width="10"/>
+  <circle cx="712" cy="316" r="30" fill="#ffb74d" stroke="#191b1f" stroke-width="10"/>
+  <!-- タイムラインの軸 -->
+  <line x1="222" y1="760" x2="802" y2="760" stroke="#3a3f46" stroke-width="14" stroke-linecap="round"/>
+  <!-- タイムラインに並べたスキル -->
+  <rect x="240" y="618" width="104" height="104" rx="24" fill="#a5d6a7"/>
+  <rect x="380" y="618" width="104" height="104" rx="24" fill="#90caf9"/>
+  <rect x="520" y="618" width="104" height="104" rx="24" fill="#c08ae6"/>
+  <rect x="660" y="618" width="104" height="104" rx="24" fill="#ffb74d"/>
+</svg>
