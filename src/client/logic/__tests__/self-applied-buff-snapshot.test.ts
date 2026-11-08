@@ -69,7 +69,8 @@ describe("自スキル付与の potency バフは activeBuffsAtUse に含まれ�
     const contributions = getBuffContributions(
       spiralEntry.activeBuffsAtUse,
       buffDefMap,
-      spiralEntry.resolvedSkillId
+      spiralEntry.resolvedSkillId,
+      spiralBlow.type
     );
     expect(contributions.some((c) => c.buffId === "power-surge")).toBe(false);
   });

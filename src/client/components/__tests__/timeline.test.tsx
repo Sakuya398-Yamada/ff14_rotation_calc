@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach, onTestFinished } from "vitest";
 import i18next from "i18next";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
@@ -183,6 +183,9 @@ describe("Timeline", () => {
     const entryEl = container.querySelector(`[data-skill-entry-uid="${targetUid}"]`);
     expect(entryEl).not.toBeNull();
 
+    // MouseSensor はドラッグの開始で document にクリックの伝播を止めるリスナーを付け、終了の 50ms 後に外す。
+    // 外れるまで待たないと、このファイルで後に続くテストのクリックが React に届かないので、テストの終わりに（途中で落ちても）待つ（#884）
+    onTestFinished(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
     // dnd-kit の MouseSensor は mousedown を要素で、move/up を document で購読する
     fireEvent.mouseDown(entryEl!, { button: 0, clientX: 10, clientY: 10 });
     expect(screen.getByText("ここにドロップして削除")).toBeInTheDocument();
@@ -387,10 +390,6 @@ describe("Timeline: リソースのゲージ表示 (#632)", () => {
 });
 
 describe("Timeline: PPS 範囲選択を開いたときの初期区間 (#884)", () => {
-  // dnd-kit の MouseSensor は、ドラッグの開始で document にクリックの伝播を止めるリスナーを付け、
-  // 終了の 50ms 後に外す。このファイルの削除 D&D のテストの後は、それまでクリックが React に届かない
-  beforeEach(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
-
   /** PPS 範囲選択を開いた直後の区間と、続けて「全体」ボタンを押した後の区間を返す */
   function openPpsRangeAndReset(entries: TimelineEntry[]) {
     const result = resolveTimeline(entries, jobASkillMap, [], defaultStats, [], []);

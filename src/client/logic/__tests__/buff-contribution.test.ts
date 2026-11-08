@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { getBuffContributions } from "../buff-contribution";
-import type { ActiveBuff, BuffDefinition } from "../../types/skill";
+import { resolveTimeline } from "../resolve-timeline";
+import type { ActiveBuff, BuffDefinition, ResolvedTimelineEntry } from "../../types/skill";
+import { DRG_ATTACK_SKILLS } from "../../data/drg-skills";
+import { DRG_BUFFS } from "../../data/drg-buffs";
+import { DRG_RESOURCES } from "../../data/drg-resources";
 
 function makeBuff(overrides: Partial<BuffDefinition> & { id: string }): BuffDefinition {
   return {
@@ -28,7 +32,7 @@ describe("getBuffContributions", () => {
     ]);
     const activeBuffs = [makeActiveBuff("potency-only"), makeActiveBuff("speed-only"), makeActiveBuff("no-effect")];
 
-    const result = getBuffContributions(activeBuffs, buffDefMap, "any-skill");
+    const result = getBuffContributions(activeBuffs, buffDefMap, "any-skill", "gcd");
 
     expect(result).toHaveLength(1);
     expect(result[0].buffId).toBe("potency-only");
@@ -45,11 +49,11 @@ describe("getBuffContributions", () => {
     const buffDefMap = new Map([[af3.id, af3]]);
     const activeBuffs = [makeActiveBuff("af3")];
 
-    const onFire = getBuffContributions(activeBuffs, buffDefMap, "fire-skill");
+    const onFire = getBuffContributions(activeBuffs, buffDefMap, "fire-skill", "gcd");
     expect(onFire).toHaveLength(1);
     expect(onFire[0].potencyMultiplier).toBeCloseTo(1.8);
 
-    const onBlizzard = getBuffContributions(activeBuffs, buffDefMap, "blizzard-skill");
+    const onBlizzard = getBuffContributions(activeBuffs, buffDefMap, "blizzard-skill", "gcd");
     expect(onBlizzard).toHaveLength(0);
   });
 
@@ -69,7 +73,8 @@ describe("getBuffContributions", () => {
     const result = getBuffContributions(
       [makeActiveBuff("battle-litany"), makeActiveBuff("battle-voice")],
       buffDefMap,
-      "any-skill"
+      "any-skill",
+      "gcd"
     );
 
     expect(result).toHaveLength(2);
@@ -87,12 +92,23 @@ describe("getBuffContributions", () => {
       effects: [{ type: "guaranteedCrit", value: 0 }, { type: "guaranteedDh", value: 0 }],
     });
     const buffDefMap = new Map([[reassemble.id, reassemble]]);
-    const result = getBuffContributions([makeActiveBuff("reassemble")], buffDefMap, "any-skill");
+    const result = getBuffContributions([makeActiveBuff("reassemble")], buffDefMap, "any-skill", "gcd");
 
     expect(result).toHaveLength(1);
     expect(result[0].guaranteedCrit).toBe(true);
     expect(result[0].guaranteedDh).toBe(true);
     expect(result[0].potencyMultiplier).toBeUndefined();
+  });
+
+  it("アビリティ（ogcd）では guaranteedCrit / guaranteedDh を拾わない（計算と同じく GCD だけに効く）", () => {
+    const reassemble = makeBuff({
+      id: "reassemble",
+      effects: [{ type: "guaranteedCrit", value: 0 }, { type: "guaranteedDh", value: 0 }],
+    });
+    const buffDefMap = new Map([[reassemble.id, reassemble]]);
+    const result = getBuffContributions([makeActiveBuff("reassemble")], buffDefMap, "any-skill", "ogcd");
+
+    expect(result).toEqual([]);
   });
 
   it("複数の potency effect は積として合成される", () => {
@@ -104,14 +120,14 @@ describe("getBuffContributions", () => {
       ],
     });
     const buffDefMap = new Map([[multiBuff.id, multiBuff]]);
-    const result = getBuffContributions([makeActiveBuff("multi")], buffDefMap, "any-skill");
+    const result = getBuffContributions([makeActiveBuff("multi")], buffDefMap, "any-skill", "gcd");
 
     expect(result).toHaveLength(1);
     expect(result[0].potencyMultiplier).toBeCloseTo(1.32);
   });
 
   it("buffDefMap に存在しない buffId は無視する", () => {
-    const result = getBuffContributions([makeActiveBuff("unknown")], new Map(), "any-skill");
+    const result = getBuffContributions([makeActiveBuff("unknown")], new Map(), "any-skill", "gcd");
     expect(result).toHaveLength(0);
   });
 
@@ -122,7 +138,45 @@ describe("getBuffContributions", () => {
       effects: [{ type: "potency", value: 1.05 }],
     });
     const buffDefMap = new Map([[stackedBuff.id, stackedBuff]]);
-    const result = getBuffContributions([makeActiveBuff("stacked", 2)], buffDefMap, "any-skill");
+    const result = getBuffContributions([makeActiveBuff("stacked", 2)], buffDefMap, "any-skill", "gcd");
     expect(result[0].stacks).toBe(2);
+  });
+});
+
+describe("DRG: ライフサージの確定クリティカルは、計算と同じく GCD の内訳にだけ出る (#927)", () => {
+  const skillMap = new Map(DRG_ATTACK_SKILLS.map((s) => [s.id, s]));
+  const buffDefMap = new Map(DRG_BUFFS.map((b) => [b.id, b]));
+
+  function expectNoError(e: ResolvedTimelineEntry) {
+    expect(e.recastError).toBeFalsy();
+    expect(e.untargetableError).toBeFalsy();
+    expect(e.comboErrors).toEqual([]);
+    expect(e.resourceErrors).toEqual([]);
+  }
+
+  // SkillDetailPanel と同じく、変化後のスキルの種別を渡す
+  function contributionsOf(e: ResolvedTimelineEntry) {
+    return getBuffContributions(e.activeBuffsAtUse, buffDefMap, e.resolvedSkillId, skillMap.get(e.resolvedSkillId)!.type);
+  }
+
+  it("ライフサージ → ハイジャンプ → トゥルースラスト: ハイジャンプの内訳には出ず、トゥルースラストの内訳には出る", () => {
+    const [, highJump, trueThrust] = resolveTimeline(
+      ["life-surge", "high-jump", "true-thrust"].map((skillId) => ({ uid: skillId, skillId })),
+      skillMap,
+      DRG_RESOURCES,
+      undefined,
+      DRG_BUFFS
+    ).entries;
+
+    expectNoError(highJump);
+    expect(highJump.resolvedSkillId).toBe("high-jump");
+    expect(highJump.activeBuffsAtUse.some((ab) => ab.buffId === "life-surge")).toBe(true);
+    expect(highJump.critRateBonus).toBe(0);
+    expect(contributionsOf(highJump).some((c) => c.guaranteedCrit)).toBe(false);
+
+    expectNoError(trueThrust);
+    expect(trueThrust.resolvedSkillId).toBe("true-thrust");
+    expect(trueThrust.critRateBonus).toBe(1);
+    expect(contributionsOf(trueThrust)).toContainEqual(expect.objectContaining({ buffId: "life-surge", guaranteedCrit: true }));
   });
 });
