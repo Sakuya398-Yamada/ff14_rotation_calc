@@ -90,6 +90,11 @@ export type AutoTransformEntry =
 export interface Skill {
   /** スキルの一意識別子。名前は辞書の job-<ジョブ ID> の `skills.<id>.name` にある（#846） */
   id: string;
+  /**
+   * ゲームのアクション ID（XIVAPI の Action シートの行 ID）。Mint Leaf への書き出しに使い、無いスキルは書き出さない（#834）。
+   * 状態違いの隠しスキルは、元のアクションの ID にする
+   */
+  gameActionId?: number;
   /** 威力（基本値。特性適用前） */
   potency: number;
   /** GCD or oGCD */
