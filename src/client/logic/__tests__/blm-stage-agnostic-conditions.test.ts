@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
+import { hasBuffAfterHit } from "./helpers/buffs-after-hit";
 import type { TimelineEntry } from "../../types/skill";
 import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
 import { BLM_BUFFS } from "../../data/blm-buffs";
@@ -21,11 +22,6 @@ function hasBuff(e: ResolvedEntry, buffId: string): boolean {
   return e.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
-// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
-// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
-function hasBuffAfterHit(entry: ResolvedEntry, buffId: string): boolean {
-  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
-}
 
 // エラーで倍率が 1 に倒れているだけのケースを弾く（testing-conventions 罠3）
 function expectNoErrors(e: ResolvedEntry) {
@@ -52,13 +48,13 @@ describe("BLM: AF/UB 段階不問の発動条件（#417）", () => {
   describe("ファイジャ", () => {
     it.each(AF_STAGES)("$label 中でも使用でき、AF の段階を変えない", ({ setup, buffId, fireMul }) => {
       const result = resolve([...setup, "fire-4"]);
-      expect(hasBuffAfterHit(result.entries[setup.length - 1], buffId)).toBe(true);
+      expect(hasBuffAfterHit(result.entries[setup.length - 1], BLM_BUFFS, buffId)).toBe(true);
 
       const fire4 = result.entries[setup.length];
       expectNoErrors(fire4);
       expect(fire4.buffMultiplier).toBeCloseTo(fireMul * ENOCHIAN, 5);
-      expect(hasBuff(fire4, buffId)).toBe(true);
-      expect(hasBuff(fire4, "astral-fire-3")).toBe(false);
+      expect(hasBuffAfterHit(fire4, BLM_BUFFS, buffId)).toBe(true);
+      expect(hasBuffAfterHit(fire4, BLM_BUFFS, "astral-fire-3")).toBe(false);
     });
   });
 
@@ -77,27 +73,27 @@ describe("BLM: AF/UB 段階不問の発動条件（#417）", () => {
   describe("ブリザジャ", () => {
     it.each(UB_STAGES)("$label 中でも使用でき、UB の段階を変えない", ({ setup, buffId }) => {
       const result = resolve([...setup, "blizzard-4"]);
-      expect(hasBuffAfterHit(result.entries[setup.length - 1], buffId)).toBe(true);
+      expect(hasBuffAfterHit(result.entries[setup.length - 1], BLM_BUFFS, buffId)).toBe(true);
 
       const blizzard4 = result.entries[setup.length];
       expectNoErrors(blizzard4);
       // ブリザド系は UB でブースト対象外なのでエノキアン倍率のみ
       expect(blizzard4.buffMultiplier).toBeCloseTo(ENOCHIAN, 5);
-      expect(hasBuff(blizzard4, buffId)).toBe(true);
-      expect(hasBuff(blizzard4, "umbral-ice-3")).toBe(false);
+      expect(hasBuffAfterHit(blizzard4, BLM_BUFFS, buffId)).toBe(true);
+      expect(hasBuffAfterHit(blizzard4, BLM_BUFFS, "umbral-ice-3")).toBe(false);
     });
   });
 
   describe("フリーズ", () => {
     it.each(UB_STAGES)("$label 中でも使用でき、UB の段階を変えない", ({ setup, buffId }) => {
       const result = resolve([...setup, "freeze"]);
-      expect(hasBuffAfterHit(result.entries[setup.length - 1], buffId)).toBe(true);
+      expect(hasBuffAfterHit(result.entries[setup.length - 1], BLM_BUFFS, buffId)).toBe(true);
 
       const freeze = result.entries[setup.length];
       expectNoErrors(freeze);
       expect(freeze.buffMultiplier).toBeCloseTo(ENOCHIAN, 5);
-      expect(hasBuff(freeze, buffId)).toBe(true);
-      expect(hasBuff(freeze, "umbral-ice-3")).toBe(false);
+      expect(hasBuffAfterHit(freeze, BLM_BUFFS, buffId)).toBe(true);
+      expect(hasBuffAfterHit(freeze, BLM_BUFFS, "umbral-ice-3")).toBe(false);
     });
 
     it.each([
@@ -125,7 +121,7 @@ describe("BLM: アンプリファイアの発動条件（#454）", () => {
   it.each(POLARITY_STAGES)("$label 中は使用でき、ポリグロットが +1 される", ({ setup, buffId }) => {
     const result = resolve([...setup, "amplifier"]);
     const before = result.entries[setup.length - 1];
-    expect(hasBuffAfterHit(before, buffId)).toBe(true);
+    expect(hasBuffAfterHit(before, BLM_BUFFS, buffId)).toBe(true);
 
     const amplifier = result.entries[setup.length];
     expectNoErrors(amplifier);

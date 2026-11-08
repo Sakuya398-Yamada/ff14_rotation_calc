@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
+import { buffsAfterHit } from "./helpers/buffs-after-hit";
 import { computeBuffTimespans } from "../buff-timespans";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../skill-level";
 import type { ResolvedTimelineEntry, TimelineEntry } from "../../types/skill";
@@ -31,20 +32,9 @@ function resolveIds(skillIds: string[]) {
   return resolve(skillIds.map((id) => entry(id)));
 }
 
-const exclusiveGroups = new Map(buffs.map((b) => [b.id, b.exclusiveGroup]));
-
-/**
- * 使用後（このエントリの効果が着弾した後）に効いているエーテルヒュー。色魔法は詠唱があり、付けるバフは詠唱完了の時刻に付くので、
- * 着弾で付いたバフ（hitAppliedBuffs）と、activeBuffs のうちそれに付け直された・同じ排他グループで付け替えられたものを除いた残りを見る（#948）
- */
+/** 使用後（このエントリの効果が着弾した後）に効いているエーテルヒュー。色魔法は詠唱があり、エーテルヒューは詠唱完了に付く（#948） */
 function aetherhues(e: ResolvedTimelineEntry): string[] {
-  const landed = e.hitAppliedBuffs ?? [];
-  const group = (buffId: string) => exclusiveGroups.get(buffId);
-  const replaced = (buffId: string) =>
-    landed.some((l) => l.buffId === buffId || (group(l.buffId) !== undefined && group(l.buffId) === group(buffId)));
-  return [...landed, ...e.activeBuffs.filter((ab) => !replaced(ab.buffId))]
-    .map((ab) => ab.buffId)
-    .filter((id) => id.startsWith("aetherhues"));
+  return buffsAfterHit(e, buffs).map((ab) => ab.buffId).filter((id) => id.startsWith("aetherhues"));
 }
 
 /** ウォーターブルー 2 回でパレットゲージが 50 になり、サブトラクティブパレットを使える。エーテルヒューは残らない */

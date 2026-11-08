@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
+import { hasBuffAfterHit } from "./helpers/buffs-after-hit";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../skill-level";
 import type { PlayerLevel, ResolvedTimelineEntry, TimelineEntry } from "../../types/skill";
 import { PCT_ATTACK_SKILLS } from "../../data/pct-skills";
@@ -31,11 +32,6 @@ function hasBuff(entry: ResolvedTimelineEntry, buffId: string): boolean {
   return entry.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
-// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
-// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
-function hasBuffAfterHit(entry: ResolvedTimelineEntry, buffId: string): boolean {
-  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
-}
 
 describe("PCT: 特性による威力（変化先スキルを含む）", () => {
   it.each([
@@ -176,7 +172,7 @@ describe("PCT: インスタレーション", () => {
     const colors = entries.slice(5);
     for (const e of colors.slice(0, 4)) expect(hasBuff(e, "installation")).toBe(true);
     expect(hasBuff(colors[4], "installation")).toBe(false);
-    expect(hasBuffAfterHit(colors[4], "rainbow-drip-ready")).toBe(true);
+    expect(hasBuffAfterHit(colors[4], PCT_BUFFS, "rainbow-drip-ready")).toBe(true);
   });
 
   it("Lv82 未満ではイマジンスカイでインスタレーションが付与されない", () => {

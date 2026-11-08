@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
+import { buffsAfterHit } from "./helpers/buffs-after-hit";
 import type { TimelineEntry } from "../../types/skill";
 import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
 import { BLM_BUFFS } from "../../data/blm-buffs";
@@ -11,11 +12,6 @@ function entry(skillId: string): TimelineEntry {
   return { uid: `${skillId}-${Math.random()}`, skillId };
 }
 
-// このエントリの効果が着弾した後のバフ。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
-// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある。付け直したバフは着弾で付いた方を先に見る（#948）
-function buffsAfterHit(e: ReturnType<typeof resolveTimeline>["entries"][number]) {
-  return [...(e.hitAppliedBuffs ?? []), ...e.activeBuffs];
-}
 
 describe("BLM: フレア（#316）", () => {
   it("AF3 中のフレアは MP を全消費し、アストラルソウル +3 と AF3 を付与する", () => {
@@ -35,7 +31,7 @@ describe("BLM: フレア（#316）", () => {
     expect(flare.resourceSnapshot["mp"]).toBe(0);
     expect(flare.resourceSnapshot["astral-soul"]).toBe(3);
     // AF3 維持（ファイア系ブースト 1.8 × エノキアン 1.27）
-    expect(flare.activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
+    expect(buffsAfterHit(flare, BLM_BUFFS).some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
     expect(flare.buffMultiplier).toBeCloseTo(1.8 * 1.27, 5);
   });
 
@@ -58,7 +54,7 @@ describe("BLM: フレア（#316）", () => {
     // AF1 中の使用: ファイア系ブースト 1.4 × エノキアン 1.27
     expect(flare.buffMultiplier).toBeCloseTo(1.4 * 1.27, 5);
     // 使用後は最大スタック分の AF（AF3）へ引き上げ
-    expect(buffsAfterHit(flare).some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
+    expect(buffsAfterHit(flare, BLM_BUFFS).some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
     const afterHit = result.entries[3];
     expect(afterHit.startTime).toBe(flare.hitTime);
     expect(afterHit.activeBuffsAtUse.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);

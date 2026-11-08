@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
+import { hasBuffAfterHit } from "./helpers/buffs-after-hit";
 import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillMapForLevel } from "../skill-level";
 import type { PlayerLevel, ResolvedTimelineEntry, TimelineEntry } from "../../types/skill";
 import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
@@ -32,11 +33,6 @@ function hasBuff(entry: ResolvedTimelineEntry, buffId: string): boolean {
   return entry.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
-// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
-// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
-function hasBuffAfterHit(entry: ResolvedTimelineEntry, buffId: string): boolean {
-  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
-}
 
 function expectNoError(entry: ResolvedTimelineEntry) {
   expect(entry.recastError).toBeFalsy();
@@ -66,7 +62,7 @@ describe("BLM: サンダーヘッドは AF/UB の付与・反転時だけ付与�
     expectNoError(entries[entries.length - 2]);
     expectNoError(target);
     expect(target.resolvedSkillId).toBe(resolved);
-    expect(hasBuff(target, "thunderhead")).toBe(false);
+    expect(hasBuffAfterHit(target, BLM_BUFFS, "thunderhead")).toBe(false);
   });
 
   it.each([
@@ -79,7 +75,7 @@ describe("BLM: サンダーヘッドは AF/UB の付与・反転時だけ付与�
     const entries = resolve100(ids);
     const target = entries[entries.length - 1];
     expectNoError(target);
-    expect(hasBuffAfterHit(target, "thunderhead")).toBe(true);
+    expect(hasBuffAfterHit(target, BLM_BUFFS, "thunderhead")).toBe(true);
   });
 });
 

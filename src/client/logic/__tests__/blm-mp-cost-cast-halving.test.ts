@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveTimeline } from "../resolve-timeline";
+import { buffsAfterHit } from "./helpers/buffs-after-hit";
 import type { ResolvedTimelineEntry, TimelineEntry } from "../../types/skill";
 import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
 import { BLM_BUFFS } from "../../data/blm-buffs";
@@ -14,11 +15,6 @@ function resolve(skillIds: string[]) {
   return resolveTimeline(entries, skillMap, BLM_RESOURCES, undefined, BLM_BUFFS).entries;
 }
 
-// このエントリの効果が着弾した後のバフ。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
-// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある。付け直したバフは着弾で付いた方を先に見る（#948）
-function buffsAfterHit(e: ReturnType<typeof resolveTimeline>["entries"][number]) {
-  return [...(e.hitAppliedBuffs ?? []), ...e.activeBuffs];
-}
 
 function expectNoErrors(entry: ResolvedTimelineEntry) {
   expect(entry.recastError).toBeFalsy();
@@ -33,7 +29,7 @@ describe("BLM: 反対属性の MP 消費 0", () => {
     expect(despair.resourceSnapshot["mp"]).toBe(0);
     expectNoErrors(blizzard3);
     expect(blizzard3.resourceSnapshot["mp"]).toBe(0);
-    expect(buffsAfterHit(blizzard3).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(blizzard3, BLM_BUFFS).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("AF/UB 外のブリザド系は基本コストを消費する（ブリザド 400 / ブリザラ 800）", () => {
