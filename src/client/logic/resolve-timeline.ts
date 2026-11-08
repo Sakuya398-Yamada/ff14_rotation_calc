@@ -1572,9 +1572,10 @@ export function resolveTimeline(
       };
 
       // このスキルが付与するバフで上限が上がるリソースは、上がった上限で獲得を数える
-      // （ブラッドソイルはソイルの上限を 6 に上げて 3 付与する。バフの付与はリソース変動より後なので、ここで先に反映する）
+      // （ブラッドソイルはソイルの上限を 6 に上げて 3 付与する。バフの付与はリソース変動より後なので、ここで先に反映する）。
+      // 着弾時にボスが離脱中ならバフが付かないので、上限も上げない（#950）
       const appliedBuffIds = skill.buffApplications ?? [];
-      if (appliedBuffIds.length > 0) {
+      if (appliedBuffIds.length > 0 && !hitsUntargetable) {
         const buffsWithApplied: ActiveBuff[] = [
           ...currentActiveBuffs,
           ...appliedBuffIds.map((buffId) => ({ buffId, startTime, endTime: startTime })),

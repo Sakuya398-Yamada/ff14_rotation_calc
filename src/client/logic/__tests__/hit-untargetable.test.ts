@@ -202,6 +202,41 @@ describe("ゴーストのエントリの効果（#950）", () => {
       expect(combo2.wsComboError).toBe(false);
       expect(combo2.resolvedPotency).toBe(400);
     });
+
+    // ブラッドソイル型: 付けるバフでリソースの上限を上げ、上がった上限で獲得を数える（#948 で上限だけは実行時から上げる）。
+    // ゴーストではバフが付かないので、獲得は元の上限で止まる
+    it.each([
+      { at: GHOST_AT, ghost: true, gained: 3, afterSpend: 2 },
+      { at: CONTROL_AT, ghost: false, gained: 6, afterSpend: 5 },
+    ])("付けるバフで上がる上限（ゴースト: $ghost）", ({ at, ghost, gained, afterSpend }) => {
+      const soil: ResourceDefinition = {
+        id: "soil",
+        maxStacks: 3,
+        color: "#000",
+        whileBuffModifiers: [{ buffId: "soil-cap", maxStacks: 6 }],
+      };
+      const capBuffs = [makeBuff({ id: "soil-cap", duration: 30 })];
+      const capSkills = [
+        makeSkill({ id: "fill", resourceChanges: [{ resourceId: "soil", amount: 3 }] }),
+        makeSkill({ id: "festival", type: "ogcd", potency: 0, buffApplications: ["soil-cap"], resourceChanges: [{ resourceId: "soil", amount: 3 }] }),
+        makeSkill({ id: "spend", resourceChanges: [{ resourceId: "soil", amount: -1 }] }),
+      ];
+      const [, festival, spend] = resolveTimeline(
+        [entry("fill", at - 2.5), entry("festival", at), entry("spend", 12)],
+        new Map(capSkills.map((s) => [s.id, s])),
+        [soil],
+        undefined,
+        capBuffs,
+        WINDOWS,
+        undefined,
+        { festival: DELAY },
+      ).entries;
+      expect(festival.untargetableHit === true).toBe(ghost);
+      expectNoHardError(festival);
+      expect(festival.resourceSnapshot["soil"]).toBe(gained);
+      expectNoHardError(spend);
+      expect(spend.resourceSnapshot["soil"]).toBe(afterSpend);
+    });
   });
 
   describe("着弾時の効果は起きない", () => {
