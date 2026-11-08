@@ -3,8 +3,9 @@ import { Hono } from "hono";
 import type { Bindings } from "./env";
 import { createAuthRoute, createMeRoute } from "./routes/auth";
 import { createMyTimelinesRoute, createTimelinesRoute } from "./routes/timelines";
+import { deleteExpiredSessions } from "./services/session";
 
-const app = new Hono<{ Bindings: Bindings }>();
+export const app = new Hono<{ Bindings: Bindings }>();
 const getDb = (env: Bindings) => drizzle(env.DB);
 
 app.get("/api/health", (c) => c.json({ status: "ok" }));
@@ -32,4 +33,11 @@ app.get("/en/*", async (c) => {
   return c.req.path.startsWith("/en/t/") ? withNoindex(res) : res;
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  // Cron Trigger（wrangler.jsonc の triggers.crons。1 日 1 回）。ログアウトせずに期限が切れたセッションの行を消す（#919）。
+  // 引数の controller は使わないので型を付けない（Bindings と同じく workers-types を入れないため）
+  async scheduled(_controller: unknown, env: Bindings): Promise<void> {
+    await deleteExpiredSessions(getDb(env));
+  },
+};

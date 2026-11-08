@@ -39,6 +39,7 @@
                ├ /t/*    → Hono → Static Assets の /（index.html）
                └ それ以外 → Static Assets（dist/client。未知のパスは index.html）
              ※ 共有 URL（/t/*・/en/t/*）の応答には Hono が X-Robots-Tag: noindex を付ける（#837）
+[Cron Trigger（毎日 UTC 19:00 = JST 04:00。wrangler.jsonc の triggers）] → 同じ Worker の scheduled → D1 の期限切れのセッションの行を消す（#919）
 ```
 
 - 配信 URL: `https://ff14-rotation-calc.forestry-for.workers.dev`（独自ドメインは使わない）
