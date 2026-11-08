@@ -56,7 +56,7 @@ describe("BRD: ピッチパーフェクトのメヌエット限定条件 (#108)"
   });
 
   it("メヌエット中に詩心 3（上限）まで蓄積すれば使用でき、威力 360 で詩心を全て消費する", () => {
-    // 詩心は歌中 3.75 秒ごとに +1（上限 3）。GCD 8 回（約 18 秒）で確実に上限到達
+    // 詩心は歌中 3 秒ごとの判定で +1（上限 3。9 秒の判定は既定で不発）。GCD 8 回（約 18 秒）で確実に上限到達
     const result = resolve([
       entry("wanderers-minuet"),
       ...heavyShots(8),
@@ -88,14 +88,15 @@ describe("BRD: ピッチパーフェクトのメヌエット限定条件 (#108)"
     expect(one.entries[2].resolvedPotency).toBe(100);
     expect(one.entries[2].resourceSnapshot["repertoire"]).toBe(0);
 
-    // エンピリアルアロー +1 と自動付与 1 tick で詩心 2
+    // エンピリアルアロー +1 と自動付与 1 tick（3 秒）で詩心 2。ピッチパーフェクトは 2 回目の判定（6 秒）より前の 4.45 秒
     const two = resolve([
       entry("wanderers-minuet"),
       entry("empyreal-arrow"),
-      ...heavyShots(3),
+      ...heavyShots(2),
       entry("pitch-perfect"),
     ]);
     const pitch = two.entries[two.entries.length - 1];
+    expect(pitch.startTime).toBeLessThan(6);
     expect(two.entries[two.entries.length - 2].resourceSnapshot["repertoire"]).toBe(2);
     expect(pitch.resourceErrors).toEqual([]);
     expect(pitch.resolvedPotency).toBe(220);

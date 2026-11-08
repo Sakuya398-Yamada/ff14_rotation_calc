@@ -19,6 +19,8 @@ function savedState(): PersistedAppState {
       { uid: "entry-1", skillId: "fire-3" },
       { uid: "entry-7", skillId: "fire-4", manualStartTime: 2.5 },
       { uid: "entry-8", skillId: "fire", procOccurred: true },
+      // 判定ごとの発生の指定（#900）。詩人の歌のエントリに付けるものだが、保存と読み込みはスキルを見ずに通す
+      { uid: "entry-9", skillId: "fire-3", autoGenerateProcOccurred: [true, null, false] },
     ],
     stats: { critical: 3000, directHit: 2000, determination: 2500, speed: 528 },
     untargetableWindows: [{ startTime: 30, endTime: 45 }],
