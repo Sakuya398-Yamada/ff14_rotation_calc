@@ -10,7 +10,6 @@ import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsDialog } from "./SettingsDialog";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
-import { AccountControl } from "./AccountControl";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
@@ -415,7 +414,6 @@ export function App() {
             <circle cx="12" cy="12" r="3" />
           </svg>
         </button>
-        <AccountControl status={accountStatus} returnTo={pathname} onLoggedOut={() => setAccountStatus("loggedOut")} />
       </header>
       <SettingsDialog
         open={settingsOpen}
@@ -423,6 +421,9 @@ export function App() {
         onChange={setSettings}
         onClose={() => setSettingsOpen(false)}
         returnFocusRef={settingsButtonRef}
+        accountStatus={accountStatus}
+        returnTo={pathname}
+        onLoggedOut={() => setAccountStatus("loggedOut")}
       />
       <SaveTimelineDialog
         open={saveOpen}

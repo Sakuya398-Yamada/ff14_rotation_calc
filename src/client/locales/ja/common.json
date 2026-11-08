@@ -199,7 +199,8 @@
       "standard": "標準",
       "compact": "コンパクト"
     },
-    "savedNote": "変更はこのブラウザに保存されます",
+    "account": "アカウント",
+    "savedNote": "表示の設定はこのブラウザに保存されます",
     "closeButton": "閉じる"
   },
   "jobPicker": {

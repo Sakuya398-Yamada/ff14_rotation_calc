@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeAll, beforeEach, vi } from "vitest";
 import i18next from "i18next";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { App } from "../App";
 
@@ -46,6 +46,13 @@ describe("App のログイン", () => {
   let me: { loginAvailable: boolean; loggedIn: boolean };
   let fetchMock: ReturnType<typeof vi.fn<(url: string, init?: RequestInit) => Promise<Response>>>;
 
+  // jsdom は HTMLDialogElement の showModal を実装していないため最小限の代替を入れる
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    };
+  });
+
   beforeEach(() => {
     me = { loginAvailable: true, loggedIn: false };
     fetchMock = vi.fn(async (url: string) => {
@@ -62,66 +69,83 @@ describe("App のログイン", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  it("ログインしていなければ、ヘッダーに今のパスへ戻るログインのリンクを出す", async () => {
+  function openSettings(name = "設定") {
+    fireEvent.click(screen.getByRole("button", { name }));
+    return screen.getByRole("dialog", { name });
+  }
+
+  it.each([
+    [{ loginAvailable: true, loggedIn: false }, "Discord でログイン"],
+    [{ loginAvailable: true, loggedIn: true }, "ログアウト"],
+  ])("/api/me が %o でも、ヘッダーにはログイン・ログアウトとプライバシーポリシーのリンクを出さない", async (body, shownInSettings) => {
+    me = body;
     render(<App />);
-    expect(await screen.findByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
+    // 応答を反映したことを、設定ダイアログに出たことで確かめてから、ヘッダーを見る
+    await within(openSettings()).findByText(shownInSettings);
+    const header = screen.getByRole("banner");
+    expect(within(header).queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
+    expect(within(header).queryByRole("button", { name: "ログアウト" })).not.toBeInTheDocument();
+    expect(within(header).queryByText("ログイン中")).not.toBeInTheDocument();
+    expect(within(header).queryByRole("link", { name: "プライバシーポリシー" })).not.toBeInTheDocument();
+  });
+
+  it("ログインしていなければ、設定ダイアログに今のパスへ戻るログインのリンクを出す", async () => {
+    render(<App />);
+    expect(await within(openSettings()).findByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
       "href",
       "/api/auth/discord?returnTo=%2F"
     );
     expect(fetchMock).toHaveBeenCalledWith("/api/me", expect.anything());
   });
 
-  it("共有 URL の画面では、そのパスに戻るログインのリンクにする", async () => {
+  it("共有 URL の画面では、設定ダイアログのログインのリンクをそのパスに戻す", async () => {
     window.history.replaceState(null, "", "/t/V1StGXR8_Z5jdHi6B-myT");
     render(<App />);
-    expect(await screen.findByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
+    expect(await within(openSettings()).findByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
       "href",
       "/api/auth/discord?returnTo=%2Ft%2FV1StGXR8_Z5jdHi6B-myT"
     );
   });
 
-  it("ログインできない環境では、ログインのリンクを出さない", async () => {
+  it("ログインできない環境では、設定ダイアログにアカウントの欄を出さない", async () => {
     me = { loginAvailable: false, loggedIn: false };
     render(<App />);
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/me", expect.anything()));
     // 応答を反映するまで待ってから、出ていないことを見る
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(screen.queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "ログアウト" })).not.toBeInTheDocument();
+    const dialog = openSettings();
+    expect(within(dialog).queryByRole("heading", { name: "アカウント" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
   });
 
-  it("ログイン中はログアウトのボタンを出し、ログアウトするとログインのリンクに戻る", async () => {
+  it("ログイン中は設定ダイアログにログアウトのボタンを出し、ログアウトするとログインのリンクに戻る", async () => {
     me = { loginAvailable: true, loggedIn: true };
     render(<App />);
-    expect(await screen.findByText("ログイン中")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
+    const dialog = openSettings();
+    expect(await within(dialog).findByText("ログイン中")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "ログアウト" }));
 
-    expect(await screen.findByRole("link", { name: "Discord でログイン" })).toBeInTheDocument();
-    expect(screen.queryByText("ログイン中")).not.toBeInTheDocument();
+    expect(await within(dialog).findByRole("link", { name: "Discord でログイン" })).toBeInTheDocument();
+    expect(within(dialog).queryByText("ログイン中")).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/auth/logout", expect.objectContaining({ method: "POST" }));
   });
 
   it("保存したタイムラインの一覧に、ログインの状態を渡す", async () => {
-    // jsdom は HTMLDialogElement の showModal を実装していないため最小限の代替を入れる
-    HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
-      this.setAttribute("open", "");
-    };
     me = { loginAvailable: true, loggedIn: true };
     render(<App />);
-    await screen.findByText("ログイン中");
     fireEvent.click(screen.getByRole("button", { name: "保存したタイムライン" }));
 
-    expect(screen.getByText(/^ログイン中のアカウントで保存したタイムラインを/)).toBeInTheDocument();
+    expect(await screen.findByText(/^ログイン中のアカウントで保存したタイムラインを/)).toBeInTheDocument();
   });
 
   describe("英語", () => {
     beforeEach(() => i18next.changeLanguage("en"));
     afterEach(() => i18next.changeLanguage("ja"));
 
-    it("ログインのリンクを英語で出す", async () => {
+    it("設定ダイアログのログインのリンクを英語で出す", async () => {
       window.history.replaceState(null, "", "/en/");
       render(<App />);
-      expect(await screen.findByRole("link", { name: "Log in with Discord" })).toHaveAttribute(
+      expect(await within(openSettings("Settings")).findByRole("link", { name: "Log in with Discord" })).toHaveAttribute(
         "href",
         "/api/auth/discord?returnTo=%2Fen%2F"
       );

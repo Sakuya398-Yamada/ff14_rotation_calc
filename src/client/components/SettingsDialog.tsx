@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
+import type { AccountStatus } from "../logic/account";
 import type { AccentColor, AppSettings, ThemePreference } from "../logic/app-settings";
+import { AccountControl } from "./AccountControl";
 import "./settings-dialog.css";
 
 const THEME_OPTIONS: ThemePreference[] = ["light", "dark", "system"];
@@ -18,9 +20,22 @@ interface SettingsDialogProps {
   onClose: () => void;
   /** 閉じたときにフォーカスを戻す要素（開いたボタン） */
   returnFocusRef: RefObject<HTMLElement | null>;
+  accountStatus: AccountStatus;
+  /** ログインした後に戻るパス */
+  returnTo: string;
+  onLoggedOut: () => void;
 }
 
-export function SettingsDialog({ open, settings, onChange, onClose, returnFocusRef }: SettingsDialogProps) {
+export function SettingsDialog({
+  open,
+  settings,
+  onChange,
+  onClose,
+  returnFocusRef,
+  accountStatus,
+  returnTo,
+  onLoggedOut,
+}: SettingsDialogProps) {
   const { t } = useTranslation();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -130,6 +145,16 @@ export function SettingsDialog({ open, settings, onChange, onClose, returnFocusR
             ))}
           </div>
         </fieldset>
+
+        {/* ログインできない環境（PR のプレビュー）では、見出しごと出さない */}
+        {accountStatus !== "unavailable" && (
+          <section aria-labelledby="settings-dialog-account">
+            <h3 id="settings-dialog-account" style={styles.sectionHeading}>
+              {t("settingsDialog.account")}
+            </h3>
+            <AccountControl status={accountStatus} returnTo={returnTo} onLoggedOut={onLoggedOut} />
+          </section>
+        )}
       </div>
 
       <div style={styles.footer}>
@@ -207,6 +232,11 @@ const styles: Record<string, React.CSSProperties> = {
   legend: {
     padding: 0,
     marginBottom: "var(--space-2)",
+    fontSize: "12px",
+    fontWeight: 700,
+  },
+  sectionHeading: {
+    margin: "0 0 var(--space-2)",
     fontSize: "12px",
     fontWeight: 700,
   },

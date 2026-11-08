@@ -28,6 +28,9 @@ function renderDialog(overrides: Partial<Parameters<typeof SettingsDialog>[0]> =
     onChange: vi.fn(),
     onClose: vi.fn(),
     returnFocusRef: createRef<HTMLElement>(),
+    accountStatus: "unavailable" as const,
+    returnTo: "/",
+    onLoggedOut: vi.fn(),
     ...overrides,
   };
   return { props, ...render(<SettingsDialog {...props} />) };
@@ -90,5 +93,56 @@ describe("SettingsDialog（英語）", () => {
     expect(screen.getByLabelText("Green")).toBeInTheDocument();
     expect(screen.getByLabelText("Compact")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close settings" })).toBeInTheDocument();
+  });
+});
+
+describe("SettingsDialog: アカウント", () => {
+  it("ログインしていなければ、アカウントの欄に戻るパスを付けたログインのリンクとプライバシーポリシーのリンクを出す", () => {
+    renderDialog({ accountStatus: "loggedOut", returnTo: "/t/V1StGXR8_Z5jdHi6B-myT" });
+
+    expect(screen.getByRole("heading", { name: "アカウント" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
+      "href",
+      "/api/auth/discord?returnTo=%2Ft%2FV1StGXR8_Z5jdHi6B-myT"
+    );
+    expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
+  });
+
+  it("ログイン中は、ログイン中の表示とログアウトのボタンを出す", () => {
+    renderDialog({ accountStatus: "loggedIn" });
+
+    expect(screen.getByRole("heading", { name: "アカウント" })).toBeInTheDocument();
+    expect(screen.getByText("ログイン中")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ログアウト" })).toBeInTheDocument();
+  });
+
+  it("ログインできない環境では、アカウントの欄を見出しごと出さない", () => {
+    renderDialog({ accountStatus: "unavailable" });
+
+    expect(screen.queryByRole("heading", { name: "アカウント" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "プライバシーポリシー" })).not.toBeInTheDocument();
+  });
+
+  it("下の注記は、表示の設定がこのブラウザに保存されることを書く", () => {
+    renderDialog({ accountStatus: "loggedIn" });
+    expect(screen.getByText("表示の設定はこのブラウザに保存されます")).toBeInTheDocument();
+  });
+});
+
+describe("SettingsDialog: アカウント（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("アカウントの欄と下の注記を英語で出す", () => {
+    renderDialog({ accountStatus: "loggedOut", returnTo: "/en/" });
+
+    expect(screen.getByRole("heading", { name: "Account" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Log in with Discord" })).toHaveAttribute(
+      "href",
+      "/api/auth/discord?returnTo=%2Fen%2F"
+    );
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/en/privacy");
+    expect(screen.getByText("Display settings are saved in this browser")).toBeInTheDocument();
   });
 });

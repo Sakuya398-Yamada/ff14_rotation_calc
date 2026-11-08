@@ -199,7 +199,8 @@
       "standard": "Standard",
       "compact": "Compact"
     },
-    "savedNote": "Changes are saved in this browser",
+    "account": "Account",
+    "savedNote": "Display settings are saved in this browser",
     "closeButton": "Close"
   },
   "jobPicker": {
