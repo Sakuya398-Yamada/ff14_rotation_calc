@@ -47,3 +47,18 @@
   git status --short
   ```
 - **確認**: tsx 4.23.15・Node 22.22.0・Vitest 4.1.12（Claude Code 2.1.310 クラウドセッション）/ 2026-10 / #629（tsx での停止）・#655（`agent` レポーター）・#679 と #707（scratchpad での回し方と `--dir /` のヒープ不足。Node 22.23.4）
+
+## Workers Builds の PR プレビュー URL は、全パスの応答に `X-Robots-Tag: noindex` が付く
+
+- **条件**: 応答ヘッダー（特に `X-Robots-Tag`）の有無を確かめる完了条件を作るとき（Phase 1.5「完了条件の生成」）と、それを確かめるとき
+- **症状**: Workers Builds の PR プレビュー URL では、コードが触らない静的ファイル（`/robots.txt`・`/ogp.png`）や `/` も含めて、全パスの応答に `X-Robots-Tag: noindex` が付く。本番の同じパスには付かない。「プレビュー URL で確認」と書いた完了条件では「付かない」ことを確かめられず、PR を作ったあとに完了条件と `closes` / `refs` を直すことになる
+- **回避**: 完了条件は、ビルド出力を `wrangler dev` で配信して確かめる形か、マージ後の本番で確かめる形にする（後者なら PR は `refs`。`phases/07-pr-creation.md`）。`wrangler dev` では、ビルドしてから起動し、別の呼び出しで `<パス>` ごとにヘッダーを見る
+  ```bash
+  npm run build
+  npx wrangler dev --config dist/ff14_rotation_calc/wrangler.json
+  ```
+  ```bash
+  curl -s -D - -o /dev/null http://localhost:8787<パス> | grep -i '^x-robots-tag'
+  ```
+  確かめ終わったら、`run_in_background` で起動したなら `TaskStop`（起動時のタスク ID）で止める。それ以外で起動したときは `kill $(lsof -ti:8787)` で止める（`$!` は `npx` の PID で、kill しても wrangler と workerd が残ってポートを開いたままになる）
+- **確認**: Workers Builds のプレビュー・wrangler 4.151.0 / 2026-11 / #837・#910
