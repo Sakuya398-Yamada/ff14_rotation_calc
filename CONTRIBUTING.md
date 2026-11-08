@@ -231,6 +231,20 @@ PR のプレビューは本番の D1 を使わず、全 PR で共有するプレ
 
 - **データは使い捨て**: PR 同士の保存が同じ D1 に混ざります。バックアップ（`docs/d1-backup.md`）も本番の D1 だけで、プレビュー用は取りません
 - **マージ前の PR のマイグレーションも当たる**: その PR を閉じたり、マイグレーションを作り直したりすると、`main` の `migrations/` と D1 の中身がずれます。ずれたら `npx wrangler d1 delete ff14-rotation-calc-preview` で消し、手順 1・2 で作り直す。作り直すと ID が変わるので、開いている PR は `main` を取り込んで push し直す（古い ID のままだと、マイグレーションの適用が D1 を見つけられずに失敗する）
+- **マイグレーションの番号を振り直したら、`d1_migrations` の名前も揃える**: PR のブランチのマイグレーションの番号を `main` の取り込みで振り直す（並行の PR が同じ番号を先にマージした等）と、この D1 の適用履歴 `d1_migrations` に、振り直す前の名前が残ります。そのままだと `npm run db:migrate:preview` が新しい名前を未適用と見て同じテーブルを作り直そうとし、その PR と、マージ後は `main` から派生したすべての PR のプレビューのビルドが失敗します（#896）。振り直した版をコミットしたら、push する前に次を行います
+  1. 振り直す前と後で SQL が同じかを確かめる。何も出なければ同じ（`<振り直す前のコミット>` は、`main` を取り込んだマージコミットで振り直したなら `HEAD^1`）:
+
+     ```powershell
+     git diff <振り直す前のコミット>:migrations/<古い名前> HEAD:migrations/<新しい名前>
+     ```
+
+  2. 同じなら、名前を揃える:
+
+     ```powershell
+     npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "UPDATE d1_migrations SET name = '<新しい名前>' WHERE name = '<古い名前>'"
+     ```
+
+     SQL が違う（取り込んだ `main` に合わせて中身も変わった）ときは、名前を揃えると古い SQL で作ったテーブルのまま適用済みになるので、揃えずに、前の項目のとおり D1 を作り直す
 
 ### Turnstile（初回のみ・#479 のマージ前に）
 
@@ -291,6 +305,7 @@ PR のプレビューではログインを出しません。リダイレクト U
 - **プレビューのビルドでマイグレーションが当たらない（ログの `Executing user deploy command:` に `db:migrate:preview` が無く、プレビューの API が 500 になる）**: そのプレビューが、Worker の Preview command を変える前に作られている。プレビューごとのビルドの設定を直し、push し直す（上記「プレビュー用 D1」の手順 3）
 - **プレビューのビルド失敗（`Missing script: "db:migrate:preview"`）**: Preview command にマイグレーションの適用を足した（#581）より前の `main` から切ったブランチ。`main` を取り込んで push し直す
 - **プレビューのビルド失敗（`wrangler d1 migrations apply PREVIEW_DB --remote` のエラー）**: 認証・権限のエラーならビルド用トークンの D1 の編集権限（「本番 D1 とビルド用トークン」の手順 3）、D1 が見つからないなら `wrangler.preview-migrations.jsonc` の `database_id`、SQL のエラーなら共有の D1 の中身のずれ（「プレビュー用 D1」の作り直し）を確かめる
+- **`main` のマイグレーションが増えた直後から、全 PR のプレビューのビルドが失敗する（`db:migrate:preview` が `table ... already exists` で止まる）**: プレビュー用 D1 の `d1_migrations` に、番号を振り直す前のマイグレーションの名前が残っている（#896）。`npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT id, name, applied_at FROM d1_migrations ORDER BY id"` の `name` を `main` の `migrations/` のファイル名と比べ、番号だけが違う組（`0001_create_users_and_sessions.sql` と `0002_create_users_and_sessions.sql` など）があれば、上記「プレビュー用 D1」の「マイグレーションの番号を振り直したら」の手順 2 の `UPDATE` で名前を揃えて、失敗したビルドを Retry する。`migrations/` に無い名前でも、開いている PR のマイグレーションはそのままでよい（閉じた PR のものなら、同じ節のとおり D1 を作り直す）
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で認証・権限のエラー）**: ビルド用 API トークンに D1 の編集権限が無い。上記「本番 D1 とビルド用トークン」の手順 3 のとおり足す
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す
 - **本番の保存がいつも「ボット対策の確認ができませんでした」（403）になる**: ビルド変数 `VITE_TURNSTILE_SITE_KEY` が無いと、フロントはテスト用の sitekey で動き（ウィジェットにテスト用の表示が出る）、そのダミートークンを本番の secret が拒否する。上記「Turnstile」の手順 2 のとおり足して、ビルドし直す（ビルド変数は次のビルドから効く）。テスト用の表示が出ていなければ、sitekey と secret が別のウィジェットのものになっていないか確かめる
