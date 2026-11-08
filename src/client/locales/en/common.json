@@ -23,7 +23,6 @@
   },
   "accountControl": {
     "login": "Log in with Discord",
-    "loggedIn": "Logged in",
     "logout": "Log out",
     "loggingOut": "Logging out…",
     "logoutFailed": "Couldn't log out. Check your connection and try again.",
@@ -202,6 +201,7 @@
       "standard": "Standard",
       "compact": "Compact"
     },
+    "account": "Account",
     "savedNote": "Theme and accent color are saved in this browser",
     "closeButton": "Close"
   },

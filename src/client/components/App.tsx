@@ -10,7 +10,6 @@ import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsButton } from "./SettingsButton";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
-import { AccountControl } from "./AccountControl";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
@@ -372,8 +371,10 @@ export function App() {
         >
           {t("app.saveAndShare")}
         </button>
-        <SettingsButton languageHref={alternateLanguagePath(pathname)} />
-        <AccountControl status={accountStatus} returnTo={pathname} onLoggedOut={() => setAccountStatus("loggedOut")} />
+        <SettingsButton
+          languageHref={alternateLanguagePath(pathname)}
+          account={{ status: accountStatus, returnTo: pathname, onLoggedOut: () => setAccountStatus("loggedOut") }}
+        />
       </header>
       <SaveTimelineDialog
         open={saveOpen}

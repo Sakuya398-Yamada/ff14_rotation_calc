@@ -23,7 +23,6 @@
   },
   "accountControl": {
     "login": "Discord でログイン",
-    "loggedIn": "ログイン中",
     "logout": "ログアウト",
     "loggingOut": "ログアウト中…",
     "logoutFailed": "ログアウトできませんでした。通信状況を確かめて、もう一度試してください。",
@@ -202,6 +201,7 @@
       "standard": "標準",
       "compact": "コンパクト"
     },
+    "account": "アカウント",
     "savedNote": "テーマとアクセントカラーはこのブラウザに保存されます",
     "closeButton": "閉じる"
   },

@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { applySettings, loadSettings, prefersDarkScheme, saveSettings } from "../logic/app-settings";
-import { SettingsDialog } from "./SettingsDialog";
+import { SettingsDialog, type SettingsAccount } from "./SettingsDialog";
 
 interface SettingsButtonProps {
   /** 設定ダイアログの言語の切り替え先（今のページの、相手の言語版のパス） */
   languageHref: string;
+  /** 渡すと設定ダイアログにアカウントの欄を出す */
+  account?: SettingsAccount;
 }
 
 /** 歯車のボタンと、それで開く設定ダイアログ。設定の保存と画面への反映もここで行う */
-export function SettingsButton({ languageHref }: SettingsButtonProps) {
+export function SettingsButton({ languageHref, account }: SettingsButtonProps) {
   const { t } = useTranslation();
   const [settings, setSettings] = useState(loadSettings);
   const [open, setOpen] = useState(false);
@@ -48,6 +50,7 @@ export function SettingsButton({ languageHref }: SettingsButtonProps) {
         onClose={() => setOpen(false)}
         returnFocusRef={buttonRef}
         languageHref={languageHref}
+        account={account}
       />
     </>
   );

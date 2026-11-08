@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
+import type { AccountStatus } from "../logic/account";
 import type { AccentColor, AppSettings, ThemePreference } from "../logic/app-settings";
 import type { Language } from "../logic/language-path";
 import { useLanguage } from "../i18n";
+import { AccountControl } from "./AccountControl";
 import "./settings-dialog.css";
 
 const LANGUAGE_OPTIONS: Language[] = ["ja", "en"];
@@ -24,9 +26,26 @@ interface SettingsDialogProps {
   returnFocusRef: RefObject<HTMLElement | null>;
   /** 言語の切り替え先（今のページの、相手の言語版のパス）。言語はパスで決まるので、選ぶとそのページに移る */
   languageHref: string;
+  /** 渡すとアカウントの欄を出す（アプリの画面だけ。プライバシーポリシーのページは /api/me を取得しないので渡さない） */
+  account?: SettingsAccount;
 }
 
-export function SettingsDialog({ open, settings, onChange, onClose, returnFocusRef, languageHref }: SettingsDialogProps) {
+export interface SettingsAccount {
+  status: AccountStatus;
+  /** ログインした後に戻るパス */
+  returnTo: string;
+  onLoggedOut: () => void;
+}
+
+export function SettingsDialog({
+  open,
+  settings,
+  onChange,
+  onClose,
+  returnFocusRef,
+  languageHref,
+  account,
+}: SettingsDialogProps) {
   const { t } = useTranslation();
   const lang = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -155,6 +174,17 @@ export function SettingsDialog({ open, settings, onChange, onClose, returnFocusR
             ))}
           </div>
         </fieldset>
+
+        {/* ログインできない環境（PR のプレビュー）では、見出しごと出さない。
+            閉じているあいだは外し、ログアウトの失敗の表示を開き直したときに残さない */}
+        {open && account && account.status !== "unavailable" && (
+          <section aria-labelledby="settings-dialog-account">
+            <h3 id="settings-dialog-account" style={styles.sectionHeading}>
+              {t("settingsDialog.account")}
+            </h3>
+            <AccountControl status={account.status} returnTo={account.returnTo} onLoggedOut={account.onLoggedOut} />
+          </section>
+        )}
       </div>
 
       <div style={styles.footer}>
@@ -232,6 +262,11 @@ const styles: Record<string, React.CSSProperties> = {
   legend: {
     padding: 0,
     marginBottom: "var(--space-2)",
+    fontSize: "12px",
+    fontWeight: 700,
+  },
+  sectionHeading: {
+    margin: "0 0 var(--space-2)",
     fontSize: "12px",
     fontWeight: 700,
   },
