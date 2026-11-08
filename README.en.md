@@ -70,6 +70,7 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
   - **Level (alpha)**: Choose from 70 / 80 / 90 / 100. Below Lv100, action availability and potencies are for reference only, so this is an alpha feature
 - **Settings** (gear button): Change the display language (日本語 / English), the theme (Light / Dark / Match OS) and the accent color
   - Selecting **日本語** under Language opens the same page in Japanese. The timeline you are working on is kept (on the Japanese version, select **English** to come back)
+  - Under **Account**, "Log in with Discord" logs you in with your Discord account. While you are logged in, a "Log out" button appears in the same place. Once logged in, you can see the list of saved timelines in other browsers and on other devices too (see "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ). The information handled for logging in is described in the "Privacy policy" in the same section
 - **Save & share**: Opens the list of saved timelines. To save the current timeline, use "Save current timeline" in this list. For how to use it, see "[I want to share a timeline or open it on another device](#q-i-want-to-share-a-timeline-or-open-it-on-another-device)" and "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ
 
 ### Summary bar (below the header)
@@ -146,7 +147,7 @@ Currently only 14 jobs are supported: WHM / DRG / BRD / PCT / BLM / SAM / MNK / 
 
 What you are working on (the selected job, level, stats, timeline, boss untargetable windows and so on) is saved automatically in your browser's LocalStorage. In the same browser, you can pick up where you left off even after reloading the page or closing and reopening the tab.
 
-- Auto-saved data is stored only in your browser. Clearing the browser's browsing data (site data) also deletes it (timelines saved to the server with "Save & share", described next, are not deleted. However, they no longer appear in the list of saved timelines. They can still be opened from their share URLs)
+- Auto-saved data is stored only in your browser. Clearing the browser's browsing data (site data) also deletes it (timelines saved to the server with "Save & share", described next, are not deleted. However, those saved without logging in and not linked to an account no longer appear in the list of saved timelines. They can still be opened from their share URLs. Those linked to an account appear in the list again when you log in)
 - Auto-saved data is not carried over to other browsers or devices. To open a timeline on another device or show it to someone, use "Save & share", described next
 
 ### Q. I want to share a timeline or open it on another device
@@ -164,12 +165,15 @@ Saving a timeline to the server with "Save current timeline" in the list opened 
 
 ### Q. I want to find a saved timeline later
 
-With "Save & share" at the top of the screen, you can list the timelines saved in this browser, newest first. Even if you forgot to note a share URL, you can choose the timeline from the list and open it. Each row of the list is a link to its share URL, so you can also open it in a new tab.
+With "Save & share" at the top of the screen, you can list your saved timelines, newest first. Even if you forgot to note a share URL, you can choose the timeline from the list and open it. Each row of the list is a link to its share URL, so you can also open it in a new tab.
 
-- Only timelines saved in the same browser appear in the list (there is no login; your browser is identified by a cookie). Timelines saved in other browsers or on other devices do not appear
+- If you are not logged in, only timelines saved in the same browser appear in the list (your browser is identified by a cookie). Timelines saved in other browsers or on other devices do not appear
+- If you log in with Discord under **Account** in the settings (gear button at the top of the screen), the timelines saved with that account appear in the list. In other browsers and on other devices, log in with the same account to see the same list. You can also log in with "Log in with Discord" in the list
+  - When you log in, the timelines saved in that browser without logging in are also linked to your account
+  - When you log out, the list in that browser becomes empty. Your saved timelines stay with your account and appear in the list again when you log in
 - With "Copy" on each row of the list, you can copy the share URL of that row
 - With the trash can button on each row of the list, you can delete a saved timeline. Once deleted, it can no longer be opened from its share URL, even by people you shared the URL with. This cannot be undone
-- If you clear the browser's browsing data (site data), or 400 days pass without saving or viewing the list, the timelines saved until then no longer appear in the list and can no longer be deleted. The timelines themselves remain on the server, so they can still be opened from their share URLs
+- If you clear the browser's browsing data (site data), or 400 days pass without saving or viewing the list, the timelines saved until then without logging in and not linked to an account no longer appear in the list and can no longer be deleted. The timelines themselves remain on the server, so they can still be opened from their share URLs. Those linked to an account appear in the list when you log in
 
 ---
 
