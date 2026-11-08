@@ -1992,6 +1992,7 @@ export function resolveTimeline(
     // スキル実行後のリソーススナップショット（UI表示・最終状態計算用）
     // エラー時は resourceState が変動していないため snapshot と同値になる
     const snapshotAfter: ResourceSnapshot = { ...resourceState };
+    const pendingBuffIds = [...new Set(pendingBuffApplications.flatMap((p) => p.buffIds))];
 
     resolved.push({
       uid: entry.uid,
@@ -2012,6 +2013,7 @@ export function resolveTimeline(
       wastedProc,
       ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
       ...(hitTime !== undefined ? { hitTime } : {}),
+      ...(pendingBuffIds.length > 0 ? { pendingBuffIds } : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),
       activeBuffsAtUse,

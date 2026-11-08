@@ -702,6 +702,12 @@ export interface ResolvedTimelineEntry {
    * バフのレーンはこれも材料にする（#948）
    */
   hitAppliedBuffs?: ActiveBuff[];
+  /**
+   * このエントリの実行後に、着弾を待っているバフの ID（前のエントリが付けたものも含む）。待っているときだけ持つ。
+   * リソースの上限を上げるバフ（whileBuffModifiers）は、着弾を待つ間も上限だけ実行時から上げるので、
+   * リソースのレーンの上限の表示もこれを入れて計算する（#948）
+   */
+  pendingBuffIds?: string[];
   /** 威力バフの合成倍率（1.0 = バフなし） */
   buffMultiplier: number;
   /** クリティカル発生率ボーナス（0.0 = バフなし、0.1 = +10%） */

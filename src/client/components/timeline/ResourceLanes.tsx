@@ -29,7 +29,11 @@ function getMarkers(group: ResourceGroup, entries: ResolvedTimelineEntry[], tick
     key: entry.uid,
     time: entry.startTime,
     snapshot: entry.resourceSnapshot,
-    activeBuffs: entry.activeBuffs,
+    // 着弾を待っているバフも、上限は実行時から上げる（計算と同じ。#948）
+    activeBuffs: [
+      ...entry.activeBuffs,
+      ...(entry.pendingBuffIds ?? []).map((buffId) => ({ buffId, startTime: entry.startTime, endTime: entry.startTime })),
+    ],
     hasError: group.resources.some((r) => entry.resourceErrors.some((e) => e.resourceId === r.id)),
   }));
   if (group.resources.length !== 1) return entryMarkers;

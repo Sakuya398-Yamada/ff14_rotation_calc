@@ -353,6 +353,10 @@ describe("リソースの上限を上げるバフ（whileBuffModifiers）", () =
     expect(result[1].startTime).toBeLessThan(result[0].hitTime!);
     expect(buffAtUse(result[1], "fest")).toBeUndefined();
     expect(result[1].resourceSnapshot["soil"]).toBe(5);
+    // 着弾を待っているバフは、付けたエントリにも、着弾前の後続のエントリにも持たせる（リソースのレーンの上限の表示に使う）
+    expect(result[0].pendingBuffIds).toEqual(["fest"]);
+    expect(result[1].pendingBuffIds).toEqual(["fest"]);
+    expect(result[2].pendingBuffIds).toBeUndefined();
   });
 });
 
