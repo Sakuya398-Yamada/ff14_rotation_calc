@@ -278,7 +278,7 @@
       "notOccurred": "No proc"
     },
     "autoGenerateProcs": "{{name}} procs",
-    "autoGenerateProcsHint": "Click to cycle unset → proc → no proc (faded marks show how unset checks are counted)",
+    "autoGenerateProcsHint": "Click to cycle unset → proc → no proc (faded colors show how unset checks are counted; green is proc, red is no proc)",
     "autoGenerateProcTick": {
       "occurred": "Check at {{seconds}}s: proc",
       "notOccurred": "Check at {{seconds}}s: no proc",

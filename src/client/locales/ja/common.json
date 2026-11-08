@@ -278,7 +278,7 @@
       "notOccurred": "不発"
     },
     "autoGenerateProcs": "{{name}}の判定",
-    "autoGenerateProcsHint": "押すと 未指定 → 発生 → 不発 の順に切り替わる（薄い印は未指定の判定の計算上の結果）",
+    "autoGenerateProcsHint": "押すと 未指定 → 発生 → 不発 の順に切り替わる（薄い色は未指定の判定の計算上の結果。緑は発生、赤は不発）",
     "autoGenerateProcTick": {
       "occurred": "{{seconds}}秒の判定: 発生",
       "notOccurred": "{{seconds}}秒の判定: 不発",

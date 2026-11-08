@@ -539,9 +539,7 @@ function AutoGenerateProcRow({
               onClick={() => onChange(entry.uid, tickNumber, next)}
               aria-label={tickLabel}
               title={tickLabel}
-              style={typeof specified === "boolean"
-                ? { ...styles.autoGenerateProcButton, ...styles.autoGenerateProcButtonSpecified }
-                : styles.autoGenerateProcButton}
+              style={autoGenerateProcButtonStyle(occurred, typeof specified === "boolean")}
             >
               <span className="num">{seconds}s</span>
               <span aria-hidden="true">{occurred ? "○" : "×"}</span>
@@ -552,6 +550,20 @@ function AutoGenerateProcRow({
       <span style={styles.headerAutoHint}>{t("skillDetailPanel.autoGenerateProcsHint")}</span>
     </div>
   );
+}
+
+/** 発生は緑、不発は赤。未指定は薄い枠、指定した判定は濃い枠・文字と薄い塗りにして、指定したかを見分けられるようにする */
+function autoGenerateProcButtonStyle(occurred: boolean, specified: boolean): React.CSSProperties {
+  const tone = occurred ? "var(--color-dot)" : "var(--color-error)";
+  return specified
+    ? {
+        ...styles.autoGenerateProcButton,
+        borderColor: tone,
+        color: tone,
+        backgroundColor: `color-mix(in srgb, ${tone} 15%, transparent)`,
+        fontWeight: 700,
+      }
+    : { ...styles.autoGenerateProcButton, borderColor: `color-mix(in srgb, ${tone} 40%, transparent)` };
 }
 
 function formatPercent(value: number): string {
@@ -701,19 +713,13 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     gap: "4px",
     fontSize: "12px",
-    background: "transparent",
-    // 指定時に borderColor だけ上書きするので、shorthand の border は使わない（React が混在を警告する）
+    // 枠と塗りの色は状態ごとに上書きするので、shorthand の border・background は使わない（React が混在を警告する）
+    backgroundColor: "transparent",
     borderWidth: "1px",
     borderStyle: "solid",
-    borderColor: "var(--color-field)",
     borderRadius: "var(--radius-md)",
     color: "var(--color-muted)",
     cursor: "pointer",
-  },
-  autoGenerateProcButtonSpecified: {
-    borderColor: "var(--color-accent)",
-    color: "var(--color-accent)",
-    fontWeight: 700,
   },
   closeButton: {
     marginLeft: "auto",
