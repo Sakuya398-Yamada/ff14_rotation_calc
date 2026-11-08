@@ -40,6 +40,12 @@ describe("PrivacyPolicyPage", () => {
     expect(screen.getByText(/ユーザー ID もそのままは保存せず、運営者だけが持つ鍵で HMAC-SHA256 にかけた値を保存します/)).toBeInTheDocument();
   });
 
+  // Cron Trigger で 1 日 1 回消す（src/server/index.ts の scheduled。#919）
+  it("ログアウトせずに期限が切れたセッションの記録も、1 日 1 回消すと書いている", () => {
+    render(<PrivacyPolicyPage />);
+    expect(screen.getByText(/ログアウトせずに期限が切れたものも 1 日 1 回まとめて消します/)).toBeInTheDocument();
+  });
+
   describe("英語", () => {
     beforeEach(() => i18next.changeLanguage("en"));
     afterEach(() => i18next.changeLanguage("ja"));
@@ -70,6 +76,11 @@ describe("PrivacyPolicyPage", () => {
       render(<PrivacyPolicyPage />);
       expect(screen.getByText("Value derived from your Discord user ID")).toBeInTheDocument();
       expect(screen.getByText(/Your user ID itself is not stored either: the tool stores its HMAC-SHA256/)).toBeInTheDocument();
+    });
+
+    it("ログアウトせずに期限が切れたセッションの記録も、1 日 1 回消すと書いている", () => {
+      render(<PrivacyPolicyPage />);
+      expect(screen.getByText(/records of sessions that expired without logging out are deleted once a day/)).toBeInTheDocument();
     });
   });
 });

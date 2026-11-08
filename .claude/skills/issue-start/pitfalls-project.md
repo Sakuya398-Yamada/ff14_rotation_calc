@@ -72,3 +72,18 @@
      ```
   3. プレビュー用 D1（PR のプレビューのビルドが `npm run db:migrate:preview` で当てる共有の D1）に、古い名前が当たっていないかを見る。古い名前のまま push してプレビューのビルドが走っていれば当たっている。`d1_migrations` の読み方は `CONTRIBUTING.md`「トラブルシューティング」の `table ... already exists` の項目、当たっていたときの直し方は同じファイルの「プレビュー用 D1（初回のみ）」の「マイグレーションの番号を振り直したら、`d1_migrations` の名前も揃える」（push する前に行う）
 - **確認**: drizzle-kit 0.31.11・wrangler 4.151.0 / 2026-11 / #876（発見元）・#915（一時クローンで同じコンフリクトを起こして手順 1 を、手元の D1 で手順 2 を、テーブルを作る版と列を足す版の両方で流して確かめた）
+
+## Workers Builds の PR プレビュー URL は、全パスの応答に `X-Robots-Tag: noindex` が付く
+
+- **条件**: 応答ヘッダー（特に `X-Robots-Tag`）の有無を確かめる完了条件を作るとき（Phase 1.5「完了条件の生成」）と、それを確かめるとき
+- **症状**: Workers Builds の PR プレビュー URL では、コードが触らない静的ファイル（`/robots.txt`・`/ogp.png`）や `/` も含めて、全パスの応答に `X-Robots-Tag: noindex` が付く。本番の同じパスには付かない。「プレビュー URL で確認」と書いた完了条件では「付かない」ことを確かめられず、PR を作ったあとに完了条件と `closes` / `refs` を直すことになる
+- **回避**: 完了条件は、ビルド出力を `wrangler dev` で配信して確かめる形か、マージ後の本番で確かめる形にする（後者なら PR は `refs`。`phases/07-pr-creation.md`）。`wrangler dev` では、ビルドしてから起動し、別の呼び出しで `<パス>` ごとにヘッダーを見る
+  ```bash
+  npm run build
+  npx wrangler dev --config dist/ff14_rotation_calc/wrangler.json
+  ```
+  ```bash
+  curl -s -D - -o /dev/null http://localhost:8787<パス> | grep -i '^x-robots-tag'
+  ```
+  確かめ終わったら、`run_in_background` で起動したなら `TaskStop`（起動時のタスク ID）で止める。それ以外で起動したときは `kill $(lsof -ti:8787)` で止める（`$!` は `npx` の PID で、kill しても wrangler と workerd が残ってポートを開いたままになる）
+- **確認**: Workers Builds のプレビュー・wrangler 4.151.0 / 2026-11 / #837・#910

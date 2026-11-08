@@ -82,7 +82,7 @@
       "heading": "Retention",
       "timelines": "Saved timelines have no expiry. When you delete one, it no longer appears in your list or at its share URL, but the data remains on the server. To erase it completely, send a request as described in \"Deletion requests\" below.",
       "account": "The value derived from your Discord user ID and the links to your account also have no expiry and are kept until you request their deletion.",
-      "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and can no longer be used. Their records are deleted when you log out. Records of sessions that expired without logging out may be kept until you request deletion of your account.",
+      "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and can no longer be used. Their records are deleted when you log out, and records of sessions that expired without logging out are deleted once a day.",
       "backup": "So that the database can be restored if it breaks, it is backed up daily, and the newest 30 backups (normally 30 days' worth) are kept on a device the operator manages. Erased data normally disappears from the backups after about 30 days."
     },
     "deletion": {
