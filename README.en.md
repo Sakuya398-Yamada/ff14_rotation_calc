@@ -105,6 +105,7 @@ The timeline is split into several lanes.
 - **PPS range**: Set the time range used to calculate the total potency and PPS
 - **Untargetable**: Set when the boss becomes untargetable. No potency is dealt while it is untargetable, so that time is excluded from the calculation
 - **Multi-target**: Set a number of enemies and the time range in which that many enemies are present. AoE actions used in that time range are calculated as hitting that number of enemies (the target cap and potency falloff of each action are applied. DoTs are calculated for one enemy)
+- **Application delay**: In an action's details panel, set the seconds from using the action until its damage lands (it applies to every use of that action, and for actions with a cast time it counts from the end of the cast). The action then counts toward PPS ranges and totals when it lands. As in the game, buffs on its potency are still checked when it is used
 
 ---
 

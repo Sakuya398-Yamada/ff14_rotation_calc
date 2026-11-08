@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import i18next from "i18next";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { render, screen, cleanup, within, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { SkillDetailPanel } from "../SkillDetailPanel";
 import { resolveTimeline } from "../../logic/resolve-timeline";
@@ -68,6 +68,8 @@ function renderLastEntry(skillIds: string[], job = BRD) {
       onClose={vi.fn()}
       onManualStartTimeChange={vi.fn()}
       onProcOccurredChange={vi.fn()}
+      hitDelay={undefined}
+      onHitDelayChange={vi.fn()}
     />
   );
 }
@@ -94,6 +96,8 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
         onClose={vi.fn()}
         onManualStartTimeChange={vi.fn()}
         onProcOccurredChange={onProcOccurredChange}
+        hitDelay={undefined}
+        onHitDelayChange={vi.fn()}
       />
     );
     return onProcOccurredChange;
@@ -137,6 +141,95 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
     for (const label of ["期待値", "発生", "不発"]) {
       expect(screen.getByRole("button", { name: label })).toHaveAttribute("aria-pressed", String(label === selectedLabel));
     }
+  });
+});
+
+describe("SkillDetailPanel: 着弾までの遅れ (#901)", () => {
+  // 2 発目のファイガは AF 中のファイガ（fire-3-in-af）に自動変化する
+  function renderSecondFire3(hitDelay?: number) {
+    const onHitDelayChange = vi.fn();
+    const entries = resolveTimeline(
+      [
+        { uid: "e-1", skillId: "fire-3" },
+        { uid: "e-2", skillId: "fire-3" },
+      ],
+      BLM.skillMap,
+      BLM.resources,
+      stats,
+      BLM.buffs,
+      undefined,
+      undefined,
+      hitDelay !== undefined ? { "fire-3-in-af": hitDelay } : undefined
+    ).entries;
+    const entry = entries[1];
+    render(
+      <SkillDetailPanel
+        entry={entry}
+        resolvedSkill={BLM.skillMap.get(entry.resolvedSkillId)!}
+        jobId={BLM.jobId}
+        buffDefMap={BLM.buffDefMap}
+        stats={stats}
+        onClose={vi.fn()}
+        onManualStartTimeChange={vi.fn()}
+        onProcOccurredChange={vi.fn()}
+        hitDelay={hitDelay}
+        onHitDelayChange={onHitDelayChange}
+      />
+    );
+    return { entry, onHitDelayChange, input: screen.getByRole("spinbutton", { name: "着弾までの遅れ" }) };
+  }
+
+  it("前提: 2 発目は AF 中のファイガに変化している", () => {
+    const { entry } = renderSecondFire3();
+    expect(entry.skillId).toBe("fire-3");
+    expect(entry.resolvedSkillId).toBe("fire-3-in-af");
+  });
+
+  it("値を入れて Enter で確定すると、実行されたスキルの ID と 0.01 秒に丸めた値で呼ぶ", () => {
+    const { input, onHitDelayChange } = renderSecondFire3();
+
+    fireEvent.change(input, { target: { value: "0.624" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(onHitDelayChange).toHaveBeenCalledWith("fire-3-in-af", 0.62);
+  });
+
+  it("設定中に空にして確定すると、解除（undefined）で呼ぶ", () => {
+    const { input, onHitDelayChange } = renderSecondFire3(0.6);
+    expect(input).toHaveValue(0.6);
+
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
+
+    expect(onHitDelayChange).toHaveBeenCalledWith("fire-3-in-af", undefined);
+  });
+
+  it("負の値は呼ばずに、設定中の値に戻す", () => {
+    const { input, onHitDelayChange } = renderSecondFire3(0.6);
+
+    fireEvent.change(input, { target: { value: "-1" } });
+    fireEvent.blur(input);
+
+    expect(onHitDelayChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue(0.6);
+  });
+
+  it("設定中は着弾時刻を出し、解除ボタンで解除（undefined）で呼ぶ", () => {
+    const { entry, onHitDelayChange } = renderSecondFire3(0.6);
+    expect(entry.hitTime).toBeDefined();
+
+    expect(screen.getByText(`（着弾: ${entry.hitTime!.toFixed(2)}s）`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "着弾までの遅れを解除" }));
+
+    expect(onHitDelayChange).toHaveBeenCalledWith("fire-3-in-af", undefined);
+  });
+
+  it("未設定なら入力欄は空で、解除ボタンと着弾時刻は出ない", () => {
+    const { input } = renderSecondFire3();
+
+    expect(input).toHaveValue(null);
+    expect(screen.queryByRole("button", { name: "着弾までの遅れを解除" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/着弾:/)).not.toBeInTheDocument();
   });
 });
 

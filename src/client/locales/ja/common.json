@@ -266,6 +266,11 @@
     "resetStartTimeLabel": "自動計算に戻す",
     "resetStartTime": "自動に戻す",
     "autoStartTime": "（自動計算値: {{time}}s）",
+    "hitDelay": "着弾までの遅れ",
+    "hitDelayDescription": "このスキルを実行してから着弾するまでの秒数（詠唱のあるスキルは詠唱完了から）。同じスキルすべてに効き、PPS 区間・集計には着弾した時刻で入る",
+    "resetHitDelayLabel": "着弾までの遅れを解除",
+    "resetHitDelay": "解除",
+    "hitTime": "（着弾: {{time}}s）",
     "procOutcome": "{{name}}の発生",
     "procOutcomes": {
       "expected": "期待値",
