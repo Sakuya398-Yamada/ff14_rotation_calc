@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Bindings } from "../env";
-import app from "../index";
+import { app } from "../index";
 
 function envWithAssets() {
   const fetch = vi.fn(async (_request: Request) => new Response("<html lang=\"en\"></html>", { status: 200 }));
