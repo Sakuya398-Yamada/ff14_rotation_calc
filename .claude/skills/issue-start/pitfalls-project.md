@@ -47,3 +47,28 @@
   git status --short
   ```
 - **確認**: tsx 4.23.15・Node 22.22.0・Vitest 4.1.12（Claude Code 2.1.310 クラウドセッション）/ 2026-10 / #629（tsx での停止）・#655（`agent` レポーター）・#679 と #707（scratchpad での回し方と `--dir /` のヒープ不足。Node 22.23.4）
+
+## 並行の Issue と同じ番号のマイグレーションを作っていると、`main` の取り込みで `migrations/meta/` がコンフリクトする
+
+- **条件**: マイグレーションを足したブランチで、並行して進んだ別の Issue が同じ番号のマイグレーション（`000N_*`）を先に `main` へマージしたあと、`main` を取り込むとき（Phase 7「push 前チェック」の `git merge origin/main`）。Phase 1 の重なりの確認（`phases/01-overlap-check.md`）で、後からマージする側が作り直すと決めていたときも同じ
+- **症状**: `git merge origin/main` が次のとおり止まる（`0001` は重なった番号）。SQL は名前が違うのでコンフリクトせず、同じ番号の SQL が 2 つ並ぶ
+  ```
+  CONFLICT (add/add): Merge conflict in migrations/meta/0001_snapshot.json
+  CONFLICT (content): Merge conflict in migrations/meta/_journal.json
+  ```
+- **回避**: 自分のマイグレーションを `main` の次の番号で作り直す。生成物は手で編集しない（`.claude/rules/coding-standards.md`「基本方針」）
+  1. `migrations/meta/` は `main` 側を採り、自分の SQL を消して `npm run db:generate` で作り直す。`db:generate` は `src/server/db/schema.ts` と最新の snapshot の差から SQL を作るので、`schema.ts` もコンフリクトしていたら、先に両方の変更を残して解消しておく:
+     ```bash
+     git checkout --theirs migrations/meta/<番号>_snapshot.json migrations/meta/_journal.json
+     git rm migrations/<番号>_<名前>.sql
+     npm run db:generate -- --name <名前>
+     git add migrations/
+     ```
+     `<名前>` は自分の SQL のファイル名から番号と `.sql` を除いた部分。マージを終える（`git commit --no-edit`）前に、`ls migrations/` に同じ番号の SQL が並んでいないことと、作り直した SQL に自分の変更だけが入っていることを見る（`main` 側の変更が入っていれば、`meta/` が `main` 側になっていない）
+  2. ローカルの D1 に古い版が当たっていたら、消して当て直す。`npx wrangler d1 execute DB --local --command "SELECT name FROM d1_migrations ORDER BY id"` に手順 1 で消した SQL の名前があれば当たっていて、そのままだと `npm run db:migrate` が作り直した版を未適用と見て `table ... already exists` で止まる。古い版が作ったテーブル（作り直した SQL の `CREATE TABLE` と同じ名前。インデックスはテーブルと一緒に消える）と履歴の行を消してから当て直す。テーブルが複数なら `DROP TABLE` を並べ、外部キーで参照されているテーブルは、参照している側より後に消す:
+     ```bash
+     npx wrangler d1 execute DB --local --command "DROP TABLE <テーブル>; DELETE FROM d1_migrations WHERE name = '<番号>_<名前>.sql'"
+     npm run db:migrate
+     ```
+  3. プレビュー用 D1（PR のプレビューのビルドが `npm run db:migrate:preview` で当てる共有の D1）に、古い名前が当たっていないかを見る。古い名前のまま push してプレビューのビルドが走っていれば当たっている。`d1_migrations` の読み方は `CONTRIBUTING.md`「トラブルシューティング」の `table ... already exists` の項目、当たっていたときの直し方は同じファイルの「プレビュー用 D1（初回のみ）」の「マイグレーションの番号を振り直したら、`d1_migrations` の名前も揃える」（push する前に行う）
+- **確認**: drizzle-kit 0.31.11・wrangler 4.151.0 / 2026-11 / #876（発見元）・#915（一時クローンで同じコンフリクトを起こして手順 1 を、手元の D1 で手順 2 を流して確かめた）
