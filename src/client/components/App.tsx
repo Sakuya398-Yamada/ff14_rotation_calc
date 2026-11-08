@@ -10,6 +10,7 @@ import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsButton } from "./SettingsButton";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
+import { AccountControl } from "./AccountControl";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
@@ -22,6 +23,7 @@ import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillM
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
 import { getSharedTimelineId, loadSharedTimeline } from "../logic/shared-timeline";
+import { fetchAccountStatus, type AccountStatus } from "../logic/account";
 import { alternateLanguagePath, languageBasePath, privacyPolicyPath } from "../logic/language-path";
 import { useLanguage } from "../i18n";
 import type { SharedLoadError } from "../logic/shared-timeline";
@@ -43,6 +45,16 @@ export function App() {
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const [myTimelinesOpen, setMyTimelinesOpen] = useState(false);
   const myTimelinesButtonRef = useRef<HTMLButtonElement>(null);
+  // 取得できるまでは、ログインできないものとして何も出さない
+  const [accountStatus, setAccountStatus] = useState<AccountStatus>("unavailable");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchAccountStatus({ signal: controller.signal }).then((status) => {
+      if (!controller.signal.aborted) setAccountStatus(status);
+    });
+    return () => controller.abort();
+  }, []);
 
   // 初回マウント時に LocalStorage から復元（復元不能時は null → 各 state の初期値にフォールバック）
   const [restored] = useState(() => {
@@ -68,7 +80,7 @@ export function App() {
   const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
   // 共有 URL から開いたタイムラインのタイトルとコンテンツ。ジョブを変えるか保存すると、別のタイムラインになるので外す
   const [sharedInfo, setSharedInfo] = useState<{ title: string | null; contentId: string | null } | null>(null);
-  // 設定ダイアログの言語の切り替え先を作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
+  // 設定ダイアログの言語の切り替え先と、ログインした後に戻るパスを作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
   const [pathname, setPathname] = useState(() => window.location.pathname);
   // 共有タイムラインの取得が終わった時点のエントリで上書きの確認を判定するため、最新の値を持っておく
   const entriesRef = useRef(entries);
@@ -367,6 +379,7 @@ export function App() {
           {t("app.myTimelines")}
         </button>
         <SettingsButton languageHref={alternateLanguagePath(pathname)} />
+        <AccountControl status={accountStatus} returnTo={pathname} onLoggedOut={() => setAccountStatus("loggedOut")} />
       </header>
       <SaveTimelineDialog
         open={saveOpen}
@@ -380,6 +393,8 @@ export function App() {
         open={myTimelinesOpen}
         onClose={() => setMyTimelinesOpen(false)}
         returnFocusRef={myTimelinesButtonRef}
+        accountStatus={accountStatus}
+        returnTo={pathname}
       />
       {sharedLoadError !== null && (
         <div style={styles.sharedLoadError}>

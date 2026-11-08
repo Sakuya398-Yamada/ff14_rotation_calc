@@ -22,6 +22,14 @@
     "mailLabel": "メール:",
     "privacyPolicy": "プライバシーポリシー"
   },
+  "accountControl": {
+    "login": "Discord でログイン",
+    "loggedIn": "ログイン中",
+    "logout": "ログアウト",
+    "loggingOut": "ログアウト中…",
+    "logoutFailed": "ログアウトできませんでした。通信状況を確かめて、もう一度試してください。",
+    "privacyPolicy": "プライバシーポリシー"
+  },
   "privacyPolicyPage": {
     "siteName": "FF14 Rotation Calculator",
     "documentTitle": "プライバシーポリシー | FF14 Rotation Calculator",
@@ -142,8 +150,12 @@
     "title": "保存したタイムライン",
     "close": "保存したタイムラインを閉じる",
     "intro": "このブラウザで保存したタイムラインを、新しい順に表示します。ブラウザのサイトデータを消すと、ここには表示されなくなります（共有 URL からは開けます）。",
+    "introAccount": "ログイン中のアカウントで保存したタイムラインを、新しい順に表示します。別のブラウザでも、ログインすれば同じ一覧を見られます。",
+    "loginNote": "Discord でログインすると、ここに出ているタイムラインがアカウントに紐づき、別のブラウザでもこの一覧を見られます。",
+    "login": "Discord でログイン",
     "loading": "読み込み中…",
     "empty": "このブラウザで保存したタイムラインはありません。",
+    "emptyAccount": "このアカウントで保存したタイムラインはありません。",
     "untitled": "（無題）",
     "jobLevel": "{{job}} Lv{{level}}・",
     "loadMore": "もっと見る",
