@@ -10,3 +10,5 @@ TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 # （手順は CONTRIBUTING.md「Discord でのログイン」）
 DISCORD_CLIENT_ID=
 # DISCORD_CLIENT_SECRET=
+# Discord のユーザー ID を HMAC にする鍵（#918）。ローカル専用の値で、ログインを試すときだけ使われる（本番の鍵は書かない）
+DISCORD_ID_HMAC_KEY=local-dev-only-hmac-key
