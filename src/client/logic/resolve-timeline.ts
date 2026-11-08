@@ -867,7 +867,9 @@ export function resolveTimeline(
   stats?: CharacterStats,
   buffs?: BuffDefinition[],
   untargetableWindows?: BossUntargetableWindow[],
-  multiTargetWindows?: MultiTargetWindow[]
+  multiTargetWindows?: MultiTargetWindow[],
+  /** 実行されたスキル（resolvedSkillId）の ID → 実行から着弾までの遅れ（秒）。設定したスキルのエントリだけが hitTime を持つ（#901） */
+  hitDelays?: Record<string, number>
 ): TimelineResult {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
@@ -1988,6 +1990,10 @@ export function resolveTimeline(
       consumedProc,
       wastedProc,
       ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
+      // 詠唱のあるスキルは詠唱完了から遅れを数える（実機のスナップショットは詠唱完了時）
+      ...(hitDelays && Object.hasOwn(hitDelays, resolvedSkillId)
+        ? { hitTime: Math.round((startTime + resolvedCastTime + hitDelays[resolvedSkillId]) * 1000) / 1000 }
+        : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),
       activeBuffsAtUse,
@@ -2132,7 +2138,7 @@ export function calcPps(
 
   let directPotency = 0;
   for (const entry of resolvedEntries) {
-    if (inRange(entry.startTime)) {
+    if (inRange(entry.hitTime ?? entry.startTime)) {
       const skill = skillMap.get(entry.resolvedSkillId);
       directPotency += calcEntryExpectedPotency(entry, skill, stats);
     }
