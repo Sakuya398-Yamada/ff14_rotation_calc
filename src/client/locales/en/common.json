@@ -41,8 +41,8 @@
       "timelines": "The content you save with \"Save & share\" (job, level, placed skills, stats and so on) and its title. Anyone with the share URL can view it.",
       "ownerHashLabel": "Hash of the anonymous token",
       "ownerHash": "A value that identifies the browser that saved a timeline. The token itself is not stored.",
-      "discordIdLabel": "Discord user ID",
-      "discordId": "Stored when you log in with Discord. This tool asks Discord only for the identify scope, and of the information it receives, it stores only your user ID (your username and avatar are not stored, and your email address is not received).",
+      "discordIdLabel": "Value derived from your Discord user ID",
+      "discordId": "Stored when you log in with Discord. This tool asks Discord only for the identify scope, and of the information it receives, it uses only your user ID (your username and avatar are not stored, and your email address is not received). Your user ID itself is not stored either: the tool stores its HMAC-SHA256, computed with a key that only the operator holds. The same ID always gives the same value, so the tool can recognize your account the next time you log in, but your ID cannot be found from the value (when a deletion request arrives, the operator computes the value from the ID of the requester to find it).",
       "accountLinkLabel": "Links to your account",
       "accountLink": "When you log in, timelines saved in that browser are linked to your account, so they also appear in your list when you log in from another browser.",
       "sessionsLabel": "Login sessions",
@@ -68,7 +68,7 @@
       "turnstile": "Used for bot protection when you open the save dialog. Your IP address, browser information and similar data are passed to Cloudflare.",
       "turnstilePolicy": "Turnstile Privacy Addendum",
       "discordLabel": "Discord",
-      "discord": "Used for logging in. When you log in, this tool receives your user information from Discord (only your user ID is stored).",
+      "discord": "Used for logging in. When you log in, this tool receives your user information from Discord (it uses only your user ID, and stores only a value derived from it).",
       "discordPolicy": "Discord Privacy Policy",
       "googleFontsLabel": "Google Fonts",
       "googleFonts": "Used to display text. When you open a page, your IP address and browser information are passed to Google.",
@@ -81,7 +81,7 @@
     "retention": {
       "heading": "Retention",
       "timelines": "Saved timelines have no expiry. When you delete one, it no longer appears in your list or at its share URL, but the data remains on the server. To erase it completely, send a request as described in \"Deletion requests\" below.",
-      "account": "Your Discord user ID and the links to your account also have no expiry and are kept until you request their deletion.",
+      "account": "The value derived from your Discord user ID and the links to your account also have no expiry and are kept until you request their deletion.",
       "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and can no longer be used. Their records are deleted when you log out. Records of sessions that expired without logging out may be kept until you request deletion of your account.",
       "backup": "So that the database can be restored if it breaks, it is backed up daily, and the newest 30 backups (normally 30 days' worth) are kept on a device the operator manages. Erased data normally disappears from the backups after about 30 days."
     },
@@ -89,7 +89,7 @@
       "heading": "Deletion requests",
       "how": "Send a friend request to {{discord}} on Discord, then send your request by DM.",
       "accountLabel": "Account information",
-      "account": "The user ID, links and sessions of the Discord account that sent the request are erased. If you also want the timelines linked to your account erased, say so in your request.",
+      "account": "The value derived from the user ID, the links and the sessions of the Discord account that sent the request are erased. If you also want the timelines linked to your account erased, say so in your request.",
       "anonymousLabel": "Timelines saved without logging in",
       "anonymous": "First delete the timeline from \"Saved timelines\" in this tool, then send your request with its share URL. Only timelines that have already been deleted are erased completely (only the owner can delete a timeline in this tool, so this confirms that you are the owner).",
       "copies": "Copies that other people saved from your timeline (by opening its share URL and saving) are their own saves and are not erased."

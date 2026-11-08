@@ -33,6 +33,13 @@ describe("PrivacyPolicyPage", () => {
     );
   });
 
+  // src/server/services/discord-id.ts（#918）
+  it("Discord のユーザー ID はそのまま保存せず、HMAC-SHA256 にした値を保存すると書いている", () => {
+    render(<PrivacyPolicyPage />);
+    expect(screen.getByText("Discord のユーザー ID から作った値")).toBeInTheDocument();
+    expect(screen.getByText(/ユーザー ID もそのままは保存せず、運営者だけが持つ鍵で HMAC-SHA256 にかけた値を保存します/)).toBeInTheDocument();
+  });
+
   describe("英語", () => {
     beforeEach(() => i18next.changeLanguage("en"));
     afterEach(() => i18next.changeLanguage("ja"));
@@ -57,6 +64,12 @@ describe("PrivacyPolicyPage", () => {
         "href",
         "https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues"
       );
+    });
+
+    it("Discord のユーザー ID はそのまま保存せず、HMAC-SHA256 にした値を保存すると書いている", () => {
+      render(<PrivacyPolicyPage />);
+      expect(screen.getByText("Value derived from your Discord user ID")).toBeInTheDocument();
+      expect(screen.getByText(/Your user ID itself is not stored either: the tool stores its HMAC-SHA256/)).toBeInTheDocument();
     });
   });
 });
