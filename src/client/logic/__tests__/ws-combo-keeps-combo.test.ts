@@ -84,7 +84,7 @@ describe("WS コンボ（comboFrom）を持つジョブで、コンボの起点�
   });
 
   it("対象のジョブがある", () => {
-    expect(new Set(cases.map((c) => c.job))).toEqual(new Set(["sam", "drg", "pct", "pld", "war", "gnb"]));
+    expect(new Set(cases.map((c) => c.job))).toEqual(new Set(["sam", "drg", "pct", "pld", "war", "gnb", "drk"]));
   });
 
   it.each(cases)("$job: $id の keepsCombo は $keepsCombo", ({ keepsCombo, actual }) => {
