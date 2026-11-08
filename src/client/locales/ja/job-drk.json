@@ -1,0 +1,116 @@
+{
+  "skills": {
+    "hard-slash": {
+      "name": "ハードスラッシュ"
+    },
+    "syphon-strike": {
+      "name": "サイフォンストライク"
+    },
+    "souleater": {
+      "name": "ソウルイーター"
+    },
+    "unleash": {
+      "name": "アンリーシュ"
+    },
+    "stalwart-soul": {
+      "name": "ストルワートソウル"
+    },
+    "unmend": {
+      "name": "アンメンド"
+    },
+    "bloodspiller": {
+      "name": "ブラッドスピラー"
+    },
+    "quietus": {
+      "name": "クワイタス"
+    },
+    "scarlet-delirium": {
+      "name": "レッドデリリアム"
+    },
+    "comeuppance": {
+      "name": "カマパンス"
+    },
+    "torcleaver": {
+      "name": "トアクリーバー"
+    },
+    "impalement": {
+      "name": "インペイルメント"
+    },
+    "disesteem": {
+      "name": "ディセスティーム"
+    },
+    "edge-of-darkness": {
+      "name": "暗黒の剣"
+    },
+    "flood-of-darkness": {
+      "name": "暗黒の波動"
+    },
+    "edge-of-shadow": {
+      "name": "漆黒の剣"
+    },
+    "flood-of-shadow": {
+      "name": "漆黒の波動"
+    },
+    "delirium": {
+      "name": "ブラッドデリリアム"
+    },
+    "living-shadow": {
+      "name": "影身具現"
+    },
+    "salted-earth": {
+      "name": "ソルトアース"
+    },
+    "salt-and-darkness": {
+      "name": "ソルト・アンド・ダーク"
+    },
+    "abyssal-drain": {
+      "name": "アビサルドレイン"
+    },
+    "carve-and-spit": {
+      "name": "カーヴ・アンド・スピット"
+    },
+    "shadowbringer": {
+      "name": "シャドウブリンガー"
+    }
+  },
+  "buffs": {
+    "darkside": {
+      "name": "暗黒",
+      "shortName": "暗黒"
+    },
+    "delirium": {
+      "name": "ブラッドデリリアム",
+      "shortName": "ﾌﾞﾗｯﾄﾞ\nﾃﾞﾘﾘｱﾑ"
+    },
+    "blood-weapon": {
+      "name": "ブラッドウェポン",
+      "shortName": "ﾌﾞﾗｯﾄﾞ\nｳｪﾎﾟﾝ"
+    },
+    "comeuppance-ready": {
+      "name": "カマパンス実行可",
+      "shortName": "ｶﾏﾊﾟﾝｽ\n実行可"
+    },
+    "torcleaver-ready": {
+      "name": "トアクリーバー実行可",
+      "shortName": "ﾄｱｸﾘｰ\n実行可"
+    },
+    "scorn": {
+      "name": "ディセスティーム実行可",
+      "shortName": "ﾃﾞｨｾｽ\n実行可"
+    },
+    "salted-earth": {
+      "name": "ソルトアース",
+      "shortName": "ｿﾙﾄ\nｱｰｽ"
+    }
+  },
+  "resources": {
+    "mp": {
+      "name": "MP",
+      "shortName": "MP"
+    },
+    "blackblood": {
+      "name": "ブラックブラッド",
+      "shortName": "ﾌﾞﾗｯｸ\nﾌﾞﾗｯﾄﾞ"
+    }
+  }
+}

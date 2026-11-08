@@ -37,10 +37,13 @@ import { WAR_BUFFS } from "./war-buffs";
 import { GNB_ATTACK_SKILLS } from "./gnb-skills";
 import { GNB_RESOURCES } from "./gnb-resources";
 import { GNB_BUFFS } from "./gnb-buffs";
+import { DRK_ATTACK_SKILLS } from "./drk-skills";
+import { DRK_RESOURCES } from "./drk-resources";
+import { DRK_BUFFS } from "./drk-buffs";
 import type { Skill, BuffDefinition, ResourceDefinition } from "../types/skill";
 
 /** ジョブID */
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge" | "pld" | "war" | "gnb";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge" | "pld" | "war" | "gnb" | "drk";
 
 /** ジョブデータ定義 */
 export interface JobData {
@@ -68,4 +71,5 @@ export const JOB_DATA: Record<JobId, JobData> = {
   pld: { abbreviation: "PLD", skills: PLD_ATTACK_SKILLS, buffs: PLD_BUFFS, resources: PLD_RESOURCES },
   war: { abbreviation: "WAR", skills: WAR_ATTACK_SKILLS, buffs: WAR_BUFFS, resources: WAR_RESOURCES },
   gnb: { abbreviation: "GNB", skills: GNB_ATTACK_SKILLS, buffs: GNB_BUFFS, resources: GNB_RESOURCES },
+  drk: { abbreviation: "DRK", skills: DRK_ATTACK_SKILLS, buffs: DRK_BUFFS, resources: DRK_RESOURCES },
 };

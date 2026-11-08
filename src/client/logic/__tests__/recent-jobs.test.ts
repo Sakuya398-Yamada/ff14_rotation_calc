@@ -13,7 +13,7 @@ describe("pushRecentJob", () => {
 
 describe("deserializeRecentJobs", () => {
   it("未実装・不正な ID と重複を捨てる", () => {
-    expect(deserializeRecentJobs(JSON.stringify(["blm", "drk", 3, "blm", "whm"]))).toEqual(["blm", "whm"]);
+    expect(deserializeRecentJobs(JSON.stringify(["blm", "nin", 3, "blm", "whm"]))).toEqual(["blm", "whm"]);
   });
 
   it("壊れた JSON・配列以外は空", () => {
