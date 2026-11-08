@@ -13,7 +13,6 @@
     "siteName": "FFXIV Rotation Calculator",
     "confirmOpenShared": "Opening the shared timeline will replace the timeline you are working on. Open it?",
     "saveAndShare": "Save & share",
-    "myTimelines": "Saved timelines",
     "languageLink": "日本語",
     "settings": "Settings",
     "closeSharedLoadError": "Close",
@@ -163,7 +162,8 @@
       "rate_limited": "You saved or deleted too many times in a short period, so the timeline was not deleted. Wait about a minute and try again.",
       "network": "The timeline could not be deleted. Check your connection and try again."
     },
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "saveNew": "Save current timeline"
   },
   "settingsDialog": {
     "title": "Settings",
