@@ -7,15 +7,17 @@
 スクリーンショットを目視で見比べるより、比べたい要素の属性を JSON に落として diff し、PNG はピクセル差分で差の範囲を出す方が、「変わっていない」を確実に示せる（#632 で発生）。何も変わっていなければ、JSON の diff が空で、差の範囲が `None` になる。
 
 1. **変更前は、Phase 5 の最初の編集の前に撮る**: 作業ツリーを変えたあとでは、同じ手順では変更前を撮れない。撮った JSON と PNG はリポジトリの外（下の例では `${TMPDIR:-/tmp}/visual-diff/`）に置く
-   - 撮り忘れて編集を始めていたら、作業ツリーには触らず、`origin/main` を別の worktree に出してそこで撮る。worktree には `node_modules` が無いので `npm ci` が要る。Vite は作業ツリーのものとは別のポートで起動する。Bash ツールの `cd` は作業ディレクトリの外だと次の呼び出しに残らないので、行ごとに `cd` を付ける（付けないと Vite が作業ツリーで起動し、変更後を変更前として撮ってしまう）
+   - 撮り忘れて編集を始めていたら、作業ツリーには触らず、`origin/main` を別の worktree に出してそこで撮る。worktree には `node_modules` が無いので `npm ci` が要る（依存が作業ツリーと同じで `git diff --quiet origin/main -- package-lock.json` が成功するなら、代わりにリポジトリで `ln -s "$PWD/node_modules" "${TMPDIR:-/tmp}/visual-diff-main/"` と打ち、作業ツリーの `node_modules` へのリンクで済ませてよい。#845）。API を使う画面（共有 URL の読み込み・保存など）まで比べるときは、gitignore 済みの `.dev.vars` を作業ツリーから写し、ローカル D1 は worktree ごとに別の `.wrangler/state` になるので、worktree の中で `npm run db:migrate` を当ててから Vite を起動する（どちらかが欠けると、作業ツリーでは 404 や 403 を返す API が 500 になり、変更前を正しく撮れない。#908）。Vite は作業ツリーのものとは別のポートで起動する。Bash ツールの `cd` は作業ディレクトリの外だと次の呼び出しに残らないので、行ごとに `cd` を付ける（付けないと Vite が作業ツリーで起動し、変更後を変更前として撮ってしまう）
 
      ```bash
      git worktree add --detach "${TMPDIR:-/tmp}/visual-diff-main" origin/main
+     cp .dev.vars "${TMPDIR:-/tmp}/visual-diff-main/"   # API を使う画面まで比べるとき
      cd "${TMPDIR:-/tmp}/visual-diff-main" && npm ci
+     cd "${TMPDIR:-/tmp}/visual-diff-main" && npm run db:migrate   # API を使う画面まで比べるとき
      cd "${TMPDIR:-/tmp}/visual-diff-main" && npx vite --port <空きポート> --strictPort   # run_in_background: true
      ```
 
-     撮り終えたら、その Vite を `TaskStop` で止め、リポジトリに戻って `git worktree remove "${TMPDIR:-/tmp}/visual-diff-main"` で消す
+     撮り終えたら、その Vite を `TaskStop` で止め、リポジトリに戻って `git worktree remove "${TMPDIR:-/tmp}/visual-diff-main"` で消す。`node_modules` をリンクにしたときは、その前に `rm "${TMPDIR:-/tmp}/visual-diff-main/node_modules"` でリンクだけを消す（`.gitignore` の `node_modules/` はディレクトリにしか当たらず、リンクが untracked として残って `git worktree remove` が止まる。`-r` や末尾の `/` を付けるとリンク先の中身を消す）
 2. **ビューポートの幅を、タイムラインに横スクロールが出ない幅まで広げる**: `.timeline-scroll` は、はみ出すと末尾までスクロールした状態で描かれ、`fullPage: true` のスクリーンショットでも要素の中のスクロールは広がらない。既定の 1600px では、長いタイムラインの前半が写らない（#632 では 2400px で撮ったら、41.8 秒のうち 18〜42 秒しか写らなかった）。必要な幅は「タイムラインの秒数 × `PX_PER_SEC`（80px、`src/client/components/timeline/constants.ts`）＋ 左の列の幅」。秒数は最後のスキルの時刻ではなく、リキャスト・バフ・DoT の帯の終わりまでを含む（#706 では、所要時間 61.5 秒のタイムラインが神速魔のリキャスト 120 秒まで伸びて、10,141px 要った）。左の列（スキルパレット・レーンラベル・余白）の幅は DOM の実寸で測る。まとめると、`.timeline-scroll` の値で `innerWidth + scrollWidth - clientWidth` になる。下のスクリプトはこの幅に広げ、それでも横スクロールが残っていれば止まる。変更後は変更前と同じ幅で撮る（幅が違うと PNG の大きさが変わって比べられない）
 3. **比べたい要素の属性を JSON に落として diff し、PNG はピクセル差分で差の範囲を出す**: 差の範囲は PIL の `ImageChops.difference(a, b).getbbox()` で出す（差が無ければ `None`、あれば `(左, 上, 右, 下)`）
 
