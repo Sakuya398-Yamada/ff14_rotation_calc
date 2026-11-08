@@ -60,5 +60,5 @@
   ```bash
   curl -s -D - -o /dev/null http://localhost:8787<パス> | grep -i '^x-robots-tag'
   ```
-  バックグラウンドで起動して `npx` の PID だけを止めると、wrangler と workerd が残ってポートを開いたままになる。`ps -eo pid,ppid,cmd | grep -E '[w]rangler|[w]orkerd'` で見て、残った PID も止める
+  確かめ終わったら、`run_in_background` で起動したなら `TaskStop`（起動時のタスク ID）で止める。それ以外で起動したときは `kill $(lsof -ti:8787)` で止める（`$!` は `npx` の PID で、kill しても wrangler と workerd が残ってポートを開いたままになる）
 - **確認**: Workers Builds のプレビュー・wrangler 4.151.0 / 2026-11 / #837・#910
