@@ -181,14 +181,24 @@ describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => 
     ["wanderers-minuet", "旅神のメヌエット"],
     ["mages-ballad", "賢人のバラード"],
     ["armys-paeon", "軍神のパイオン"],
-  ])("%s には 3〜42 秒の 14 回の判定のボタンが並ぶ", (skillId, name) => {
+  ])("%s には残り 42〜3 秒の 14 回の判定のボタンが並ぶ", (skillId, name) => {
     renderEntry(skillId);
 
     const group = screen.getByRole("group", { name: `${name}の判定` });
     const buttons = within(group).getAllByRole("button");
     expect(buttons).toHaveLength(14);
-    expect(buttons[0]).toHaveAccessibleName("3秒の判定: 未指定（発生として計算）");
-    expect(buttons[13]).toHaveAccessibleName("42秒の判定: 未指定（発生として計算）");
+    expect(buttons[0]).toHaveAccessibleName("残り42秒の判定: 未指定（発生として計算）");
+    expect(buttons[0]).toHaveAttribute("title", "残り42秒の判定: 未指定（発生として計算）");
+    expect(buttons[13]).toHaveAccessibleName("残り3秒の判定: 未指定（発生として計算）");
+  });
+
+  it("ボタンの秒数は歌の残り秒数で、左から 42s, 39s, …, 3s と並ぶ (#969)", () => {
+    renderEntry("wanderers-minuet");
+
+    const buttons = within(screen.getByRole("group", { name: "旅神のメヌエットの判定" })).getAllByRole("button");
+    expect(buttons.map((b) => b.querySelector(".num")?.textContent)).toEqual(
+      Array.from({ length: 14 }, (_, i) => `${42 - 3 * i}s`),
+    );
   });
 
   it.each([
@@ -200,14 +210,22 @@ describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => 
     expect(screen.queryByRole("group", { name: /の判定$/ })).not.toBeInTheDocument();
   });
 
-  it("未指定の判定は既定の並びの結果を示し、指定した判定はその結果を示す", () => {
+  it("未指定の判定は既定の並びの結果を示し、指定した判定はその結果を示す（#900 の形の指定が、左から同じ回の判定に効く）", () => {
     renderEntry("wanderers-minuet", [false, null, true]);
 
-    const group = screen.getByRole("group", { name: "旅神のメヌエットの判定" });
-    expect(within(group).getByRole("button", { name: "3秒の判定: 不発" })).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "6秒の判定: 未指定（発生として計算）" })).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "9秒の判定: 発生" })).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "24秒の判定: 未指定（不発として計算）" })).toBeInTheDocument();
+    const buttons = within(screen.getByRole("group", { name: "旅神のメヌエットの判定" })).getAllByRole("button");
+    expect(buttons[0]).toHaveAccessibleName("残り42秒の判定: 不発");
+    expect(buttons[1]).toHaveAccessibleName("残り39秒の判定: 未指定（発生として計算）");
+    expect(buttons[2]).toHaveAccessibleName("残り36秒の判定: 発生");
+    expect(buttons[7]).toHaveAccessibleName("残り21秒の判定: 未指定（不発として計算）");
+  });
+
+  it("左端（残り 42 秒）のボタンを押すと、1 回目（歌が付いてから 3 秒）の判定を切り替える (#969)", () => {
+    const onAutoGenerateProcChange = renderEntry("wanderers-minuet");
+
+    within(screen.getByRole("group", { name: "旅神のメヌエットの判定" })).getAllByRole("button")[0].click();
+
+    expect(onAutoGenerateProcChange).toHaveBeenCalledWith("e-1", 1, true);
   });
 
   it.each([
@@ -218,7 +236,7 @@ describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => 
     const onAutoGenerateProcChange = renderEntry("wanderers-minuet", [null, current]);
 
     within(screen.getByRole("group", { name: "旅神のメヌエットの判定" }))
-      .getByRole("button", { name: /^6秒の判定/ })
+      .getByRole("button", { name: /^残り39秒の判定/ })
       .click();
 
     expect(onAutoGenerateProcChange).toHaveBeenCalledWith("e-1", 2, next);
@@ -514,5 +532,15 @@ describe("SkillDetailPanel（英語）", () => {
 
     expect(screen.getByText(/Buff condition not met: The Wanderer's Minuet/)).toBeInTheDocument();
     expect(screen.getByText(/Insufficient resources: Repertoire/)).toBeInTheDocument();
+  });
+
+  it("歌の判定のボタンの読み上げ名と title を、残り秒数の英語で出す (#969)", () => {
+    renderLastEntry(["wanderers-minuet"]);
+
+    const buttons = within(screen.getByRole("group", { name: "The Wanderer's Minuet procs" })).getAllByRole("button");
+    expect(buttons[0]).toHaveAccessibleName("Check at 42s remaining: unset (counted as proc)");
+    expect(buttons[0]).toHaveAttribute("title", "Check at 42s remaining: unset (counted as proc)");
+    expect(buttons[2]).toHaveAccessibleName("Check at 36s remaining: unset (counted as no proc)");
+    expect(buttons[13]).toHaveAccessibleName("Check at 3s remaining: unset (counted as proc)");
   });
 });
