@@ -224,6 +224,18 @@ describe("SkillDetailPanel: 着弾までの遅れ (#901)", () => {
     expect(onHitDelayChange).toHaveBeenCalledWith("fire-3-in-af", undefined);
   });
 
+  it("Escape は入力の取り消しで、入力中の値では呼ばずに設定中の値に戻す", () => {
+    const { input, onHitDelayChange } = renderSecondFire3(0.6);
+
+    // フォーカスしていないと blur() が何もしないので、実際の操作と同じくフォーカスしてから入力する
+    input.focus();
+    fireEvent.change(input, { target: { value: "1.5" } });
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    expect(onHitDelayChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue(0.6);
+  });
+
   it("未設定なら入力欄は空で、解除ボタンと着弾時刻は出ない", () => {
     const { input } = renderSecondFire3();
 

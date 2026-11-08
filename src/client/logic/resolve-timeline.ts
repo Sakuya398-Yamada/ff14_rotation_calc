@@ -2116,7 +2116,7 @@ export function resolveTimeline(
 
 /**
  * 指定範囲内のPPS（Power Per Second）を計算する。
- * - 直接威力: startTime が範囲内にあるスキルの威力を合算（resolvedPotencyを使用）
+ * - 直接威力: 着弾時刻（hitTime。着弾までの遅れを設定していなければ startTime）が範囲内にあるスキルの威力を合算（resolvedPotencyを使用。#901）
  * - DoT威力: time が範囲内にあるDoTティックの威力を合算
  * - PPS = 合計威力 / 範囲の秒数
  * - 範囲は既定で [rangeStart, rangeEnd) の半開区間（隣り合う区間で境界を二重に数えない）。

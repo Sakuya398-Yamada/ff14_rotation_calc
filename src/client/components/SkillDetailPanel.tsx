@@ -109,6 +109,8 @@ export function SkillDetailPanel({
   useEffect(() => {
     setHitDelayDraft(formatHitDelay(hitDelay));
   }, [entry.uid, resolvedSkill.id, hitDelay]);
+  // Escape の blur() は onBlur を同期で呼び、その時点の入力欄はまだ入力中の値なので、確定させないための印
+  const cancelHitDelayCommitRef = useRef(false);
 
   const commitHitDelay = (raw: string) => {
     const trimmed = raw.trim();
@@ -257,18 +259,26 @@ export function SkillDetailPanel({
             className="num"
             value={hitDelayDraft}
             onChange={(e) => setHitDelayDraft(e.target.value)}
-            onBlur={(e) => commitHitDelay(e.target.value)}
+            onBlur={(e) => {
+              if (cancelHitDelayCommitRef.current) {
+                cancelHitDelayCommitRef.current = false;
+                return;
+              }
+              commitHitDelay(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 commitHitDelay((e.target as HTMLInputElement).value);
                 (e.target as HTMLInputElement).blur();
               } else if (e.key === "Escape") {
-                // 開始時刻の欄と同じく、入力の取り消しだけにしてパネルは閉じない
+                // 入力の取り消しだけにしてパネルは閉じない
                 e.preventDefault();
                 e.stopPropagation();
                 setHitDelayDraft(formatHitDelay(hitDelay));
+                cancelHitDelayCommitRef.current = true;
                 (e.target as HTMLInputElement).blur();
+                cancelHitDelayCommitRef.current = false;
               }
             }}
             style={hitDelay !== undefined ? { ...styles.startTimeInput, ...styles.startTimeInputManual } : styles.startTimeInput}
