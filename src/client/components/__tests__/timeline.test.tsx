@@ -433,7 +433,7 @@ describe("Timeline: PPS 範囲選択を開いたときの初期区間 (#884)", (
 });
 
 describe("Timeline: リキャストのレーンの区間は、リキャストの短縮を反映して終わる (#898)", () => {
-  it("戦士 Lv70 でフェルクリーヴ 2 回で縮めると、最初のウォークライの区間は 50 秒で終わり、次の区間は変わらない", () => {
+  it("戦士 Lv70 でフェルクリーヴ 2 回で縮めると、最初のウォークライの区間は 50 秒で終わり、次の区間はそこからリキャスト分の 110 秒で終わる (#924)", () => {
     const level = 70;
     const buffs = getBuffsForLevel(WAR_BUFFS, level);
     const resources = getResourcesForLevel(WAR_RESOURCES, level);
@@ -452,7 +452,7 @@ describe("Timeline: リキャストのレーンの区間は、リキャストの
 
     const first = screen.getByTitle("ウォークライ リキャスト (0.00s - 50.00s / 60s)");
     expect(first.style.width).toBe(`${50 * PX_PER_SEC}px`);
-    expect(screen.getByTitle("ウォークライ リキャスト (0.65s - 60.65s / 60s)")).toBeInTheDocument();
+    expect(screen.getByTitle("ウォークライ リキャスト (0.65s - 110.00s / 60s)")).toBeInTheDocument();
   });
 });
 
