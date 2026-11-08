@@ -125,6 +125,42 @@ describe("serializeAppState / deserializeAppState", () => {
     expect(restored?.entries[3]).not.toHaveProperty("procOccurred");
   });
 
+  it("autoGenerateProcOccurred は往復し、末尾の null を切り詰め、不正な値と全部 null はキーを落とす (#900)", () => {
+    const json = JSON.stringify({
+      version: SCHEMA_VERSION,
+      ...makeSnapshot({ selectedJob: "brd" }),
+      entries: [
+        { uid: "entry-1", skillId: "wanderers-minuet", autoGenerateProcOccurred: [true, null, false] },
+        { uid: "entry-2", skillId: "mages-ballad", autoGenerateProcOccurred: [null, true, null, null] },
+        { uid: "entry-3", skillId: "armys-paeon", autoGenerateProcOccurred: [null, null] },
+        { uid: "entry-4", skillId: "wanderers-minuet", autoGenerateProcOccurred: [true, "false"] },
+        { uid: "entry-5", skillId: "mages-ballad", autoGenerateProcOccurred: Array.from({ length: 15 }, () => true) },
+        { uid: "entry-6", skillId: "armys-paeon", autoGenerateProcOccurred: { 0: true } },
+        { uid: "entry-7", skillId: "burst-shot" },
+      ],
+    });
+    const restored = deserializeAppState(json);
+    expect(restored?.entries).toEqual([
+      { uid: "entry-1", skillId: "wanderers-minuet", autoGenerateProcOccurred: [true, null, false] },
+      { uid: "entry-2", skillId: "mages-ballad", autoGenerateProcOccurred: [null, true] },
+      { uid: "entry-3", skillId: "armys-paeon" },
+      { uid: "entry-4", skillId: "wanderers-minuet" },
+      { uid: "entry-5", skillId: "mages-ballad" },
+      { uid: "entry-6", skillId: "armys-paeon" },
+      { uid: "entry-7", skillId: "burst-shot" },
+    ]);
+    for (const e of restored!.entries.slice(2)) expect(e).not.toHaveProperty("autoGenerateProcOccurred");
+
+    // 14 回ちょうどは上限の内
+    const full = Array.from({ length: 14 }, (_, i) => i % 2 === 0);
+    const fullJson = JSON.stringify({
+      version: SCHEMA_VERSION,
+      ...makeSnapshot({ selectedJob: "brd" }),
+      entries: [{ uid: "entry-1", skillId: "wanderers-minuet", autoGenerateProcOccurred: full }],
+    });
+    expect(deserializeAppState(fullJson)?.entries[0].autoGenerateProcOccurred).toEqual(full);
+  });
+
   it("manualStartTime が非数値のエントリはキーを落として復元する", () => {
     const json = JSON.stringify({
       version: SCHEMA_VERSION,

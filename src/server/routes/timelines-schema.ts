@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CONTENT_CATALOG } from "../../client/data/content-catalog";
 import { JOB_DATA, type JobId } from "../../client/data/job-registry";
+import { MAX_AUTO_GENERATE_PROCS } from "../../client/logic/auto-generate-proc";
 import { MAX_TITLE_LENGTH } from "../../client/logic/shared-timeline";
 import { SCHEMA_VERSION } from "../../client/logic/timeline-storage";
 
@@ -26,6 +27,7 @@ export const persistedAppStateSchema = z
           skillId: z.string(),
           manualStartTime: z.number().optional(),
           procOccurred: z.boolean().optional(),
+          autoGenerateProcOccurred: z.array(z.boolean().nullable()).max(MAX_AUTO_GENERATE_PROCS).optional(),
         }),
       )
       .max(MAX_ENTRIES),
