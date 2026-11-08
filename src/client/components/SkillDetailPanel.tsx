@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats } from "../types/skill";
+import type { ResolvedTimelineEntry, Skill, BuffDefinition, CharacterStats, ResourceDefinition } from "../types/skill";
+import { getAutoGenerateProcSource, isAutoGenerateProcOccurred } from "../logic/auto-generate-proc";
 import type { JobId } from "../data/job-registry";
 import { buffName, skillName } from "../logic/display-names";
 import { calcExpectedMultiplier } from "../logic/stat-calc";
@@ -33,6 +34,10 @@ interface SkillDetailPanelProps {
   hitDelay: number | undefined;
   /** 着弾までの遅れの設定/解除ハンドラ。実行されたスキルの ID で呼ぶ。undefined を渡すと解除する (#901) */
   onHitDelayChange: (skillId: string, hitDelay: number | undefined) => void;
+  /** 選択ジョブ・レベルのリソース定義（歌の判定の有無と回数を決める。#900） */
+  resources: ResourceDefinition[];
+  /** 歌の n 回目（1 始まり）の判定の発生の指定/解除ハンドラ。undefined を渡すと未指定に戻る (#900) */
+  onAutoGenerateProcChange: (uid: string, tickNumber: number, occurred: boolean | undefined) => void;
 }
 
 function formatHitDelay(hitDelay: number | undefined): string {
@@ -56,6 +61,8 @@ export function SkillDetailPanel({
   onProcOccurredChange,
   hitDelay,
   onHitDelayChange,
+  resources,
+  onAutoGenerateProcChange,
 }: SkillDetailPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -131,6 +138,7 @@ export function SkillDetailPanel({
   const isManual = entry.manualStartTime !== undefined;
   const procBuffName = buffName(t, jobId, PROC_OUTCOME_BUFF_ID);
   const resolvedSkillName = skillName(t, jobId, resolvedSkill.id);
+  const autoGenerateProcSource = getAutoGenerateProcSource(resolvedSkill, resources, buffDefMap);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -341,6 +349,17 @@ export function SkillDetailPanel({
         </button>
       </div>
 
+      {autoGenerateProcSource && (
+        <AutoGenerateProcRow
+          entry={entry}
+          name={buffName(t, jobId, autoGenerateProcSource.buffId)}
+          rate={autoGenerateProcSource.rate}
+          interval={autoGenerateProcSource.interval}
+          tickCount={autoGenerateProcSource.tickCount}
+          onChange={onAutoGenerateProcChange}
+        />
+      )}
+
       <div style={styles.metrics}>
         <div style={styles.cell}>
           <div style={styles.cellLabel}>{t("skillDetailPanel.basePotency")}</div>
@@ -481,6 +500,60 @@ export function SkillDetailPanel({
   );
 }
 
+/** 歌の判定ごとの発生の指定（#900）。押すたびに 未指定 → 発生 → 不発 → 未指定 と切り替える */
+function AutoGenerateProcRow({
+  entry,
+  name,
+  rate,
+  interval,
+  tickCount,
+  onChange,
+}: {
+  entry: ResolvedTimelineEntry;
+  name: string;
+  rate: number;
+  interval: number;
+  tickCount: number;
+  onChange: SkillDetailPanelProps["onAutoGenerateProcChange"];
+}) {
+  const { t } = useTranslation();
+  const label = t("skillDetailPanel.autoGenerateProcs", { name });
+  return (
+    <div style={styles.autoGenerateProcBlock}>
+      <div role="group" aria-label={label} style={styles.autoGenerateProcRow}>
+        <span style={styles.headerStartTimeLabel}>{label}</span>
+        {Array.from({ length: tickCount }, (_, i) => {
+          const tickNumber = i + 1;
+          const specified = entry.autoGenerateProcOccurred?.[i];
+          const occurred = isAutoGenerateProcOccurred(entry.autoGenerateProcOccurred, tickNumber, rate);
+          const state = typeof specified === "boolean"
+            ? (specified ? "occurred" : "notOccurred")
+            : (occurred ? "defaultOccurred" : "defaultNotOccurred");
+          const next = specified === true ? false : specified === false ? undefined : true;
+          const seconds = tickNumber * interval;
+          const tickLabel = t(`skillDetailPanel.autoGenerateProcTick.${state}`, { seconds });
+          return (
+            <button
+              key={tickNumber}
+              type="button"
+              onClick={() => onChange(entry.uid, tickNumber, next)}
+              aria-label={tickLabel}
+              title={tickLabel}
+              style={typeof specified === "boolean"
+                ? { ...styles.autoGenerateProcButton, ...styles.autoGenerateProcButtonSpecified }
+                : styles.autoGenerateProcButton}
+            >
+              <span className="num">{seconds}s</span>
+              <span aria-hidden="true">{occurred ? "○" : "×"}</span>
+            </button>
+          );
+        })}
+      </div>
+      <span style={styles.headerAutoHint}>{t("skillDetailPanel.autoGenerateProcsHint")}</span>
+    </div>
+  );
+}
+
 function formatPercent(value: number): string {
   const pct = value * 100;
   const sign = pct >= 0 ? "+" : "";
@@ -604,6 +677,40 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   procOutcomeButtonSelected: {
+    borderColor: "var(--color-accent)",
+    color: "var(--color-accent)",
+    fontWeight: 700,
+  },
+  autoGenerateProcBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  autoGenerateProcRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "4px",
+  },
+  autoGenerateProcButton: {
+    minHeight: "32px",
+    minWidth: "52px",
+    padding: "0 6px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    fontSize: "12px",
+    background: "transparent",
+    // 指定時に borderColor だけ上書きするので、shorthand の border は使わない（React が混在を警告する）
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: "var(--color-field)",
+    borderRadius: "var(--radius-md)",
+    color: "var(--color-muted)",
+    cursor: "pointer",
+  },
+  autoGenerateProcButtonSpecified: {
     borderColor: "var(--color-accent)",
     color: "var(--color-accent)",
     fontWeight: 700,

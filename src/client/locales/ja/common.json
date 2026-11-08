@@ -277,6 +277,14 @@
       "occurred": "発生",
       "notOccurred": "不発"
     },
+    "autoGenerateProcs": "{{name}}の判定",
+    "autoGenerateProcsHint": "押すと 未指定 → 発生 → 不発 の順に切り替わる（薄い印は未指定の判定の計算上の結果）",
+    "autoGenerateProcTick": {
+      "occurred": "{{seconds}}秒の判定: 発生",
+      "notOccurred": "{{seconds}}秒の判定: 不発",
+      "defaultOccurred": "{{seconds}}秒の判定: 未指定（発生として計算）",
+      "defaultNotOccurred": "{{seconds}}秒の判定: 未指定（不発として計算）"
+    },
     "close": "閉じる",
     "basePotency": "基本威力",
     "buffMultiplier": "バフ倍率",
