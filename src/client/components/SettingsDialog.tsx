@@ -3,8 +3,12 @@ import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import type { AccountStatus } from "../logic/account";
 import type { AccentColor, AppSettings, ThemePreference } from "../logic/app-settings";
+import type { Language } from "../logic/language-path";
+import { useLanguage } from "../i18n";
 import { AccountControl } from "./AccountControl";
 import "./settings-dialog.css";
+
+const LANGUAGE_OPTIONS: Language[] = ["ja", "en"];
 
 const THEME_OPTIONS: ThemePreference[] = ["light", "dark", "system"];
 
@@ -20,7 +24,14 @@ interface SettingsDialogProps {
   onClose: () => void;
   /** 閉じたときにフォーカスを戻す要素（開いたボタン） */
   returnFocusRef: RefObject<HTMLElement | null>;
-  accountStatus: AccountStatus;
+  /** 言語の切り替え先（今のページの、相手の言語版のパス）。言語はパスで決まるので、選ぶとそのページに移る */
+  languageHref: string;
+  /** 渡すとアカウントの欄を出す（アプリの画面だけ。プライバシーポリシーのページは /api/me を取得しないので渡さない） */
+  account?: SettingsAccount;
+}
+
+export interface SettingsAccount {
+  status: AccountStatus;
   /** ログインした後に戻るパス */
   returnTo: string;
   onLoggedOut: () => void;
@@ -32,11 +43,11 @@ export function SettingsDialog({
   onChange,
   onClose,
   returnFocusRef,
-  accountStatus,
-  returnTo,
-  onLoggedOut,
+  languageHref,
+  account,
 }: SettingsDialogProps) {
   const { t } = useTranslation();
+  const lang = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -78,6 +89,24 @@ export function SettingsDialog({
       </div>
 
       <div style={styles.body}>
+        <fieldset style={styles.fieldset}>
+          <legend style={styles.legend}>{t("settingsDialog.language")}</legend>
+          <div style={{ ...styles.segmented, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+            {LANGUAGE_OPTIONS.map((language) => {
+              const name = t(`settingsDialog.languages.${language}` as const);
+              return language === lang ? (
+                <span key={language} lang={language} aria-current="true" style={styles.segmentOn}>
+                  {name}
+                </span>
+              ) : (
+                <a key={language} href={languageHref} hrefLang={language} lang={language} style={styles.segmentLink}>
+                  {name}
+                </a>
+              );
+            })}
+          </div>
+        </fieldset>
+
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>{t("settingsDialog.theme")}</legend>
           <div style={styles.segmented}>
@@ -148,12 +177,12 @@ export function SettingsDialog({
 
         {/* ログインできない環境（PR のプレビュー）では、見出しごと出さない。
             閉じているあいだは外し、ログアウトの失敗の表示を開き直したときに残さない */}
-        {open && accountStatus !== "unavailable" && (
+        {open && account && account.status !== "unavailable" && (
           <section aria-labelledby="settings-dialog-account">
             <h3 id="settings-dialog-account" style={styles.sectionHeading}>
               {t("settingsDialog.account")}
             </h3>
-            <AccountControl status={accountStatus} returnTo={returnTo} onLoggedOut={onLoggedOut} />
+            <AccountControl status={account.status} returnTo={account.returnTo} onLoggedOut={account.onLoggedOut} />
           </section>
         )}
       </div>
@@ -256,6 +285,10 @@ const styles: Record<string, React.CSSProperties> = {
     background: "var(--color-bg)",
   },
   segment: segmentBase,
+  segmentLink: {
+    ...segmentBase,
+    textDecoration: "none",
+  },
   segmentOn: {
     ...segmentBase,
     background: "var(--color-raised)",
@@ -287,6 +320,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--color-muted)",
   },
   primaryButton: {
+    flexShrink: 0,
     minHeight: "36px",
     padding: "0 var(--space-4)",
     border: "none",

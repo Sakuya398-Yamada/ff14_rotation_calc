@@ -4,7 +4,8 @@ import i18next from "i18next";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
-import { SettingsDialog } from "../SettingsDialog";
+import { SettingsDialog, type SettingsAccount } from "../SettingsDialog";
+import type { AccountStatus } from "../../logic/account";
 import type { AppSettings } from "../../logic/app-settings";
 
 // jsdom は HTMLDialogElement の showModal / close を実装していないため最小限の代替を入れる
@@ -28,9 +29,7 @@ function renderDialog(overrides: Partial<Parameters<typeof SettingsDialog>[0]> =
     onChange: vi.fn(),
     onClose: vi.fn(),
     returnFocusRef: createRef<HTMLElement>(),
-    accountStatus: "unavailable" as const,
-    returnTo: "/",
-    onLoggedOut: vi.fn(),
+    languageHref: "/en/",
     ...overrides,
   };
   return { props, ...render(<SettingsDialog {...props} />) };
@@ -61,6 +60,21 @@ describe("SettingsDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "設定を閉じる" }));
     fireEvent(screen.getByRole("dialog", { hidden: true }), new Event("cancel", { cancelable: true }));
     expect(props.onClose).toHaveBeenCalledTimes(3);
+  });
+
+  it("言語は、今の言語をリンクにせず、相手の言語を languageHref へのリンクにする", () => {
+    renderDialog({ languageHref: "/en/t/abc" });
+    const link = screen.getByRole("link", { name: "English" });
+    expect(link).toHaveAttribute("href", "/en/t/abc");
+    expect(link).toHaveAttribute("hreflang", "en");
+    expect(link).toHaveAttribute("lang", "en");
+    expect(screen.queryByRole("link", { name: "日本語" })).toBeNull();
+    expect(screen.getByText("日本語")).toHaveAttribute("aria-current", "true");
+  });
+
+  it("保存の注記は、ブラウザに保存しない言語を含めない", () => {
+    renderDialog();
+    expect(screen.getByText("テーマとアクセントカラーはこのブラウザに保存されます")).toBeInTheDocument();
   });
 
   it("表示密度は未対応として操作できない", () => {
@@ -94,11 +108,30 @@ describe("SettingsDialog（英語）", () => {
     expect(screen.getByLabelText("Compact")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close settings" })).toBeInTheDocument();
   });
+
+  it("言語は、日本語を languageHref へのリンクにし、English をリンクにしない", () => {
+    renderDialog({ languageHref: "/" });
+    const link = screen.getByRole("link", { name: "日本語" });
+    expect(link).toHaveAttribute("href", "/");
+    expect(link).toHaveAttribute("hreflang", "ja");
+    expect(screen.queryByRole("link", { name: "English" })).toBeNull();
+    expect(screen.getByText("English")).toHaveAttribute("aria-current", "true");
+    expect(screen.getByText("Theme and accent color are saved in this browser")).toBeInTheDocument();
+  });
 });
 
+function account(status: AccountStatus, returnTo = "/"): SettingsAccount {
+  return { status, returnTo, onLoggedOut: vi.fn() };
+}
+
 describe("SettingsDialog: アカウント", () => {
+  it("account を渡さなければ（プライバシーポリシーのページ）、アカウントの欄を出さない", () => {
+    renderDialog();
+    expect(screen.queryByRole("heading", { name: "アカウント" })).not.toBeInTheDocument();
+  });
+
   it("ログインしていなければ、アカウントの欄に戻るパスを付けたログインのリンクとプライバシーポリシーのリンクを出す", () => {
-    renderDialog({ accountStatus: "loggedOut", returnTo: "/t/V1StGXR8_Z5jdHi6B-myT" });
+    renderDialog({ account: account("loggedOut", "/t/V1StGXR8_Z5jdHi6B-myT") });
 
     expect(screen.getByRole("heading", { name: "アカウント" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
@@ -109,7 +142,7 @@ describe("SettingsDialog: アカウント", () => {
   });
 
   it("ログイン中は、ログイン中の表示とログアウトのボタンを出す", () => {
-    renderDialog({ accountStatus: "loggedIn" });
+    renderDialog({ account: account("loggedIn") });
 
     expect(screen.getByRole("heading", { name: "アカウント" })).toBeInTheDocument();
     expect(screen.getByText("ログイン中")).toBeInTheDocument();
@@ -117,7 +150,7 @@ describe("SettingsDialog: アカウント", () => {
   });
 
   it("ログインできない環境では、アカウントの欄を見出しごと出さない", () => {
-    renderDialog({ accountStatus: "unavailable" });
+    renderDialog({ account: account("unavailable") });
 
     expect(screen.queryByRole("heading", { name: "アカウント" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
@@ -127,7 +160,7 @@ describe("SettingsDialog: アカウント", () => {
   it("ログアウトに失敗した表示は、閉じて開き直すと消えている", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Failed to fetch"); }));
     try {
-      const { props, rerender } = renderDialog({ accountStatus: "loggedIn" });
+      const { props, rerender } = renderDialog({ account: account("loggedIn") });
       fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
       expect(await screen.findByRole("alert")).toBeInTheDocument();
 
@@ -141,8 +174,8 @@ describe("SettingsDialog: アカウント", () => {
   });
 
   it("下の注記は、表示の設定がこのブラウザに保存されることを書く", () => {
-    renderDialog({ accountStatus: "loggedIn" });
-    expect(screen.getByText("表示の設定はこのブラウザに保存されます")).toBeInTheDocument();
+    renderDialog({ account: account("loggedIn") });
+    expect(screen.getByText("テーマとアクセントカラーはこのブラウザに保存されます")).toBeInTheDocument();
   });
 });
 
@@ -151,7 +184,7 @@ describe("SettingsDialog: アカウント（英語）", () => {
   afterEach(() => i18next.changeLanguage("ja"));
 
   it("アカウントの欄と下の注記を英語で出す", () => {
-    renderDialog({ accountStatus: "loggedOut", returnTo: "/en/" });
+    renderDialog({ account: account("loggedOut", "/en/") });
 
     expect(screen.getByRole("heading", { name: "Account" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Log in with Discord" })).toHaveAttribute(
@@ -159,6 +192,6 @@ describe("SettingsDialog: アカウント（英語）", () => {
       "/api/auth/discord?returnTo=%2Fen%2F"
     );
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/en/privacy");
-    expect(screen.getByText("Display settings are saved in this browser")).toBeInTheDocument();
+    expect(screen.getByText("Theme and accent color are saved in this browser")).toBeInTheDocument();
   });
 });

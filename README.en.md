@@ -41,7 +41,7 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 ## How to access
 
 - URL: <https://ff14-rotation-calc.forestry-for.workers.dev/en/> (served on Cloudflare Workers)
-- Japanese version: <https://ff14-rotation-calc.forestry-for.workers.dev/> (you can also switch with **日本語** at the top of the screen)
+- Japanese version: <https://ff14-rotation-calc.forestry-for.workers.dev/> (you can also switch in the settings opened with the gear button at the top of the screen)
 - No login required. Just open it in your browser
 - Recommended: a desktop browser (latest Chrome / Edge / Firefox)
 
@@ -67,9 +67,9 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 - **Job picker**: A button showing the selected job and level. Press it to open a panel where you can choose a job and level
   - You can filter jobs by name or abbreviation (e.g. "black", "BLM"). Recently used jobs are also listed. Unsupported jobs cannot be selected
   - **Level (alpha)**: Choose from 70 / 80 / 90 / 100. Below Lv100, action availability and potencies are for reference only, so this is an alpha feature
-- **日本語** (language link): Opens the same page in Japanese. The timeline you are working on is kept (on the Japanese version, the link reads **English** and brings you back)
-- **Settings** (gear button): Change the theme (Light / Dark / Match OS) and the accent color
-- For how to use "Save & share" and "Saved timelines", see "[I want to share a timeline or open it on another device](#q-i-want-to-share-a-timeline-or-open-it-on-another-device)" and "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ
+- **Settings** (gear button): Change the display language (日本語 / English), the theme (Light / Dark / Match OS) and the accent color
+  - Selecting **日本語** under Language opens the same page in Japanese. The timeline you are working on is kept (on the Japanese version, select **English** to come back)
+- **Save & share**: Opens the list of saved timelines. To save the current timeline, use "Save current timeline" in this list. For how to use it, see "[I want to share a timeline or open it on another device](#q-i-want-to-share-a-timeline-or-open-it-on-another-device)" and "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ
 
 ### Summary bar (below the header)
 
@@ -144,15 +144,15 @@ Currently only 13 jobs are supported: WHM / DRG / BRD / PCT / BLM / SAM / MNK / 
 
 What you are working on (the selected job, level, stats, timeline, boss untargetable windows and so on) is saved automatically in your browser's LocalStorage. In the same browser, you can pick up where you left off even after reloading the page or closing and reopening the tab.
 
-- Auto-saved data is stored only in your browser. Clearing the browser's browsing data (site data) also deletes it (timelines saved to the server with "Save & share", described next, are not deleted. However, they no longer appear in "Saved timelines". They can still be opened from their share URLs)
+- Auto-saved data is stored only in your browser. Clearing the browser's browsing data (site data) also deletes it (timelines saved to the server with "Save & share", described next, are not deleted. However, they no longer appear in the list of saved timelines. They can still be opened from their share URLs)
 - Auto-saved data is not carried over to other browsers or devices. To open a timeline on another device or show it to someone, use "Save & share", described next
 
 ### Q. I want to share a timeline or open it on another device
 
-Saving a timeline to the server with "Save & share" at the top of the screen creates a share URL. With this URL, the same timeline can be opened in other browsers and on other devices. You can optionally give it a title of up to 100 characters. You can also optionally choose the content (the Dawntrail savage raids and the ultimate raids of each expansion).
+Saving a timeline to the server with "Save current timeline" in the list opened by "Save & share" at the top of the screen creates a share URL. With this URL, the same timeline can be opened in other browsers and on other devices. You can optionally give it a title of up to 100 characters. You can also optionally choose the content (the Dawntrail savage raids and the ultimate raids of each expansion).
 
 - Anyone who knows the URL can open the timeline
-- A saved timeline, its title and its content cannot be changed later. If you edit it and save it again, it gets a different URL. You can delete it from the "Saved timelines" list described next
+- A saved timeline, its title and its content cannot be changed later. If you edit it and save it again, it gets a different URL. You can delete it from the list of saved timelines described next
 - Opening a share URL replaces the timeline you are working on with the shared one (if your timeline has entries, you are asked to confirm before it is replaced)
 - When you open a share URL, the content chosen and the title given when it was saved are shown at the top of the screen
 - Editing and saving a timeline opened from a share URL does not change the original timeline (it is saved as a copy with a different URL)
@@ -162,11 +162,11 @@ Saving a timeline to the server with "Save & share" at the top of the screen cre
 
 ### Q. I want to find a saved timeline later
 
-With "Saved timelines" at the top of the screen, you can list the timelines saved in this browser, newest first. Even if you forgot to note a share URL, you can choose the timeline from the list and open it. Each row of the list is a link to its share URL, so you can also open it in a new tab.
+With "Save & share" at the top of the screen, you can list the timelines saved in this browser, newest first. Even if you forgot to note a share URL, you can choose the timeline from the list and open it. Each row of the list is a link to its share URL, so you can also open it in a new tab.
 
 - Only timelines saved in the same browser appear in the list (there is no login; your browser is identified by a cookie). Timelines saved in other browsers or on other devices do not appear
 - With "Copy" on each row of the list, you can copy the share URL of that row
-- With "Delete" on each row of the list, you can delete a saved timeline. Once deleted, it can no longer be opened from its share URL, even by people you shared the URL with. This cannot be undone
+- With the trash can button on each row of the list, you can delete a saved timeline. Once deleted, it can no longer be opened from its share URL, even by people you shared the URL with. This cannot be undone
 - If you clear the browser's browsing data (site data), or 400 days pass without saving or viewing the list, the timelines saved until then no longer appear in the list and can no longer be deleted. The timelines themselves remain on the server, so they can still be opened from their share URLs
 
 ---
