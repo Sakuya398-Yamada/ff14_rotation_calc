@@ -7,6 +7,7 @@ import { calcExpectedMultiplier } from "./stat-calc";
  *
  * 計算規則:
  * - `hasError`（resourceErrors / comboErrors / untargetableError / recastError）のエントリは 0
+ * - 着弾時にボスが離脱中（`untargetableHit`。ゴースト）のエントリも 0（#950）
  * - 単体スキル（`maxTargets` 未設定 or ≤1）または `entry.targetCount` ≤1 のとき 1 体分のみ
  * - 複数体時は `min(targetCount, maxTargets)` 体まで、`falloffStartTarget` (default 2) 以降は `(1 - falloffRate)` (default 0) 倍に減衰
  */
@@ -24,7 +25,7 @@ export function calcEntryExpectedPotency(
  * - `targets`: 各体ごとの期待威力配列（長さ = effectiveTargets）。単体 or 複数体ウィンドウ外なら長さ 1
  * - `total`: 配列合計
  *
- * `hasError` 時は全フィールドを 0 / 空配列で返す。
+ * `hasError` 時とゴースト（`untargetableHit`）時は全フィールドを 0 / 空配列で返す。
  */
 export function calcEntryPotencyBreakdown(
   entry: ResolvedTimelineEntry,
@@ -36,7 +37,7 @@ export function calcEntryPotencyBreakdown(
     entry.comboErrors.length > 0 ||
     entry.untargetableError ||
     entry.recastError;
-  if (hasError) {
+  if (hasError || entry.untargetableHit === true) {
     return { total: 0, targets: [], singleTargetPotency: 0 };
   }
 

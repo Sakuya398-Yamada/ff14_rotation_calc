@@ -660,6 +660,12 @@ export interface ResolvedTimelineEntry {
   comboErrors: ComboError[];
   /** ボス離脱中に攻撃したエラー */
   untargetableError: boolean;
+  /**
+   * 実行時はボス離脱の外で、着弾時刻（hitTime）にボスが離脱中（ゴースト。#950）。ハードエラーの無い敵対象のエントリだけが持つ。
+   * 警告でありハードエラーではない（リソース・コンボ・リキャスト・バフの消費は起きる）。期待威力は 0 で、
+   * 着弾時の効果（このスキルが付けるバフ・シナジー・DoT の付与・打ち切り・延長）は起きない
+   */
+  untargetableHit?: boolean;
   /** リキャスト中に使用したエラー */
   recastError: boolean;
   /**

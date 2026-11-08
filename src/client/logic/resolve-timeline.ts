@@ -1177,12 +1177,18 @@ export function resolveTimeline(
     const hitTime = hitDelay !== undefined || resolvedCastTime > 0
       ? Math.round((startTime + resolvedCastTime + (hitDelay ?? 0)) * 1000) / 1000
       : undefined;
+    // 着弾時にボスが離脱中（ゴースト。#950）。実行時に離脱中なら untargetableError（ハードエラー）になり、
+    // 着弾時の効果も警告も出さないので、ここでは実行時の離脱を見ない
+    const hitsUntargetable = skill.target === "enemy" && untargetableWindows !== undefined && hitTime !== undefined
+      && isInUntargetableWindow(hitTime, untargetableWindows);
     const entryIndex = resolved.length;
     /**
      * このスキルが付けるバフの付与。付けるかどうかは呼び出し側が実行時に決め、付与そのもの（排他の解除・付け直し・
-     * 効果時間・延長）を着弾時刻に行う。着弾が開始より後なら待たせ、そうでなければその場で付ける（#948）
+     * 効果時間・延長）を着弾時刻に行う。着弾が開始より後なら待たせ、そうでなければその場で付ける（#948）。
+     * DoT の付与・打ち切り・延長もここを通る（#949）。着弾時にボスが離脱中なら、どれも起こさない（#950）
      */
     const scheduleBuffApplication = (buffIds: string[], apply: (t: number) => void) => {
+      if (hitsUntargetable) return;
       if (hitTime === undefined || hitTime <= startTime) {
         apply(startTime);
         return;
@@ -2016,6 +2022,7 @@ export function resolveTimeline(
       resourceErrors,
       comboErrors,
       untargetableError,
+      ...(hitsUntargetable && !hasError ? { untargetableHit: true } : {}),
       recastError,
       wsComboError,
       consumedProc,

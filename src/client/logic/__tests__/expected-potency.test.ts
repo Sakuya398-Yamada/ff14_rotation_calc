@@ -84,6 +84,8 @@ describe("calcEntryPotencyBreakdown: エラーエントリ", () => {
     { name: "comboErrors", overrides: { comboErrors: [{ buffId: "combo", kind: "missing" as const }] } },
     { name: "untargetableError", overrides: { untargetableError: true } },
     { name: "recastError", overrides: { recastError: true } },
+    // 警告だがダメージは入らない（ゴースト。#950）
+    { name: "untargetableHit", overrides: { untargetableHit: true } },
   ])("$name のエントリは 0 / 空配列を返す", ({ overrides }) => {
     const entry = makeResolvedEntry({ resolvedPotency: 300, ...overrides });
     const breakdown = calcEntryPotencyBreakdown(entry, makeSkill(), DEFAULT_STATS);
