@@ -23,7 +23,6 @@
   },
   "accountControl": {
     "login": "Log in with Discord",
-    "loggedIn": "Logged in",
     "logout": "Log out",
     "loggingOut": "Logging out…",
     "logoutFailed": "Couldn't log out. Check your connection and try again.",

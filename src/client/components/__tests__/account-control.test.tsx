@@ -34,10 +34,10 @@ describe("AccountControl", () => {
     expect(screen.queryByRole("button", { name: "ログアウト" })).not.toBeInTheDocument();
   });
 
-  it("ログイン中は、ログイン中の表示とログアウトのボタンを出し、ログインのリンクは出さない", () => {
+  it("ログイン中は、ログアウトのボタンだけを出し、「ログイン中」の表示とログインのリンクは出さない", () => {
     render(<AccountControl status="loggedIn" returnTo="/" onLoggedOut={vi.fn()} />);
 
-    expect(screen.getByText("ログイン中")).toBeInTheDocument();
+    expect(screen.queryByText("ログイン中")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ログアウト" })).toBeEnabled();
     expect(screen.queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
@@ -114,11 +114,11 @@ describe("AccountControl（英語）", () => {
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/en/privacy");
   });
 
-  it("ログイン中の表示・ログアウトのボタン・エラーを英語で出す", async () => {
+  it("ログアウトのボタン・エラーを英語で出す", async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
     render(<AccountControl status="loggedIn" returnTo="/en/" onLoggedOut={vi.fn()} />);
 
-    expect(screen.getByText("Logged in")).toBeInTheDocument();
+    expect(screen.queryByText("Logged in")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Log out" }));
     expect(screen.getByRole("button", { name: "Logging out…" })).toBeDisabled();
     expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't log out. Check your connection and try again.");

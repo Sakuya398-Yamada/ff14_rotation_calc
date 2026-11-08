@@ -141,11 +141,11 @@ describe("SettingsDialog: アカウント", () => {
     expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
   });
 
-  it("ログイン中は、ログイン中の表示とログアウトのボタンを出す", () => {
+  it("ログイン中は、ログアウトのボタンだけを出す（「ログイン中」の表示は出さない）", () => {
     renderDialog({ account: account("loggedIn") });
 
     expect(screen.getByRole("heading", { name: "アカウント" })).toBeInTheDocument();
-    expect(screen.getByText("ログイン中")).toBeInTheDocument();
+    expect(screen.queryByText("ログイン中")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ログアウト" })).toBeInTheDocument();
   });
 

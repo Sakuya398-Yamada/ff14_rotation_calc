@@ -201,7 +201,6 @@ describe("App のログイン", () => {
     const outsideDialog = (elements: HTMLElement[]) => elements.filter((el) => el.closest("dialog") === null);
     expect(outsideDialog(within(header).queryAllByRole("link", { name: "Discord でログイン" }))).toEqual([]);
     expect(outsideDialog(within(header).queryAllByRole("button", { name: "ログアウト" }))).toEqual([]);
-    expect(outsideDialog(within(header).queryAllByText("ログイン中"))).toEqual([]);
     expect(outsideDialog(within(header).queryAllByRole("link", { name: "プライバシーポリシー" }))).toEqual([]);
   });
 
@@ -238,11 +237,10 @@ describe("App のログイン", () => {
     me = { loginAvailable: true, loggedIn: true };
     render(<App />);
     const dialog = openSettings();
-    expect(await within(dialog).findByText("ログイン中")).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole("button", { name: "ログアウト" }));
+    fireEvent.click(await within(dialog).findByRole("button", { name: "ログアウト" }));
 
     expect(await within(dialog).findByRole("link", { name: "Discord でログイン" })).toBeInTheDocument();
-    expect(within(dialog).queryByText("ログイン中")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "ログアウト" })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/auth/logout", expect.objectContaining({ method: "POST" }));
   });
 

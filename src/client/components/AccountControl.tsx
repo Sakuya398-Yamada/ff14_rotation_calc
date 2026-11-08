@@ -55,18 +55,16 @@ export function AccountControl({ status, returnTo, onLoggedOut }: AccountControl
   return (
     <div style={styles.root}>
       {status === "loggedIn" ? (
-        <>
-          <span style={styles.status}>{t("accountControl.loggedIn")}</span>
-          <button
-            ref={logoutButtonRef}
-            type="button"
-            onClick={() => void handleLogout()}
-            disabled={loggingOut}
-            style={styles.button}
-          >
-            {loggingOut ? t("accountControl.loggingOut") : t("accountControl.logout")}
-          </button>
-        </>
+        // ログアウトのボタンがあればログイン中だと分かるので、「ログイン中」の表示は置かない
+        <button
+          ref={logoutButtonRef}
+          type="button"
+          onClick={() => void handleLogout()}
+          disabled={loggingOut}
+          style={styles.button}
+        >
+          {loggingOut ? t("accountControl.loggingOut") : t("accountControl.logout")}
+        </button>
       ) : (
         <a ref={loginLinkRef} href={loginUrl(returnTo)} style={styles.button}>
           {t("accountControl.login")}
@@ -90,10 +88,6 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap",
     alignItems: "center",
     gap: "var(--space-2) var(--space-3)",
-  },
-  status: {
-    fontSize: "13px",
-    color: "var(--color-muted)",
   },
   button: {
     boxSizing: "border-box",
