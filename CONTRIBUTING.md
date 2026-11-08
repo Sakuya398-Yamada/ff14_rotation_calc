@@ -73,6 +73,7 @@ Claude Code がIssueの内容を読み取り、以下を行います。
 | Issue駆動開発の Phase別手順 | `.claude/skills/issue-start/SKILL.md` |
 | 新規ジョブの追加手順（スキル/バフ/リソース定義・登録・アイコン配置） | `docs/job-addition-guide.md` |
 | 本番 D1 のバックアップ（自宅サーバーの cron）と復元（Time Travel / バックアップから） | `docs/d1-backup.md` |
+| 削除の依頼（Discord の DM）を受けたときに、本番 D1 から送り主の行を探す手順 | `docs/deletion-requests.md` |
 
 ---
 
@@ -152,7 +153,7 @@ npm run db:migrate                        # ローカルの D1 に適用
 
 ローカルでログインを試すとき:
 
-1. `.dev.vars` の `DISCORD_CLIENT_ID=` の行を消し（`wrangler.jsonc` の ID が使われる）、`DISCORD_CLIENT_SECRET=` の行の `#` を外して、後述「Discord のアプリ（初回のみ）」の Client Secret を書く
+1. `.dev.vars` の `DISCORD_CLIENT_ID=` の行を消し（`wrangler.jsonc` の ID が使われる）、`DISCORD_CLIENT_SECRET=` の行の `#` を外して、後述「Discord のアプリ（初回のみ）」の Client Secret を書く。ユーザー ID を HMAC にする鍵（後述「Discord のユーザー ID の HMAC の鍵（初回のみ）」）は、`.dev.vars.example` の `DISCORD_ID_HMAC_KEY=` のローカル専用の値がそのまま使われる。#918 より前に `.dev.vars` を作ったなら、この行を `.dev.vars.example` から写す
 2. `npm run dev` を起動し直し、`http://localhost:5173/api/auth/discord` を開く。Discord で承認するとトップに戻り、`http://localhost:5173/api/me` が `{"loginAvailable":true,"loggedIn":true}` を返す
 3. ログアウトの UI はまだ無い（#880）。ブラウザの開発者ツールのコンソールで次を実行すると、`/api/me` の `loggedIn` が `false` に戻る
 
@@ -160,7 +161,7 @@ npm run db:migrate                        # ローカルの D1 に適用
    await fetch("/api/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
    ```
 
-- `DISCORD_CLIENT_ID=` の行を消して（または行が無いまま）secret を書かずに起動すると、`/api/me` は `loginAvailable:true` を返し、`/api/auth/discord` が 500 になります（Turnstile と同じく、設定の誤りを黙って通さない）
+- `DISCORD_CLIENT_ID=` の行を消して（または行が無いまま）secret か `DISCORD_ID_HMAC_KEY` を書かずに起動すると、`/api/me` は `loginAvailable:true` を返し、`/api/auth/discord` が 500 になります（Turnstile と同じく、設定の誤りを黙って通さない）
 - テストは Discord を呼ばず、`fetch` を差し替えて確かめます（`src/server/routes/__tests__/auth.test.ts`）
 
 ---
@@ -288,6 +289,27 @@ PR のプレビューは手順 2・3 の値を使いません（#581）。プレ
 
 PR のプレビューではログインを出しません。リダイレクト URI は完全一致でしか登録できず、プレビューの URL はブランチごとに変わるためです。プレビューのバインディングは `previews` に書いたものだけで、最上位の `vars` は付かないので、プレビューにはクライアント ID が無く、ログインの API は 404 になります。
 
+### Discord のユーザー ID の HMAC の鍵（初回のみ）
+
+ログインは、Discord のユーザー ID をそのまま保存せず、Worker の secret `DISCORD_ID_HMAC_KEY` を鍵にした HMAC-SHA256 を `user_identities.provider_user_id` に入れます（#918）。D1 やバックアップが漏れても、どの Discord アカウントが使ったかを分からなくするためです。クライアント ID があるのに鍵が無いと、ログインが 500 になるので、鍵を使うコードをデプロイするより先に入れます。
+
+1. 鍵を作る（32 バイトの乱数を base64url にした 43 文字）
+
+   ```powershell
+   node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+   ```
+
+2. 出た値をパスワードマネージャーなどに控える。Worker の secret は後から読み出せないので、控えが無いと、削除の依頼を受けたときに行を探せない（`docs/deletion-requests.md`）
+3. Worker の secret に入れる（どちらか）:
+
+   ```powershell
+   npx wrangler secret put DISCORD_ID_HMAC_KEY   # 値を聞かれたら貼り付ける
+   ```
+
+   ダッシュボードなら、`DISCORD_CLIENT_SECRET` と同じく Worker の **Settings** → **Variables and Secrets**（Type: **Secret**）。**Build variables and secrets** ではない
+
+鍵は変えません。変えると、それまでの行が今の鍵で計算した値と一致しなくなり、全員が次のログインで別のユーザー（保存したタイムラインが一覧に出ない、新しいアカウント）になります。鍵を失ったときは、新しい鍵を作って同じ手順で入れ直し、これを受け入れます。前の鍵の行は消さずに残します（鍵が無いと誰のものか分からない値なので、残しても漏れる情報は無い）。ただし、その行は削除の依頼を受けても探せません。
+
 ### 動作確認手順
 
 1. 初回ビルドが成功し、本番 URL でフロントエンドが表示され、`/api/health` が `{"status":"ok"}` を返すことを確認
@@ -310,7 +332,7 @@ PR のプレビューではログインを出しません。リダイレクト U
 - **デプロイ失敗（`wrangler d1 migrations apply DB --remote` で D1 が見つからない）**: `wrangler.jsonc` の `database_id` が、ビルド用トークンのアカウントに無い D1 を指している（別アカウントで作った・作り直した等）。`npx wrangler d1 list` で ID を確かめ、手順 1・2 のとおり書き直す
 - **本番の保存がいつも「ボット対策の確認ができませんでした」（403）になる**: ビルド変数 `VITE_TURNSTILE_SITE_KEY` が無いと、フロントはテスト用の sitekey で動き（ウィジェットにテスト用の表示が出る）、そのダミートークンを本番の secret が拒否する。上記「Turnstile」の手順 2 のとおり足して、ビルドし直す（ビルド変数は次のビルドから効く）。テスト用の表示が出ていなければ、sitekey と secret が別のウィジェットのものになっていないか確かめる
 - **本番の保存がいつも「保存できませんでした」（500）になる**: Worker の secret `TURNSTILE_SECRET_KEY` が無い。`npx wrangler tail` で保存すると `TURNSTILE_SECRET_KEY is not set` が出る。上記「Turnstile」の手順 3 のとおり入れる
-- **`/api/auth/discord` が 500 になる**: `wrangler.jsonc` に `DISCORD_CLIENT_ID` があるのに、Worker の secret `DISCORD_CLIENT_SECRET` が無い（`npx wrangler tail` に `DISCORD_CLIENT_SECRET is not set` が出る）。Build の **Build variables and secrets** に入れた値は Worker から読めないので、これに当たる。上記「Discord のアプリ」の手順 3 のとおり **Variables and Secrets** に入れる
+- **`/api/auth/discord` が 500 になる**: `wrangler.jsonc` に `DISCORD_CLIENT_ID` があるのに、Worker の secret `DISCORD_CLIENT_SECRET` が無い（`npx wrangler tail` に `DISCORD_CLIENT_SECRET is not set` が出る）。Build の **Build variables and secrets** に入れた値は Worker から読めないので、これに当たる。上記「Discord のアプリ」の手順 3 のとおり **Variables and Secrets** に入れる。`DISCORD_ID_HMAC_KEY is not set` が出るなら、上記「Discord のユーザー ID の HMAC の鍵」の手順 3 のとおり鍵を入れる
 - **Discord の認可画面に、redirect_uri が無効という旨のエラーが出る**: 開いたオリジンのコールバックが Discord のアプリに登録されていない。上記「Discord のアプリ」の手順 2 の URI と、スキーム・ポートまで一致しているか確かめる
 - **Discord で承認した後、500 になる**: トークンの交換か `/users/@me` が 200 以外を返している。`npx wrangler tail` に `Discord token endpoint returned <ステータス>` が出るなら、secret が別のアプリのものでないか、Reset Secret で古くなっていないかを確かめる
 - **ビルド失敗（`tsc` 関連エラー）**: ビルドコマンドは `tsc` を呼ばない（`vite build` のみ）ため発生しない想定。GitHub Actions 側の `Type check` ステップで検出される

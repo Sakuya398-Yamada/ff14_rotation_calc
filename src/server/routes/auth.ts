@@ -6,6 +6,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { userIdentities, users } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
+import { hmacDiscordUserId } from "../services/discord-id";
 import { buildAuthorizeUrl, createPkce, fetchDiscordUserId } from "../services/discord-oauth";
 import { generateOwnerToken, hashOwnerToken, isOwnerToken } from "../services/owner-token";
 import { createSession, deleteSession, validateSession } from "../services/session";
@@ -42,13 +43,16 @@ export function safeReturnPath(value: string | undefined, origin: string): strin
   return url.origin === origin && !path.startsWith("//") ? path : "/";
 }
 
-/** ID が無ければログインできない環境（null）。ID があるのに secret が無いのは設定の誤りなので、例外（既定の onError がログに出して 500）にする */
-function getDiscordConfig(c: Context<RouteEnv>): { clientId: string; clientSecret: string } | null {
+/** ID が無ければログインできない環境（null）。ID があるのに secret か HMAC の鍵が無いのは設定の誤りなので、例外（既定の onError がログに出して 500）にする */
+function getDiscordConfig(c: Context<RouteEnv>): { clientId: string; clientSecret: string; idHmacKey: string } | null {
   const clientId = c.env.DISCORD_CLIENT_ID;
   if (!clientId) return null;
   const clientSecret = c.env.DISCORD_CLIENT_SECRET;
   if (!clientSecret) throw new Error("DISCORD_CLIENT_SECRET is not set");
-  return { clientId, clientSecret };
+  // 削除の依頼のときに手元で計算する scripts/discord-id-hmac.mjs と同じく、前後の空白・改行は除く（貼り付けで混ざっても値がずれないように）
+  const idHmacKey = c.env.DISCORD_ID_HMAC_KEY?.trim();
+  if (!idHmacKey) throw new Error("DISCORD_ID_HMAC_KEY is not set");
+  return { clientId, clientSecret, idHmacKey };
 }
 
 function readOAuthCookie(c: Context) {
@@ -94,16 +98,17 @@ export async function currentUserId<E extends { Bindings: Bindings }>(c: Context
   return session.userId;
 }
 
-async function findOrCreateUser(db: AppDb, discordUserId: string): Promise<string> {
+/** providerUserId は Discord のユーザー ID の HMAC（hmacDiscordUserId）。生の ID は渡さない */
+async function findOrCreateUser(db: AppDb, providerUserId: string): Promise<string> {
   const [identity] = await db
     .select({ userId: userIdentities.userId })
     .from(userIdentities)
-    .where(and(eq(userIdentities.provider, "discord"), eq(userIdentities.providerUserId, discordUserId)))
+    .where(and(eq(userIdentities.provider, "discord"), eq(userIdentities.providerUserId, providerUserId)))
     .limit(1);
   if (identity) return identity.userId;
   const userId = nanoid();
   await db.insert(users).values({ id: userId });
-  await db.insert(userIdentities).values({ provider: "discord", providerUserId: discordUserId, userId });
+  await db.insert(userIdentities).values({ provider: "discord", providerUserId, userId });
   return userId;
 }
 
@@ -153,7 +158,7 @@ export function createAuthRoute(getDb: (env: Bindings) => AppDb) {
         codeVerifier: oauth.verifier,
       });
       const db = getDb(c.env);
-      const userId = await findOrCreateUser(db, discordUserId);
+      const userId = await findOrCreateUser(db, await hmacDiscordUserId(config.idHmacKey, discordUserId));
       // このブラウザで匿名のまま保存したタイムラインも、アカウントから見えるようにする。確認は挟まない（#651）
       const ownerToken = readOwnerToken(c);
       if (ownerToken !== undefined && (await linkOwner(db, await hashOwnerToken(ownerToken), userId)) !== userId) {

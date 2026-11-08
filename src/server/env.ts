@@ -21,6 +21,8 @@ export type Bindings = {
   // ID が無い環境（PR のプレビュー）ではログインの API が 404 になる（#876）
   DISCORD_CLIENT_ID?: string;
   DISCORD_CLIENT_SECRET?: string;
+  // Discord のユーザー ID を HMAC にする鍵（Worker の secret。ローカルは .dev.vars）。ログインできる環境では必須（#918）
+  DISCORD_ID_HMAC_KEY?: string;
 };
 
 // 本番の D1（async）とテストの better-sqlite3（sync）のどちらも入る。await で使えるクエリビルダーだけを呼ぶ
