@@ -47,9 +47,11 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [saveOpen, setSaveOpen] = useState(false);
-  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  // 保存のダイアログは、保存したタイムラインの一覧の「今のタイムラインを保存」から、一覧に重ねて開く
+  const saveNewButtonRef = useRef<HTMLButtonElement>(null);
   const [myTimelinesOpen, setMyTimelinesOpen] = useState(false);
   const myTimelinesButtonRef = useRef<HTMLButtonElement>(null);
+  const [myTimelinesReloadKey, setMyTimelinesReloadKey] = useState(0);
   // 取得できるまでは、ログインできないものとして何も出さない
   const [accountStatus, setAccountStatus] = useState<AccountStatus>("unavailable");
 
@@ -153,6 +155,7 @@ export function App() {
   const handleSaved = useCallback((id: string) => {
     setSourceTimelineId(id);
     setSharedInfo(null);
+    setMyTimelinesReloadKey((key) => key + 1);
   }, []);
 
   const applyAppState = useCallback((state: PersistedAppState) => {
@@ -376,22 +379,13 @@ export function App() {
           onLevelChange={setLevel}
         />
         <button
-          ref={saveButtonRef}
-          type="button"
-          aria-haspopup="dialog"
-          onClick={() => setSaveOpen(true)}
-          style={styles.saveButton}
-        >
-          {t("app.saveAndShare")}
-        </button>
-        <button
           ref={myTimelinesButtonRef}
           type="button"
           aria-haspopup="dialog"
           onClick={() => setMyTimelinesOpen(true)}
           style={styles.saveButton}
         >
-          {t("app.myTimelines")}
+          {t("app.saveAndShare")}
         </button>
         <a
           href={alternateLanguagePath(pathname)}
@@ -430,12 +424,15 @@ export function App() {
         parentId={sourceTimelineId}
         onSaved={handleSaved}
         onClose={() => setSaveOpen(false)}
-        returnFocusRef={saveButtonRef}
+        returnFocusRef={saveNewButtonRef}
       />
       <MyTimelinesDialog
         open={myTimelinesOpen}
         onClose={() => setMyTimelinesOpen(false)}
         returnFocusRef={myTimelinesButtonRef}
+        onSaveNew={() => setSaveOpen(true)}
+        saveNewButtonRef={saveNewButtonRef}
+        reloadKey={myTimelinesReloadKey}
         accountStatus={accountStatus}
         returnTo={pathname}
       />

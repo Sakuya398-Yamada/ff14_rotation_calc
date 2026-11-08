@@ -50,6 +50,9 @@ function renderDialog(overrides: Partial<Parameters<typeof MyTimelinesDialog>[0]
     open: true,
     onClose: vi.fn(),
     returnFocusRef: createRef<HTMLElement>(),
+    onSaveNew: vi.fn(),
+    saveNewButtonRef: createRef<HTMLButtonElement>(),
+    reloadKey: 0,
     accountStatus: "unavailable" as const,
     returnTo: "/",
     ...overrides,
@@ -181,6 +184,52 @@ describe("MyTimelinesDialog", () => {
   });
 });
 
+describe("MyTimelinesDialog: 新しく保存", () => {
+  it("「今のタイムラインを保存」で onSaveNew を呼び、saveNewButtonRef にそのボタンを渡す", async () => {
+    const { props } = renderDialog();
+    await screen.findAllByRole("link");
+    const button = screen.getByRole("button", { name: "今のタイムラインを保存" });
+    fireEvent.click(button);
+
+    expect(props.onSaveNew).toHaveBeenCalledTimes(1);
+    expect(props.saveNewButtonRef.current).toBe(button);
+  });
+
+  it("開いている間に reloadKey が変わると、1 ページ目を取り直して一覧を置き換える", async () => {
+    const { props, rerender } = renderDialog();
+    await screen.findAllByRole("link");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }));
+    rerender(<MyTimelinesDialog {...props} reloadKey={1} />);
+
+    await vi.waitFor(() => expect(screen.getAllByRole("link")).toHaveLength(2));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/me/timelines");
+    expect(screen.getAllByRole("link")[0]).toHaveTextContent("タイムライン 2");
+  });
+
+  it("取得中に reloadKey が変わると、先の取得を中断し、後の取得の結果だけを出す", async () => {
+    let respondFirst!: (res: Response) => void;
+    fetchMock
+      .mockReturnValueOnce(new Promise((resolve) => (respondFirst = resolve)))
+      .mockResolvedValueOnce(jsonResponse({ items: [item(2), item(1)], nextCursor: null }));
+    const { props, rerender } = renderDialog();
+    rerender(<MyTimelinesDialog {...props} reloadKey={1} />);
+
+    await vi.waitFor(() => expect(screen.getAllByRole("link")).toHaveLength(2));
+    expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(true);
+    await act(async () => respondFirst(jsonResponse({ items: [item(1)], nextCursor: null })));
+    expect(screen.getAllByRole("link")).toHaveLength(2);
+  });
+
+  it("閉じている間に reloadKey が変わっても取得しない", async () => {
+    const { props, rerender } = renderDialog({ open: false });
+    rerender(<MyTimelinesDialog {...props} reloadKey={1} />);
+
+    await act(async () => {});
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("MyTimelinesDialog: 削除", () => {
   let confirmMock: ReturnType<typeof vi.fn<(message?: string) => boolean>>;
 
@@ -193,6 +242,16 @@ describe("MyTimelinesDialog: 削除", () => {
   function deleteButton(title: string) {
     return screen.getByRole("button", { name: `「${title}」を削除` });
   }
+
+  it("削除ボタンはゴミ箱のアイコンで、文字は出さず title に「削除」を付ける", async () => {
+    renderDialog();
+    await screen.findAllByRole("link");
+    const button = deleteButton("タイムライン 1");
+
+    expect(button).toHaveAttribute("title", "削除");
+    expect(button).toHaveTextContent(/^$/);
+    expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
 
   it("各行の削除ボタンで確認を出し、OK なら DELETE を送って行を一覧から外し、次の行にフォーカスを移す", async () => {
     fetchMock
@@ -452,6 +511,7 @@ describe("MyTimelinesDialog（英語）", () => {
       "Your saved timelines could not be loaded. Check your connection and try again."
     );
     expect(screen.getByRole("button", { name: "Close saved timelines" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save current timeline" })).toBeInTheDocument();
   });
 
   it("削除ボタン・確認・削除のエラーを英語で出す", async () => {
@@ -463,7 +523,7 @@ describe("MyTimelinesDialog（英語）", () => {
     renderDialog();
     await screen.findAllByRole("link");
     const button = screen.getByRole("button", { name: 'Delete "タイムライン 1"' });
-    expect(button).toHaveTextContent("Delete");
+    expect(button).toHaveAttribute("title", "Delete");
     fireEvent.click(button);
 
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('Delete "タイムライン 1"?'));
