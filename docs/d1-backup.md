@@ -135,6 +135,8 @@ tail -n 20 ~/backups/ff14-rotation-calc-d1/backup.log
 
 ## 復元する
 
+戻すと、削除の依頼で消した中身も、戻した時点より後に消したものは戻る。戻したら消し直す（`docs/deletion-requests.md`「バックアップと Time Travel に残る分」）。
+
 どれも自宅サーバーのリポジトリで、トークンを読み込んでから打つ。
 
 ```bash
