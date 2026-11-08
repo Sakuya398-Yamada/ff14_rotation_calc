@@ -65,10 +65,10 @@
      git add migrations/
      ```
      `<名前>` は自分の SQL のファイル名から番号と `.sql` を除いた部分。マージを終える（`git commit --no-edit`）前に、`ls migrations/` に同じ番号の SQL が並んでいないことと、作り直した SQL に自分の変更だけが入っていることを見る（`main` 側の変更が入っていれば、`meta/` が `main` 側になっていない）
-  2. ローカルの D1 に古い版が当たっていたら、消して当て直す。`npx wrangler d1 execute DB --local --command "SELECT name FROM d1_migrations ORDER BY id"` に手順 1 で消した SQL の名前があれば当たっていて、そのままだと `npm run db:migrate` が作り直した版を未適用と見て `table ... already exists` で止まる。古い版が作ったテーブル（作り直した SQL の `CREATE TABLE` と同じ名前。インデックスはテーブルと一緒に消える）と履歴の行を消してから当て直す。テーブルが複数なら `DROP TABLE` を並べ、外部キーで参照されているテーブルは、参照している側より後に消す:
+  2. ローカルの D1 に古い版が当たっていたら、消して当て直す。`npx wrangler d1 execute DB --local --command "SELECT name FROM d1_migrations ORDER BY id"` に手順 1 で消した SQL の名前があれば当たっていて、そのままだと `npm run db:migrate` が作り直した版を未適用と見て、`table ... already exists`（列を足す版なら `duplicate column name`）で止まる。古い版が作ったもの（作り直した SQL と同じもの）と履歴の行を消してから当て直す。テーブルは `DROP TABLE` で消す（インデックスはテーブルと一緒に消える。複数なら並べ、外部キーで参照されているテーブルは、参照している側より後に消す）。`ALTER TABLE ... ADD` で足した列は、`DROP TABLE` の代わりに `ALTER TABLE <テーブル> DROP COLUMN <列>` で消す:
      ```bash
      npx wrangler d1 execute DB --local --command "DROP TABLE <テーブル>; DELETE FROM d1_migrations WHERE name = '<番号>_<名前>.sql'"
      npm run db:migrate
      ```
   3. プレビュー用 D1（PR のプレビューのビルドが `npm run db:migrate:preview` で当てる共有の D1）に、古い名前が当たっていないかを見る。古い名前のまま push してプレビューのビルドが走っていれば当たっている。`d1_migrations` の読み方は `CONTRIBUTING.md`「トラブルシューティング」の `table ... already exists` の項目、当たっていたときの直し方は同じファイルの「プレビュー用 D1（初回のみ）」の「マイグレーションの番号を振り直したら、`d1_migrations` の名前も揃える」（push する前に行う）
-- **確認**: drizzle-kit 0.31.11・wrangler 4.151.0 / 2026-11 / #876（発見元）・#915（一時クローンで同じコンフリクトを起こして手順 1 を、手元の D1 で手順 2 を流して確かめた）
+- **確認**: drizzle-kit 0.31.11・wrangler 4.151.0 / 2026-11 / #876（発見元）・#915（一時クローンで同じコンフリクトを起こして手順 1 を、手元の D1 で手順 2 を、テーブルを作る版と列を足す版の両方で流して確かめた）
