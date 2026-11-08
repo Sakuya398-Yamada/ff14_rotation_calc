@@ -31,7 +31,11 @@ export function toMintLeafText(entries: ResolvedTimelineEntry[], skillMap: Map<s
   return { text: lines.join("\n"), skippedSkillIds: [...skipped] };
 }
 
-/** 小数 2 桁に丸める。gcdAvailableAt と startTime の差に出る浮動小数の誤差もここで落とす */
+/**
+ * 小数 2 桁に丸める。resolveTimeline の時間はミリ秒単位なので、先にミリ秒に丸めて、
+ * gcdAvailableAt と startTime の差に出る浮動小数の誤差（2.125 が 2.1249999… になる）で 2 桁の丸めがずれないようにする
+ */
 function formatSeconds(seconds: number): string {
-  return String(Math.round(seconds * 100) / 100);
+  const ms = Math.round(seconds * 1000);
+  return String(Math.round(ms / 10) / 100);
 }

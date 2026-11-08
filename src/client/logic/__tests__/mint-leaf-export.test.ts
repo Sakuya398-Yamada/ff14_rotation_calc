@@ -46,6 +46,14 @@ describe("toMintLeafText", () => {
     expect(exportOf(["slow-gcd"]).text).toBe("25793 GCD 3.33 0");
   });
 
+  it("開始時刻との引き算に出る浮動小数の誤差で、2 桁の丸めがずれない", () => {
+    // 1.895 + 2.125 - 1.895 は 2.1249999999999996 になる
+    const hasted = new Map([["hasted-gcd", skill({ id: "hasted-gcd", type: "gcd", gameActionId: 3577, recastTime: 2.125 })]]);
+    const { entries } = resolveTimeline([entry("hasted-gcd", 1.895)], hasted, []);
+    expect(entries[0].gcdAvailableAt - entries[0].startTime).toBeLessThan(2.125);
+    expect(toMintLeafText(entries, hasted).text).toBe("3577 GCD 2.13 0");
+  });
+
   it("手動の開始時刻は書き出さない", () => {
     const { entries } = resolveTimeline([entry("cast-gcd", 10), entry("ogcd")], skillMap, []);
     expect(toMintLeafText(entries, skillMap).text).toBe("141 GCD 2.5 2\n158 oGCD normal");
