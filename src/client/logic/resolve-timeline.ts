@@ -1870,60 +1870,69 @@ export function resolveTimeline(
 
       // DoT適用: スキルにdotPotency/dotDurationがあればDoTを適用
       // コンボ不成立時はDoTを適用しない（コンボ成立時の追加効果扱い）
+      // バフのスナップショットは実行時に取り、付与（効果時間・ティックの数え始め・replacesDots の打ち切り）は着弾時刻 t に行う（#949）
       if (skill.dotPotency && skill.dotDuration && !wsComboError) {
+        const dotPotency = skill.dotPotency;
+        const dotDuration = skill.dotDuration;
         const buffMultiplier = buffMultiplierBeforeApply;
         const dotCritRateBonus = baseCritRateBonus;
         const dotDhRateBonus = dhRateBonusBeforeApply;
-        const endTime = Math.round((startTime + skill.dotDuration) * 1000) / 1000;
+        scheduleBuffApplication([], (t) => {
+          const endTime = Math.round((t + dotDuration) * 1000) / 1000;
 
-        // replacesDots: 同時に1種類だけの DoT は、他スキルの DoT をこの時点で打ち切る
-        for (const otherId of skill.replacesDots ?? []) {
-          if (otherId === skill.id) continue;
-          const other = dotStreams.get(otherId);
-          if (!other || other.currentEndTime <= startTime) continue;
-          other.currentEndTime = startTime;
-          for (const seg of other.segments) seg.endTime = Math.min(seg.endTime, startTime);
-        }
+          // replacesDots: 同時に1種類だけの DoT は、他スキルの DoT をこの時点で打ち切る
+          for (const otherId of skill.replacesDots ?? []) {
+            if (otherId === skill.id) continue;
+            const other = dotStreams.get(otherId);
+            if (!other || other.currentEndTime <= t) continue;
+            other.currentEndTime = t;
+            for (const seg of other.segments) seg.endTime = Math.min(seg.endTime, t);
+          }
 
-        const existing = dotStreams.get(skill.id);
-        if (existing) {
-          // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
-          existing.currentEndTime = endTime;
-          existing.segments.push({ appliedAt: startTime, endTime, buffMultiplier, critRateBonus: dotCritRateBonus, dhRateBonus: dotDhRateBonus });
-        } else {
-          // 初回適用: 新規DoTストリーム作成
-          dotStreams.set(skill.id, {
-            skillId: skill.id,
-            icon: skill.icon,
-            dotPotency: skill.dotPotency,
-            firstAppliedAt: startTime,
-            currentEndTime: endTime,
-            segments: [{ appliedAt: startTime, endTime, buffMultiplier, critRateBonus: dotCritRateBonus, dhRateBonus: dotDhRateBonus }],
-          });
-        }
+          const existing = dotStreams.get(skill.id);
+          if (existing) {
+            // 再適用: endTimeとバフスナップショットを更新、ティックタイマーはリセットしない
+            existing.currentEndTime = endTime;
+            existing.segments.push({ appliedAt: t, endTime, buffMultiplier, critRateBonus: dotCritRateBonus, dhRateBonus: dotDhRateBonus });
+          } else {
+            // 初回適用: 新規DoTストリーム作成
+            dotStreams.set(skill.id, {
+              skillId: skill.id,
+              icon: skill.icon,
+              dotPotency,
+              firstAppliedAt: t,
+              currentEndTime: endTime,
+              segments: [{ appliedAt: t, endTime, buffMultiplier, critRateBonus: dotCritRateBonus, dhRateBonus: dotDhRateBonus }],
+            });
+          }
+        });
       }
 
-      // refreshesDots: 効いている指定DoTの効果時間をリセットし、バフスナップショットを再取得（切れたDoTは付与しなおさない）
+      // refreshesDots: 効いている指定DoTの効果時間をリセットし、バフスナップショットを再取得（切れたDoTは付与しなおさない）。
+      // 効いているかの判定と延長は着弾時刻 t、スナップショットは実行時（#949）
       if (skill.refreshesDots) {
+        const refreshesDots = skill.refreshesDots;
         const refreshBuffMultiplier = buffMultiplierBeforeApply;
         const refreshCritRateBonus = baseCritRateBonus;
         const refreshDhRateBonus = dhRateBonusBeforeApply;
-        for (const dotSkillId of skill.refreshesDots) {
-          const stream = dotStreams.get(dotSkillId);
-          if (!stream || stream.currentEndTime <= startTime) continue;
-          // 元DoTの持続時間で延長（dotPotency元スキルのdotDurationを参照）
-          const dotSkill = skillMap.get(dotSkillId);
-          if (!dotSkill?.dotDuration) continue;
-          const newEndTime = Math.round((startTime + dotSkill.dotDuration) * 1000) / 1000;
-          stream.currentEndTime = newEndTime;
-          stream.segments.push({
-            appliedAt: startTime,
-            endTime: newEndTime,
-            buffMultiplier: refreshBuffMultiplier,
-            critRateBonus: refreshCritRateBonus,
-            dhRateBonus: refreshDhRateBonus,
-          });
-        }
+        scheduleBuffApplication([], (t) => {
+          for (const dotSkillId of refreshesDots) {
+            const stream = dotStreams.get(dotSkillId);
+            if (!stream || stream.currentEndTime <= t) continue;
+            // 元DoTの持続時間で延長（dotPotency元スキルのdotDurationを参照）
+            const dotSkill = skillMap.get(dotSkillId);
+            if (!dotSkill?.dotDuration) continue;
+            const newEndTime = Math.round((t + dotSkill.dotDuration) * 1000) / 1000;
+            stream.currentEndTime = newEndTime;
+            stream.segments.push({
+              appliedAt: t,
+              endTime: newEndTime,
+              buffMultiplier: refreshBuffMultiplier,
+              critRateBonus: refreshCritRateBonus,
+              dhRateBonus: refreshDhRateBonus,
+            });
+          }
+        });
       }
     }
 
