@@ -7,13 +7,12 @@ import type { TimelineDragData } from "./timeline/dnd-types";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
-import { SettingsDialog } from "./SettingsDialog";
+import { SettingsButton } from "./SettingsButton";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
-import { loadSettings, saveSettings, applySettings, prefersDarkScheme } from "../logic/app-settings";
 import { resolveTimeline } from "../logic/resolve-timeline";
 import { calcRangePps, calcTimelineSummary } from "../logic/timeline-summary";
 import { JOB_DATA } from "../data/job-registry";
@@ -40,24 +39,10 @@ const SAVE_DEBOUNCE_MS = 500;
 export function App() {
   const { t } = useTranslation();
   const lang = useLanguage();
-  const otherLang = lang === "en" ? "ja" : "en";
-  const [settings, setSettings] = useState(loadSettings);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const [myTimelinesOpen, setMyTimelinesOpen] = useState(false);
   const myTimelinesButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    saveSettings(settings);
-    applySettings(settings, prefersDarkScheme());
-    if (settings.theme !== "system" || typeof window.matchMedia !== "function") return;
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleSchemeChange = (e: MediaQueryListEvent) => applySettings(settings, e.matches);
-    mediaQuery.addEventListener("change", handleSchemeChange);
-    return () => mediaQuery.removeEventListener("change", handleSchemeChange);
-  }, [settings]);
 
   // 初回マウント時に LocalStorage から復元（復元不能時は null → 各 state の初期値にフォールバック）
   const [restored] = useState(() => {
@@ -83,7 +68,7 @@ export function App() {
   const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
   // 共有 URL から開いたタイムラインのタイトルとコンテンツ。ジョブを変えるか保存すると、別のタイムラインになるので外す
   const [sharedInfo, setSharedInfo] = useState<{ title: string | null; contentId: string | null } | null>(null);
-  // 言語のリンクの移り先を作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
+  // 設定ダイアログの言語の切り替え先を作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
   const [pathname, setPathname] = useState(() => window.location.pathname);
   // 共有タイムラインの取得が終わった時点のエントリで上書きの確認を判定するため、最新の値を持っておく
   const entriesRef = useRef(entries);
@@ -91,7 +76,7 @@ export function App() {
     entriesRef.current = entries;
   }, [entries]);
 
-  // 「戻る」で bfcache から戻ったページの状態は、離れていたあいだに移り先（言語のリンクの先など）で保存した内容より古い。
+  // 「戻る」で bfcache から戻ったページの状態は、離れていたあいだに移り先（言語の切り替え先など）で保存した内容より古い。
   // 保存すると移り先で編集した分を上書きするので、保存を止めて読み込み直す
   const restoredFromBfcacheRef = useRef(false);
   useEffect(() => {
@@ -381,36 +366,8 @@ export function App() {
         >
           {t("app.myTimelines")}
         </button>
-        <a
-          href={alternateLanguagePath(pathname)}
-          hrefLang={otherLang}
-          lang={otherLang}
-          style={styles.languageLink}
-        >
-          {t("app.languageLink")}
-        </a>
-        <button
-          ref={settingsButtonRef}
-          type="button"
-          aria-label={t("app.settings")}
-          title={t("app.settings")}
-          aria-haspopup="dialog"
-          onClick={() => setSettingsOpen(true)}
-          style={styles.settingsButton}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </button>
+        <SettingsButton languageHref={alternateLanguagePath(pathname)} />
       </header>
-      <SettingsDialog
-        open={settingsOpen}
-        settings={settings}
-        onChange={setSettings}
-        onClose={() => setSettingsOpen(false)}
-        returnFocusRef={settingsButtonRef}
-      />
       <SaveTimelineDialog
         open={saveOpen}
         snapshot={saveSnapshot}
@@ -600,31 +557,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--color-text)",
     fontFamily: "inherit",
     fontSize: "13px",
-    cursor: "pointer",
-  },
-  languageLink: {
-    boxSizing: "border-box",
-    display: "inline-flex",
-    alignItems: "center",
-    height: "40px",
-    padding: "0 var(--space-3)",
-    border: "1px solid var(--color-field)",
-    borderRadius: "var(--radius-lg)",
-    background: "var(--color-raised)",
-    color: "var(--color-text)",
-    fontSize: "13px",
-    textDecoration: "none",
-  },
-  settingsButton: {
-    width: "40px",
-    height: "40px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "1px solid var(--color-field)",
-    borderRadius: "var(--radius-lg)",
-    background: "var(--color-raised)",
-    color: "var(--color-text)",
     cursor: "pointer",
   },
   sharedLoadError: {

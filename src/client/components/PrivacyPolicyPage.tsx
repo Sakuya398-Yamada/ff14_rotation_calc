@@ -2,6 +2,7 @@ import { useEffect, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "../i18n";
 import { languageBasePath, privacyPolicyPath } from "../logic/language-path";
+import { SettingsButton } from "./SettingsButton";
 
 const OPERATOR_NAME = "Sakuya398-Yamada";
 // 削除の依頼を受ける Discord のアカウント（DM の送り主の ID で、削除する Discord ID の持ち主か確かめられる。#879）
@@ -47,9 +48,7 @@ export function PrivacyPolicyPage() {
         <a href={languageBasePath(lang)} style={styles.siteName}>
           {t("privacyPolicyPage.siteName")}
         </a>
-        <a href={privacyPolicyPath(otherLang)} hrefLang={otherLang} lang={otherLang} style={styles.languageLink}>
-          {t("privacyPolicyPage.languageLink")}
-        </a>
+        <SettingsButton languageHref={privacyPolicyPath(otherLang)} />
       </header>
       <main style={styles.main}>
         <h1 style={styles.title}>{t("privacyPolicyPage.title")}</h1>
@@ -180,19 +179,6 @@ const styles = {
     fontWeight: 700,
     letterSpacing: "0.02em",
     color: "var(--color-text)",
-    textDecoration: "none",
-  },
-  languageLink: {
-    boxSizing: "border-box",
-    display: "inline-flex",
-    alignItems: "center",
-    height: "40px",
-    padding: "0 var(--space-3)",
-    border: "1px solid var(--color-field)",
-    borderRadius: "var(--radius-lg)",
-    background: "var(--color-raised)",
-    color: "var(--color-text)",
-    fontSize: "13px",
     textDecoration: "none",
   },
   main: {
