@@ -52,7 +52,8 @@ export const userIdentities = sqliteTable(
   {
     // 今は "discord" だけ
     provider: text("provider").notNull(),
-    // Discord は snowflake の id（username は一意でないので使わない）
+    // Discord は snowflake の id（username は一意でないので使わない）を、Worker の secret DISCORD_ID_HMAC_KEY で HMAC-SHA256 にした hex。
+    // 生の ID は保存しない（src/server/services/discord-id.ts。#918）
     providerUserId: text("provider_user_id").notNull(),
     userId: text("user_id")
       .notNull()

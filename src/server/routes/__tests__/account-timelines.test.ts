@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { eq } from "drizzle-orm";
@@ -20,6 +20,7 @@ const CURRENT_USER_URL = "https://discord.com/api/v10/users/@me";
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const DISCORD_ALICE = "80351110224678912";
 const DISCORD_BOB = "175928847299117063";
+const ID_HMAC_KEY = "test-id-hmac-key";
 
 // src/server/routes/__tests__/timelines.test.ts と同じく、本番の D1 と同じマイグレーションを当てた better-sqlite3 の DB を使う（#574）
 function createTestDb() {
@@ -77,6 +78,7 @@ class Browser {
         TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
         DISCORD_CLIENT_ID: clientId,
         DISCORD_CLIENT_SECRET: "test-client-secret",
+        DISCORD_ID_HMAC_KEY: ID_HMAC_KEY,
       },
     );
     for (const cookie of res.headers.getSetCookie()) {
@@ -138,7 +140,7 @@ async function userIdOf(discordId: string): Promise<string> {
   const [row] = await db
     .select({ userId: userIdentities.userId })
     .from(userIdentities)
-    .where(eq(userIdentities.providerUserId, discordId));
+    .where(eq(userIdentities.providerUserId, createHmac("sha256", ID_HMAC_KEY).update(discordId).digest("hex")));
   return row.userId;
 }
 

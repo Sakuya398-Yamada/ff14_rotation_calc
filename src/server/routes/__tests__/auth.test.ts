@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
@@ -12,6 +12,7 @@ const MIGRATIONS_FOLDER = fileURLToPath(new URL("../../../../migrations", import
 const ORIGIN = "http://localhost";
 const CLIENT_ID = "123456789012345678";
 const CLIENT_SECRET = "test-client-secret";
+const ID_HMAC_KEY = "test-id-hmac-key";
 const AUTHORIZE_URL = "https://discord.com/oauth2/authorize";
 const TOKEN_URL = "https://discord.com/api/oauth2/token";
 const CURRENT_USER_URL = "https://discord.com/api/v10/users/@me";
@@ -32,11 +33,16 @@ function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function hmacHex(key: string, value: string): string {
+  return createHmac("sha256", key).update(value).digest("hex");
+}
+
 let db: ReturnType<typeof createTestDb>;
 let discordFetch: ReturnType<typeof vi.fn<typeof fetch>>;
 let discordUserId: string;
 let clientId: string | undefined;
 let clientSecret: string | undefined;
+let idHmacKey: string | undefined;
 let app: Hono;
 
 // トークンのエンドポイントと /users/@me の代わり。URL で振り分ける
@@ -60,6 +66,7 @@ function request(path: string, init: RequestInit = {}) {
     DB: undefined,
     DISCORD_CLIENT_ID: clientId,
     DISCORD_CLIENT_SECRET: clientSecret,
+    DISCORD_ID_HMAC_KEY: idHmacKey,
   });
 }
 
@@ -119,6 +126,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", discordFetch);
   clientId = CLIENT_ID;
   clientSecret = CLIENT_SECRET;
+  idHmacKey = ID_HMAC_KEY;
   app = new Hono().route("/api/auth", createAuthRoute(() => db)).route("/api/me", createMeRoute(() => db));
 });
 
@@ -132,6 +140,7 @@ describe("クライアント ID が無い環境（PR のプレビュー）", () 
   beforeEach(() => {
     clientId = undefined;
     clientSecret = undefined;
+    idHmacKey = undefined;
   });
 
   it.each(["/api/auth/discord", "/api/auth/discord/callback?code=test-code&state=x"])(
@@ -252,10 +261,15 @@ describe("GET /api/auth/discord/callback: ログイン", () => {
     expect(userUrl).toBe(CURRENT_USER_URL);
     expect(new Headers(userInit?.headers).get("Authorization")).toBe(`Bearer ${ACCESS_TOKEN}`);
 
+    // 生の Discord ID は保存せず、鍵の HMAC-SHA256 だけを置く（#918）
     const createdUsers = await db.select().from(users);
     expect(createdUsers).toHaveLength(1);
     expect(await db.select().from(userIdentities)).toEqual([
-      expect.objectContaining({ provider: "discord", providerUserId: discordUserId, userId: createdUsers[0].id }),
+      expect.objectContaining({
+        provider: "discord",
+        providerUserId: hmacHex(ID_HMAC_KEY, discordUserId),
+        userId: createdUsers[0].id,
+      }),
     ]);
 
     // DB にはトークンの SHA-256 だけを置き、期限は 30 日
@@ -298,6 +312,20 @@ describe("GET /api/auth/discord/callback: ログイン", () => {
     const identities = await db.select().from(userIdentities);
     expect(await db.select().from(users)).toHaveLength(2);
     expect(identities).toHaveLength(2);
+    expect(identities[0].userId).not.toBe(identities[1].userId);
+  });
+
+  it("HMAC の鍵を変えると、同じ Discord アカウントでも別のユーザーになる（鍵を失って作り直したとき）", async () => {
+    await login();
+    idHmacKey = "another-id-hmac-key";
+    await login();
+
+    const identities = await db.select().from(userIdentities);
+    expect(await db.select().from(users)).toHaveLength(2);
+    expect(identities.map((identity) => identity.providerUserId)).toEqual([
+      hmacHex(ID_HMAC_KEY, discordUserId),
+      hmacHex("another-id-hmac-key", discordUserId),
+    ]);
     expect(identities[0].userId).not.toBe(identities[1].userId);
   });
 
@@ -359,6 +387,19 @@ describe("GET /api/auth/discord/callback: ログイン", () => {
 
     expect(res.status).toBe(500);
     expect(discordFetch).not.toHaveBeenCalled();
+  });
+
+  it("ID があるのに HMAC の鍵が無ければ、Discord に問い合わせずに 500 にし、ユーザーを作らない", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { cookie, stored } = await startLogin();
+    idHmacKey = undefined;
+    const res = await request(`/api/auth/discord/callback?code=test-code&state=${stored.state}`, {
+      headers: { Cookie: cookie },
+    });
+
+    expect(res.status).toBe(500);
+    expect(discordFetch).not.toHaveBeenCalled();
+    expect(await db.select().from(users)).toEqual([]);
   });
 });
 
