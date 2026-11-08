@@ -17,6 +17,18 @@ description: Playwright MCP で UI（src/client/**）の変更をブラウザで
 
 型チェック・ユニットテストは「コードの正しさ」は示すが「機能の正しさ」は示さない。UI 変更は必ずブラウザで確認してから完了報告する。
 
+既存の行・欄（ヘッダー・ボタンの並びなど）に要素を足す変更では、既定の幅（1600px）に加えて 390px 幅でも撮り、ボタン・ラベルの文字の折り返しを見る。#842 では、詳細パネルのヘッダーの行に文言を 1 つ足しただけで、390px でだけボタンが「期待／値」と折り返した（jsdom のユニットテストは幅を持たないので気付けない）。幅は MCP なら `browser_resize`（width 390、height 844）、Node なら `page.setViewportSize({ width: 390, height: 844 })` で変える。折り返しは文字の行数で見る。日本語は 1 文字ずつ折り返せるので、ボタンが縮んでも横にははみ出さず、`scrollWidth > clientWidth` では見つからない。次の関数を `browser_evaluate` か `page.evaluate` に渡すと、2 行以上に折り返した要素の文字が返る（`<要素>` は見る要素のセレクター。詳細パネルなら `aside button, aside label`。クラウドセッションの Chromium 153 + playwright 1.63 で動作検証済、2026-11-08、Issue #906）：
+
+```js
+() => [...document.querySelectorAll('<要素>')]
+  .filter((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size > 1;
+  })
+  .map((el) => el.textContent.trim())
+```
+
 ## 呼び出し前の必須手順
 
 Playwright MCP のツールは **deferred** で、起動直後はスキーマが未ロードのまま名前だけ見える状態になっている。いきなり呼ぶと `InputValidationError`。
