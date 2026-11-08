@@ -146,8 +146,9 @@ export function SettingsDialog({
           </div>
         </fieldset>
 
-        {/* ログインできない環境（PR のプレビュー）では、見出しごと出さない */}
-        {accountStatus !== "unavailable" && (
+        {/* ログインできない環境（PR のプレビュー）では、見出しごと出さない。
+            閉じているあいだは外し、ログアウトの失敗の表示を開き直したときに残さない */}
+        {open && accountStatus !== "unavailable" && (
           <section aria-labelledby="settings-dialog-account">
             <h3 id="settings-dialog-account" style={styles.sectionHeading}>
               {t("settingsDialog.account")}

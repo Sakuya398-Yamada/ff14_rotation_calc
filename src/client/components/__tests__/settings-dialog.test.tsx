@@ -124,6 +124,22 @@ describe("SettingsDialog: アカウント", () => {
     expect(screen.queryByRole("link", { name: "プライバシーポリシー" })).not.toBeInTheDocument();
   });
 
+  it("ログアウトに失敗した表示は、閉じて開き直すと消えている", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Failed to fetch"); }));
+    try {
+      const { props, rerender } = renderDialog({ accountStatus: "loggedIn" });
+      fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
+
+      rerender(<SettingsDialog {...props} open={false} />);
+      rerender(<SettingsDialog {...props} open={true} />);
+      expect(screen.getByRole("button", { name: "ログアウト" })).toBeEnabled();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("下の注記は、表示の設定がこのブラウザに保存されることを書く", () => {
     renderDialog({ accountStatus: "loggedIn" });
     expect(screen.getByText("表示の設定はこのブラウザに保存されます")).toBeInTheDocument();
