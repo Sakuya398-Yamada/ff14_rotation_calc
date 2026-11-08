@@ -176,7 +176,8 @@ export function SkillDetailPanel({
 
   const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
   const expectedMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
-  const singleTargetExpected = !hasError && entry.resolvedPotency > 0
+  // ゴースト（着弾時にボス離脱中。#950）は期待値が 0 なので、計算式の行は出さない
+  const singleTargetExpected = !hasError && !entry.untargetableHit && entry.resolvedPotency > 0
     ? Math.floor(buffedPotency * expectedMul)
     : null;
   // 複数体ヒット内訳。単体時は targets.length <= 1
@@ -191,6 +192,14 @@ export function SkillDetailPanel({
   errorMessages.push(...formatComboErrors(entry.comboErrors, jobId));
   if (entry.untargetableError) errorMessages.push(t("skillDetailPanel.errors.untargetable"));
   if (entry.recastError) errorMessages.push(t("skillDetailPanel.errors.recast"));
+
+  const warningMessages: string[] = [];
+  if (entry.unconfirmedProcBuffs) {
+    warningMessages.push(t("skillDetailPanel.unconfirmedProcBuffs", {
+      names: entry.unconfirmedProcBuffs.map((id) => buffName(t, jobId, id)).join(", "),
+    }));
+  }
+  if (entry.untargetableHit) warningMessages.push(t("skillDetailPanel.untargetableHit"));
 
 
   // 使用時点で有効なバフを全件表示する（威力に関係しないバフも含む）。寄与の内訳と違いエラー時も表示する
@@ -431,14 +440,10 @@ export function SkillDetailPanel({
               {entry.wsComboError ? t("skillDetailPanel.comboBroken") : t("skillDetailPanel.comboOk")}
             </span>
           </div>
-          {entry.unconfirmedProcBuffs && (
+          {warningMessages.length > 0 && (
             <div style={styles.metaRow}>
               <span style={{ ...styles.cellLabel, flexShrink: 0 }}>{t("skillDetailPanel.warning")}</span>
-              <span style={styles.metaWarning}>
-                {t("skillDetailPanel.unconfirmedProcBuffs", {
-                  names: entry.unconfirmedProcBuffs.map((id) => buffName(t, jobId, id)).join(", "),
-                })}
-              </span>
+              <span style={styles.metaWarning}>{warningMessages.join(" / ")}</span>
             </div>
           )}
           <div style={styles.metaRow}>

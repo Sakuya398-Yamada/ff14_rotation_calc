@@ -218,6 +218,10 @@ export const styles: Record<string, React.CSSProperties> = {
     border: "2px solid var(--color-error)",
     boxShadow: "0 0 8px color-mix(in srgb, var(--color-error) 60%, transparent)",
   },
+  ogcdIconWarning: {
+    border: "2px solid var(--color-warning)",
+    boxShadow: "0 0 8px color-mix(in srgb, var(--color-warning) 60%, transparent)",
+  },
   ogcdIconSelected: {
     border: "2px solid var(--color-accent)",
     boxShadow: "0 0 8px color-mix(in srgb, var(--color-accent) 60%, transparent)",
