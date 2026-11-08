@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, primaryKey, sqliteTable, text, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 
-// 中身は書き換えない（UPDATE するのは削除の印の deleted_at だけ。#832）。設計の根拠は #462 の結論コメント「テーブル設計」
+// 中身は書き換えない（UPDATE するのは削除の印の deleted_at だけ。#832）。設計の根拠は #462 の結論コメント「テーブル設計」。
+// 例外は、削除の依頼を受けて中身を手作業で空にするときだけ（docs/deletion-requests.md。#920）
 export const timelines = sqliteTable(
   "timelines",
   {
