@@ -59,6 +59,6 @@
 | `npm test` | Vitest 一括実行 |
 | `npx tsc --noEmit` | 型チェック（CI と同じ） |
 | `npm run test:watch` | Vitest watchモード |
-| `python3 .claude/scripts/check-context-budget.py` | CLAUDE.md と `paths:` なし rules の常駐量が予算（1000 行）以内か、`.claude/skills/` の md がどれも 30,000 バイト未満か（外部の `skill-creator/` は除く）を検査（CI でも実行。`--limit N` / `--max-bytes N` で閾値を上書き） |
+| `python3 .claude/scripts/check-context-budget.py` | CLAUDE.md と `paths:` なし rules の常駐量が予算（1000 行）以内か、`.claude/skills/` と `.claude/routines/` の md がどれも 30,000 バイト未満で、合計がスクリプトの `SKILL_TOTAL_MAX_BYTES` 以下か（外部の `skill-creator/` は除く）を検査（CI でも実行。`--limit N` / `--max-bytes N` / `--max-total-bytes N` で閾値を上書き） |
 
 > `npm run dev` 1 つでフロントと `/api/*` が同じオリジンから応答する（Vite の中で Worker を workerd 上で動かす）。

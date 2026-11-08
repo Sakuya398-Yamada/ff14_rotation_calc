@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Context budgets: the always-loaded instruction files must stay under a line budget, and each
-skill file under a byte limit.
+"""Context budgets: the always-loaded instruction files must stay under a line budget, each
+skill file under a byte limit, and all skill files together under a total byte limit.
 
-Usage: .claude/scripts/check-context-budget.py [--limit N] [--max-bytes N] [repo-root]
+Usage: .claude/scripts/check-context-budget.py [--limit N] [--max-bytes N] [--max-total-bytes N] [repo-root]
 
 Why: CLAUDE.md and every `.claude/rules/*.md` without a `paths:` frontmatter are loaded into
 every Claude Code session (Copilot equivalents: copilot-instructions.md and every instructions
@@ -23,13 +23,18 @@ are listed but not counted.
 `--limit N` overrides every budget; use it to see the check fail on purpose
 (`.claude/scripts/check-context-budget.py --limit 100` must exit 1).
 
-Skill file size: every Markdown file under .claude/skills/ (SKILL.md, phases, pitfalls) must
-also stay under SKILL_MAX_BYTES. Claude reads them on demand, often with `cat`, and the Bash
+Skill file size: every Markdown file under .claude/skills/ (SKILL.md, phases, pitfalls) and
+.claude/routines/ (the routine procedures, read the same way) must also stay under
+SKILL_MAX_BYTES. Claude reads them on demand, often with `cat`, and the Bash
 tool returns at most about 30,000 *bytes* inline; a larger output is saved to a file and only a
 2 KB preview comes back (.claude/skills/issue-start/pitfalls.md "Bash の出力上限は、文字数では
-なくバイト数で効く"). Same check as the template repository's (issue-driven-dev-starter v2.3.2),
+なくバイト数で効く"). Same check as the template repository's (issue-driven-dev-starter v2.7.0),
 except that skills vendored from elsewhere and never edited here (SKILL_EXCLUDE, #708) are
 skipped. `--max-bytes N` overrides the limit (`--max-bytes 1000` must exit 1).
+
+Skill files' total: the same files together must stay at or under SKILL_TOTAL_MAX_BYTES, so that
+the procedures stop growing one sentence at a time (#805, #897; the template's #296).
+`--max-total-bytes N` overrides it (`--max-total-bytes 1000` must exit 1).
 """
 import argparse
 import glob
@@ -46,8 +51,13 @@ BUDGETS = {
     },
 }
 
-SKILL_GLOB = ".claude/skills/**/*.md"
+SKILL_GLOBS = [".claude/skills/**/*.md", ".claude/routines/*.md"]
 SKILL_MAX_BYTES = 30000  # each file must be smaller than this
+# All skill and routine files together must stay at or under this, so that an addition comes with
+# a deletion or a deliberate raise of this number (say why in the commit message). Set from the
+# 453,045 bytes measured when it was introduced (#897): the next thousand plus 1,000, the same
+# margin the template took over its own total.
+SKILL_TOTAL_MAX_BYTES = 455000
 SKILL_EXCLUDE = (".claude/skills/skill-creator/",)
 
 
@@ -77,6 +87,8 @@ def main():
     ap.add_argument("--limit", type=int, help="override every budget (for testing the failure path)")
     ap.add_argument("--max-bytes", type=int, default=SKILL_MAX_BYTES,
                     help="override the skill file size limit (for testing the failure path)")
+    ap.add_argument("--max-total-bytes", type=int, default=SKILL_TOTAL_MAX_BYTES,
+                    help="override the skill files' total size limit (for testing the failure path)")
     ap.add_argument("root", nargs="?", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
     args = ap.parse_args()
     os.chdir(args.root)
@@ -108,15 +120,20 @@ def main():
             failed = True
 
     # glob returns "\"-separated paths on Windows; compare with "/" so SKILL_EXCLUDE still matches.
-    skills = sorted(p for p in glob.glob(SKILL_GLOB, recursive=True)
+    skills = sorted(p for g in SKILL_GLOBS for p in glob.glob(g, recursive=True)
                     if not p.replace(os.sep, "/").startswith(SKILL_EXCLUDE))
     over = [(os.path.getsize(p), p) for p in skills if os.path.getsize(p) >= args.max_bytes]
-    status = "OVER" if over else ("MISSING (no file matches SKILL_GLOB)" if not skills else "OK")
+    status = "OVER" if over else ("MISSING (no file matches SKILL_GLOBS)" if not skills else "OK")
     print(f"skill files (Claude Code): {len(over)} of {len(skills)} at or over {args.max_bytes} bytes"
           f" (excluded: {', '.join(SKILL_EXCLUDE)}) ... {status}")
     for size, path in over:
         print(f"  {size:>9}  {path}")
     if not skills or over:
+        failed = True
+    total_bytes = sum(os.path.getsize(p) for p in skills)
+    status = "OK" if total_bytes <= args.max_total_bytes else "OVER BUDGET"
+    print(f"skill files (Claude Code): {total_bytes} / {args.max_total_bytes} bytes in total ... {status}")
+    if total_bytes > args.max_total_bytes:
         failed = True
 
     print("check-context-budget: " + ("FAIL" if failed else "OK"))
