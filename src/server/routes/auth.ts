@@ -49,7 +49,8 @@ function getDiscordConfig(c: Context<RouteEnv>): { clientId: string; clientSecre
   if (!clientId) return null;
   const clientSecret = c.env.DISCORD_CLIENT_SECRET;
   if (!clientSecret) throw new Error("DISCORD_CLIENT_SECRET is not set");
-  const idHmacKey = c.env.DISCORD_ID_HMAC_KEY;
+  // 削除の依頼のときに手元で計算する scripts/discord-id-hmac.mjs と同じく、前後の空白・改行は除く（貼り付けで混ざっても値がずれないように）
+  const idHmacKey = c.env.DISCORD_ID_HMAC_KEY?.trim();
   if (!idHmacKey) throw new Error("DISCORD_ID_HMAC_KEY is not set");
   return { clientId, clientSecret, idHmacKey };
 }

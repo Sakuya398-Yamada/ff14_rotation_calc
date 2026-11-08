@@ -329,6 +329,15 @@ describe("GET /api/auth/discord/callback: ログイン", () => {
     expect(identities[0].userId).not.toBe(identities[1].userId);
   });
 
+  it("HMAC の鍵の前後の空白・改行は除いて使う（scripts/discord-id-hmac.mjs と同じ値になる）", async () => {
+    idHmacKey = ` ${ID_HMAC_KEY}\r\n`;
+    await login();
+
+    expect(await db.select({ providerUserId: userIdentities.providerUserId }).from(userIdentities)).toEqual([
+      { providerUserId: hmacHex(ID_HMAC_KEY, discordUserId) },
+    ]);
+  });
+
   it("短命の Cookie が無ければ、Discord に問い合わせずにトップへ戻し、ログインしない", async () => {
     const { stored } = await startLogin("/en/");
     const res = await request(`/api/auth/discord/callback?code=test-code&state=${stored.state}`);
@@ -387,6 +396,16 @@ describe("GET /api/auth/discord/callback: ログイン", () => {
 
     expect(res.status).toBe(500);
     expect(discordFetch).not.toHaveBeenCalled();
+  });
+
+  it("ID があるのに HMAC の鍵が無ければ、認可画面へ移らずに 500 にする", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    idHmacKey = undefined;
+    const res = await request("/api/auth/discord");
+
+    expect(res.status).toBe(500);
+    expect(res.headers.get("Location")).toBeNull();
+    expect(findSetCookie(res, "__Host-discord_oauth")).toBeUndefined();
   });
 
   it("ID があるのに HMAC の鍵が無ければ、Discord に問い合わせずに 500 にし、ユーザーを作らない", async () => {
