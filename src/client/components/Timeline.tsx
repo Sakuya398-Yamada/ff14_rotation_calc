@@ -236,8 +236,8 @@ export function Timeline({
       if (!skill) continue;
       const end = entry.startTime + getResolvedEntryRecast(entry, skill);
       if (end > maxEnd) maxEnd = end;
-      // バフ終了時刻も考慮（永続バフ= endTime が Infinity はタイムライン幅に影響させない）
-      for (const ab of entry.activeBuffs) {
+      // バフ終了時刻も考慮（永続バフ= endTime が Infinity はタイムライン幅に影響させない）。着弾で付いたバフも含める（#948）
+      for (const ab of [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])]) {
         if (!Number.isFinite(ab.endTime)) continue;
         if (ab.endTime > maxEnd) maxEnd = ab.endTime;
       }
