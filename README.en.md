@@ -76,11 +76,11 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 
 | Item | Description |
 |------|------|
-| Total expected potency | Expected potency from 0s until the end of the last GCD's recast (including DoTs; DoT ticks after that are not counted). Without GCDs, the expected potency of all placed actions and DoTs |
+| Total expected potency | Expected potency that lands from 0s until the end of the last GCD's recast (or the end of its cast, if the cast is longer than the recast) (including DoTs; DoT ticks after that are not counted). Without GCDs, the expected potency of all placed actions and DoTs |
 | PPS (overall) | Total expected potency ÷ duration (the PPS of the same range as "All" in "PPS range") |
 | PPS (range) | PPS of the range set with "PPS range" |
 | DoT expected potency | The DoT part of the total expected potency |
-| Duration | Time until the end of the last GCD's recast. When DoTs tick after that, the time of the last DoT tick is shown next to it (without GCDs, the time of the last DoT tick) |
+| Duration | Time until the end of the last GCD's recast (or the end of its cast, if the cast is longer than the recast). When DoTs tick after that, the time of the last DoT tick is shown next to it (without GCDs, the time of the last DoT tick) |
 
 ### Job palette (left side)
 
@@ -105,6 +105,7 @@ The timeline is split into several lanes.
 - **PPS range**: Set the time range used to calculate the total potency and PPS
 - **Untargetable**: Set when the boss becomes untargetable. No potency is dealt while it is untargetable, so that time is excluded from the calculation
 - **Multi-target**: Set a number of enemies and the time range in which that many enemies are present. AoE actions used in that time range are calculated as hitting that number of enemies (the target cap and potency falloff of each action are applied. DoTs are calculated for one enemy)
+- **Application delay**: In an action's details panel, set the seconds from using the action until its damage lands (it applies to every use of that action, and for actions with a cast time it counts from the end of the cast). Actions count toward PPS ranges and totals when they land. Without a setting the delay is 0s, so actions with a cast time land at the end of the cast and other actions land when used. As in the game, buffs on its potency are still checked when it is used
 
 ---
 

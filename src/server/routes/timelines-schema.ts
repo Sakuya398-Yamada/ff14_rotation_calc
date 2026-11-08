@@ -39,6 +39,7 @@ export const persistedAppStateSchema = z
     multiTargetWindows: z.array(
       z.object({ startTime: z.number(), endTime: z.number(), targetCount: z.number().min(2) }),
     ),
+    hitDelays: z.record(z.string(), z.number().min(0)).optional(),
   })
   .superRefine((data, ctx) => {
     const skillIds = SKILL_IDS_BY_JOB[data.selectedJob];
@@ -52,6 +53,11 @@ export const persistedAppStateSchema = z
       }
       uids.add(entry.uid);
     });
+    for (const skillId of Object.keys(data.hitDelays ?? {})) {
+      if (!skillIds.has(skillId)) {
+        ctx.addIssue({ code: "custom", path: ["hitDelays", skillId], message: "unknown skill id" });
+      }
+    }
   });
 
 // nanoid の既定の 21 文字（base64url）

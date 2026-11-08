@@ -135,6 +135,33 @@ describe("serializeAppState / deserializeAppState", () => {
     expect(restored?.entries).toEqual([{ uid: "entry-1", skillId: "glare3" }]);
   });
 
+  it("着弾までの遅れ（hitDelays）はラウンドトリップで残る (#901)", () => {
+    const snapshot = makeSnapshot({ hitDelays: { glare3: 0.62, dia: 0 } });
+    const restored = deserializeAppState(serializeAppState(snapshot));
+    expect(restored).toEqual({ version: SCHEMA_VERSION, ...snapshot });
+  });
+
+  it("hitDelays の無い保存データも読め、復元結果にもキーが無い (#901)", () => {
+    const restored = deserializeAppState(serializeAppState(makeSnapshot()));
+    expect(restored).not.toBeNull();
+    expect(restored).not.toHaveProperty("hitDelays");
+  });
+
+  it("hitDelays のうち、選択ジョブに無いスキル・負の値・数値でない値は落とし、残りが無ければキーも無い (#901)", () => {
+    const json = JSON.stringify({
+      version: SCHEMA_VERSION,
+      ...makeSnapshot(),
+      hitDelays: { glare3: 0.5, "burst-shot": 0.6, dia: -0.1, holy3: "0.6" },
+    });
+    expect(deserializeAppState(json)?.hitDelays).toEqual({ glare3: 0.5 });
+
+    const allInvalid = JSON.stringify({ version: SCHEMA_VERSION, ...makeSnapshot(), hitDelays: { dia: -1 } });
+    expect(deserializeAppState(allInvalid)).not.toHaveProperty("hitDelays");
+
+    const notObject = JSON.stringify({ version: SCHEMA_VERSION, ...makeSnapshot(), hitDelays: [0.5] });
+    expect(deserializeAppState(notObject)).not.toHaveProperty("hitDelays");
+  });
+
   it("targetCount が 2 未満の複数体ウィンドウを含む場合は null を返す", () => {
     const json = JSON.stringify({
       version: SCHEMA_VERSION,

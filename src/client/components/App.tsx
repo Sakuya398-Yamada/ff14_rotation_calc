@@ -37,6 +37,11 @@ let nextUid = 1;
 /** 保存の debounce 間隔（ミリ秒）。連続操作中の書き込み頻度を抑える */
 const SAVE_DEBOUNCE_MS = 500;
 
+/** 着弾までの遅れが無ければ保存データに項目を入れない（設定の無い保存データの形を変えない。#901） */
+function hitDelaysToSave(hitDelays: Record<string, number>): { hitDelays?: Record<string, number> } {
+  return Object.keys(hitDelays).length > 0 ? { hitDelays } : {};
+}
+
 export function App() {
   const { t } = useTranslation();
   const lang = useLanguage();
@@ -73,6 +78,8 @@ export function App() {
   const [stats, setStats] = useState<CharacterStats>(restored?.stats ?? DEFAULT_STATS);
   const [untargetableWindows, setUntargetableWindows] = useState<BossUntargetableWindow[]>(restored?.untargetableWindows ?? []);
   const [multiTargetWindows, setMultiTargetWindows] = useState<MultiTargetWindow[]>(restored?.multiTargetWindows ?? []);
+  // 実行されたスキルの ID → 実行から着弾までの遅れ（秒）（#901）
+  const [hitDelays, setHitDelays] = useState<Record<string, number>>(restored?.hitDelays ?? {});
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
   const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
   // 保存するときに複製元（parentId）として付ける ID。共有 URL から開いたタイムラインの ID で、保存したら保存した ID に置き換える
@@ -108,7 +115,7 @@ export function App() {
   useEffect(() => {
     const flush = () => {
       if (restoredFromBfcacheRef.current) return;
-      saveAppState({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows });
+      saveAppState({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows, ...hitDelaysToSave(hitDelays) });
     };
     const timer = window.setTimeout(flush, SAVE_DEBOUNCE_MS);
     window.addEventListener("pagehide", flush);
@@ -116,19 +123,20 @@ export function App() {
       window.clearTimeout(timer);
       window.removeEventListener("pagehide", flush);
     };
-  }, [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows]);
+  }, [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows, hitDelays]);
 
   const saveSnapshot = useMemo<AppStateSnapshot>(
-    () => ({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows }),
-    [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows]
+    () => ({ selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows, ...hitDelaysToSave(hitDelays) }),
+    [selectedJob, level, entries, stats, untargetableWindows, multiTargetWindows, hitDelays]
   );
 
   const jobData = JOB_DATA[selectedJob];
 
   const handleJobChange = useCallback((jobId: JobId) => {
     setSelectedJob(jobId);
-    // ジョブ変更時にタイムラインをリセット（異なるジョブのスキルは互換性がない）
+    // ジョブ変更時にタイムラインをリセット（異なるジョブのスキルは互換性がない）。着弾までの遅れもスキルごとの設定なので消す
     setEntries([]);
+    setHitDelays({});
     setPpsRange(null);
     setSelectedEntryUid(null);
     // 中身が別のタイムラインになるので、複製元も外す
@@ -150,6 +158,7 @@ export function App() {
     setStats(state.stats);
     setUntargetableWindows(state.untargetableWindows);
     setMultiTargetWindows(state.multiTargetWindows);
+    setHitDelays(state.hitDelays ?? {});
     setPpsRange(null);
     setSelectedEntryUid(null);
   }, []);
@@ -221,8 +230,8 @@ export function App() {
   );
 
   const timelineResult = useMemo(
-    () => resolveTimeline(entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows),
-    [entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows]
+    () => resolveTimeline(entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows, hitDelays),
+    [entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows, hitDelays]
   );
 
   const resolvedEntries = timelineResult.entries;
@@ -325,6 +334,19 @@ export function App() {
     },
     []
   );
+
+  const handleHitDelayChange = useCallback((skillId: string, hitDelay: number | undefined) => {
+    setHitDelays((prev) => {
+      if (hitDelay === undefined) {
+        if (!Object.hasOwn(prev, skillId)) return prev;
+        const { [skillId]: _drop, ...rest } = prev;
+        void _drop;
+        return rest;
+      }
+      if (prev[skillId] === hitDelay) return prev;
+      return { ...prev, [skillId]: hitDelay };
+    });
+  }, []);
 
   const summary = useMemo(
     () => calcTimelineSummary(timelineResult, allSkillMap, stats),
@@ -484,6 +506,8 @@ export function App() {
               onClose={() => setSelectedEntryUid(null)}
               onManualStartTimeChange={handleManualStartTimeChange}
               onProcOccurredChange={handleProcOccurredChange}
+              hitDelay={hitDelays[selectedSkill.id]}
+              onHitDelayChange={handleHitDelayChange}
             />
           )}
         </div>

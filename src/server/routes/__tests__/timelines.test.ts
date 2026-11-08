@@ -121,6 +121,15 @@ describe("POST /api/timelines: 保存", () => {
     expect(JSON.parse(row.data)).toEqual(data);
   });
 
+  it("着弾までの遅れ（hitDelays）も保存する (#901)", async () => {
+    const data = validData({ hitDelays: { "fire-4": 0.6, fire: 0 } });
+    const res = await post({ data });
+
+    expect(res.status).toBe(201);
+    const [row] = await rows();
+    expect(JSON.parse(row.data)).toEqual(data);
+  });
+
   it("data の余分なキーは落として保存する", async () => {
     const data = { ...validData(), extra: "x", entries: [{ uid: "entry-1", skillId: "fire-3", note: "x" }] };
     const res = await post({ data });
@@ -236,6 +245,11 @@ describe("POST /api/timelines: 不正な入力", () => {
       "エントリの procOccurred が boolean でない",
       { data: { ...validData(), entries: [{ uid: "entry-1", skillId: "fire", procOccurred: "true" }] } },
     ],
+    ["hitDelays に存在しないスキル ID", { data: validData({ hitDelays: { "no-such-skill": 0.5 } }) }],
+    ["hitDelays に別のジョブのスキル ID", { data: validData({ hitDelays: { stone: 0.5 } }) }],
+    ["hitDelays のキーが prototype のキー", { data: validData({ hitDelays: { constructor: 0.5 } }) }],
+    ["hitDelays の値が負", { data: validData({ hitDelays: { fire: -0.1 } }) }],
+    ["hitDelays の値が文字列", { data: { ...validData(), hitDelays: { fire: "0.5" } } }],
     ["stats が文字列", { data: { ...validData(), stats: { ...validData().stats, critical: "3000" } } }],
     ["ウィンドウの endTime が無い", { data: { ...validData(), untargetableWindows: [{ startTime: 1 }] } }],
     ["targetCount が 1", { data: validData({ multiTargetWindows: [{ startTime: 0, endTime: 1, targetCount: 1 }] }) }],

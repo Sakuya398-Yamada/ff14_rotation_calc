@@ -266,6 +266,11 @@
     "resetStartTimeLabel": "Revert to the calculated start time",
     "resetStartTime": "Reset to auto",
     "autoStartTime": "(Calculated: {{time}}s)",
+    "hitDelay": "Application delay",
+    "hitDelayDescription": "Seconds from using this action until its damage lands (from the end of the cast for actions with a cast time). Applies to every use of this action, and PPS ranges and totals count it when it lands",
+    "resetHitDelayLabel": "Clear the application delay",
+    "resetHitDelay": "Clear",
+    "hitTime": "(Lands at {{time}}s)",
     "procOutcome": "{{name}} proc",
     "procOutcomes": {
       "expected": "Expected",

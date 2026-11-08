@@ -29,6 +29,14 @@ interface SkillDetailPanelProps {
   onManualStartTimeChange: (uid: string, manualStartTime: number | undefined) => void;
   /** 確率付与の発生の有無の指定/解除ハンドラ。undefined を渡すと未指定（期待値）に戻る (#838) */
   onProcOccurredChange: (uid: string, procOccurred: boolean | undefined) => void;
+  /** resolvedSkill に設定した、実行から着弾までの遅れ（秒）。未設定は undefined (#901) */
+  hitDelay: number | undefined;
+  /** 着弾までの遅れの設定/解除ハンドラ。実行されたスキルの ID で呼ぶ。undefined を渡すと解除する (#901) */
+  onHitDelayChange: (skillId: string, hitDelay: number | undefined) => void;
+}
+
+function formatHitDelay(hitDelay: number | undefined): string {
+  return hitDelay === undefined ? "" : hitDelay.toFixed(2);
 }
 
 const PROC_OUTCOME_OPTIONS: { id: "expected" | "occurred" | "notOccurred"; value: boolean | undefined }[] = [
@@ -46,6 +54,8 @@ export function SkillDetailPanel({
   onClose,
   onManualStartTimeChange,
   onProcOccurredChange,
+  hitDelay,
+  onHitDelayChange,
 }: SkillDetailPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -92,6 +102,28 @@ export function SkillDetailPanel({
 
   const handleResetStartTime = () => {
     onManualStartTimeChange(entry.uid, undefined);
+  };
+
+  // 開始時刻と同じく入力中は文字列で持つ。遅れは確定するまで変わらないので、表示するスキルか値が変わったときだけ同期する
+  const [hitDelayDraft, setHitDelayDraft] = useState<string>(() => formatHitDelay(hitDelay));
+  useEffect(() => {
+    setHitDelayDraft(formatHitDelay(hitDelay));
+  }, [entry.uid, resolvedSkill.id, hitDelay]);
+  // Escape の blur() は onBlur を同期で呼び、その時点の入力欄はまだ入力中の値なので、確定させないための印
+  const cancelHitDelayCommitRef = useRef(false);
+
+  const commitHitDelay = (raw: string) => {
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+      if (hitDelay !== undefined) onHitDelayChange(resolvedSkill.id, undefined);
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setHitDelayDraft(formatHitDelay(hitDelay));
+      return;
+    }
+    onHitDelayChange(resolvedSkill.id, Math.round(parsed * 100) / 100);
   };
 
   const isManual = entry.manualStartTime !== undefined;
@@ -212,6 +244,61 @@ export function SkillDetailPanel({
           {isManual && (
             <span className="num" style={styles.headerAutoHint}>
               {t("skillDetailPanel.autoStartTime", { time: entry.autoStartTime.toFixed(2) })}
+            </span>
+          )}
+        </div>
+        <div style={styles.headerStartTimeRow}>
+          <label style={styles.headerStartTimeLabel} htmlFor="hit-delay-input" title={t("skillDetailPanel.hitDelayDescription")}>
+            {t("skillDetailPanel.hitDelay")}
+          </label>
+          <input
+            id="hit-delay-input"
+            type="number"
+            step="0.01"
+            min="0"
+            className="num"
+            value={hitDelayDraft}
+            onChange={(e) => setHitDelayDraft(e.target.value)}
+            onBlur={(e) => {
+              if (cancelHitDelayCommitRef.current) {
+                cancelHitDelayCommitRef.current = false;
+                return;
+              }
+              commitHitDelay(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitHitDelay((e.target as HTMLInputElement).value);
+                (e.target as HTMLInputElement).blur();
+              } else if (e.key === "Escape") {
+                // 入力の取り消しだけにしてパネルは閉じない
+                e.preventDefault();
+                e.stopPropagation();
+                setHitDelayDraft(formatHitDelay(hitDelay));
+                cancelHitDelayCommitRef.current = true;
+                (e.target as HTMLInputElement).blur();
+                cancelHitDelayCommitRef.current = false;
+              }
+            }}
+            style={hitDelay !== undefined ? { ...styles.startTimeInput, ...styles.startTimeInputManual } : styles.startTimeInput}
+            aria-label={t("skillDetailPanel.hitDelay")}
+            title={t("skillDetailPanel.hitDelayDescription")}
+          />
+          <span style={styles.startTimeUnit}>s</span>
+          {hitDelay !== undefined && (
+            <button
+              type="button"
+              onClick={() => onHitDelayChange(resolvedSkill.id, undefined)}
+              style={styles.resetButton}
+              aria-label={t("skillDetailPanel.resetHitDelayLabel")}
+            >
+              {t("skillDetailPanel.resetHitDelay")}
+            </button>
+          )}
+          {entry.hitTime !== undefined && (
+            <span className="num" style={styles.headerAutoHint}>
+              {t("skillDetailPanel.hitTime", { time: entry.hitTime.toFixed(2) })}
             </span>
           )}
         </div>

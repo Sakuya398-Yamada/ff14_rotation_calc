@@ -601,7 +601,7 @@ export interface TimelineResult {
   activeDoTs: ActiveDoT[];
   /** 段差として描く自動生成の付与（showAutoGenerateTicks のリソースのみ。エントリと同時刻の付与は除く）。時刻順 */
   resourceTicks: ResourceTick[];
-  /** 最後のGCDスキルのリキャスト完了時刻 */
+  /** 最後のGCDスキルのリキャスト完了時刻。詠唱がリキャストより長いスキルは詠唱完了まで延ばす（#901） */
   lastGcdEndTime: number;
   /** タイムライン全体の終了時刻（GCD完了 or DoT最終ティックの遅い方） */
   timelineEndTime: number;
@@ -645,6 +645,11 @@ export interface ResolvedTimelineEntry {
   autoStartTime: number;
   /** 元のタイムラインエントリにマニュアル開始時刻が設定されているか */
   manualStartTime?: number;
+  /**
+   * 着弾時刻（秒）= 開始 + 詠唱時間 + 遅れ（未設定なら 0）。詠唱のあるスキルと、着弾までの遅れを設定したスキル
+   * （resolvedSkillId）だけが持ち、PPS 区間・集計に入るかをこの時刻で判定する。無ければ開始時刻で判定する（#901）
+   */
+  hitTime?: number;
   /** 元のタイムラインエントリの TimelineEntry.procOccurred */
   procOccurred?: boolean;
   /** スキル実行後のリソース状態（消費・獲得・バフ由来の自動消費すべて反映済み） */

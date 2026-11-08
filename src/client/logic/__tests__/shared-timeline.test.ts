@@ -133,6 +133,13 @@ describe("loadSharedTimeline", () => {
     expect(await loadSharedTimeline(ID, deps())).toEqual({ kind: "apply", id: ID, state: savedState(), title: null, contentId: null });
   });
 
+  it("着弾までの遅れ（hitDelays）も読み込む (#901)", async () => {
+    const data: PersistedAppState = { ...savedState(), hitDelays: { "fire-4": 0.6 } };
+    fetchMock.mockResolvedValue(jsonResponse(timelineResponse({ data })));
+
+    expect(await loadSharedTimeline(ID, deps())).toEqual({ kind: "apply", id: ID, state: data, title: null, contentId: null });
+  });
+
   it("タイトルとコンテンツの ID を一緒に返す", async () => {
     fetchMock.mockResolvedValue(jsonResponse(timelineResponse({ title: "零式4層 2分", contentId: "m4s" })));
 
@@ -252,6 +259,13 @@ describe("saveTimeline", () => {
     expect(new Headers(init?.headers).get("Content-Type")).toBe("application/json");
     expect(new Headers(init?.headers).get("X-Turnstile-Token")).toBe(TURNSTILE_TOKEN);
     expect(sentBody()).toEqual({ data: savedState(), title: "零式 4 層" });
+  });
+
+  it("着弾までの遅れ（hitDelays）も data に入れて送る (#901)", async () => {
+    const state: AppStateSnapshot = { ...snapshot(), hitDelays: { "fire-4": 0.6 } };
+    await saveTimeline({ state, title: "", parentId: null, contentId: null, turnstileToken: TURNSTILE_TOKEN });
+
+    expect(sentBody().data).toEqual({ ...savedState(), hitDelays: { "fire-4": 0.6 } });
   });
 
   it("タイトルは前後の空白を除いて送り、空なら title を送らない", async () => {
