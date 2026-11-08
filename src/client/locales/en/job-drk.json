@@ -1,0 +1,116 @@
+{
+  "skills": {
+    "hard-slash": {
+      "name": "Hard Slash"
+    },
+    "syphon-strike": {
+      "name": "Syphon Strike"
+    },
+    "souleater": {
+      "name": "Souleater"
+    },
+    "unleash": {
+      "name": "Unleash"
+    },
+    "stalwart-soul": {
+      "name": "Stalwart Soul"
+    },
+    "unmend": {
+      "name": "Unmend"
+    },
+    "bloodspiller": {
+      "name": "Bloodspiller"
+    },
+    "quietus": {
+      "name": "Quietus"
+    },
+    "scarlet-delirium": {
+      "name": "Scarlet Delirium"
+    },
+    "comeuppance": {
+      "name": "Comeuppance"
+    },
+    "torcleaver": {
+      "name": "Torcleaver"
+    },
+    "impalement": {
+      "name": "Impalement"
+    },
+    "disesteem": {
+      "name": "Disesteem"
+    },
+    "edge-of-darkness": {
+      "name": "Edge of Darkness"
+    },
+    "flood-of-darkness": {
+      "name": "Flood of Darkness"
+    },
+    "edge-of-shadow": {
+      "name": "Edge of Shadow"
+    },
+    "flood-of-shadow": {
+      "name": "Flood of Shadow"
+    },
+    "delirium": {
+      "name": "Delirium"
+    },
+    "living-shadow": {
+      "name": "Living Shadow"
+    },
+    "salted-earth": {
+      "name": "Salted Earth"
+    },
+    "salt-and-darkness": {
+      "name": "Salt and Darkness"
+    },
+    "abyssal-drain": {
+      "name": "Abyssal Drain"
+    },
+    "carve-and-spit": {
+      "name": "Carve and Spit"
+    },
+    "shadowbringer": {
+      "name": "Shadowbringer"
+    }
+  },
+  "buffs": {
+    "darkside": {
+      "name": "Darkside",
+      "shortName": "Dark-\nside"
+    },
+    "delirium": {
+      "name": "Delirium",
+      "shortName": "Deli-\nrium"
+    },
+    "blood-weapon": {
+      "name": "Blood Weapon",
+      "shortName": "Blood\nWeapon"
+    },
+    "comeuppance-ready": {
+      "name": "Comeuppance Ready",
+      "shortName": "Comeup.\nReady"
+    },
+    "torcleaver-ready": {
+      "name": "Torcleaver Ready",
+      "shortName": "Torcl.\nReady"
+    },
+    "scorn": {
+      "name": "Scorn",
+      "shortName": "Scorn"
+    },
+    "salted-earth": {
+      "name": "Salted Earth",
+      "shortName": "Salted\nEarth"
+    }
+  },
+  "resources": {
+    "mp": {
+      "name": "MP",
+      "shortName": "MP"
+    },
+    "blackblood": {
+      "name": "Blood Gauge",
+      "shortName": "Blood\nGauge"
+    }
+  }
+}
