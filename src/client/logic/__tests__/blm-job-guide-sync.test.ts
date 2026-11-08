@@ -42,6 +42,12 @@ function hasBuff(e: ResolvedTimelineEntry, buffId: string): boolean {
   return e.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
+// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
+// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
+function hasBuffAfterHit(entry: ResolvedTimelineEntry, buffId: string): boolean {
+  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
+}
+
 const { skillMap, resolve } = setup(100);
 
 describe("BLM: UB 中のファイア・AF 中のブリザドは属性を解除するだけ", () => {
@@ -101,7 +107,7 @@ describe("BLM: ファイアのファイガ効果アップ（発動確率 40%）"
 
   it("ファイアで付いたファイアスターターをファイガが消費すると、インスタント・MP 0 のまま警告が立つ", () => {
     const entries = resolve(["fire", "fire-3"]).entries;
-    expect(hasBuff(entries[0], "firestarter")).toBe(true);
+    expect(hasBuffAfterHit(entries[0], "firestarter")).toBe(true);
     const fire3 = entries[1];
     expect(fire3.comboErrors).toEqual([]);
     expect(fire3.castTime).toBe(0);
@@ -128,7 +134,8 @@ describe("BLM: ファイアのファイガ効果アップ（発動確率 40%）"
   // ファイアスターターは効果時間が無期限なので、消費した付与元を数え続けると P が上がり続ける (#615)
   it("付与時点の発動確率は、ファイガで消費したあと 0.4 から数え直す", () => {
     const entries = resolve(["fire", "fire-3", "fire", "fire"]).entries;
-    const firestarterOf = (e: ResolvedTimelineEntry) => e.activeBuffs.find((ab) => ab.buffId === "firestarter");
+    // ファイアのファイアスターターは詠唱完了に付くので、着弾で付いたもの（hitAppliedBuffs）を先に見る（#948）
+    const firestarterOf = (e: ResolvedTimelineEntry) => [...(e.hitAppliedBuffs ?? []), ...e.activeBuffs].find((ab) => ab.buffId === "firestarter");
 
     expect(entries.flatMap((e) => [...e.comboErrors, ...e.resourceErrors])).toEqual([]);
     expect(firestarterOf(entries[0])?.procRate).toBeCloseTo(0.4, 10);

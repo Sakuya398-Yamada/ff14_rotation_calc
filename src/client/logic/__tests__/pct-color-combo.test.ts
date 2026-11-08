@@ -31,9 +31,20 @@ function resolveIds(skillIds: string[]) {
   return resolve(skillIds.map((id) => entry(id)));
 }
 
-/** 使用後に効いているエーテルヒュー */
+const exclusiveGroups = new Map(buffs.map((b) => [b.id, b.exclusiveGroup]));
+
+/**
+ * 使用後（このエントリの効果が着弾した後）に効いているエーテルヒュー。色魔法は詠唱があり、付けるバフは詠唱完了の時刻に付くので、
+ * 着弾で付いたバフ（hitAppliedBuffs）と、activeBuffs のうちそれに付け直された・同じ排他グループで付け替えられたものを除いた残りを見る（#948）
+ */
 function aetherhues(e: ResolvedTimelineEntry): string[] {
-  return e.activeBuffs.map((ab) => ab.buffId).filter((id) => id.startsWith("aetherhues"));
+  const landed = e.hitAppliedBuffs ?? [];
+  const group = (buffId: string) => exclusiveGroups.get(buffId);
+  const replaced = (buffId: string) =>
+    landed.some((l) => l.buffId === buffId || (group(l.buffId) !== undefined && group(l.buffId) === group(buffId)));
+  return [...landed, ...e.activeBuffs.filter((ab) => !replaced(ab.buffId))]
+    .map((ab) => ab.buffId)
+    .filter((id) => id.startsWith("aetherhues"));
 }
 
 /** ウォーターブルー 2 回でパレットゲージが 50 になり、サブトラクティブパレットを使える。エーテルヒューは残らない */
@@ -58,15 +69,18 @@ describe("PCT: 色魔法コンボ（通常）", () => {
     expect(water.resourceSnapshot["white-paint"]).toBe(1);
   });
 
-  it("エーテルヒューの区間は、次の段の使用時刻で終わる", () => {
+  // 色魔法は詠唱があるので、エーテルヒューは着弾（詠唱完了）の時刻に付き、次の段の着弾で付け替わる。
+  // ブルーウォータはエーテルヒューを使用時に外す（removesBuffs）（#948）
+  it("エーテルヒューの区間は、色魔法の着弾から、次の段の着弾（ブルーウォータは使用）で終わる", () => {
     const entries = resolveIds(["fire-in-red", "fire-in-red", "fire-in-red"]);
     const spans = computeBuffTimespans(entries, buffs);
 
+    expect(entries[0].hitTime).toBeGreaterThan(entries[0].startTime);
     expect(spans.get("aetherhues-2")?.map((s) => [s.startTime, s.endTime])).toEqual([
-      [entries[0].startTime, entries[1].startTime],
+      [entries[0].hitTime, entries[1].hitTime],
     ]);
     expect(spans.get("aetherhues-3")?.map((s) => [s.startTime, s.endTime])).toEqual([
-      [entries[1].startTime, entries[2].startTime],
+      [entries[1].hitTime, entries[2].startTime],
     ]);
   });
 

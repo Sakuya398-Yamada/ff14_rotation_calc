@@ -21,6 +21,12 @@ function hasBuff(e: ResolvedEntry, buffId: string): boolean {
   return e.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
+// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
+// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
+function hasBuffAfterHit(entry: ResolvedEntry, buffId: string): boolean {
+  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
+}
+
 // エラーで倍率が 1 に倒れているだけのケースを弾く（testing-conventions 罠3）
 function expectNoErrors(e: ResolvedEntry) {
   expect(e.comboErrors).toEqual([]);
@@ -46,7 +52,7 @@ describe("BLM: AF/UB 段階不問の発動条件（#417）", () => {
   describe("ファイジャ", () => {
     it.each(AF_STAGES)("$label 中でも使用でき、AF の段階を変えない", ({ setup, buffId, fireMul }) => {
       const result = resolve([...setup, "fire-4"]);
-      expect(hasBuff(result.entries[setup.length - 1], buffId)).toBe(true);
+      expect(hasBuffAfterHit(result.entries[setup.length - 1], buffId)).toBe(true);
 
       const fire4 = result.entries[setup.length];
       expectNoErrors(fire4);
@@ -71,7 +77,7 @@ describe("BLM: AF/UB 段階不問の発動条件（#417）", () => {
   describe("ブリザジャ", () => {
     it.each(UB_STAGES)("$label 中でも使用でき、UB の段階を変えない", ({ setup, buffId }) => {
       const result = resolve([...setup, "blizzard-4"]);
-      expect(hasBuff(result.entries[setup.length - 1], buffId)).toBe(true);
+      expect(hasBuffAfterHit(result.entries[setup.length - 1], buffId)).toBe(true);
 
       const blizzard4 = result.entries[setup.length];
       expectNoErrors(blizzard4);
@@ -85,7 +91,7 @@ describe("BLM: AF/UB 段階不問の発動条件（#417）", () => {
   describe("フリーズ", () => {
     it.each(UB_STAGES)("$label 中でも使用でき、UB の段階を変えない", ({ setup, buffId }) => {
       const result = resolve([...setup, "freeze"]);
-      expect(hasBuff(result.entries[setup.length - 1], buffId)).toBe(true);
+      expect(hasBuffAfterHit(result.entries[setup.length - 1], buffId)).toBe(true);
 
       const freeze = result.entries[setup.length];
       expectNoErrors(freeze);
@@ -119,7 +125,7 @@ describe("BLM: アンプリファイアの発動条件（#454）", () => {
   it.each(POLARITY_STAGES)("$label 中は使用でき、ポリグロットが +1 される", ({ setup, buffId }) => {
     const result = resolve([...setup, "amplifier"]);
     const before = result.entries[setup.length - 1];
-    expect(hasBuff(before, buffId)).toBe(true);
+    expect(hasBuffAfterHit(before, buffId)).toBe(true);
 
     const amplifier = result.entries[setup.length];
     expectNoErrors(amplifier);

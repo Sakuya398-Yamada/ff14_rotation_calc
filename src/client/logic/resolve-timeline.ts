@@ -934,6 +934,12 @@ export function resolveTimeline(
   const procSources = new Map<string, { endTime: number; rate: number }[]>();
   // 1 未満の確率付与だけで付き、確定付与で付け直されていないバフ（自動消費したエントリで警告する）
   const unconfirmedProcBuffs = new Set<string>();
+  // 着弾時刻まで待たせているバフの付与（付ける時刻の昇順、同じ時刻は入れた順。#948）。
+  // buffIds は付けるバフ（リソースの上限は実行時から上げるので、着弾前の上限の計算に入れる）
+  const pendingBuffApplications: { time: number; entryIndex: number; buffIds: string[]; apply: (t: number) => void }[] = [];
+  // 待たせて付けたバフの着弾時の複製と、着弾で重なって無駄になった確率付与（付けたエントリの添字ごと。全エントリを解決してから書き戻す）
+  const hitAppliedBuffs: Map<number, ActiveBuff[]> = new Map();
+  const hitWastedProcs: Map<number, NonNullable<ResolvedTimelineEntry["wastedProc"]>> = new Map();
 
   // リソース初期化
   for (const res of resources) {
@@ -952,10 +958,17 @@ export function resolveTimeline(
    */
   const advanceAutoGen = (time: number, excludeTime: boolean = false) => {
     // whileBuffModifiers の maxStacks を、現在のバフで反映した定義に差し替える。
-    // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
+    // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う。
+    // 着弾を待っているバフも、上限だけは実行時から上げる（リソースの獲得が実行時なので。ブラッドソイル。#948）
+    const capBuffs = pendingBuffApplications.length > 0
+      ? [
+          ...currentActiveBuffs,
+          ...pendingBuffApplications.flatMap((p) => p.buffIds.map((buffId) => ({ buffId, startTime: p.time, endTime: p.time }))),
+        ]
+      : currentActiveBuffs;
     for (const res of resources) {
       if (!res.whileBuffModifiers) continue;
-      resourceDefMap.set(res.id, { ...res, maxStacks: getEffectiveMaxStacks(res, currentActiveBuffs) });
+      resourceDefMap.set(res.id, { ...res, maxStacks: getEffectiveMaxStacks(res, capBuffs) });
     }
 
     for (const res of resources) {
@@ -1029,6 +1042,23 @@ export function resolveTimeline(
     expireBuffs(currentActiveBuffs, time, buffDefMap, resourceState, resourceDefMap, resources);
   };
 
+  /**
+   * time までに着弾したバフの付与を、付ける時刻の順に行う（#948）。エントリの中と同じく、
+   * その時刻まで失効させ、自動生成を進めてから付ける（歌の上書きで詩心が消える時刻なども着弾時刻になる）。
+   * 時刻ちょうどに着弾した付与も行う（詠唱がリキャストより長い GCD の次の GCD は、ちょうど詠唱完了から始まる）
+   */
+  const applyPendingBuffsUntil = (time: number) => {
+    while (pendingBuffApplications.length > 0 && pendingBuffApplications[0].time <= time) {
+      const pending = pendingBuffApplications.shift()!;
+      expireBuffsUntil(pending.time);
+      advanceAutoGen(pending.time);
+      const before = new Set(currentActiveBuffs);
+      pending.apply(pending.time);
+      const applied = currentActiveBuffs.filter((ab) => !before.has(ab)).map((ab) => ({ ...ab }));
+      if (applied.length > 0) hitAppliedBuffs.set(pending.entryIndex, [...(hitAppliedBuffs.get(pending.entryIndex) ?? []), ...applied]);
+    }
+  };
+
   for (const entry of entries) {
     const originalSkill = skillMap.get(entry.skillId);
     if (!originalSkill) continue;
@@ -1047,7 +1077,8 @@ export function resolveTimeline(
         ? Math.round(entry.manualStartTime * 1000) / 1000
         : autoStartTime;
 
-      // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
+      // 着弾した付与を付けてから、期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
+      applyPendingBuffsUntil(startTime);
       expireBuffsUntil(startTime);
 
     } else {
@@ -1060,7 +1091,8 @@ export function resolveTimeline(
         ? Math.round(entry.manualStartTime * 1000) / 1000
         : autoStartTime;
 
-      // 期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
+      // 着弾した付与を付けてから、期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
+      applyPendingBuffsUntil(startTime);
       expireBuffsUntil(startTime);
 
       actionAvailableAt = startTime + originalSkill.animationLock;
@@ -1139,6 +1171,27 @@ export function resolveTimeline(
       // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
       actionAvailableAt = startTime + Math.max(resolvedCastTime, skill.animationLock);
     }
+
+    // 着弾時刻（#901）。詠唱のあるスキルは詠唱完了から遅れを数える（実機のスナップショットは詠唱完了時）。遅れが未設定なら 0 秒として扱う
+    const hitDelay = hitDelays && Object.hasOwn(hitDelays, resolvedSkillId) ? hitDelays[resolvedSkillId] : undefined;
+    const hitTime = hitDelay !== undefined || resolvedCastTime > 0
+      ? Math.round((startTime + resolvedCastTime + (hitDelay ?? 0)) * 1000) / 1000
+      : undefined;
+    const entryIndex = resolved.length;
+    /**
+     * このスキルが付けるバフの付与。付けるかどうかは呼び出し側が実行時に決め、付与そのもの（排他の解除・付け直し・
+     * 効果時間・延長）を着弾時刻に行う。着弾が開始より後なら待たせ、そうでなければその場で付ける（#948）
+     */
+    const scheduleBuffApplication = (buffIds: string[], apply: (t: number) => void) => {
+      if (hitTime === undefined || hitTime <= startTime) {
+        apply(startTime);
+        return;
+      }
+      const item = { time: hitTime, entryIndex, buffIds, apply };
+      const at = pendingBuffApplications.findIndex((p) => p.time > hitTime);
+      if (at < 0) pendingBuffApplications.push(item);
+      else pendingBuffApplications.splice(at, 0, item);
+    };
 
     // スキル実行前のリソーススナップショット
     // （buffApplicationIfResource の閾値判定など、消費前の値が必要な処理で参照する）
@@ -1616,10 +1669,17 @@ export function resolveTimeline(
           ? (1 - consumedProc.procRate) * anyOfFallbackProcRate
           : 0;
         if (buffDef && rate > 0) {
-          const endTime = computeBuffEndTime(startTime, buffDef.duration);
-          currentActiveBuffs.push({ buffId: anyOfMatchedBuffId, startTime, endTime, stacks: buffDef.maxStacks, procRate: rate });
-          procSources.set(anyOfMatchedBuffId, [{ endTime, rate }]);
-          unconfirmedProcBuffs.add(anyOfMatchedBuffId);
+          const buffId = anyOfMatchedBuffId;
+          scheduleBuffApplication([buffId], (t) => {
+            const endTime = computeBuffEndTime(t, buffDef.duration);
+            const reapplied: ActiveBuff = { buffId, startTime: t, endTime, stacks: buffDef.maxStacks, procRate: rate };
+            // 着弾までに別の付与で付いていたら付け直す（同じバフを 2 つ持たない）
+            const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+            if (existingIdx >= 0) currentActiveBuffs[existingIdx] = reapplied;
+            else currentActiveBuffs.push(reapplied);
+            procSources.set(buffId, [{ endTime, rate }]);
+            unconfirmedProcBuffs.add(buffId);
+          });
         }
       }
 
@@ -1651,19 +1711,7 @@ export function resolveTimeline(
           for (const buffId of buffIds) {
             const buffDef = buffDefMap.get(buffId);
             if (!buffDef) continue;
-            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
-            const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
-            const newBuff: ActiveBuff = {
-              buffId,
-              startTime,
-              endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
-              stacks: buffDef.maxStacks,
-            };
-            if (existingIdx >= 0) {
-              currentActiveBuffs[existingIdx] = newBuff;
-            } else {
-              currentActiveBuffs.push(newBuff);
-            }
+            scheduleBuffApplication([buffId], (t) => applyBuffAt(currentActiveBuffs, buffDef, t, buffDefMap, resourceState, resources));
           }
         }
       }
@@ -1675,19 +1723,7 @@ export function resolveTimeline(
           for (const buffId of buffIds) {
             const buffDef = buffDefMap.get(buffId);
             if (!buffDef) continue;
-            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
-            const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
-            const newBuff: ActiveBuff = {
-              buffId,
-              startTime,
-              endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
-              stacks: buffDef.maxStacks,
-            };
-            if (existingIdx >= 0) {
-              currentActiveBuffs[existingIdx] = newBuff;
-            } else {
-              currentActiveBuffs.push(newBuff);
-            }
+            scheduleBuffApplication([buffId], (t) => applyBuffAt(currentActiveBuffs, buffDef, t, buffDefMap, resourceState, resources));
           }
         }
       }
@@ -1699,7 +1735,7 @@ export function resolveTimeline(
         const amount = snapshot[resourceId] ?? 0;
         const buffDef = amount > 0 ? buffDefMap.get(buffIds[amount - 1]) : undefined;
         if (buffDef && activeBuffsAtUse.some((ab) => ab.buffId === buffId)) {
-          applyBuffAt(currentActiveBuffs, buffDef, startTime, buffDefMap, resourceState, resources);
+          scheduleBuffApplication([buffDef.id], (t) => applyBuffAt(currentActiveBuffs, buffDef, t, buffDefMap, resourceState, resources));
         }
       }
 
@@ -1715,56 +1751,63 @@ export function resolveTimeline(
           if (isUncertainProc && entry.procOccurred === false) continue;
           const rate = isUncertainProc && entry.procOccurred === true ? 1 : procRate;
 
-          // 排他グループのバフを解除
-          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
-          // 同じバフが既にアクティブなら上書き（リフレッシュ）
-          const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
-          const newBuff: ActiveBuff = {
-            buffId,
-            startTime,
-            endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
-            stacks: buffDef.maxStacks,
-          };
-          if (existingIdx >= 0) {
-            currentActiveBuffs[existingIdx] = newBuff;
-          } else {
-            currentActiveBuffs.push(newBuff);
-          }
-
-          if (rate !== undefined) {
-            // 効いていないバフの付与元は、消費・解除・失効で使い終わっているので数えない
-            // （ファイアスターターのような無期限のバフは、時間では付与元が外れない。#615）
-            const sources = existingIdx >= 0 ? procSources.get(buffId) ?? [] : [];
-            // 効いているバフに重ねた付与は、すでに出ていれば無駄になる。付与元が無ければ確定で付いている (#842)
+          scheduleBuffApplication([buffId], (t) => {
+            // 排他グループのバフを解除
+            removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
+            // 同じバフが既にアクティブなら上書き（リフレッシュ）
+            const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
+            const newBuff: ActiveBuff = {
+              buffId,
+              startTime: t,
+              endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, t),
+              stacks: buffDef.maxStacks,
+            };
             if (existingIdx >= 0) {
-              wastedProc = { buffId, rate: (calcLiveProcRate(sources, startTime) ?? 1) * rate };
+              currentActiveBuffs[existingIdx] = newBuff;
+            } else {
+              currentActiveBuffs.push(newBuff);
             }
-            sources.push({ endTime: newBuff.endTime, rate });
-            procSources.set(buffId, sources);
-          }
-          // 確定で付いている間に確率付与が重なっても確定のまま。確定付与で付け直したら確定に戻す
-          if (rate !== undefined && rate < 1) {
-            if (existingIdx < 0) unconfirmedProcBuffs.add(buffId);
-          } else {
-            unconfirmedProcBuffs.delete(buffId);
-          }
-          if (unconfirmedProcBuffs.has(buffId)) {
-            newBuff.procRate = calcLiveProcRate(procSources.get(buffId), startTime);
-          }
+
+            if (rate !== undefined) {
+              // 効いていないバフの付与元は、消費・解除・失効で使い終わっているので数えない
+              // （ファイアスターターのような無期限のバフは、時間では付与元が外れない。#615）
+              const sources = existingIdx >= 0 ? procSources.get(buffId) ?? [] : [];
+              // 効いているバフに重ねた付与は、すでに出ていれば無駄になる。付与元が無ければ確定で付いている (#842)。
+              // 着弾で重なったものは、全エントリを解決してから付けたエントリに書き戻す
+              if (existingIdx >= 0) {
+                const wasted = { buffId, rate: (calcLiveProcRate(sources, t) ?? 1) * rate };
+                if (t === startTime) wastedProc = wasted;
+                else hitWastedProcs.set(entryIndex, wasted);
+              }
+              sources.push({ endTime: newBuff.endTime, rate });
+              procSources.set(buffId, sources);
+            }
+            // 確定で付いている間に確率付与が重なっても確定のまま。確定付与で付け直したら確定に戻す
+            if (rate !== undefined && rate < 1) {
+              if (existingIdx < 0) unconfirmedProcBuffs.add(buffId);
+            } else {
+              unconfirmedProcBuffs.delete(buffId);
+            }
+            if (unconfirmedProcBuffs.has(buffId)) {
+              newBuff.procRate = calcLiveProcRate(procSources.get(buffId), t);
+            }
+          });
         }
       }
 
       // buffExtensions: 効果中のバフだけを延長する（原初の解放の戦嵐 +10 秒。上限は maxDuration）。
-      // 付け直しと同じく startTime を使用時刻にし、延長前の区間はこの時刻で表示を区切る
+      // 付け直しと同じく着弾時刻を使用時刻にし、延長前の区間はこの時刻で表示を区切る。着弾までに切れたバフは延長しない
       for (const ext of skill.buffExtensions ?? []) {
-        const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === ext.buffId);
-        if (idx < 0) continue;
-        const maxDuration = buffDefMap.get(ext.buffId)?.maxDuration;
-        const extended = computeBuffEndTime(currentActiveBuffs[idx].endTime, ext.seconds);
-        const endTime = maxDuration === undefined
-          ? extended
-          : Math.min(extended, computeBuffEndTime(startTime, maxDuration));
-        currentActiveBuffs[idx] = { ...currentActiveBuffs[idx], startTime, endTime };
+        scheduleBuffApplication([], (t) => {
+          const idx = currentActiveBuffs.findIndex((ab) => ab.buffId === ext.buffId);
+          if (idx < 0) return;
+          const maxDuration = buffDefMap.get(ext.buffId)?.maxDuration;
+          const extended = computeBuffEndTime(currentActiveBuffs[idx].endTime, ext.seconds);
+          const endTime = maxDuration === undefined
+            ? extended
+            : Math.min(extended, computeBuffEndTime(t, maxDuration));
+          currentActiveBuffs[idx] = { ...currentActiveBuffs[idx], startTime: t, endTime };
+        });
       }
 
       // コンボ成立時のみのバフ適用
@@ -1772,20 +1815,7 @@ export function resolveTimeline(
         for (const buffId of skill.comboBuffApplications) {
           const buffDef = buffDefMap.get(buffId);
           if (!buffDef) continue;
-
-          removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
-          const existingIdx = currentActiveBuffs.findIndex((ab) => ab.buffId === buffId);
-          const newBuff: ActiveBuff = {
-            buffId,
-            startTime,
-            endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
-            stacks: buffDef.maxStacks,
-          };
-          if (existingIdx >= 0) {
-            currentActiveBuffs[existingIdx] = newBuff;
-          } else {
-            currentActiveBuffs.push(newBuff);
-          }
+          scheduleBuffApplication([buffId], (t) => applyBuffAt(currentActiveBuffs, buffDef, t, buffDefMap, resourceState, resources));
         }
       }
 
@@ -1793,6 +1823,7 @@ export function resolveTimeline(
       // appliesToSkillIds に resolvedSkillId が含まれる場合、appliedBuffId を付与する。
       // 例: 明鏡止水中の月光使用時に風月を付与（明鏡止水バフ側で対応関係を宣言）。
       // 走査中の配列変更を避けるため、まず付与対象を収集してから一括付与する。
+      // 起点のバフが効いているかは実行時に見る（明鏡止水はこの GCD で消費しても風月が付く）。付与は着弾時刻（#948）
       const buffsToApplyOnSkill: string[] = [];
       for (const ab of currentActiveBuffs) {
         const def = buffDefMap.get(ab.buffId);
@@ -1806,19 +1837,7 @@ export function resolveTimeline(
       for (const buffId of buffsToApplyOnSkill) {
         const buffDef = buffDefMap.get(buffId);
         if (!buffDef) continue;
-        removeExclusiveGroupBuffs(currentActiveBuffs, buffDef, buffDefMap, resourceState, resources);
-        const existingIdx = currentActiveBuffs.findIndex((b) => b.buffId === buffId);
-        const newBuff: ActiveBuff = {
-          buffId,
-          startTime,
-          endTime: computeAppliedEndTime(currentActiveBuffs, buffDef, startTime),
-          stacks: buffDef.maxStacks,
-        };
-        if (existingIdx >= 0) {
-          currentActiveBuffs[existingIdx] = newBuff;
-        } else {
-          currentActiveBuffs.push(newBuff);
-        }
+        scheduleBuffApplication([buffId], (t) => applyBuffAt(currentActiveBuffs, buffDef, t, buffDefMap, resourceState, resources));
       }
 
       // チャージ消費 & クールダウン開始
@@ -1951,8 +1970,10 @@ export function resolveTimeline(
               currentActiveBuffs.splice(idx, 1);
               unconfirmedProcBuffs.delete(buffId);
               // applyBuffOnDeplete: スタックを消費し切った時点で別バフを付与する
-              // （例: インスタレーション 5 スタック枯渇 → レインボードリップ効果アップ）
-              applyBuffsOnDeplete(currentActiveBuffs, buffId, startTime, buffDefMap, resourceState, resources);
+              // （例: インスタレーション 5 スタック枯渇 → レインボードリップ効果アップ）。消費は実行時、付与は着弾時刻（#948）
+              const appliedOnDeplete = (buffDefMap.get(buffId)?.effects ?? [])
+                .flatMap((e) => (e.type === "applyBuffOnDeplete" && e.appliedBuffId ? [e.appliedBuffId] : []));
+              scheduleBuffApplication(appliedOnDeplete, (t) => applyBuffsOnDeplete(currentActiveBuffs, buffId, t, buffDefMap, resourceState, resources));
             }
           } else {
             currentActiveBuffs.splice(idx, 1);
@@ -1971,7 +1992,6 @@ export function resolveTimeline(
     // スキル実行後のリソーススナップショット（UI表示・最終状態計算用）
     // エラー時は resourceState が変動していないため snapshot と同値になる
     const snapshotAfter: ResourceSnapshot = { ...resourceState };
-    const hitDelay = hitDelays && Object.hasOwn(hitDelays, resolvedSkillId) ? hitDelays[resolvedSkillId] : undefined;
 
     resolved.push({
       uid: entry.uid,
@@ -1991,10 +2011,7 @@ export function resolveTimeline(
       consumedProc,
       wastedProc,
       ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
-      // 詠唱のあるスキルは詠唱完了から遅れを数える（実機のスナップショットは詠唱完了時）。遅れが未設定なら 0 秒として扱う
-      ...(hitDelay !== undefined || resolvedCastTime > 0
-        ? { hitTime: Math.round((startTime + resolvedCastTime + (hitDelay ?? 0)) * 1000) / 1000 }
-        : {}),
+      ...(hitTime !== undefined ? { hitTime } : {}),
       // activeBuffsAtUse と同じく要素も複製する（後続エントリの消費で stacks が書き換わるため。#429）
       activeBuffs: currentActiveBuffs.map((ab) => ({ ...ab })),
       activeBuffsAtUse,
@@ -2015,6 +2032,12 @@ export function resolveTimeline(
     if (state) recoverCharges({ ...state }, Infinity, spans.cooldown, spans.maxCharges, (at) => endOldestCooldownSpan(chargeKey, at));
   }
   for (const [index, endTime] of cooldownEndTimes) resolved[index].cooldownEndTime = endTime;
+
+  // 最後のエントリまでに着弾しなかった付与も付け、着弾で付いたバフと無駄になった確率付与を、付けたエントリに書き戻す（#948）。
+  // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない
+  applyPendingBuffsUntil(Infinity);
+  for (const [index, applied] of hitAppliedBuffs) resolved[index].hitAppliedBuffs = applied;
+  for (const [index, wasted] of hitWastedProcs) resolved[index].wastedProc = wasted;
 
   // 段差を描く自動生成（黙想）は、最後のエントリの後も条件バフが切れるまで数える。
   // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない

@@ -32,6 +32,12 @@ function hasBuff(entry: ResolvedTimelineEntry, buffId: string): boolean {
   return entry.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
+// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
+// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
+function hasBuffAfterHit(entry: ResolvedTimelineEntry, buffId: string): boolean {
+  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
+}
+
 function expectNoError(entry: ResolvedTimelineEntry) {
   expect(entry.recastError).toBeFalsy();
   expect(entry.comboErrors).toEqual([]);
@@ -73,7 +79,7 @@ describe("BLM: サンダーヘッドは AF/UB の付与・反転時だけ付与�
     const entries = resolve100(ids);
     const target = entries[entries.length - 1];
     expectNoError(target);
-    expect(hasBuff(target, "thunderhead")).toBe(true);
+    expect(hasBuffAfterHit(target, "thunderhead")).toBe(true);
   });
 });
 

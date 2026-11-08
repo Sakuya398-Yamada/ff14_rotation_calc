@@ -31,6 +31,12 @@ function hasBuff(entry: ResolvedTimelineEntry, buffId: string): boolean {
   return entry.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
+// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
+// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
+function hasBuffAfterHit(entry: ResolvedTimelineEntry, buffId: string): boolean {
+  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
+}
+
 describe("PCT: 特性による威力（変化先スキルを含む）", () => {
   it.each([
     [70, "fire-in-red", 310], [80, "fire-in-red", 380], [90, "fire-in-red", 420], [100, "fire-in-red", 490],
@@ -170,7 +176,7 @@ describe("PCT: インスタレーション", () => {
     const colors = entries.slice(5);
     for (const e of colors.slice(0, 4)) expect(hasBuff(e, "installation")).toBe(true);
     expect(hasBuff(colors[4], "installation")).toBe(false);
-    expect(hasBuff(colors[4], "rainbow-drip-ready")).toBe(true);
+    expect(hasBuffAfterHit(colors[4], "rainbow-drip-ready")).toBe(true);
   });
 
   it("Lv82 未満ではイマジンスカイでインスタレーションが付与されない", () => {

@@ -11,6 +11,12 @@ function entry(skillId: string): TimelineEntry {
   return { uid: `${skillId}-${Math.random()}`, skillId };
 }
 
+// このエントリの効果が着弾した後のバフ。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
+// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある。付け直したバフは着弾で付いた方を先に見る（#948）
+function buffsAfterHit(e: ReturnType<typeof resolveTimeline>["entries"][number]) {
+  return [...(e.hitAppliedBuffs ?? []), ...e.activeBuffs];
+}
+
 describe("BLM: AF/UB 排他と威力倍率", () => {
   it("ファイア使用で AF1 が付与され、AF 中のブリザドは AF を解除するだけで UB1 を付与しない（#519）", () => {
     const result = resolveTimeline(
@@ -23,7 +29,7 @@ describe("BLM: AF/UB 排他と威力倍率", () => {
 
     // ファイア直後は AF1 がアクティブ
     const afterFire = result.entries[0];
-    expect(afterFire.activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
+    expect(buffsAfterHit(afterFire).some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
     // ブリザド後: AF1 は解除され、UB1 は付与されない
     const afterBlizzard = result.entries[1];
     expect(afterBlizzard.resolvedSkillId).toBe("blizzard-in-af");
@@ -181,11 +187,11 @@ describe("BLM: AF/UB 段階進行", () => {
     );
 
     // 1発目: AF1
-    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
+    expect(buffsAfterHit(result.entries[0]).some((ab) => ab.buffId === "astral-fire-1")).toBe(true);
     // 2発目: AF2
-    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "astral-fire-2")).toBe(true);
+    expect(buffsAfterHit(result.entries[1]).some((ab) => ab.buffId === "astral-fire-2")).toBe(true);
     // 3発目: AF3
-    expect(result.entries[2].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[2]).some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
     // 4発目: AF3 維持
     expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "astral-fire-3")).toBe(true);
   });
@@ -199,9 +205,9 @@ describe("BLM: AF/UB 段階進行", () => {
       BLM_BUFFS,
     );
 
-    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
-    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
-    expect(result.entries[2].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[0]).some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+    expect(buffsAfterHit(result.entries[1]).some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
+    expect(buffsAfterHit(result.entries[2]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
     expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
@@ -238,7 +244,7 @@ describe("BLM: UB 段階別 MP 回復", () => {
     const before = result.entries[3].resourceSnapshot["mp"];
     const after = result.entries[4].resourceSnapshot["mp"];
     expect(after - before).toBe(2500);
-    expect(result.entries[4].activeBuffs.some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
+    expect(buffsAfterHit(result.entries[4]).some((ab) => ab.buffId === "umbral-ice-2")).toBe(true);
   });
 
   it("UB2 中の通常ブリザドは UB3 へ進めつつ MP を 5000 回復する", () => {
@@ -260,7 +266,7 @@ describe("BLM: UB 段階別 MP 回復", () => {
     const before = result.entries[4].resourceSnapshot["mp"];
     const after = result.entries[5].resourceSnapshot["mp"];
     expect(after - before).toBe(5000);
-    expect(result.entries[5].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[5]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB3 中の通常ブリザドは UB3 を維持しつつ MP を全回復させる", () => {
@@ -307,7 +313,7 @@ describe("BLM: UB 段階別 MP 回復", () => {
     );
     // 初期 MP（10000）から基本コスト 400 だけ減る（UB 未付与なので回復なし）
     expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000 - 400);
-    expect(result.entries[0].activeBuffs.some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
+    expect(buffsAfterHit(result.entries[0]).some((ab) => ab.buffId === "umbral-ice-1")).toBe(true);
   });
 });
 
@@ -326,7 +332,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     const before = result.entries[2].resourceSnapshot["mp"];
     const after = result.entries[3].resourceSnapshot["mp"];
     expect(after - before).toBe(2500);
-    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[3]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB3 中にブリザジャを撃つと UB3 を維持しつつ MP が全回復する", () => {
@@ -361,7 +367,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     expect(before).toBeLessThan(10000);
     expect(result.entries[1].resourceErrors).toEqual([]);
     expect(after - before).toBe(0);
-    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[1]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB1 中の AOE ブリザド系（ブリザラ）は UB バフの MP 回復 +2500 が発動する", () => {
@@ -376,7 +382,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     const before = result.entries[2].resourceSnapshot["mp"];
     const after = result.entries[3].resourceSnapshot["mp"];
     expect(after - before).toBe(2500);
-    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[3]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB2 中のブリザラは UB バフの MP 回復 +5000 が発動する", () => {
@@ -401,7 +407,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     const before = result.entries[4].resourceSnapshot["mp"];
     const after = result.entries[5].resourceSnapshot["mp"];
     expect(after - before).toBe(5000);
-    expect(result.entries[5].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[5]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB3 中のブリザラは UB バフの MP 回復 +10000 が発動する（上限キャップ）", () => {
@@ -432,7 +438,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     const before = result.entries[2].resourceSnapshot["mp"];
     const after = result.entries[3].resourceSnapshot["mp"];
     expect(after - before).toBe(2500);
-    expect(result.entries[3].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[3]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB2 中のハイブリザラは UB バフの MP 回復 +5000 が発動する", () => {
@@ -454,7 +460,7 @@ describe("BLM: UB 中の他ブリザド系スキルの MP 回復", () => {
     const before = result.entries[4].resourceSnapshot["mp"];
     const after = result.entries[5].resourceSnapshot["mp"];
     expect(after - before).toBe(5000);
-    expect(result.entries[5].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[5]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB3 中のハイブリザラは UB バフの MP 回復 +10000 が発動する（上限キャップ）", () => {
@@ -543,7 +549,7 @@ describe("BLM: トランスポーズの逆状態切替", () => {
     // 「トランス自身が thunderhead を付与していない」ことを検証する。
     const beforeTranspose = result.entries[0];
     const afterTranspose = result.entries[1];
-    const thunderheadBefore = beforeTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
+    const thunderheadBefore = buffsAfterHit(beforeTranspose).find((ab) => ab.buffId === "thunderhead");
     const thunderheadAfter = afterTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
     expect(thunderheadBefore).toBeDefined();
     expect(thunderheadAfter).toBeDefined();
@@ -561,7 +567,7 @@ describe("BLM: トランスポーズの逆状態切替", () => {
 
     const beforeTranspose = result.entries[0];
     const afterTranspose = result.entries[1];
-    const thunderheadBefore = beforeTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
+    const thunderheadBefore = buffsAfterHit(beforeTranspose).find((ab) => ab.buffId === "thunderhead");
     const thunderheadAfter = afterTranspose.activeBuffs.find((ab) => ab.buffId === "thunderhead");
     expect(thunderheadBefore).toBeDefined();
     expect(thunderheadAfter).toBeDefined();
@@ -693,7 +699,7 @@ describe("BLM: AF/UB バフ連動 MP 消費（#209）", () => {
     // blizzard-3: UB1 中なので MP -800 が 0 になり、UB1 の回復 +2500 で上限 10000 にキャップ
     expect(result.entries[0].resourceSnapshot["mp"]).toBe(10000 - 400);
     expect(result.entries[1].resourceSnapshot["mp"]).toBe(10000);
-    expect(result.entries[1].activeBuffs.some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
+    expect(buffsAfterHit(result.entries[1]).some((ab) => ab.buffId === "umbral-ice-3")).toBe(true);
   });
 
   it("UB 中のファイア系（fire-3）は MP 消費が 0 になる（#415）", () => {

@@ -28,6 +28,12 @@ function hasBuff(entry: ResolvedTimelineEntry, buffId: string): boolean {
   return entry.activeBuffs.some((ab) => ab.buffId === buffId);
 }
 
+// このエントリの効果が着弾した後にバフがあるか。詠唱のあるスキルが付けるバフは詠唱完了の時刻に付くので、
+// 付けたエントリの activeBuffs には無く、hitAppliedBuffs にある（#948）
+function hasBuffAfterHit(entry: ResolvedTimelineEntry, buffId: string): boolean {
+  return [...entry.activeBuffs, ...(entry.hitAppliedBuffs ?? [])].some((ab) => ab.buffId === buffId);
+}
+
 /** イマジンスカイ（scenic-muse）を発動し、色魔法を count 回撃った後に rainbow-drip を撃つシーケンス */
 function burstSequence(aetherhueCount: number): TimelineEntry[] {
   // scape-canvas は initialStacks: 1 のため、ピクトスケープを描かずに scenic-muse を撃てる
@@ -61,12 +67,13 @@ describe("PCT: レインボードリップ効果アップ（rainbow-drip-ready�
     // 5 発目でインスタレーションが消滅し Ready が付与される
     expect(c5.resourceErrors).toEqual([]);
     expect(hasBuff(c5, "installation")).toBe(false);
-    expect(hasBuff(c5, "rainbow-drip-ready")).toBe(true);
+    expect(hasBuffAfterHit(c5, "rainbow-drip-ready")).toBe(true);
 
-    // Ready の効果時間は 30 秒（5 発目の開始時刻起点）
-    const ready = c5.activeBuffs.find((ab) => ab.buffId === "rainbow-drip-ready");
-    expect(ready?.startTime).toBe(c5.startTime);
-    expect(ready?.endTime).toBeCloseTo(c5.startTime + 30, 3);
+    // Ready の効果時間は 30 秒（5 発目の着弾起点。色魔法は詠唱があるので、付与は詠唱完了の時刻になる。#948）
+    const ready = c5.hitAppliedBuffs?.find((ab) => ab.buffId === "rainbow-drip-ready");
+    expect(c5.hitTime).toBeGreaterThan(c5.startTime);
+    expect(ready?.startTime).toBe(c5.hitTime);
+    expect(ready?.endTime).toBeCloseTo(c5.hitTime! + 30, 3);
   });
 
   it("Ready 中の rainbow-drip は詠唱なし・リキャスト 2.5 秒で解決され、Ready を消費する", () => {
@@ -129,7 +136,7 @@ describe("PCT: レインボードリップ効果アップ（rainbow-drip-ready�
 
     // 迅速魔は色魔法（詠唱あり）で先に消費されるので、Ready 付与時点では迅速魔は無い前提を崩さないよう
     // ここでは Ready と迅速魔の併存ではなく「Ready が rainbow-drip で確実に消費される」ことを検証する
-    expect(hasBuff(c5, "rainbow-drip-ready")).toBe(true);
+    expect(hasBuffAfterHit(c5, "rainbow-drip-ready")).toBe(true);
     expect(first.castTime).toBe(0);
     expect(hasBuff(first, "rainbow-drip-ready")).toBe(false);
     expect(second.castTime).toBe(4);
