@@ -39,6 +39,35 @@ describe("App の見出し", () => {
   });
 });
 
+describe("App の言語の切り替え", () => {
+  it("ヘッダーに言語のリンクが無く、設定ダイアログから英語版に移れる", () => {
+    render(<App />);
+    expect(screen.queryByRole("link", { name: "English" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
+    expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("href", "/en/");
+  });
+
+  describe("英語", () => {
+    beforeEach(() => {
+      window.history.replaceState(null, "", "/en/");
+      return i18next.changeLanguage("en");
+    });
+    afterEach(() => {
+      window.history.replaceState(null, "", "/");
+      return i18next.changeLanguage("ja");
+    });
+
+    it("ヘッダーに言語のリンクが無く、設定ダイアログから日本語版に移れる", () => {
+      render(<App />);
+      expect(screen.queryByRole("link", { name: "日本語" })).toBeNull();
+
+      fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+      expect(screen.getByRole("link", { name: "日本語" })).toHaveAttribute("href", "/");
+    });
+  });
+});
+
 describe("App のヘッダーの保存・共有", () => {
   const SAVED_ID = "id0000000000000000002";
 

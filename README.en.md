@@ -42,7 +42,7 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 ## How to access
 
 - URL: <https://ff14-rotation-calc.forestry-for.workers.dev/en/> (served on Cloudflare Workers)
-- Japanese version: <https://ff14-rotation-calc.forestry-for.workers.dev/> (you can also switch with **日本語** at the top of the screen)
+- Japanese version: <https://ff14-rotation-calc.forestry-for.workers.dev/> (you can also switch in the settings opened with the gear button at the top of the screen)
 - No login required. Just open it in your browser
 - Recommended: a desktop browser (latest Chrome / Edge / Firefox)
 
@@ -68,8 +68,8 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 - **Job picker**: A button showing the selected job and level. Press it to open a panel where you can choose a job and level
   - You can filter jobs by name or abbreviation (e.g. "black", "BLM"). Recently used jobs are also listed. Unsupported jobs cannot be selected
   - **Level (alpha)**: Choose from 70 / 80 / 90 / 100. Below Lv100, action availability and potencies are for reference only, so this is an alpha feature
-- **日本語** (language link): Opens the same page in Japanese. The timeline you are working on is kept (on the Japanese version, the link reads **English** and brings you back)
-- **Settings** (gear button): Change the theme (Light / Dark / Match OS) and the accent color
+- **Settings** (gear button): Change the display language (日本語 / English), the theme (Light / Dark / Match OS) and the accent color
+  - Selecting **日本語** under Language opens the same page in Japanese. The timeline you are working on is kept (on the Japanese version, select **English** to come back)
 - **Save & share**: Opens the list of saved timelines. To save the current timeline, use "Save current timeline" in this list. For how to use it, see "[I want to share a timeline or open it on another device](#q-i-want-to-share-a-timeline-or-open-it-on-another-device)" and "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ
 
 ### Summary bar (below the header)

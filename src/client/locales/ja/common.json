@@ -13,7 +13,6 @@
     "siteName": "FF14 Rotation Calculator",
     "confirmOpenShared": "共有タイムラインを開くと、作業中のタイムラインは置き換えられます。開きますか？",
     "saveAndShare": "保存・共有",
-    "languageLink": "English",
     "settings": "設定",
     "closeSharedLoadError": "閉じる",
     "sharedInfo": "開いた共有タイムライン",
@@ -33,7 +32,6 @@
   "privacyPolicyPage": {
     "siteName": "FF14 Rotation Calculator",
     "documentTitle": "プライバシーポリシー | FF14 Rotation Calculator",
-    "languageLink": "English",
     "title": "プライバシーポリシー",
     "intro": "FF14 Rotation Calculator（以下「このツール」）が扱う情報と、その使い道・保存期間・削除の依頼の方法を説明します。",
     "enactedOn": "施行日: {{date}}",
@@ -180,6 +178,11 @@
   "settingsDialog": {
     "title": "設定",
     "close": "設定を閉じる",
+    "language": "言語",
+    "languages": {
+      "ja": "日本語",
+      "en": "English"
+    },
     "theme": "テーマ",
     "themes": {
       "light": "ライト",
@@ -199,7 +202,7 @@
       "standard": "標準",
       "compact": "コンパクト"
     },
-    "savedNote": "変更はこのブラウザに保存されます",
+    "savedNote": "テーマとアクセントカラーはこのブラウザに保存されます",
     "closeButton": "閉じる"
   },
   "jobPicker": {
