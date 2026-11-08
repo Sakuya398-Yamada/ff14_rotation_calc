@@ -55,7 +55,7 @@
     "cookies": {
       "heading": "Cookies",
       "intro": "This tool sets the following three cookies. They are used only for saving and logging in, not for advertising or analytics.",
-      "owner": "Identifies the owner of saved timelines. Its expiry is extended each time you save, view your list or delete, and it expires 400 days after it was last used. It is also deleted when you log out.",
+      "owner": "Identifies the owner of saved timelines. Its expiry is extended each time you save, view your list or delete, and it expires 400 days after it was last used. It is also deleted when you log out. If your login session expires without logging out and this cookie is linked to your account, it is deleted the next time you save, view your list or delete (when saving, it is replaced with a new one).",
       "session": "Keeps you logged in. It expires after 30 days (extended while you use the tool, up to 1 year). It is deleted when you log out.",
       "discordOauth": "Used only while you log in with Discord. It holds values that verify the login (state and code_verifier) and the page to return to after logging in. It expires after 10 minutes and is deleted when you return from Discord."
     },

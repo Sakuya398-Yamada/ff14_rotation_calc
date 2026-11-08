@@ -22,6 +22,16 @@ export async function linkOwner(db: AppDb, ownerHash: string, userId: string): P
   return row.userId;
 }
 
+/** 匿名トークン（の owner_hash）が、どれかのユーザーに紐づいているか */
+export async function isLinkedOwner(db: AppDb, ownerHash: string): Promise<boolean> {
+  const [row] = await db
+    .select({ ownerHash: userOwners.ownerHash })
+    .from(userOwners)
+    .where(eq(userOwners.ownerHash, ownerHash))
+    .limit(1);
+  return row !== undefined;
+}
+
 /** ユーザーに紐づいた owner_hash を選ぶサブクエリ（`inArray(timelines.ownerHash, ...)` に渡す） */
 export function selectOwnerHashesOf(db: AppDb, userId: string) {
   return db.select({ ownerHash: userOwners.ownerHash }).from(userOwners).where(eq(userOwners.userId, userId));
