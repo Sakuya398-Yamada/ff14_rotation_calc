@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, lte, or } from "drizzle-orm";
 import { sessions } from "../db/schema";
 import type { AppDb } from "../env";
 // セッショントークンも匿名トークンと同じ作り（32 バイトの乱数の base64url。DB には SHA-256 の hex だけを書く）
@@ -52,4 +52,16 @@ export async function validateSession(
 
 export async function deleteSession(db: AppDb, token: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.idHash, await hashOwnerToken(token)));
+}
+
+/**
+ * 期限が切れた行をまとめて消す。Cookie は DB の期限と同時に切れ、期限切れのトークンはふつう届かないので、
+ * validateSession だけではログアウトせずに放置した行が残る。境界は validateSession と同じ（期限ちょうども切れ）。
+ * Cron Trigger から 1 日 1 回呼ぶ（src/server/index.ts の scheduled。#919）
+ */
+export async function deleteExpiredSessions(db: AppDb): Promise<void> {
+  const now = nowSeconds();
+  await db
+    .delete(sessions)
+    .where(or(lte(sessions.expiresAt, now), lte(sessions.createdAt, now - SESSION_ABSOLUTE_TTL)));
 }
