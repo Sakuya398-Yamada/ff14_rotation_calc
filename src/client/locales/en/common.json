@@ -13,7 +13,6 @@
     "siteName": "FFXIV Rotation Calculator",
     "confirmOpenShared": "Opening the shared timeline will replace the timeline you are working on. Open it?",
     "saveAndShare": "Save & share",
-    "languageLink": "日本語",
     "settings": "Settings",
     "closeSharedLoadError": "Close",
     "sharedInfo": "Opened shared timeline",
@@ -33,7 +32,6 @@
   "privacyPolicyPage": {
     "siteName": "FFXIV Rotation Calculator",
     "documentTitle": "Privacy policy | FFXIV Rotation Calculator",
-    "languageLink": "日本語",
     "title": "Privacy policy",
     "intro": "This page explains what information FFXIV Rotation Calculator (\"this tool\") handles, how it is used, how long it is kept and how to request its deletion.",
     "enactedOn": "Effective date: {{date}}",
@@ -180,6 +178,11 @@
   "settingsDialog": {
     "title": "Settings",
     "close": "Close settings",
+    "language": "Language",
+    "languages": {
+      "ja": "日本語",
+      "en": "English"
+    },
     "theme": "Theme",
     "themes": {
       "light": "Light",
@@ -199,7 +202,7 @@
       "standard": "Standard",
       "compact": "Compact"
     },
-    "savedNote": "Changes are saved in this browser",
+    "savedNote": "Theme and accent color are saved in this browser",
     "closeButton": "Close"
   },
   "jobPicker": {

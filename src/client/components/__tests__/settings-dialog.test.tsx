@@ -28,6 +28,7 @@ function renderDialog(overrides: Partial<Parameters<typeof SettingsDialog>[0]> =
     onChange: vi.fn(),
     onClose: vi.fn(),
     returnFocusRef: createRef<HTMLElement>(),
+    languageHref: "/en/",
     ...overrides,
   };
   return { props, ...render(<SettingsDialog {...props} />) };
@@ -60,6 +61,21 @@ describe("SettingsDialog", () => {
     expect(props.onClose).toHaveBeenCalledTimes(3);
   });
 
+  it("言語は、今の言語をリンクにせず、相手の言語を languageHref へのリンクにする", () => {
+    renderDialog({ languageHref: "/en/t/abc" });
+    const link = screen.getByRole("link", { name: "English" });
+    expect(link).toHaveAttribute("href", "/en/t/abc");
+    expect(link).toHaveAttribute("hreflang", "en");
+    expect(link).toHaveAttribute("lang", "en");
+    expect(screen.queryByRole("link", { name: "日本語" })).toBeNull();
+    expect(screen.getByText("日本語")).toHaveAttribute("aria-current", "true");
+  });
+
+  it("保存の注記は、ブラウザに保存しない言語を含めない", () => {
+    renderDialog();
+    expect(screen.getByText("テーマとアクセントカラーはこのブラウザに保存されます")).toBeInTheDocument();
+  });
+
   it("表示密度は未対応として操作できない", () => {
     renderDialog();
     expect(screen.getByText("未対応")).toBeInTheDocument();
@@ -90,5 +106,15 @@ describe("SettingsDialog（英語）", () => {
     expect(screen.getByLabelText("Green")).toBeInTheDocument();
     expect(screen.getByLabelText("Compact")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close settings" })).toBeInTheDocument();
+  });
+
+  it("言語は、日本語を languageHref へのリンクにし、English をリンクにしない", () => {
+    renderDialog({ languageHref: "/" });
+    const link = screen.getByRole("link", { name: "日本語" });
+    expect(link).toHaveAttribute("href", "/");
+    expect(link).toHaveAttribute("hreflang", "ja");
+    expect(screen.queryByRole("link", { name: "English" })).toBeNull();
+    expect(screen.getByText("English")).toHaveAttribute("aria-current", "true");
+    expect(screen.getByText("Theme and accent color are saved in this browser")).toBeInTheDocument();
   });
 });
