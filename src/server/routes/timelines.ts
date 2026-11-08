@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { and, desc, eq, inArray, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { csrf } from "hono/csrf";
 import { createMiddleware } from "hono/factory";
@@ -11,17 +11,18 @@ import { timelines } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
 import { generateOwnerToken, hashOwnerToken } from "../services/owner-token";
 import { MAX_TURNSTILE_TOKEN_LENGTH, verifyTurnstileToken } from "../services/turnstile";
-import { linkOwner, selectOwnerHashesOf } from "../services/user-owners";
+import { isLinkedOwner, linkOwner, selectOwnerHashesOf } from "../services/user-owners";
 import { currentUserId } from "./auth";
-import { readOwnerToken, setOwnerCookie } from "./owner-cookie";
+import { clearOwnerCookie, readOwnerToken, setOwnerCookie } from "./owner-cookie";
 import { requireJson } from "./require-json";
 import { myTimelinesQuerySchema, saveTimelineRequestSchema, timelineIdParamSchema } from "./timelines-schema";
 
 type RouteEnv = {
   Bindings: Bindings;
   Variables: {
-    // 保存する行の持ち主
+    // 保存する行の持ち主と、その匿名トークン（応答の Cookie に付ける）
     ownerHash: string;
+    ownerToken: string;
     // 削除できる行の持ち主。匿名トークンの owner_hash と、ログイン中ならユーザー（に紐づいた owner_hash）
     deleter: { ownerHash?: string; userId?: string };
     // 保存・削除のレート制限のキー。匿名トークンの owner_hash で、トークンの無いログイン中の削除ではユーザーの ID
@@ -37,12 +38,40 @@ const ownerToken = createMiddleware<RouteEnv>(async (c, next) => {
   // 形の不正な値は無いものとして扱い、作り直す
   const token = readOwnerToken(c) ?? generateOwnerToken();
   const ownerHash = await hashOwnerToken(token);
+  c.set("ownerToken", token);
   c.set("ownerHash", ownerHash);
   c.set("rateLimitKey", ownerHash);
-  // 期限を延ばすため、既存のトークンでも毎回付け直す
-  setOwnerCookie(c, token);
   await next();
+  // 期限を延ばすため、既存のトークンでも毎回付け直す。保存の処理でトークンを替えたら替えたものを付けるよう、処理のあとで付ける
+  setOwnerCookie(c, c.get("ownerToken"));
 });
+
+/**
+ * ログインしていないときに、この匿名トークンをアカウントに紐づかない持ち主として使えるか。紐づいていれば、ログアウトしたあとと同じく使わない
+ * （共用の PC で前の人がログアウトせずにセッションが切れたとき、次の人の保存を前の人のアカウントに入れず、前の人の保存も見せないため。#955）。
+ * ログインできない環境（クライアント ID が無い）では、currentUserId と同じくアカウントは無いものとし、DB を読まない
+ */
+async function isAnonymousOwner<E extends { Bindings: Bindings }>(
+  c: Context<E>,
+  db: AppDb,
+  ownerHash: string,
+): Promise<boolean> {
+  return !c.env.DISCORD_CLIENT_ID || !(await isLinkedOwner(db, ownerHash));
+}
+
+/** 一覧・削除で使う Cookie の匿名トークン。ログインしていないのにアカウントに紐づいていれば、ログアウトしたときと同じく Cookie を消し、無いものとする */
+async function readUsableOwnerToken<E extends { Bindings: Bindings }>(
+  c: Context<E>,
+  db: AppDb,
+  userId: string | undefined,
+): Promise<string | undefined> {
+  const token = readOwnerToken(c);
+  if (token === undefined || userId !== undefined || (await isAnonymousOwner(c, db, await hashOwnerToken(token)))) {
+    return token;
+  }
+  clearOwnerCookie(c);
+  return undefined;
+}
 
 const rateLimit = createMiddleware<RouteEnv>(async (c, next) => {
   const { success } = await c.env.TIMELINE_RATE_LIMITER.limit({ key: c.get("rateLimitKey") });
@@ -65,9 +94,10 @@ const turnstile = createMiddleware<RouteEnv>(async (c, next) => {
 export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
   // 削除用。匿名トークンもログインも無ければ、消せる行も無いので、Cookie を発行せず DB にも触れずに「無い」と答える
   const requireDeleter = createMiddleware<RouteEnv>(async (c, next) => {
-    const token = readOwnerToken(c);
+    const db = getDb(c.env);
     // 別の端末で保存した行も、ログイン中なら消せる。この端末に匿名トークンが無くてもよい
-    const userId = await currentUserId(c, getDb(c.env));
+    const userId = await currentUserId(c, db);
+    const token = await readUsableOwnerToken(c, db, userId);
     const ownerHash = token === undefined ? undefined : await hashOwnerToken(token);
     // 保存と同じく匿名トークンで数える。トークンの無い端末では、ユーザーで数える（ID の形が owner_hash と違うので、キーはぶつからない）
     const rateLimitKey = ownerHash ?? userId;
@@ -107,6 +137,12 @@ export function createTimelinesRoute(getDb: (env: Bindings) => AppDb) {
       // すでに紐づいていれば書かない。別のユーザーに紐づいていても付け替えない
       const userId = await currentUserId(c, db);
       if (userId !== undefined) await linkOwner(db, c.get("ownerHash"), userId);
+      else if (!(await isAnonymousOwner(c, db, c.get("ownerHash")))) {
+        // ログアウトしたあとと同じく、新しい匿名トークンで保存する（新しいトークンは、次にログインしたときに紐づく）
+        const token = generateOwnerToken();
+        c.set("ownerToken", token);
+        c.set("ownerHash", await hashOwnerToken(token));
+      }
       const id = nanoid();
       await db.insert(timelines).values({
         id,
@@ -247,8 +283,8 @@ export function createMyTimelinesRoute(getDb: (env: Bindings) => AppDb) {
     }),
     async (c) => {
       const db = getDb(c.env);
-      const token = readOwnerToken(c);
       const userId = await currentUserId(c, db);
+      const token = await readUsableOwnerToken(c, db, userId);
       const { cursor } = c.req.valid("query");
       // ログイン中は、この端末の匿名トークンではなくアカウントで引く（この端末の匿名トークンも、ログインか保存で紐づいている）
       const query =

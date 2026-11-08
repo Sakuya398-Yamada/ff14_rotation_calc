@@ -81,6 +81,8 @@ export function SkillDetailPanel({
       };
     }
   }, [entry.uid, entry.manualStartTime, entry.autoStartTime]);
+  // Escape の blur() は onBlur を同期で呼び、その時点の入力欄はまだ入力中の値なので、確定させないための印
+  const cancelStartTimeCommitRef = useRef(false);
 
   const commitStartTime = (raw: string) => {
     const trimmed = raw.trim();
@@ -212,7 +214,10 @@ export function SkillDetailPanel({
             className="num"
             value={startTimeDraft}
             onChange={(e) => setStartTimeDraft(e.target.value)}
-            onBlur={(e) => commitStartTime(e.target.value)}
+            onBlur={(e) => {
+              if (cancelStartTimeCommitRef.current) return;
+              commitStartTime(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -224,7 +229,9 @@ export function SkillDetailPanel({
                 e.preventDefault();
                 e.stopPropagation();
                 setStartTimeDraft((entry.manualStartTime ?? entry.autoStartTime).toFixed(2));
+                cancelStartTimeCommitRef.current = true;
                 (e.target as HTMLInputElement).blur();
+                cancelStartTimeCommitRef.current = false;
               }
             }}
             style={isManual ? { ...styles.startTimeInput, ...styles.startTimeInputManual } : styles.startTimeInput}

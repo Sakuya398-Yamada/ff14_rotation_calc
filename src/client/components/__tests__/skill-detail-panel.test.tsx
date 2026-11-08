@@ -144,6 +144,69 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
   });
 });
 
+describe("SkillDetailPanel: 開始時刻の手動設定 (#953)", () => {
+  function renderSecondBurstShot() {
+    const onManualStartTimeChange = vi.fn();
+    const entries = resolveTimeline(
+      [
+        { uid: "e-1", skillId: "burst-shot" },
+        { uid: "e-2", skillId: "burst-shot" },
+      ],
+      BRD.skillMap,
+      BRD.resources,
+      stats,
+      BRD.buffs
+    ).entries;
+    const entry = entries[1];
+    render(
+      <SkillDetailPanel
+        entry={entry}
+        resolvedSkill={BRD.skillMap.get(entry.resolvedSkillId)!}
+        jobId={BRD.jobId}
+        buffDefMap={BRD.buffDefMap}
+        stats={stats}
+        onClose={vi.fn()}
+        onManualStartTimeChange={onManualStartTimeChange}
+        onProcOccurredChange={vi.fn()}
+        hitDelay={undefined}
+        onHitDelayChange={vi.fn()}
+      />
+    );
+    return { entry, onManualStartTimeChange, input: screen.getByRole("spinbutton", { name: "開始時刻" }) };
+  }
+
+  it("Escape は入力の取り消しで、入力中の値では呼ばずに元の値に戻す", () => {
+    const { entry, input, onManualStartTimeChange } = renderSecondBurstShot();
+    expect(entry.manualStartTime).toBeUndefined();
+    const original = Number(entry.autoStartTime.toFixed(2));
+    expect(original).toBeGreaterThan(0);
+    expect(input).toHaveValue(original);
+
+    // フォーカスしていないと blur() が何もしないので、実際の操作と同じくフォーカスしてから入力する
+    input.focus();
+    fireEvent.change(input, { target: { value: "3" } });
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    expect(onManualStartTimeChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue(original);
+    expect(input).not.toHaveFocus();
+  });
+
+  it("Escape で取り消したあとも、入力し直して blur すると、その値で確定する", () => {
+    const { entry, input, onManualStartTimeChange } = renderSecondBurstShot();
+
+    input.focus();
+    fireEvent.change(input, { target: { value: "3" } });
+    fireEvent.keyDown(input, { key: "Escape" });
+    input.focus();
+    fireEvent.change(input, { target: { value: "4.567" } });
+    input.blur();
+
+    expect(onManualStartTimeChange).toHaveBeenCalledTimes(1);
+    expect(onManualStartTimeChange).toHaveBeenCalledWith(entry.uid, 4.57);
+  });
+});
+
 describe("SkillDetailPanel: 着弾までの遅れ (#901)", () => {
   // 2 発目のファイガは AF 中のファイガ（fire-3-in-af）に自動変化する
   function renderSecondFire3(hitDelay?: number) {

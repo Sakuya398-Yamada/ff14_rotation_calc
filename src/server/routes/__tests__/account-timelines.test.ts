@@ -1,7 +1,7 @@
 import { createHash, createHmac } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { Hono } from "hono";
@@ -110,12 +110,16 @@ class Browser {
     });
   }
 
-  async save(title: string): Promise<string> {
-    const res = await this.request("/api/timelines", {
+  saveResponse(title: string) {
+    return this.request("/api/timelines", {
       method: "POST",
       headers: { Origin: ORIGIN, "Content-Type": "application/json", "X-Turnstile-Token": "XXXX.DUMMY.TOKEN.XXXX" },
       body: JSON.stringify({ data: validData(), title }),
     });
+  }
+
+  async save(title: string): Promise<string> {
+    const res = await this.saveResponse(title);
     expect(res.status).toBe(201);
     return ((await res.json()) as { id: string }).id;
   }
@@ -305,6 +309,109 @@ describe("ログアウト", () => {
     expect(res.status).toBe(204);
     expect(res.headers.getSetCookie().find((cookie) => cookie.startsWith("__Host-owner="))).toBeUndefined();
     expect(await a.titles()).toEqual(["匿名の保存"]);
+  });
+});
+
+describe("ログアウトせずにセッションが切れたブラウザ（共用の PC）", () => {
+  const PREVIOUS_TITLES = ["前の人のログイン中の保存", "前の人のログイン前の保存"];
+
+  /** 前の人（Alice）がログインの前後に保存し、ログアウトせずにセッションが切れた。ブラウザは期限の切れたセッションの Cookie を送らない */
+  async function abandonedBrowser() {
+    const shared = new Browser();
+    const anonymousId = await shared.save("前の人のログイン前の保存");
+    await shared.login(DISCORD_ALICE);
+    const loggedInId = await shared.save("前の人のログイン中の保存");
+    shared.cookies.delete("__Host-session");
+    return { shared, previousToken: shared.ownerToken, ids: [anonymousId, loggedInId] };
+  }
+
+  async function aliceTitles() {
+    const alice = new Browser();
+    await alice.login(DISCORD_ALICE);
+    return alice.titles();
+  }
+
+  function ownerCookieOf(res: Response) {
+    return res.headers.getSetCookie().filter((cookie) => cookie.startsWith("__Host-owner="));
+  }
+
+  it("ログインせずに保存すると、新しい匿名トークンで保存し、前の人のアカウントの一覧に出ない", async () => {
+    const { shared, previousToken } = await abandonedBrowser();
+
+    const res = await shared.saveResponse("次の人の保存");
+
+    expect(res.status).toBe(201);
+    // 前のトークンの期限を延ばす Set-Cookie は出さず、新しいトークンの 1 本だけ
+    expect(ownerCookieOf(res)).toHaveLength(1);
+    expect(shared.ownerToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(shared.ownerToken).not.toBe(previousToken);
+    const { id } = (await res.json()) as { id: string };
+    const [row] = await db.select({ ownerHash: timelines.ownerHash }).from(timelines).where(eq(timelines.id, id));
+    expect(row.ownerHash).toBe(sha256Hex(shared.ownerToken ?? ""));
+    expect(await db.select().from(userOwners).where(eq(userOwners.ownerHash, row.ownerHash))).toEqual([]);
+    expect(await aliceTitles()).toEqual(PREVIOUS_TITLES);
+    expect(await shared.titles()).toEqual(["次の人の保存"]);
+  });
+
+  it("ログインせずに開いた一覧は、ログアウトしたあとと同じく空で、匿名トークンの Cookie も消す。前の人の保存はアカウントに残る", async () => {
+    const { shared } = await abandonedBrowser();
+
+    const res = await shared.request("/api/me/timelines");
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ items: [], nextCursor: null });
+    expect(ownerCookieOf(res)).toEqual([expect.stringContaining("Max-Age=0")]);
+    expect(shared.ownerToken).toBeUndefined();
+    expect(await aliceTitles()).toEqual(PREVIOUS_TITLES);
+  });
+
+  it("ログインせずに前の人のタイムラインを削除しようとすると 404 で、削除せず、匿名トークンの Cookie を消す。レート制限は数えない", async () => {
+    const { shared, ids } = await abandonedBrowser();
+    limit.mockClear();
+
+    const res = await shared.delete(ids[1]);
+
+    expect(res.status).toBe(404);
+    expect(ownerCookieOf(res)).toEqual([expect.stringContaining("Max-Age=0")]);
+    expect(limit).not.toHaveBeenCalled();
+    expect(await aliceTitles()).toEqual(PREVIOUS_TITLES);
+  });
+
+  it("同じブラウザで前の人がもう一度ログインすると、それまでの保存も、セッションが切れたあとにログインせずに保存したものも一覧に出る", async () => {
+    const { shared } = await abandonedBrowser();
+    await shared.save("セッションが切れたあとの保存");
+
+    await shared.login(DISCORD_ALICE);
+
+    expect(await shared.titles()).toEqual(["セッションが切れたあとの保存", ...PREVIOUS_TITLES]);
+  });
+
+  it("前のトークンのまま 2 件を同時に保存すると、それぞれ別の新しいトークンになり、どちらも前の人のアカウントに入らない", async () => {
+    const { shared, previousToken } = await abandonedBrowser();
+
+    const ids = await Promise.all([shared.save("同時の 1 件目"), shared.save("同時の 2 件目")]);
+
+    const ownerHashes = (
+      await db.select({ ownerHash: timelines.ownerHash }).from(timelines).where(inArray(timelines.id, ids))
+    ).map((row) => row.ownerHash);
+    expect(new Set(ownerHashes).size).toBe(2);
+    expect(ownerHashes).not.toContain(sha256Hex(previousToken ?? ""));
+    expect(await db.select().from(userOwners).where(inArray(userOwners.ownerHash, ownerHashes))).toEqual([]);
+    // ブラウザに残るのは後で届いた応答のトークンなので、このブラウザの一覧に出るのは片方だけ
+    expect(await shared.titles()).toHaveLength(1);
+    expect(await aliceTitles()).toEqual(PREVIOUS_TITLES);
+  });
+
+  it("アカウントに紐づいていない匿名トークンなら、ログインできる環境でログインしていなくても、今と同じく同じトークンで保存・一覧・削除できる", async () => {
+    const a = new Browser();
+    const id = await a.save("匿名の保存");
+    const token = a.ownerToken;
+    await a.save("匿名の 2 件目");
+
+    expect(await a.titles()).toEqual(["匿名の 2 件目", "匿名の保存"]);
+    expect((await a.delete(id)).status).toBe(204);
+    expect(await a.titles()).toEqual(["匿名の 2 件目"]);
+    expect(a.ownerToken).toBe(token);
   });
 });
 

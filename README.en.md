@@ -170,7 +170,7 @@ With "Save & share" at the top of the screen, you can list your saved timelines,
 - If you are not logged in, only timelines saved in the same browser appear in the list (your browser is identified by a cookie). Timelines saved in other browsers or on other devices do not appear
 - If you log in with Discord under **Account** in the settings (gear button at the top of the screen), the timelines saved with that account appear in the list. In other browsers and on other devices, log in with the same account to see the same list. You can also log in with "Log in with Discord" in the list
   - When you log in, the timelines saved in that browser without logging in are also linked to your account
-  - When you log out, the list in that browser becomes empty. Your saved timelines stay with your account and appear in the list again when you log in
+  - When you log out, the list in that browser becomes empty. The same happens when your login session expires without logging out. Your saved timelines stay with your account and appear in the list again when you log in
 - With "Copy" on each row of the list, you can copy the share URL of that row
 - With the trash can button on each row of the list, you can delete a saved timeline. Once deleted, it can no longer be opened from its share URL, even by people you shared the URL with. This cannot be undone
 - If you clear the browser's browsing data (site data), or 400 days pass without saving or viewing the list, the timelines saved until then without logging in and not linked to an account no longer appear in the list and can no longer be deleted. The timelines themselves remain on the server, so they can still be opened from their share URLs. Those linked to an account appear in the list when you log in
