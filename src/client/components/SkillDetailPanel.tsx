@@ -531,7 +531,7 @@ function AutoGenerateProcRow({
             : (occurred ? "defaultOccurred" : "defaultNotOccurred");
           const next = specified === true ? false : specified === false ? undefined : true;
           const seconds = tickNumber * interval;
-          const tickLabel = t(`skillDetailPanel.autoGenerateProcTick.${state}`, { seconds });
+          const tickLabel = t(`skillDetailPanel.autoGenerateProcTick.${state}` as const, { seconds });
           return (
             <button
               key={tickNumber}

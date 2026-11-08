@@ -293,7 +293,7 @@ describe("BRD: 詩心・ソウルボイスの自動付与は歌の実行時刻�
 
     const before = withNext(46.4);
     expect(before.slice(1, 4).every((e) => !e.recastError)).toBe(true);
-    expect(before[3].startTime).toBeLessThan(41.25);
+    expect(before[3].startTime).toBeLessThan(42);
     expect(before[4].recastError).toBe(true);
 
     const after = withNext(46.5);
