@@ -17,8 +17,11 @@ export function AccountControl({ status, returnTo, onLoggedOut }: AccountControl
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
   const loginLinkRef = useRef<HTMLAnchorElement>(null);
+  const logoutButtonRef = useRef<HTMLButtonElement>(null);
   // ログアウトすると押したボタンが消えてフォーカスが外れるので、代わりに出るログインのリンクへ移す
   const focusLoginRef = useRef(false);
+  // 送信中はボタンを無効にするので、ブラウザがフォーカスを外す。失敗したら、押せるようになってから戻す
+  const refocusLogoutRef = useRef(false);
 
   useLayoutEffect(() => {
     if (status !== "loggedOut" || !focusLoginRef.current) return;
@@ -26,17 +29,25 @@ export function AccountControl({ status, returnTo, onLoggedOut }: AccountControl
     loginLinkRef.current?.focus();
   }, [status]);
 
+  useLayoutEffect(() => {
+    if (loggingOut || !refocusLogoutRef.current) return;
+    refocusLogoutRef.current = false;
+    logoutButtonRef.current?.focus();
+  }, [loggingOut]);
+
   if (status === "unavailable") return null;
 
   const handleLogout = async () => {
     setLoggingOut(true);
     setLogoutFailed(false);
     const ok = await logout();
-    setLoggingOut(false);
     if (!ok) {
+      refocusLogoutRef.current = true;
+      setLoggingOut(false);
       setLogoutFailed(true);
       return;
     }
+    setLoggingOut(false);
     focusLoginRef.current = true;
     onLoggedOut();
   };
@@ -46,7 +57,13 @@ export function AccountControl({ status, returnTo, onLoggedOut }: AccountControl
       {status === "loggedIn" ? (
         <>
           <span style={styles.status}>{t("accountControl.loggedIn")}</span>
-          <button type="button" onClick={() => void handleLogout()} disabled={loggingOut} style={styles.button}>
+          <button
+            ref={logoutButtonRef}
+            type="button"
+            onClick={() => void handleLogout()}
+            disabled={loggingOut}
+            style={styles.button}
+          >
             {loggingOut ? t("accountControl.loggingOut") : t("accountControl.logout")}
           </button>
         </>

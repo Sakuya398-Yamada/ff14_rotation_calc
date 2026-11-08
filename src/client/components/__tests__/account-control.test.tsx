@@ -86,6 +86,18 @@ describe("AccountControl", () => {
     expect(screen.getByRole("button", { name: "ログアウト" })).toBeEnabled();
     expect(onLoggedOut).not.toHaveBeenCalled();
   });
+
+  it("ログアウトに失敗したら、押せるようになったログアウトのボタンにフォーカスを戻す", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    render(<AccountControl status="loggedIn" returnTo="/" onLoggedOut={vi.fn()} />);
+    const button = screen.getByRole("button", { name: "ログアウト" });
+    fireEvent.click(button);
+    // 無効にしたボタンからは、ブラウザがフォーカスを外す
+    button.blur();
+
+    await screen.findByRole("alert");
+    expect(screen.getByRole("button", { name: "ログアウト" })).toHaveFocus();
+  });
 });
 
 describe("AccountControl（英語）", () => {
