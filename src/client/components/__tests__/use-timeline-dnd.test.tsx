@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, onTestFinished } from "vitest";
 import { renderHook, fireEvent, act, cleanup, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import {
@@ -117,6 +117,9 @@ function setup(entries: TimelineEntry[], draggedUid: string) {
   /** ドラッグ中のエントリを時刻 seconds の位置まで動かし、挿入位置の計算（rAF）が済むまで待つ */
   async function dragTo(seconds: number) {
     const clientX = clientXAt(seconds);
+    // MouseSensor はドラッグの開始で document にクリックの伝播を止めるリスナーを付け、終了の 50ms 後に外す。
+    // 外れるまで待たないと、このファイルで後に続くテストのクリックが React に届かないので、テストの終わりに（途中で落ちても）待つ（#884）
+    onTestFinished(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
     // dnd-kit の MouseSensor は mousedown を要素で、move/up を document で購読する
     fireEvent.mouseDown(screen.getByTestId(`entry-${draggedUid}`), { button: 0, clientX: clientXAt(startTime), clientY: 10 });
     // hook はポインタの clientX を window の pointermove で追っている

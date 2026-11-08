@@ -1,12 +1,26 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeAll, beforeEach } from "vitest";
 import i18next from "i18next";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { App } from "../App";
+import type { MyTimelineItem } from "../../logic/my-timelines";
+
+// jsdom は HTMLDialogElement の showModal / close を実装していないため最小限の代替を入れる
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  };
+});
 
 beforeEach(() => window.localStorage.clear());
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("App の見出し", () => {
   it("日本語では FF14 表記", () => {
@@ -25,6 +39,77 @@ describe("App の見出し", () => {
   });
 });
 
+describe("App のヘッダーの保存・共有", () => {
+  const SAVED_ID = "id0000000000000000002";
+
+  function item(id: string, title: string): MyTimelineItem {
+    return { id, title, job: "blm", level: 100, contentId: null, createdAt: "2026-10-23T03:04:05.000Z" };
+  }
+
+  function jsonResponse(body: unknown, status: number): Response {
+    return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+  }
+
+  // 保存すると、一覧の先頭に保存したものが出る
+  let saved: MyTimelineItem[];
+
+  beforeEach(() => {
+    saved = [item("id0000000000000000001", "前に保存したもの")];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/me") return jsonResponse({ loginAvailable: false, loggedIn: false }, 200);
+        if (url === "/api/me/timelines") return jsonResponse({ items: saved, nextCursor: null }, 200);
+        if (url === "/api/timelines" && init?.method === "POST") {
+          saved = [item(SAVED_ID, "今保存したもの"), ...saved];
+          return jsonResponse({ id: SAVED_ID }, 201);
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      }),
+    );
+    // window.turnstile の代わり。描画したその場でトークンを渡す
+    vi.stubGlobal("turnstile", {
+      render: (_container: HTMLElement, options: { callback: (token: string) => void }) => {
+        options.callback("token");
+        return "widget";
+      },
+      remove: () => {},
+    });
+  });
+
+  it("保存関係のボタンは「保存・共有」の 1 つだけで、押すと保存したタイムラインの一覧が開く", async () => {
+    render(<App />);
+    expect(screen.queryByRole("button", { name: "保存したタイムライン" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "保存・共有" }));
+
+    const list = screen.getByRole("dialog", { name: "保存したタイムライン" });
+    expect(await within(list).findByRole("link", { name: /前に保存したもの/ })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "タイムラインを保存して共有" })).not.toBeInTheDocument();
+  });
+
+  it("一覧の「今のタイムラインを保存」から保存すると共有 URL が出て、閉じると一覧に戻り、保存したものが先頭に出る", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "保存・共有" }));
+    const list = screen.getByRole("dialog", { name: "保存したタイムライン" });
+    await within(list).findByRole("link", { name: /前に保存したもの/ });
+
+    const saveNewButton = within(list).getByRole("button", { name: "今のタイムラインを保存" });
+    fireEvent.click(saveNewButton);
+    const saveDialog = screen.getByRole("dialog", { name: "タイムラインを保存して共有" });
+    fireEvent.click(within(saveDialog).getByRole("button", { name: "保存" }));
+    expect(await within(saveDialog).findByRole("textbox", { name: "共有 URL" })).toHaveValue(
+      `${window.location.origin}/t/${SAVED_ID}`,
+    );
+
+    fireEvent.click(within(saveDialog).getByRole("button", { name: "閉じる" }));
+    expect(screen.queryByRole("dialog", { name: "タイムラインを保存して共有" })).not.toBeInTheDocument();
+    expect(saveNewButton).toHaveFocus();
+    const links = within(list).getAllByRole("link");
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent("今保存したもの");
+  });
+});
+
 describe("App のフッター", () => {
   it("日本語では日本語のプライバシーポリシーにリンクする", () => {
     render(<App />);
@@ -38,6 +123,93 @@ describe("App のフッター", () => {
     it("英語のプライバシーポリシーにリンクする", () => {
       render(<App />);
       expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/en/privacy");
+    });
+  });
+});
+
+describe("App のログイン", () => {
+  let me: { loginAvailable: boolean; loggedIn: boolean };
+  let fetchMock: ReturnType<typeof vi.fn<(url: string, init?: RequestInit) => Promise<Response>>>;
+
+  beforeEach(() => {
+    me = { loginAvailable: true, loggedIn: false };
+    fetchMock = vi.fn(async (url: string) => {
+      if (url === "/api/me") return Response.json(me);
+      if (url === "/api/auth/logout") return new Response(null, { status: 204 });
+      // 共有タイムラインの取得は返さず、読み込み中のままにする
+      return new Promise<Response>(() => {});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("ログインしていなければ、ヘッダーに今のパスへ戻るログインのリンクを出す", async () => {
+    render(<App />);
+    expect(await screen.findByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
+      "href",
+      "/api/auth/discord?returnTo=%2F"
+    );
+    expect(fetchMock).toHaveBeenCalledWith("/api/me", expect.anything());
+  });
+
+  it("共有 URL の画面では、そのパスに戻るログインのリンクにする", async () => {
+    window.history.replaceState(null, "", "/t/V1StGXR8_Z5jdHi6B-myT");
+    render(<App />);
+    expect(await screen.findByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
+      "href",
+      "/api/auth/discord?returnTo=%2Ft%2FV1StGXR8_Z5jdHi6B-myT"
+    );
+  });
+
+  it("ログインできない環境では、ログインのリンクを出さない", async () => {
+    me = { loginAvailable: false, loggedIn: false };
+    render(<App />);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/me", expect.anything()));
+    // 応答を反映するまで待ってから、出ていないことを見る
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ログアウト" })).not.toBeInTheDocument();
+  });
+
+  it("ログイン中はログアウトのボタンを出し、ログアウトするとログインのリンクに戻る", async () => {
+    me = { loginAvailable: true, loggedIn: true };
+    render(<App />);
+    expect(await screen.findByText("ログイン中")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
+
+    expect(await screen.findByRole("link", { name: "Discord でログイン" })).toBeInTheDocument();
+    expect(screen.queryByText("ログイン中")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/logout", expect.objectContaining({ method: "POST" }));
+  });
+
+  it("保存したタイムラインの一覧に、ログインの状態を渡す", async () => {
+    // jsdom は HTMLDialogElement の showModal を実装していないため最小限の代替を入れる
+    HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    };
+    me = { loginAvailable: true, loggedIn: true };
+    render(<App />);
+    await screen.findByText("ログイン中");
+    fireEvent.click(screen.getByRole("button", { name: "保存・共有" }));
+
+    expect(screen.getByText(/^ログイン中のアカウントで保存したタイムラインを/)).toBeInTheDocument();
+  });
+
+  describe("英語", () => {
+    beforeEach(() => i18next.changeLanguage("en"));
+    afterEach(() => i18next.changeLanguage("ja"));
+
+    it("ログインのリンクを英語で出す", async () => {
+      window.history.replaceState(null, "", "/en/");
+      render(<App />);
+      expect(await screen.findByRole("link", { name: "Log in with Discord" })).toHaveAttribute(
+        "href",
+        "/api/auth/discord?returnTo=%2Fen%2F"
+      );
     });
   });
 });

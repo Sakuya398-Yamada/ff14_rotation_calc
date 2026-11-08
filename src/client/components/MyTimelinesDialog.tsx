@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import { useLanguage } from "../i18n";
+import { loginUrl, type AccountStatus } from "../logic/account";
 import { deleteMyTimeline, fetchMyTimelines, type DeleteMyTimelineError, type MyTimelineItem } from "../logic/my-timelines";
 import { buildShareUrl } from "../logic/shared-timeline";
 import { jobName } from "../logic/display-names";
@@ -12,9 +13,28 @@ interface MyTimelinesDialogProps {
   onClose: () => void;
   /** 閉じたときにフォーカスを戻す要素（開いたボタン） */
   returnFocusRef: RefObject<HTMLElement | null>;
+  /** 「今のタイムラインを保存」が押された */
+  onSaveNew: () => void;
+  /** 「今のタイムラインを保存」のボタン。保存のダイアログを閉じたときのフォーカスの戻り先 */
+  saveNewButtonRef: RefObject<HTMLButtonElement | null>;
+  /** 変わったら、開いている一覧を 1 ページ目から取り直す（保存したものを出すため） */
+  reloadKey: number;
+  /** ログイン中はアカウントの一覧になる。ログインしていなければログインを案内する */
+  accountStatus: AccountStatus;
+  /** ログインした後に戻るパス */
+  returnTo: string;
 }
 
-export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelinesDialogProps) {
+export function MyTimelinesDialog({
+  open,
+  onClose,
+  returnFocusRef,
+  onSaveNew,
+  saveNewButtonRef,
+  reloadKey,
+  accountStatus,
+  returnTo,
+}: MyTimelinesDialogProps) {
   const { t } = useTranslation();
   const lang = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -41,6 +61,8 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
   const copyFallbackInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async (cursor: string | null) => {
+    // 取得中に取り直したら、先の取得の結果は捨てる
+    loadControllerRef.current?.abort();
     const controller = new AbortController();
     loadControllerRef.current = controller;
     setLoading(true);
@@ -123,6 +145,14 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
     }
   }, [open, returnFocusRef, load]);
 
+  const reloadKeyRef = useRef(reloadKey);
+  useEffect(() => {
+    if (reloadKeyRef.current === reloadKey) return;
+    reloadKeyRef.current = reloadKey;
+    // 閉じている間は、次に開いたときに取り直す
+    if (dialogRef.current?.open) void load(null);
+  }, [reloadKey, load]);
+
   // useEffect だと DOM の更新より後のタスクで走り、その間フォーカスが body に外れる
   useLayoutEffect(() => {
     const id = focusIdRef.current;
@@ -176,12 +206,22 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
 
       <div style={styles.body}>
         <p style={styles.note}>
-          {t("myTimelinesDialog.intro")}
+          {accountStatus === "loggedIn" ? t("myTimelinesDialog.introAccount") : t("myTimelinesDialog.intro")}
         </p>
+        {accountStatus === "loggedOut" && (
+          <div style={styles.loginNote}>
+            <p style={styles.note}>{t("myTimelinesDialog.loginNote")}</p>
+            <a href={loginUrl(returnTo)} style={styles.loginLink}>
+              {t("myTimelinesDialog.login")}
+            </a>
+          </div>
+        )}
         {items === null ? (
           !error && <p style={styles.text}>{t("myTimelinesDialog.loading")}</p>
         ) : items.length === 0 ? (
-          <p style={styles.text}>{t("myTimelinesDialog.empty")}</p>
+          <p style={styles.text}>
+            {accountStatus === "loggedIn" ? t("myTimelinesDialog.emptyAccount") : t("myTimelinesDialog.empty")}
+          </p>
         ) : (
           <ul ref={listRef} style={styles.list}>
             {items.map((item) => (
@@ -215,11 +255,21 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
                   type="button"
                   data-delete-id={item.id}
                   aria-label={t("myTimelinesDialog.deleteLabel", { title: item.title ?? t("myTimelinesDialog.untitled") })}
+                  title={t("myTimelinesDialog.delete")}
                   onClick={() => void handleDelete(item)}
                   disabled={deletingId !== null}
                   style={styles.deleteButton}
                 >
-                  {deletingId === item.id ? t("myTimelinesDialog.deleting") : t("myTimelinesDialog.delete")}
+                  {deletingId === item.id ? (
+                    t("myTimelinesDialog.deleting")
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <path d="M10 11v6M14 11v6" />
+                    </svg>
+                  )}
                 </button>
               </li>
             ))}
@@ -258,8 +308,11 @@ export function MyTimelinesDialog({ open, onClose, returnFocusRef }: MyTimelines
             {loading ? t("myTimelinesDialog.loading") : t("myTimelinesDialog.loadMore")}
           </button>
         )}
-        <button ref={closeButtonRef} type="button" onClick={onClose} style={styles.primaryButton}>
+        <button ref={closeButtonRef} type="button" onClick={onClose} style={styles.secondaryButton}>
           {t("myTimelinesDialog.closeButton")}
+        </button>
+        <button ref={saveNewButtonRef} type="button" aria-haspopup="dialog" onClick={onSaveNew} style={styles.primaryButton}>
+          {t("myTimelinesDialog.saveNew")}
         </button>
       </div>
     </dialog>
@@ -337,6 +390,21 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.5,
     color: "var(--color-muted)",
   },
+  loginNote: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "var(--space-2)",
+  },
+  loginLink: {
+    ...buttonBase,
+    display: "inline-flex",
+    alignItems: "center",
+    border: "1px solid var(--color-field)",
+    background: "var(--color-raised)",
+    color: "var(--color-text)",
+    textDecoration: "none",
+  },
   list: {
     display: "flex",
     flexDirection: "column",
@@ -383,6 +451,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footer: {
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "flex-end",
     gap: "var(--space-2)",
     padding: "var(--space-3) var(--space-5)",
@@ -416,6 +485,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   deleteButton: {
     ...rowButtonBase,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: "32px",
+    padding: "0 var(--space-2)",
     color: "var(--color-error)",
   },
 };

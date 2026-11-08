@@ -10,6 +10,7 @@ import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsDialog } from "./SettingsDialog";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
+import { AccountControl } from "./AccountControl";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
@@ -23,6 +24,7 @@ import { getSkillsForLevel, getBuffsForLevel, getResourcesForLevel, getAllSkillM
 import { loadAppState, saveAppState, computeNextUid } from "../logic/timeline-storage";
 import type { AppStateSnapshot, PersistedAppState } from "../logic/timeline-storage";
 import { getSharedTimelineId, loadSharedTimeline } from "../logic/shared-timeline";
+import { fetchAccountStatus, type AccountStatus } from "../logic/account";
 import { alternateLanguagePath, languageBasePath, privacyPolicyPath } from "../logic/language-path";
 import { useLanguage } from "../i18n";
 import type { SharedLoadError } from "../logic/shared-timeline";
@@ -45,9 +47,21 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [saveOpen, setSaveOpen] = useState(false);
-  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  // 保存のダイアログは、保存したタイムラインの一覧の「今のタイムラインを保存」から、一覧に重ねて開く
+  const saveNewButtonRef = useRef<HTMLButtonElement>(null);
   const [myTimelinesOpen, setMyTimelinesOpen] = useState(false);
   const myTimelinesButtonRef = useRef<HTMLButtonElement>(null);
+  const [myTimelinesReloadKey, setMyTimelinesReloadKey] = useState(0);
+  // 取得できるまでは、ログインできないものとして何も出さない
+  const [accountStatus, setAccountStatus] = useState<AccountStatus>("unavailable");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchAccountStatus({ signal: controller.signal }).then((status) => {
+      if (!controller.signal.aborted) setAccountStatus(status);
+    });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     saveSettings(settings);
@@ -83,7 +97,7 @@ export function App() {
   const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
   // 共有 URL から開いたタイムラインのタイトルとコンテンツ。ジョブを変えるか保存すると、別のタイムラインになるので外す
   const [sharedInfo, setSharedInfo] = useState<{ title: string | null; contentId: string | null } | null>(null);
-  // 言語のリンクの移り先を作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
+  // 言語のリンクの移り先と、ログインした後に戻るパスを作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
   const [pathname, setPathname] = useState(() => window.location.pathname);
   // 共有タイムラインの取得が終わった時点のエントリで上書きの確認を判定するため、最新の値を持っておく
   const entriesRef = useRef(entries);
@@ -141,6 +155,7 @@ export function App() {
   const handleSaved = useCallback((id: string) => {
     setSourceTimelineId(id);
     setSharedInfo(null);
+    setMyTimelinesReloadKey((key) => key + 1);
   }, []);
 
   const applyAppState = useCallback((state: PersistedAppState) => {
@@ -364,22 +379,13 @@ export function App() {
           onLevelChange={setLevel}
         />
         <button
-          ref={saveButtonRef}
-          type="button"
-          aria-haspopup="dialog"
-          onClick={() => setSaveOpen(true)}
-          style={styles.saveButton}
-        >
-          {t("app.saveAndShare")}
-        </button>
-        <button
           ref={myTimelinesButtonRef}
           type="button"
           aria-haspopup="dialog"
           onClick={() => setMyTimelinesOpen(true)}
           style={styles.saveButton}
         >
-          {t("app.myTimelines")}
+          {t("app.saveAndShare")}
         </button>
         <a
           href={alternateLanguagePath(pathname)}
@@ -403,6 +409,7 @@ export function App() {
             <circle cx="12" cy="12" r="3" />
           </svg>
         </button>
+        <AccountControl status={accountStatus} returnTo={pathname} onLoggedOut={() => setAccountStatus("loggedOut")} />
       </header>
       <SettingsDialog
         open={settingsOpen}
@@ -417,12 +424,17 @@ export function App() {
         parentId={sourceTimelineId}
         onSaved={handleSaved}
         onClose={() => setSaveOpen(false)}
-        returnFocusRef={saveButtonRef}
+        returnFocusRef={saveNewButtonRef}
       />
       <MyTimelinesDialog
         open={myTimelinesOpen}
         onClose={() => setMyTimelinesOpen(false)}
         returnFocusRef={myTimelinesButtonRef}
+        onSaveNew={() => setSaveOpen(true)}
+        saveNewButtonRef={saveNewButtonRef}
+        reloadKey={myTimelinesReloadKey}
+        accountStatus={accountStatus}
+        returnTo={pathname}
       />
       {sharedLoadError !== null && (
         <div style={styles.sharedLoadError}>
