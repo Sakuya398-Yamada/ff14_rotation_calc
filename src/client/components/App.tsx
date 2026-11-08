@@ -10,6 +10,7 @@ import { SkillDetailPanel } from "./SkillDetailPanel";
 import { SettingsButton } from "./SettingsButton";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
+import { MintLeafExportDialog } from "./MintLeafExportDialog";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
@@ -52,6 +53,8 @@ export function App() {
   const [myTimelinesOpen, setMyTimelinesOpen] = useState(false);
   const myTimelinesButtonRef = useRef<HTMLButtonElement>(null);
   const [myTimelinesReloadKey, setMyTimelinesReloadKey] = useState(0);
+  const [mintLeafOpen, setMintLeafOpen] = useState(false);
+  const mintLeafButtonRef = useRef<HTMLButtonElement>(null);
   // 取得できるまでは、ログインできないものとして何も出さない
   const [accountStatus, setAccountStatus] = useState<AccountStatus>("unavailable");
 
@@ -412,6 +415,15 @@ export function App() {
         >
           {t("app.saveAndShare")}
         </button>
+        <button
+          ref={mintLeafButtonRef}
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setMintLeafOpen(true)}
+          style={styles.saveButton}
+        >
+          {t("app.exportToMintLeaf")}
+        </button>
         <SettingsButton
           languageHref={alternateLanguagePath(pathname)}
           account={{ status: accountStatus, returnTo: pathname, onLoggedOut: () => setAccountStatus("loggedOut") }}
@@ -434,6 +446,14 @@ export function App() {
         reloadKey={myTimelinesReloadKey}
         accountStatus={accountStatus}
         returnTo={pathname}
+      />
+      <MintLeafExportDialog
+        open={mintLeafOpen}
+        onClose={() => setMintLeafOpen(false)}
+        returnFocusRef={mintLeafButtonRef}
+        jobId={selectedJob}
+        entries={resolvedEntries}
+        skillMap={allSkillMap}
       />
       {sharedLoadError !== null && (
         <div style={styles.sharedLoadError}>

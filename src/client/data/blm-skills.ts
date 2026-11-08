@@ -107,6 +107,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire",
+    gameActionId: 141,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -134,6 +135,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-3",
+    gameActionId: 152,
     potency: 290,
     type: "gcd",
     target: "enemy",
@@ -154,6 +156,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-4",
+    gameActionId: 3577,
     potency: 300,
     type: "gcd",
     target: "enemy",
@@ -171,6 +174,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "despair",
+    gameActionId: 16505,
     potency: 350,
     type: "gcd",
     target: "enemy",
@@ -186,6 +190,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "flare-star",
+    gameActionId: 36989,
     potency: 500,
     type: "gcd",
     target: "enemy",
@@ -208,6 +213,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire-2",
+    gameActionId: 147,
     potency: 80,
     type: "gcd",
     target: "enemy",
@@ -229,6 +235,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "high-fire-2",
+    gameActionId: 25794,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -251,6 +258,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "flare",
+    gameActionId: 162,
     potency: 240,
     type: "gcd",
     target: "enemy",
@@ -279,6 +287,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "blizzard",
+    gameActionId: 142,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -303,6 +312,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-3",
+    gameActionId: 154,
     potency: 290,
     type: "gcd",
     target: "enemy",
@@ -322,6 +332,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-4",
+    gameActionId: 3576,
     potency: 300,
     type: "gcd",
     target: "enemy",
@@ -344,6 +355,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "blizzard-2",
+    gameActionId: 25793,
     potency: 80,
     type: "gcd",
     target: "enemy",
@@ -363,6 +375,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "high-blizzard-2",
+    gameActionId: 25795,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -383,6 +396,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "freeze",
+    gameActionId: 159,
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -406,6 +420,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "paradox",
+    gameActionId: 25797,
     potency: 540,
     type: "gcd",
     target: "enemy",
@@ -433,6 +448,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // Lv92 の特性でハイサンダーに置き換わる。ツールではハイサンダーに集約する。
   {
     id: "high-thunder",
+    gameActionId: 36986,
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -449,6 +465,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "thunder-3",
+    gameActionId: 153,
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -465,6 +482,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "high-thunder-2",
+    gameActionId: 36987,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -483,6 +501,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "thunder-4",
+    gameActionId: 7420,
     potency: 80,
     type: "gcd",
     target: "enemy",
@@ -504,6 +523,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "xenoglossy",
+    gameActionId: 16507,
     potency: 890,
     type: "gcd",
     target: "enemy",
@@ -517,6 +537,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "foul",
+    gameActionId: 7422,
     potency: 600,
     type: "gcd",
     target: "enemy",
@@ -537,6 +558,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "manafont",
+    gameActionId: 158,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -557,6 +579,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "triplecast",
+    gameActionId: 7421,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -570,6 +593,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "ley-lines",
+    gameActionId: 3573,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -585,6 +609,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "transpose",
+    gameActionId: 149,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -611,6 +636,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "amplifier",
+    gameActionId: 25796,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -627,6 +653,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "swiftcast",
+    gameActionId: 7561,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -643,6 +670,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ここで即時 `resourceChanges` は付けない（回復はバフ中の 3 秒ごとのティックだけにするため）
   {
     id: "lucid-dreaming",
+    gameActionId: 7562,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -661,6 +689,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire-up-af2",
+    gameActionId: 141,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -676,6 +705,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-up-af3",
+    gameActionId: 141,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -691,6 +721,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "fire-stay-af3",
+    gameActionId: 141,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -708,6 +739,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   // UB バフの `resourceGainOnSkill` 効果で自動発動するため、隠しスキル側に MP 回復を持たせない。
   {
     id: "blizzard-up-ub2",
+    gameActionId: 142,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -722,6 +754,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-up-ub3",
+    gameActionId: 142,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -736,6 +769,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "blizzard-stay-ub3",
+    gameActionId: 142,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -750,6 +784,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "paradox-af",
+    gameActionId: 25797,
     potency: 540,
     type: "gcd",
     target: "enemy",
@@ -766,6 +801,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "transpose-to-ub1",
+    gameActionId: 149,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -780,6 +816,7 @@ const BLM_BASE_SKILLS: Skill[] = [
   },
   {
     id: "transpose-to-af1",
+    gameActionId: 149,
     potency: 0,
     type: "ogcd",
     target: "self",

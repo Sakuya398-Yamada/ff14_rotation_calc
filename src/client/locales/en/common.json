@@ -13,6 +13,7 @@
     "siteName": "FFXIV Rotation Calculator",
     "confirmOpenShared": "Opening the shared timeline will replace the timeline you are working on. Open it?",
     "saveAndShare": "Save & share",
+    "exportToMintLeaf": "Export to Mint Leaf",
     "settings": "Settings",
     "closeSharedLoadError": "Close",
     "sharedInfo": "Opened shared timeline",
@@ -143,6 +144,21 @@
     "copied": "Copied",
     "copy": "Copy",
     "copyFailed": "Could not copy. Select the URL and copy it."
+  },
+  "mintLeafExportDialog": {
+    "title": "Export to Mint Leaf",
+    "close": "Close export to Mint Leaf",
+    "closeButton": "Close",
+    "introBeforeLink": "Paste the text below into the \"Import / Export\" box on ",
+    "introAfterLink": " and press \"Apply import\".",
+    "headerNote": "The job, level and title are not included in the text. Choose them at the top of the Mint Leaf page.",
+    "scopeNote": "Only the order of actions and the GCD recast and cast times (as calculated by this tool, including skill speed and buffs) are exported. Manual start times, oGCD weave timing and buffs are not exported.",
+    "textLabel": "Text to paste into Mint Leaf",
+    "empty": "There are no actions to export.",
+    "skipped": "These actions have no matching Mint Leaf action and were not exported: {{names}}",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy. Select the text and copy it."
   },
   "myTimelinesDialog": {
     "title": "Saved timelines",

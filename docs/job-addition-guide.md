@@ -175,6 +175,7 @@ export const XXX_BUFFS: BuffDefinition[] = [
 | 確定クリ | `guaranteedCrit: true` | `sam-skills.ts` の `midare-setsugekka`・`kaeshi-setsugekka`・`tendo-kaeshi-setsugekka` |
 | 自動変化 | `autoTransform: AutoTransformEntry[]` + `hidden: true` | `sam-skills.ts` の `iaijutsu`（居合術 → 5 種に変化）／変化先は `hidden: true` |
 | AoE 威力減衰 | `maxTargets` + `falloffRate` + `falloffStartTarget` | `src/client/types/skill.ts` の `Skill`（同名のフィールドのコメント） |
+| Mint Leaf への書き出し | `gameActionId`（ゲームのアクション ID）。XIVAPI v2 の `Action` シートを日本語名で引き、PvP 版（`IsPvP`）と NPC 用の行を除いて決める。同じアクションの状態違いを表す隠しスキル（黒魔の AF/UB の段階など）は元のアクションの ID に、別のアクションに変わる変化先（居合術 → 彼岸花など）はそのアクションの ID にする。無いスキルは書き出されない | `blm-skills.ts` の `fire`（141）・`fire-up-af2`（隠しスキル。141）・`paradox`（25797） |
 
 ### 共有リキャストグループ（`cooldownGroup`）の注意
 
