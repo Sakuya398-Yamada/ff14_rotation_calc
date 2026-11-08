@@ -1,5 +1,6 @@
 import { JOB_DATA } from "../data/job-registry";
 import type { JobId } from "../data/job-registry";
+import { MAX_AUTO_GENERATE_PROCS, normalizeAutoGenerateProcOccurred } from "./auto-generate-proc";
 import type {
   TimelineEntry,
   CharacterStats,
@@ -75,7 +76,13 @@ function isMultiTargetWindow(value: unknown): value is MultiTargetWindow {
 
 function hasEntryShape(
   value: unknown,
-): value is { uid: string; skillId: string; manualStartTime?: unknown; procOccurred?: unknown } {
+): value is {
+  uid: string;
+  skillId: string;
+  manualStartTime?: unknown;
+  procOccurred?: unknown;
+  autoGenerateProcOccurred?: unknown;
+} {
   if (typeof value !== "object" || value === null) return false;
   const obj = value as Record<string, unknown>;
   return typeof obj.uid === "string" && typeof obj.skillId === "string";
@@ -121,6 +128,15 @@ export function deserializeAppState(json: string | null): PersistedAppState | nu
     }
     if (typeof item.procOccurred === "boolean") {
       entry.procOccurred = item.procOccurred;
+    }
+    const procs = item.autoGenerateProcOccurred;
+    if (
+      Array.isArray(procs) &&
+      procs.length <= MAX_AUTO_GENERATE_PROCS &&
+      procs.every((v) => typeof v === "boolean" || v === null)
+    ) {
+      const normalized = normalizeAutoGenerateProcOccurred(procs);
+      if (normalized) entry.autoGenerateProcOccurred = normalized;
     }
     entries.push(entry);
   }

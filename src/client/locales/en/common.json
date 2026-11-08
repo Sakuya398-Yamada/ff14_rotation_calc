@@ -293,6 +293,14 @@
       "occurred": "Proc",
       "notOccurred": "No proc"
     },
+    "autoGenerateProcs": "{{name}} procs",
+    "autoGenerateProcsHint": "Click to cycle unset → proc → no proc (faded colors show how unset checks are counted; green is proc, red is no proc)",
+    "autoGenerateProcTick": {
+      "occurred": "Check at {{seconds}}s: proc",
+      "notOccurred": "Check at {{seconds}}s: no proc",
+      "defaultOccurred": "Check at {{seconds}}s: unset (counted as proc)",
+      "defaultNotOccurred": "Check at {{seconds}}s: unset (counted as no proc)"
+    },
     "close": "Close",
     "basePotency": "Base potency",
     "buffMultiplier": "Buff multiplier",

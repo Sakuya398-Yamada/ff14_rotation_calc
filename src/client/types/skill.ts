@@ -319,6 +319,11 @@ export interface TimelineEntry {
    * true なら確率 1 で付与し、false なら付与しない（効いているバフの延長もしない）。未設定なら確率を期待値に使う
    */
   procOccurred?: boolean;
+  /**
+   * このエントリが付ける条件バフ（autoGenerateWhileBuff）の効果中の、確率の判定（autoGenerateProcRate）ごとの発生。
+   * i 番目が i + 1 回目の判定で、true なら発生、false なら不発。null と範囲外は未指定で、確率に近い既定の並びで決める（#900）
+   */
+  autoGenerateProcOccurred?: (boolean | null)[];
 }
 
 /** 指定バフの効果中だけ変わるリソースの性質 */
@@ -359,6 +364,12 @@ export interface ResourceDefinition {
   autoGenerateRestartOnBuffChange?: boolean;
   /** autoGenerateWhileBuff の条件バフが時間切れになる時刻ちょうどの付与も数える（黙想の 15 秒目）。未設定なら数えない（#524） */
   autoGenerateIncludeBuffEnd?: boolean;
+  /**
+   * 自動生成の刻みが、この確率で付与する判定であること（詩人の歌の 80%）。autoGenerateWhileBuff と併せて使う。
+   * 判定ごとの発生は、条件バフを付けたエントリの TimelineEntry.autoGenerateProcOccurred で指定する。
+   * 不発の判定では値を増やさず、付与ごとの効果（cooldownReductionOnGain）も起きない。未設定なら毎回付与する（#900）
+   */
+  autoGenerateProcRate?: number;
   /** 自動生成の付与 1 回ごとの時刻と値を TimelineResult.resourceTicks に記録し、リソースレーンに段差として描く */
   showAutoGenerateTicks?: boolean;
   /** 指定バフの効果中だけ変わる性質（例: 軍神のパイオン中の詩心最大 4・ヘイスト） */
@@ -658,6 +669,8 @@ export interface ResolvedTimelineEntry {
   hitTime?: number;
   /** 元のタイムラインエントリの TimelineEntry.procOccurred */
   procOccurred?: boolean;
+  /** 元のタイムラインエントリの TimelineEntry.autoGenerateProcOccurred（#900） */
+  autoGenerateProcOccurred?: (boolean | null)[];
   /** スキル実行後のリソース状態（消費・獲得・バフ由来の自動消費すべて反映済み） */
   resourceSnapshot: ResourceSnapshot;
   /** 発動条件を満たさなかったリソースとその種類 */

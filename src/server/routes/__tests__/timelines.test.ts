@@ -130,6 +130,21 @@ describe("POST /api/timelines: 保存", () => {
     expect(JSON.parse(row.data)).toEqual(data);
   });
 
+  it("歌の判定ごとの発生の指定（autoGenerateProcOccurred）も保存する (#900)", async () => {
+    const data = validData({
+      selectedJob: "brd",
+      entries: [
+        { uid: "entry-1", skillId: "wanderers-minuet", autoGenerateProcOccurred: [true, null, false] },
+        { uid: "entry-2", skillId: "burst-shot" },
+      ],
+    });
+    const res = await post({ data });
+
+    expect(res.status).toBe(201);
+    const [row] = await rows();
+    expect(JSON.parse(row.data)).toEqual(data);
+  });
+
   it("data の余分なキーは落として保存する", async () => {
     const data = { ...validData(), extra: "x", entries: [{ uid: "entry-1", skillId: "fire-3", note: "x" }] };
     const res = await post({ data });
@@ -244,6 +259,18 @@ describe("POST /api/timelines: 不正な入力", () => {
     [
       "エントリの procOccurred が boolean でない",
       { data: { ...validData(), entries: [{ uid: "entry-1", skillId: "fire", procOccurred: "true" }] } },
+    ],
+    [
+      "エントリの autoGenerateProcOccurred の要素が boolean・null でない",
+      { data: { ...validData(), entries: [{ uid: "entry-1", skillId: "fire", autoGenerateProcOccurred: [true, "false"] }] } },
+    ],
+    [
+      "エントリの autoGenerateProcOccurred が 15 件",
+      {
+        data: validData({
+          entries: [{ uid: "entry-1", skillId: "fire", autoGenerateProcOccurred: Array.from({ length: 15 }, () => true) }],
+        }),
+      },
     ],
     ["hitDelays に存在しないスキル ID", { data: validData({ hitDelays: { "no-such-skill": 0.5 } }) }],
     ["hitDelays に別のジョブのスキル ID", { data: validData({ hitDelays: { stone: 0.5 } }) }],

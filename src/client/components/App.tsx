@@ -15,6 +15,7 @@ import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
 import { resolveTimeline } from "../logic/resolve-timeline";
+import { normalizeAutoGenerateProcOccurred } from "../logic/auto-generate-proc";
 import { calcRangePps, calcTimelineSummary } from "../logic/timeline-summary";
 import { JOB_DATA } from "../data/job-registry";
 import { contentName, skillName } from "../logic/display-names";
@@ -338,6 +339,24 @@ export function App() {
     []
   );
 
+  const handleAutoGenerateProcChange = useCallback(
+    (uid: string, tickNumber: number, occurred: boolean | undefined) => {
+      setEntries((prev) =>
+        prev.map((e) => {
+          if (e.uid !== uid) return e;
+          const spec = [...(e.autoGenerateProcOccurred ?? [])];
+          while (spec.length < tickNumber) spec.push(null);
+          spec[tickNumber - 1] = occurred ?? null;
+          const normalized = normalizeAutoGenerateProcOccurred(spec);
+          const { autoGenerateProcOccurred: _drop, ...rest } = e;
+          void _drop;
+          return normalized ? { ...rest, autoGenerateProcOccurred: normalized } : rest;
+        })
+      );
+    },
+    []
+  );
+
   const handleHitDelayChange = useCallback((skillId: string, hitDelay: number | undefined) => {
     setHitDelays((prev) => {
       if (hitDelay === undefined) {
@@ -528,6 +547,8 @@ export function App() {
               onProcOccurredChange={handleProcOccurredChange}
               hitDelay={hitDelays[selectedSkill.id]}
               onHitDelayChange={handleHitDelayChange}
+              resources={levelResources}
+              onAutoGenerateProcChange={handleAutoGenerateProcChange}
             />
           )}
         </div>
