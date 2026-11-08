@@ -90,7 +90,7 @@
       "accountLabel": "Account information",
       "account": "The value derived from the user ID, the links and the sessions of the Discord account that sent the request are erased. If you also want the timelines linked to your account erased, say so in your request.",
       "anonymousLabel": "Timelines saved without logging in",
-      "anonymous": "First delete the timeline from \"Saved timelines\" in this tool, then send your request with its share URL. Only timelines that have already been deleted are erased completely (only the owner can delete a timeline in this tool, so this confirms that you are the owner).",
+      "anonymous": "First delete the timeline from the list opened by \"Save & share\" in this tool, then send your request with its share URL. Only timelines that have already been deleted are erased completely (only the owner can delete a timeline in this tool, so this confirms that you are the owner).",
       "copies": "Copies that other people saved from your timeline (by opening its share URL and saving) are their own saves and are not erased."
     },
     "contact": {
