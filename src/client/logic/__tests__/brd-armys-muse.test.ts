@@ -45,7 +45,7 @@ function expectNoError(e: ResolvedTimelineEntry) {
   expect(e.resourceErrors).toEqual([]);
 }
 
-// パイオン(0) → バーストショット(0.65) のあと、詩心は 4.4 / 8.15 / 11.9 / 15.65 秒に 1 つずつ付く
+// パイオン(0) → バーストショット(0.65) のあと、詩心は 3 / 6 / 12 / 15 秒に 1 つずつ付く（9 秒の判定は既定で不発。#900）
 const SONG_TIME_BY_REPERTOIRE: [number, number, number][] = [
   [1, 5, 2.475],
   [2, 9, 2.45],

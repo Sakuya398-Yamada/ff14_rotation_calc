@@ -7,9 +7,13 @@ import type { ResourceDefinition } from "../types/skill";
  *   → エイペックスアローで全消費
  * - コーダシンボル（Coda）: 各歌の実行時に付与（最大3）
  *   → 光神のフィナーレ / 光神のアンコールで消費
- * - 詩心（Repertoire）: 歌の効果中にDoTクリティカル時等で付与（旅神のメヌエット中は最大3、軍神のパイオン中は最大4。
+ * - 詩心（Repertoire）: 歌の効果中の 3 秒ごとの判定で、80% の確率で付与（旅神のメヌエット中は最大3、軍神のパイオン中は最大4。
  *   賢人のバラード中は溜まらず、付与のたびにブラッドレッター系のリキャストを短縮する）
  *   → メヌエット中はピッチパーフェクトで消費
+ *
+ * 歌の判定は、歌が付いてから 3, 6, …, 42 秒の 14 回（45 秒の時間切れちょうどは判定しない）。
+ * 判定ごとの発生は歌のエントリで指定し、未指定の判定は 3・8・13 回目を不発とする（#900。出典は公式ジョブガイドの
+ * 「追加効果（発動確率80％）」と特性「ソウルボイス」の「発動条件：自身に「詩心」が付与されるとき」、間隔と起点は The Balance の BRD FAQ）
  */
 export const BRD_RESOURCES: ResourceDefinition[] = [
   {
@@ -18,11 +22,13 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     color: "#ffd700",
     displayAsGauge: true,
     acquiredLevel: 80,
-    autoGenerateInterval: 3.75,
+    autoGenerateInterval: 3,
     autoGenerateAmount: 5,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
     // 詩心と同じく、歌を実行した時刻から数える
     autoGenerateRestartOnBuffChange: true,
+    // 詩心が付与される判定と同じ判定で増える（詩心と同じ指定を引く）
+    autoGenerateProcRate: 0.8,
   },
   {
     id: "coda-mages",
@@ -53,10 +59,11 @@ export const BRD_RESOURCES: ResourceDefinition[] = [
     // ドットだと、アビリティを続けて並べたときに隣のマーカーの丸とつながって数が読めないので、数字付きのゲージで描く
     displayAsGauge: true,
     acquiredLevel: 52,
-    autoGenerateInterval: 3.75,
+    autoGenerateInterval: 3,
     autoGenerateWhileBuff: ["mages-ballad", "armys-paeon", "wanderers-minuet"],
     // 付与は歌ごとの効果なので、歌を上書きしたら新しい歌を実行した時刻から数え直す
     autoGenerateRestartOnBuffChange: true,
+    autoGenerateProcRate: 0.8,
     whileBuffModifiers: [
       // 旅神のメヌエット: 詩心は最大 3（ピッチパーフェクトで消費）
       { buffId: "wanderers-minuet", maxStacks: 3 },
