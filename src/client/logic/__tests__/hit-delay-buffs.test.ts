@@ -78,6 +78,7 @@ const buffs: BuffDefinition[] = [
   makeBuff({ id: "fest", duration: 30 }),
   makeBuff({ id: "stance-a", duration: 30, exclusiveGroup: "stance" }),
   makeBuff({ id: "stance-b", duration: 30, exclusiveGroup: "stance" }),
+  makeBuff({ id: "consumable", duration: 20, effects: [{ type: "consumeOnGcd", value: 0 }] }),
   makeBuff({ id: "song-a", duration: 45, exclusiveGroup: "songs" }),
   makeBuff({ id: "song-b", duration: 45, exclusiveGroup: "songs" }),
 ];
@@ -103,6 +104,8 @@ const skills: Skill[] = [
   makeSkill({ id: "buff-ogcd", type: "ogcd", potency: 0, recastTime: 120, buffApplications: ["damage-up"] }),
   makeSkill({ id: "quick-buff-ogcd", type: "ogcd", potency: 0, recastTime: 1, buffApplications: ["damage-up"] }),
   makeSkill({ id: "spell", potency: 300, castTime: 2.0, buffApplications: ["spell-buff"] }),
+  // 詠唱とリキャストが同じ（次の GCD がちょうど着弾時刻から始まる）
+  makeSkill({ id: "even-spell", potency: 300, castTime: 2.5, buffApplications: ["consumable"] }),
   makeSkill({ id: "proc-gcd", buffApplications: ["proc"], buffApplicationProcRates: { proc: 0.4 } }),
   makeSkill({ id: "combo-1" }),
   makeSkill({ id: "combo-2", comboFrom: ["combo-1"], comboBuffApplications: ["combo-buff"] }),
@@ -362,6 +365,16 @@ describe("バフのレーン", () => {
     expect(spans).toEqual([
       { buffId: "damage-up", startTime: Math.round((last.startTime + 0.8) * 1000) / 1000, endTime: Math.round((last.startTime + 20.8) * 1000) / 1000, stacks: undefined },
     ]);
+  });
+
+  it("着弾時刻ちょうどに始まったエントリが消費したバフは、その時刻で区間を終える", () => {
+    const result = resolve([entry("even-spell"), entry("gcd"), entry("gcd")]);
+    const [spell, consumer] = result.entries;
+    expect(consumer.startTime).toBe(spell.hitTime);
+    expect(buffAtUse(consumer, "consumable")).toBeDefined();
+    expect(consumer.activeBuffs.some((ab) => ab.buffId === "consumable")).toBe(false);
+    const spans = computeBuffTimespans(result.entries, buffs).get("consumable");
+    expect(spans).toEqual([{ buffId: "consumable", startTime: spell.hitTime, endTime: spell.hitTime, stacks: undefined }]);
   });
 
   it("エントリの間の着弾で排他グループのバフが外れたら、その着弾時刻で区間を終える", () => {

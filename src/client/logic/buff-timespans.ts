@@ -48,17 +48,21 @@ export function computeBuffTimespans(
   for (const spanList of spans.values()) {
     for (const span of spanList) {
       let lastSeenTime = span.startTime;
+      let seen = false;
       for (const entry of resolvedEntries) {
         const match = entry.activeBuffs.find(
           (ab) => ab.buffId === span.buffId && ab.startTime === span.startTime,
         );
         if (match) {
           lastSeenTime = entry.startTime;
+          seen = true;
         }
       }
       if (lastSeenTime >= span.endTime) continue;
 
-      const nextTimeIdx = allTimes.findIndex((t) => t > lastSeenTime);
+      // どのエントリの activeBuffs にも出ない、着弾で付いたバフは、着弾時刻ちょうどに始まったエントリが
+      // 消費・解除したことがある（詠唱がリキャスト以上の GCD の次の GCD）ので、そのエントリから探す（#948）
+      const nextTimeIdx = allTimes.findIndex((t) => (seen ? t > lastSeenTime : t >= span.startTime));
       const nextTime = nextTimeIdx < 0 ? Number.POSITIVE_INFINITY : allTimes[nextTimeIdx];
       const nextEntry = nextTimeIdx < 0 ? undefined : resolvedEntries.find((e) => e.startTime === nextTime);
       const stillActive = nextEntry?.activeBuffs.some(
