@@ -1,4 +1,4 @@
-import type { ActiveBuff, BuffDefinition } from "../types/skill";
+import type { ActiveBuff, BuffDefinition, SkillType } from "../types/skill";
 
 /**
  * 詳細パネル表示用のバフ寄与情報。
@@ -25,13 +25,15 @@ export interface BuffContribution {
  * 指定スキルに対する各 ActiveBuff の寄与を抽出する。
  * potency / critRate / dhRate / guaranteedCrit / guaranteedDh のいずれかに寄与するバフだけ返す。
  *
- * potency の appliesToSkillIds フィルタは resolve-timeline.ts:getPotencyMultiplier と、
- * guaranteedCrit / guaranteedDh のフィルタは resolve-timeline.ts:hasGuaranteedHit と同じロジック。
+ * potency の appliesToSkillIds フィルタは resolve-timeline.ts:getPotencyMultiplier と同じロジック。
+ * guaranteedCrit / guaranteedDh は resolve-timeline.ts の判定（hasGuaranteedHit の appliesToSkillIds フィルタと、
+ * 呼び出し側の GCD 限定）と揃え、GCD のときだけ拾う。
  */
 export function getBuffContributions(
   activeBuffs: ActiveBuff[],
   buffDefMap: Map<string, BuffDefinition>,
-  targetSkillId: string
+  targetSkillId: string,
+  targetSkillType: SkillType
 ): BuffContribution[] {
   const result: BuffContribution[] = [];
   for (const ab of activeBuffs) {
@@ -63,10 +65,12 @@ export function getBuffContributions(
           hasDh = true;
           break;
         case "guaranteedCrit":
+          if (targetSkillType !== "gcd") continue;
           if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(targetSkillId)) continue;
           guaranteedCrit = true;
           break;
         case "guaranteedDh":
+          if (targetSkillType !== "gcd") continue;
           if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(targetSkillId)) continue;
           guaranteedDh = true;
           break;
