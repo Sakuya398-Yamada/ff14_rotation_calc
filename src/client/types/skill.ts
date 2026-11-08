@@ -659,7 +659,8 @@ export interface ResolvedTimelineEntry {
   recastError: boolean;
   /**
    * リキャストのレーンに描く区間の終わり（秒）。固有リキャストのあるスキルを、エラー無しで使ったときだけ持つ。
-   * 開始 + リキャストから、リキャストの短縮（reduceChargeCooldown）で引いた分を反映済み（#898）
+   * 計算でそのチャージが戻る時刻。チャージは 1 本のタイマーで順番に戻るので、続けて使った 2 本目以降は
+   * 前のチャージが戻ってから数える（#924）。リキャストの短縮（reduceChargeCooldown）も反映済み（#898）
    */
   cooldownEndTime?: number;
   /** WSコンボ不成立（エラーではないがコンボ威力が適用されない） */
