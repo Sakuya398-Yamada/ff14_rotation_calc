@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useTranslation } from "react-i18next";
 import type { RefObject } from "react";
 import { useLanguage } from "../i18n";
+import { loginUrl, type AccountStatus } from "../logic/account";
 import { deleteMyTimeline, fetchMyTimelines, type DeleteMyTimelineError, type MyTimelineItem } from "../logic/my-timelines";
 import { buildShareUrl } from "../logic/shared-timeline";
 import { jobName } from "../logic/display-names";
@@ -18,6 +19,10 @@ interface MyTimelinesDialogProps {
   saveNewButtonRef: RefObject<HTMLButtonElement | null>;
   /** 変わったら、開いている一覧を 1 ページ目から取り直す（保存したものを出すため） */
   reloadKey: number;
+  /** ログイン中はアカウントの一覧になる。ログインしていなければログインを案内する */
+  accountStatus: AccountStatus;
+  /** ログインした後に戻るパス */
+  returnTo: string;
 }
 
 export function MyTimelinesDialog({
@@ -27,6 +32,8 @@ export function MyTimelinesDialog({
   onSaveNew,
   saveNewButtonRef,
   reloadKey,
+  accountStatus,
+  returnTo,
 }: MyTimelinesDialogProps) {
   const { t } = useTranslation();
   const lang = useLanguage();
@@ -199,12 +206,22 @@ export function MyTimelinesDialog({
 
       <div style={styles.body}>
         <p style={styles.note}>
-          {t("myTimelinesDialog.intro")}
+          {accountStatus === "loggedIn" ? t("myTimelinesDialog.introAccount") : t("myTimelinesDialog.intro")}
         </p>
+        {accountStatus === "loggedOut" && (
+          <div style={styles.loginNote}>
+            <p style={styles.note}>{t("myTimelinesDialog.loginNote")}</p>
+            <a href={loginUrl(returnTo)} style={styles.loginLink}>
+              {t("myTimelinesDialog.login")}
+            </a>
+          </div>
+        )}
         {items === null ? (
           !error && <p style={styles.text}>{t("myTimelinesDialog.loading")}</p>
         ) : items.length === 0 ? (
-          <p style={styles.text}>{t("myTimelinesDialog.empty")}</p>
+          <p style={styles.text}>
+            {accountStatus === "loggedIn" ? t("myTimelinesDialog.emptyAccount") : t("myTimelinesDialog.empty")}
+          </p>
         ) : (
           <ul ref={listRef} style={styles.list}>
             {items.map((item) => (
@@ -372,6 +389,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "11px",
     lineHeight: 1.5,
     color: "var(--color-muted)",
+  },
+  loginNote: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "var(--space-2)",
+  },
+  loginLink: {
+    ...buttonBase,
+    display: "inline-flex",
+    alignItems: "center",
+    border: "1px solid var(--color-field)",
+    background: "var(--color-raised)",
+    color: "var(--color-text)",
+    textDecoration: "none",
   },
   list: {
     display: "flex",

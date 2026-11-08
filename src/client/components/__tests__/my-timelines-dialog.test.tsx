@@ -53,6 +53,8 @@ function renderDialog(overrides: Partial<Parameters<typeof MyTimelinesDialog>[0]
     onSaveNew: vi.fn(),
     saveNewButtonRef: createRef<HTMLButtonElement>(),
     reloadKey: 0,
+    accountStatus: "unavailable" as const,
+    returnTo: "/",
     ...overrides,
   };
   const result = render(<MyTimelinesDialog {...props} />);
@@ -552,5 +554,82 @@ describe("MyTimelinesDialog（英語）", () => {
     } finally {
       Reflect.deleteProperty(navigator, "clipboard");
     }
+  });
+});
+
+describe("MyTimelinesDialog: ログインの状態", () => {
+  const LOGIN_NOTE = "Discord でログインすると、ここに出ているタイムラインがアカウントに紐づき、別のブラウザでもこの一覧を見られます。";
+
+  it("ログインしていなければ、ログインの案内と、戻るパスを付けたログインのリンクを出す", async () => {
+    renderDialog({ accountStatus: "loggedOut", returnTo: "/t/V1StGXR8_Z5jdHi6B-myT" });
+
+    expect(screen.getByText(/^このブラウザで保存したタイムラインを/)).toBeInTheDocument();
+    expect(screen.getByText(LOGIN_NOTE)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Discord でログイン" })).toHaveAttribute(
+      "href",
+      "/api/auth/discord?returnTo=%2Ft%2FV1StGXR8_Z5jdHi6B-myT"
+    );
+    await screen.findByRole("link", { name: /タイムライン 1/ });
+  });
+
+  it("ログインしていなくて保存が無ければ、このブラウザの保存が無いと出す", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null }));
+    renderDialog({ accountStatus: "loggedOut" });
+
+    expect(await screen.findByText("このブラウザで保存したタイムラインはありません。")).toBeInTheDocument();
+  });
+
+  it("ログイン中は、アカウントの一覧としての説明を出し、ログインの案内は出さない", async () => {
+    renderDialog({ accountStatus: "loggedIn" });
+
+    expect(screen.getByText(/^ログイン中のアカウントで保存したタイムラインを/)).toBeInTheDocument();
+    expect(screen.queryByText(/^このブラウザで保存したタイムラインを/)).not.toBeInTheDocument();
+    expect(screen.queryByText(LOGIN_NOTE)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
+    await screen.findByRole("link", { name: /タイムライン 1/ });
+  });
+
+  it("ログイン中で保存が無ければ、このアカウントの保存が無いと出す", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null }));
+    renderDialog({ accountStatus: "loggedIn" });
+
+    expect(await screen.findByText("このアカウントで保存したタイムラインはありません。")).toBeInTheDocument();
+  });
+
+  it("ログインできない環境では、ログインの案内を出さない", async () => {
+    renderDialog({ accountStatus: "unavailable" });
+
+    expect(screen.getByText(/^このブラウザで保存したタイムラインを/)).toBeInTheDocument();
+    expect(screen.queryByText(LOGIN_NOTE)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Discord でログイン" })).not.toBeInTheDocument();
+    await screen.findByRole("link", { name: /タイムライン 1/ });
+  });
+});
+
+describe("MyTimelinesDialog: ログインの状態（英語）", () => {
+  beforeEach(() => i18next.changeLanguage("en"));
+  afterEach(() => i18next.changeLanguage("ja"));
+
+  it("ログインしていなければ、ログインの案内とリンクを英語で出す", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null }));
+    renderDialog({ accountStatus: "loggedOut", returnTo: "/en/" });
+
+    expect(
+      screen.getByText("Log in with Discord to link the timelines shown here to your account and see this list in other browsers too.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Log in with Discord" })).toHaveAttribute(
+      "href",
+      "/api/auth/discord?returnTo=%2Fen%2F"
+    );
+  });
+
+  it("ログイン中は、アカウントの一覧としての説明と、空のときの文を英語で出す", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null }));
+    renderDialog({ accountStatus: "loggedIn" });
+
+    expect(
+      screen.getByText("Timelines saved to the account you're logged in with, newest first. Log in on another browser to see the same list.")
+    ).toBeInTheDocument();
+    expect(await screen.findByText("No timelines have been saved to this account.")).toBeInTheDocument();
   });
 });

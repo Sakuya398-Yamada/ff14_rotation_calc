@@ -22,6 +22,14 @@
     "mailLabel": "Email:",
     "privacyPolicy": "Privacy policy"
   },
+  "accountControl": {
+    "login": "Log in with Discord",
+    "loggedIn": "Logged in",
+    "logout": "Log out",
+    "loggingOut": "Logging out…",
+    "logoutFailed": "Couldn't log out. Check your connection and try again.",
+    "privacyPolicy": "Privacy policy"
+  },
   "privacyPolicyPage": {
     "siteName": "FFXIV Rotation Calculator",
     "documentTitle": "Privacy policy | FFXIV Rotation Calculator",
@@ -143,8 +151,12 @@
     "title": "Saved timelines",
     "close": "Close saved timelines",
     "intro": "Timelines saved in this browser, newest first. If you clear the browser's site data, they no longer appear here (you can still open them from their share URLs).",
+    "introAccount": "Timelines saved to the account you're logged in with, newest first. Log in on another browser to see the same list.",
+    "loginNote": "Log in with Discord to link the timelines shown here to your account and see this list in other browsers too.",
+    "login": "Log in with Discord",
     "loading": "Loading…",
     "empty": "No timelines have been saved in this browser.",
+    "emptyAccount": "No timelines have been saved to this account.",
     "untitled": "(Untitled)",
     "jobLevel": "{{job}} Lv{{level}} · ",
     "loadMore": "Load more",

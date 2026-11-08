@@ -4,6 +4,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { csrf } from "hono/csrf";
 import { nanoid } from "nanoid";
 import { z } from "zod";
+import type { MeResponse } from "../../client/logic/account";
 import { userIdentities, users } from "../db/schema";
 import type { AppDb, Bindings } from "../env";
 import { hmacDiscordUserId } from "../services/discord-id";
@@ -15,8 +16,6 @@ import { clearOwnerCookie, readOwnerToken, setOwnerCookie } from "./owner-cookie
 import { requireJson } from "./require-json";
 
 type RouteEnv = { Bindings: Bindings };
-
-export type MeResponse = { loginAvailable: boolean; loggedIn: boolean };
 
 const SESSION_COOKIE = "session";
 // 認可画面から戻るまでのあいだだけ、state・code_verifier・戻るパスを持つ
