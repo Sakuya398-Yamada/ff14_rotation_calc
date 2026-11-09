@@ -17,7 +17,7 @@ PR 作成後、実装を通じて得られた情報を Issue にコメントと�
 
 ### 2. ハマりどころ
 
-後から同じ問題に遭遇したときの参考になるよう、**症状・原因・解決** の 3 点セットで：
+**症状・原因・解決** の 3 点セットで：
 
 ```
 ## ハマりどころ
@@ -54,13 +54,13 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
 
 追記手順の正本はこの節。判定基準（何を書くか・重要度・還元先）は `.claude/rules/workflow-feedback.md`。
 
-個別 Issue への記録（1〜4）が終わった **最後** に、セッション全体を振り返り、**ワークフロー自体**（`/issue-start` の手順、`.claude/rules/*`、`CLAUDE.md`、hooks、agents、skills、MCP 運用）への改善余地があれば、知見ボード Issue（#195）にコメントする。
+個別 Issue への記録（1〜4）が終わった **最後** に、セッション全体を振り返り、**ワークフロー自体** への改善余地があれば、知見ボード Issue（#195）にコメントする。
 
 ### 書き込み手順
 
 1. このセッションの気づきと、Phase 1〜6 の起票フローで [U]（還元に回す）にした候補を棚卸しする。テンプレート更新を取り込むセッションでは、取り込みで見つかったテンプレートの不具合だけにする
 2. 気づきが無ければこのステップ全体をスキップしてよい（「特になし」コメントは不要）
-3. 気づきがあれば、提示する前に `bash .claude/scripts/knowledge-board.sh grep '<キーワード>'` で過去の知見と重なっていないかを見る（知見ボードを `issue_read` で丸読みしない）。重なる知見があれば、そのコメント ID と回収状況を「現状の動作」に添え、それが Low なら再発として Medium で書く。そのうえで以下のフォーマットで提示し、確認を得る。還元先を「テンプレート汎用」にする前に、気づきに関わるファイル（hook・skill・rules など）を、テンプレート元の取り込み済みの版の、`template/` 配下の同じパスのファイルと見比べる（`get_file_contents` で `path` に `template/<パス>`、`ref` に `.claude/template-version` の `version` を指定して読む。`gh` なら `gh api "repos/<テンプレート元>/contents/template/<パス>?ref=<version>" -H "Accept: application/vnd.github.raw"`）。プロジェクトでカスタマイズした部分が原因なら、別のプロジェクトでは起きないので「プロジェクト固有」にする。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、テンプレート元がセッションに付いていないと、この読み取りは MCP・gh のどちらでも拒まれるので、作業ツリーを作らないクローンから読む（`git clone -q --no-checkout --depth 1 --branch <version> https://github.com/<テンプレート元>.git <scratchpad>/template-<version>` のあと、`git -C <scratchpad>/template-<version> show <version>:template/<パス>`。2 件目からは、既にあるクローンを使い回す。クローンの `template/` 配下のファイルを Read で読むと、プレースホルダーのままの `CLAUDE.md` と rules が読み込まれるので、`git show` で読む。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは、セッションに付いていないリポジトリの Release やファイルを API で読めない」）。テンプレート元をセッションに足すかは、ここでは聞かず、起票が要るときに節 6 の手順 3 で聞く。クローンでも読めないとき（非公開のテンプレート元など）は、見比べずに提示し、「還元先」にテンプレート元と見比べられなかったことを添えて、汎用かどうかも、その提示の Y/E/N で一緒にユーザーに決めてもらう
+3. 気づきがあれば、提示する前に `bash .claude/scripts/knowledge-board.sh grep '<キーワード>'` で過去の知見と重なっていないかを見る。重なる知見があれば、そのコメント ID と回収状況を「現状の動作」に添え、それが Low なら再発として Medium で書く。改善案が対象ファイルの記述の不足（〜しか書いていない・〜が無い）を前提にするなら、その節を読んで今もそうかを確かめ、もう足りていれば書かない。そのうえで以下のフォーマットで提示し、確認を得る。還元先を「テンプレート汎用」にする前に、気づきに関わるファイル（hook・skill・rules など）を、テンプレート元の取り込み済みの版の、`template/` 配下の同じパスのファイルと見比べる（`get_file_contents` で `path` に `template/<パス>`、`ref` に `.claude/template-version` の `version` を指定して読む。`gh` なら `gh api "repos/<テンプレート元>/contents/template/<パス>?ref=<version>" -H "Accept: application/vnd.github.raw"`）。プロジェクトでカスタマイズした部分が原因なら「プロジェクト固有」にする。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、テンプレート元がセッションに付いていないと、この読み取りは MCP・gh のどちらでも拒まれるので、作業ツリーを作らないクローンから読む（`git clone -q --no-checkout --depth 1 --branch <version> https://github.com/<テンプレート元>.git <scratchpad>/template-<version>` のあと、`git -C <scratchpad>/template-<version> show <version>:template/<パス>`。2 件目からはクローンを使い回す。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは、セッションに付いていないリポジトリの Release やファイルを API で読めない」）。テンプレート元をセッションに足すかは、ここでは聞かず、起票が要るときに節 6 の手順 3 で聞く。クローンでも読めないとき（非公開のテンプレート元など）は、見比べられなかったことを「還元先」に添えて提示し、汎用かどうかもその Y/E/N でユーザーに決めてもらう
 
    ```
    【ワークフロー改善余地 候補】
@@ -78,7 +78,7 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
     [N] 追記しない（口頭報告のみ）
    ```
 
-5. 承認（Y/E）後、`add_issue_comment` で知見ボード Issue #195 にコメントする。本文は以下のテンプレート：
+4. 承認（Y/E）後、`add_issue_comment` で知見ボード Issue #195 にコメントする。本文は以下のテンプレート：
 
    ```markdown
    ## ワークフロー改善余地 [#<作業Issue番号>]
@@ -98,22 +98,22 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
    **還元先**: プロジェクト固有 / テンプレート汎用（未還元）
    ```
 
-   `**還元先**` は「還元する / しないの判定」（`.claude/rules/workflow-feedback.md`）の結果。テンプレート元へ Issue として還元したら、節 6「テンプレート元への還元」の手順で `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する
-6. 複数ある場合は候補ごとに確認し、承認されたものだけをそれぞれ独立したコメントにする（1 気づき = 1 コメント）
+   `**還元先**` は、テンプレート元へ還元したら節 6 手順 7 で編集する
+5. 複数ある場合は候補ごとに確認し、承認されたものだけをそれぞれ独立したコメントにする（1 気づき = 1 コメント）
 
-無人書き込みはしない。知見ボード Issue は自動クローズしない。知見が改善 Issue に昇格したら（日次ルーティン `daily-triage` の棚卸しか、手での棚卸し。`.claude/rules/workflow-feedback.md`「知見ボードIssue」）、元コメント末尾に `✅ Issue #XXX で対応` が付く運用。印は `knowledge-board.sh mark` で付けられる（後述「知見ボードの読み方」）。
+知見が改善 Issue に昇格したら（棚卸しは `.claude/rules/workflow-feedback.md`「知見ボードIssue」）、元コメント末尾に `✅ Issue #XXX で対応` が付く運用（`knowledge-board.sh mark` で付けられる。後述「知見ボードの読み方」）。
 
 ## 6. テンプレート元への還元（upstream feedback）
 
 還元手順の正本はこの節。「還元する / しないの判定」と「還元 Issue に含めないもの」は `.claude/rules/workflow-feedback.md`。
 
-節 5 で投稿した気づき（と、手順 1 の棚卸しの指摘）のうち **還元先が「テンプレート汎用」のもの** は、このプロジェクト内で閉じさせず、テンプレート元リポジトリ（`.claude/template-version` の `repo`）に **Issue として起票** する。テンプレート側で反映・リリースされた改善は、SessionStart hook の更新チェック経由でこのプロジェクトにも戻ってくる。
+節 5 で投稿した気づき（と、手順 1 の棚卸しの指摘）のうち **還元先が「テンプレート汎用」のもの** は、テンプレート元リポジトリ（`.claude/template-version` の `repo`）に **Issue として起票** する。
 
 ### 手順
 
-1. **対象の抽出**: 節 5 で承認・投稿されたコメントのうち、`還元先: テンプレート汎用` で、重要度が Medium 以上のものだけ（Low は再発するまで還元しない）。棚卸しの Issue（`refactor: rules 棚卸し` など）で、知見ボードを経由せずにその Issue のコメントに記録した、テンプレート由来の文面への指摘も対象にしてよい（汎用かどうかは、節 5「書き込み手順」3 と同じく、テンプレート元の取り込み済みの版と見比べて決める）。無ければスキップ
-2. **抽象化**: プロジェクト固有情報（コード断片・ファイルパス・内部識別子・URL・FF14 のスキル名／ジョブ名等のドメイン固有語・顧客名・社内システム名・認証情報・`#N` 形式の Issue 番号）を除き、ワークフロー手順のレベルに書き直す。非公開プロジェクトならリポジトリ名も書かず「非公開プロジェクト」とする（公開かどうかは `gh api repos/{owner}/{repo} --jq .visibility` で見る。`public` のときだけ公開として扱い、`private`・`internal` のときや確かめられないときは非公開として扱う）。改善案は **テンプレート側のどのファイルをどう変えるか**（例: `template/.claude/skills/issue-start/phases/05-implementation.md`）の形で書く。引用したツールのエラー・拒否のメッセージは要約に置き換えず、前の文の固有情報だけを `[伏せ字: パス]` のように原文の記号と区別できる形で伏せて、「## 気づき」に残す（どの仕組みに止められたかの手がかりになる）。止められた呼び出し（コマンド・関数と渡した引数）も、コード断片として除かず、固有の値だけを同じ形で伏せて残す（どの引数で失敗したかが、失敗の条件の手がかりになる）
-3. **重複チェック**: `search_issues` を `owner` / `repo` に **テンプレート元** を指定して呼び、近い Issue があればリンクを提示してコメント追記を提案する。GitHub MCP が使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、テンプレート元がセッションに付いていないと、MCP でも gh でも検索・起票が拒まれる。付いていないと分かっているか、呼び出しが拒まれたら、テンプレート元をこのセッションに足してよいかをユーザーに聞き、承認を得てから `add_repo` ツールで足す（起票もするので `access: push`。auto mode では、明示の承認が無いと権限の付与として止められる）。この確認を減らそうと、次からテンプレート元を最初から付けてセッションを開始することはしない。リポジトリを複数付けて開始すると、作業ディレクトリが各クローンの親になり、利用プロジェクトの settings.json の hooks と deny が読まれなくなる（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションにリポジトリを複数付けて開始すると、settings.json が読まれない」）。聞くのは、候補が複数あってもこのセッションで 1 回。足せていれば、この手順と、この節の手順 5（起票）をそのまま行う（MCP が使えなければ、検索は `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の重複検索の REST）。ツールが無い・足せない・断られた・足しても拒まれるときは、もう一度は聞かず、提示の「既存Issue重複チェック」を「未確認」として進む
+1. **対象の抽出**: 節 5 で承認・投稿されたコメントのうち、`還元先: テンプレート汎用` で、重要度が Medium 以上のものだけ。棚卸しの Issue（`refactor: rules 棚卸し` など）で、知見ボードを経由せずにその Issue のコメントに記録した、テンプレート由来の文面への指摘も対象にしてよい（汎用かどうかは節 5「書き込み手順」3 と同じく見比べて決める）。無ければスキップ
+2. **抽象化**: プロジェクト固有情報（`.claude/rules/workflow-feedback.md`「還元 Issue に含めないもの」）を除き、ワークフロー手順のレベルに書き直す。非公開プロジェクトならリポジトリ名も書かず「非公開プロジェクト」とする（`gh api repos/{owner}/{repo} --jq .visibility` が `public` のときだけ公開。`private`・`internal` や確かめられないときは非公開）。改善案は **テンプレート側のどのファイルをどう変えるか**（例: `template/.claude/skills/issue-start/phases/05-implementation.md`）の形で書く。引用したツールのエラー・拒否のメッセージは要約に置き換えず、前の文の固有情報だけを `[伏せ字: パス]` のように原文の記号と区別できる形で伏せて、「## 気づき」に残す。止められた呼び出し（コマンド・関数と渡した引数）も、コード断片として除かず、固有の値だけを同じ形で伏せて残す（どの仕組みにどの引数で止められたかが、失敗の条件の手がかりになる）
+3. **重複チェック**: `search_issues` を `owner` / `repo` に **テンプレート元** を指定して呼び、近い Issue があればリンクを提示してコメント追記を提案する。GitHub MCP が使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" issue list -R <owner/repo> --search "<キーワード>" --state all` で代替する。クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、テンプレート元がセッションに付いていないと MCP でも gh でも検索・起票が拒まれるので、付いていないと分かっているか拒まれたら、テンプレート元をこのセッションに足してよいかをユーザーに聞き、承認を得てから `add_repo` ツールで足す（起票もするので `access: push`。auto mode では、明示の承認が無いと権限の付与として止められる）。この確認を減らそうと、次からテンプレート元を最初から付けてセッションを開始することはしない。足すと以降は PreToolUse hook が呼ばれなくなるので、還元はセッションの最後に行い、以降は規約を手で守る（別の Issue は新しいセッションで始める。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションにリポジトリを複数付けて開始すると、settings.json が読まれない」）。聞くのは、候補が複数あってもこのセッションで 1 回。足せていれば、この手順と手順 5（起票）をそのまま行う（MCP が使えなければ、検索は `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の重複検索の REST）。ツールが無い・足せない・断られた・足しても拒まれるときは、もう一度は聞かず、提示の「既存Issue重複チェック」を「未確認」として進む
 4. **ユーザー確認**: 抽象化後の本文を以下のフォーマットで提示する（ローカル知見ボードへの承認とは **別に** 取る）。本文の構成はテンプレート元の Issue テンプレート `.github/ISSUE_TEMPLATE/template-feedback.md` と同じ
 
    ```
@@ -155,13 +155,13 @@ sub-issue として紐づけた場合は親 Issue 側に自動で表示される
    "/c/Program Files/GitHub CLI/gh.exe" issue create -R <owner/repo> --title "feedback: <要約>" --label feedback --body-file <tmp>
    ```
 
-   クラウドセッションでは、`gh issue create` は GraphQL なので 403 になる（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。手順 3 でテンプレート元をセッションに足せていれば、MCP が使えないときは同じ節の Issue 作成の REST で起票する。足せていなければ、セッションに付いていないリポジトリへの操作は REST でも `sessions are bound to their configured repositories` で拒まれるので、MCP も gh も試さずに手順 6 に進む（クラウド以外なら上の `gh issue create -R` を使う）
+   クラウドセッションでは `gh issue create` が GraphQL で 403 になるので、手順 3 でテンプレート元を足せていれば、MCP が使えないときは `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の Issue 作成の REST で起票する。足せていなければ REST でも `sessions are bound to their configured repositories` で拒まれるので、MCP も gh も試さずに手順 6 に進む（クラウド以外なら上の `gh issue create -R` を使う）
 
 6. **失敗した場合**（権限・ネットワーク等）: 整形済み本文を提示し、テンプレート元の Issue テンプレート「テンプレートへの知見還元」（`.github/ISSUE_TEMPLATE/template-feedback.md`）からの手動起票を案内する。手順 3 の重複チェックが「未確認」なら、起票する前にテンプレート元の Issue 一覧で重複を確かめてもらうよう添える。フローは止めない
-7. **ローカル側への印**: 起票後（手順 6 の手動起票なら、ユーザーから Issue の URL をもらってから。もらえなければ「未還元」のまま残す）、知見ボード #195 の元コメントの `**還元先**` 行を `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する（`update_issue_comment`。使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" api -X PATCH repos/Sakuya398-Yamada/ff14_rotation_calc/issues/comments/<comment_id> -F body=@<tmp>`、それも難しければユーザーに編集を依頼。再発として Medium で書いた気づきなら、前回の Low のコメントも同じく）。[N] で起票しなかったものは印を変えず、「テンプレート汎用（未還元）」のまま残す（還元するかどうかは、知見ボードの棚卸しのときにユーザーが決める）。棚卸しの Issue の指摘は、知見ボードには書かず、その Issue へのコメント（`add_issue_comment`。個別 Issue への記録と同じく書いてよい）に、起票した URL を記録する。URL をもらえなかったものや [N] で起票しなかったものは、未還元とそのコメントに書いて残す
+7. **ローカル側への印**: 起票後（手順 6 の手動起票なら、ユーザーから Issue の URL をもらってから）、知見ボード #195 の元コメントの `**還元先**` 行を `テンプレート汎用（↗ 還元済み: <テンプレート元Issue URL>）` に編集する（`update_issue_comment`。使えない場合は `"/c/Program Files/GitHub CLI/gh.exe" api -X PATCH repos/Sakuya398-Yamada/ff14_rotation_calc/issues/comments/<comment_id> -F body=@<tmp>`、それも難しければユーザーに編集を依頼。再発として Medium で書いた気づきなら、前回の Low のコメントも同じく）。URL をもらえなかったものと、[N] で起票しなかったもの（還元するかどうかは、知見ボードの棚卸しのときにユーザーが決める）は印を変えず、「テンプレート汎用（未還元）」のまま残す。棚卸しの Issue の指摘は、知見ボードには書かず、その Issue へのコメント（`add_issue_comment`。個別 Issue への記録と同じく書いてよい）に、起票した URL か未還元であることを記録する
 8. 複数ある場合は候補ごとに確認し、1 気づき = 1 Issue で起票する。ただし、同じ節（同じファイルの同じ見出しの下）を直す候補と、同じ点検（棚卸しなど）で出た小さな指摘（1 件が数行で済むもの）は、1 Issue にまとめて起票する。本文の改善案には、候補ごとに番号を付けて対象ファイルと直し方を書く（分けて進めるかはテンプレート元が決める。同じ節を直す Issue が別々にあると、テンプレート元で衝突する）
 
-テンプレート元への無人起票はしない。`.claude/template-version` が無い・読めない場合は「テンプレート版 不明」と書いて進め、ファイルの復旧をユーザーに促す。
+`.claude/template-version` が無い・読めない場合は「テンプレート版 不明」と書いて進め、ファイルの復旧をユーザーに促す。
 
 ## 知見ボードの読み方
 

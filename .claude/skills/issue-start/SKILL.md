@@ -12,33 +12,32 @@ argument-hint: "#<Issue番号>"
 
 ## Phase一覧（progressive disclosure）
 
-各 Phase の手順は `phases/` 配下に分割してある。**該当 Phase に入る直前にそのファイルを読む**。冒頭でまとめて読み込まない。読むのは Read ツールで行う（Bash の `cat` だと、出力上限を超えたファイルは退避されて先頭しか届かない。`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）。
+各 Phase の手順は `phases/` 配下に分割してある。**該当 Phase に入る直前にそのファイルを読む**。冒頭でまとめて読み込まない。読むのは Read ツールで行う（`cat` だと出力上限を超えたファイルは先頭しか届かない。`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）。
 
 | # | Phase | ファイル | スキップ |
 |---|-------|---------|---------|
 | 1 | Issue分析・不足確認・補完（+ テンプレート更新チェック） | `phases/01-issue-analysis.md`（条件付きの手順は `phases/01-*.md` に分けてあり、本体から該当するときだけ読む） | 不可 |
 | 2 | ラベル付与・ブランチ作成 | `phases/02-branch-setup.md` | 不可 |
-| 3 | コード探索（code-explorer） | `phases/03-exploration.md` | 修正箇所が明確な bug / docs は可（利用者から見える挙動・上限・制約を変える Issue では、利用者向けドキュメントの Grep だけは行う。扱いは `phases/03-exploration.md`「スキップ条件」） |
-| 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可（`phases/04-design.md`「いつ設計 Phase を行うか」の表の 1・2 行目に当たる変更（手順書・規約から人の確認を外す・弱める変更と、無人ルーティンの書き込み・判断の手順を変える変更）は不可） |
+| 3 | コード探索（code-explorer） | `phases/03-exploration.md` | 修正箇所が明確な bug / docs は可（利用者から見える挙動・上限・制約を変える Issue では、利用者向けドキュメントの Grep だけは行う。`phases/03-exploration.md`「スキップ条件」） |
+| 4 | 設計（code-architect）とユーザー承認 | `phases/04-design.md` | 差分を 1 文で説明できる変更は可（手順書・規約から人の確認を外す・弱める変更と、ルーティンの手順書（`.claude/routines/`）・ルーティンが判定に使う skill（`/issue-priority` とその補助ファイル）を変える変更は不可。`phases/04-design.md`「いつ設計 Phase を行うか」） |
 | 5 | 実装・検証・コミット | `phases/05-implementation.md`（条件付きの手順は `phases/05-*.md` に分けてあり、本体から該当するときだけ読む） | 不可 |
 | 6 | コードレビュー（code-reviewer） | `phases/06-review.md` | 散文のみの docs は可（手順・コマンドを含むランブックと、記述を別ファイルへ移す・まとめる変更は不可。`phases/06-review.md`「スキップ条件」） |
 | 7 | PR作成 | `phases/07-pr-creation.md` | 不可 |
 | 8 | Issueへの記録（+ 知見ボード・テンプレート元への還元） | `phases/08-issue-recording.md` | 不可 |
 
-> **リポジトリへの変更が出ない Issue**（「〜を裏取りし、必要なら修正 Issue を起票、不要ならクローズ」のような調査だけの Issue と、Issue 本文の書き換えやマージ済みブランチの削除のような GitHub 上の操作だけで終わる Issue）は、Phase 2〜7 を省略して Phase 8 に進む。調査の結果リポジトリへの変更が出れば、通常どおり Phase 2 から進める。どちらに当たるかは `phases/01-issue-analysis.md`「リポジトリへの変更が出ない Issue（調査・GitHub 上の操作だけ）」で見分け、手順は `phases/01-no-repo-change.md` にある
+> **リポジトリへの変更が出ない Issue**（調査だけの Issue と、GitHub 上の操作だけで終わる Issue）は、Phase 2〜7 を省略して Phase 8 に進む（調査の結果変更が出れば Phase 2 から）。見分け方は `phases/01-issue-analysis.md`「リポジトリへの変更が出ない Issue（調査・GitHub 上の操作だけ）」、手順は `phases/01-no-repo-change.md`
 
 ## 全体ルール
 
-- **確認ポイント**: Phase 1 の不足確認、Phase 4 の設計承認、スコープ外問題の起票、GitHub 上の操作だけで終わる Issue の適用前（dry-run の結果を示す）、Phase 8 の知見ボード追記とテンプレート元への起票では、ユーザーの Y/E/N を得てから進む。それ以外の場面では進捗を 2〜3 行で共有しながら自律的に進める
+- **確認ポイント**: Phase 1 の不足確認、Phase 4 の設計承認、スコープ外問題の起票、GitHub 上の操作だけで終わる Issue の適用前（dry-run の結果を示す）、Phase 8 の知見ボード追記とテンプレート元への起票では、ユーザーの Y/E/N を得てから進む
 - **確認の聞き方**: 確認ポイントと各 Phase の提示フォーマットの問いは、`AskUserQuestion` で選択式に聞く。1 つのテキストに並べて聞くと、「Y」だけの返事がどれへの答えか読めない
   - 設計案・起票本文などの中身は先にメッセージ本文に出し、質問には問いと選択肢だけを載せる。問いには候補番号とタイトルを入れ、質問だけでどれへの確認か読めるようにする
   - 選択肢はフォーマットの選択肢の行（[Y] / [N]、Phase 1 の旧 PR の [R] / [N] など）から取る。行の無い問い（Phase 4 の案の選択、Phase 1.5 の [Y/E/N]）は、案が複数なら案ごと（推奨を先頭）、1 つなら「進める / 進めない」のように立てる。[E] や修正点は選択肢に入れず、自由記述（Other）で受ける。受けたあとの扱いは各フォーマットの [E] の行のとおり
   - 独立した確認が複数あるとき（起票候補が複数ある等）は、1 回の呼び出しの中で別々の質問にする（1 回 4 問まで。超えたら呼び出しを分ける）。前の答えで次が決まる確認（知見ボードへの投稿のあとのテンプレート元への起票など）はまとめず、順に聞く。plan mode で設計承認を `ExitPlanMode` に乗せるときは、ほかの確認を先に聞いてから `ExitPlanMode` を呼ぶ
   - `AskUserQuestion` が使えないときは、質問ごとに名前（`設計`・`候補1` など）を付けて並べ、`設計-Y 候補1-N` の形で答えてもらう
-- **判断の線引き**: 読み方が分かれて成果物が変わる曖昧さは質問する。調べれば分かること（コードの構造・ライブラリの使い方・既存の挙動）は自分で調べる。ツール呼び出しの回数を理由に止まらない
+- **判断の線引き**: 読み方が分かれて成果物が変わる曖昧さは質問し、調べれば分かることは自分で調べる
 - **1 Issue = 1 PR**: スコープ外の変更を混ぜない（後述「スコープ外問題の起票提案」）
-- **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ）を使う。未接続・エラー時（使うツールがツール一覧に無いときも含む。MCP はつながっていても `search_issues` / `search_pull_requests` だけが無いセッションがある）は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe` のフルパス起動。`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）にフォールバックし（各 Phase の `gh issue` / `gh pr` などのサブコマンドは、クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では GraphQL を使うので 403 になる。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の REST に置き換える）、それも無ければ整形済みの本文を提示してユーザーに操作を依頼する。フロー全体は止めない
-- **セッション**: 1 セッション 1 Issue。別の Issue に移るときは `/clear` してから始める
+- **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ）を使う。未接続・エラー時（使うツールがツール一覧に無いときも含む）は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe` のフルパス起動。`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）にフォールバックし（クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、各 Phase の `gh issue` / `gh pr` などを `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の REST に置き換える）、それも無ければ整形済みの本文を提示してユーザーに操作を依頼する。フロー全体は止めない
 
 ## サブエージェント
 
@@ -50,9 +49,9 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 | `code-architect` | 実装ブループリント（1 案に絞って提案） | `.claude/agents/code-architect.md` |
 | `code-reviewer` | 実装者とは別の新しいコンテキストでの批判的レビュー（信頼度80以上のみ報告） | `.claude/agents/code-reviewer.md` |
 
-起動数・使いどころ・プロンプトに含めるものは `.claude/rules/context-efficiency.md`「サブエージェント委譲」と各 Phase の起動数表。バックグラウンドのサブエージェントの報告が届かず、output ファイルのパスだけが渡されたら（クラウドでコンテナが再起動したとき）、ファイルを読まずに `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでコンテナが再起動すると、バックグラウンドのサブエージェントの報告が届かない」のコマンドで報告だけを取り出す。
+起動数・使いどころ・プロンプトに含めるものは `.claude/rules/context-efficiency.md`「サブエージェント委譲」と各 Phase の起動数表。バックグラウンドのサブエージェントの報告が届かず、output ファイルのパスだけが渡されたら、ファイルを読まずに `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでコンテナが再起動すると、バックグラウンドのサブエージェントの報告が届かない」のコマンドで報告だけを取り出す。
 
-`subagent_type` が見つからない（`Agent type '...' not found`）ときは、エージェント定義がセッション開始時にしか読み込まれないのが原因（クラウドセッションの途中でリポジトリを付けた場合など）。クラウドでリポジトリを付けた直後なら、クローン後に登録ツール（`register_repo_root`）を呼べば次のターンから使える。それでも見つからなければ `general-purpose` に `.claude/agents/<name>.md` を読ませて代わりにする。その場合、定義の `tools` に無い操作（`code-reviewer` ならファイルの編集）はしないようプロンプトに書く。
+`subagent_type` が見つからない（`Agent type '...' not found`）ときは、エージェント定義がセッション開始時にしか読み込まれないのが原因。クラウドセッションの途中でリポジトリを付けたなら、クローン後に登録ツール（`register_repo_root`）を呼べば次のターンから使える。それでも見つからなければ `general-purpose` に `.claude/agents/<name>.md` を読ませて代わりにする。その場合、定義の `tools` に無い操作（`code-reviewer` ならファイルの編集）はしないようプロンプトに書く。
 
 ## MCP ツール
 
@@ -60,7 +59,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 | 用途 | 使うもの | 未接続時のフォールバック |
 |------|---------|------------------------|
-| Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `list_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request`。PR の購読（`subscribe_pr_activity`）は GitHub MCP に無いことがあるので、`phases/07-pr-creation.md` 手順 4 で確かめる（クラウドセッションでは claude-code-remote 側の `mcp__claude-code-remote__subscribe_pr_activity`） | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...`（クラウドセッションでは `gh api` の REST。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」） |
+| Issue / PR 操作 | GitHub MCP（`github-mcp-server` バイナリ）: `issue_read` / `issue_write` / `search_issues` / `list_issues` / `sub_issue_write` / `add_issue_comment` / `update_issue_comment` / `pull_request_read` / `search_pull_requests` / `create_pull_request`。PR の購読（`subscribe_pr_activity`）は GitHub MCP に無いことがあるので、`phases/07-pr-creation.md` 手順 4 で確かめる（クラウドセッションでは claude-code-remote 側の `mcp__claude-code-remote__subscribe_pr_activity`） | `/c/Program Files/GitHub CLI/gh.exe` のフルパス起動で `gh issue ...` / `gh pr ...`（クラウドセッションでは REST。「全体ルール」の「GitHub 操作」） |
 | 外部仕様・技術情報（FF14 公式ジョブガイド・ゲーム仕様等） | Brave Search MCP: `brave_web_search` | 組み込みの `WebSearch` / `WebFetch`、またはユーザーに確認 |
 | ライブラリの最新ドキュメント | context7 MCP（`resolve-library-id` → `query-docs`）※本リポジトリでは未登録。必要時に `.mcp.json` へ追加 | 公式ドキュメントを `WebFetch` |
 | UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}`。`.claude/skills/playwright-mcp/SKILL.md`） | クラウドセッションでは Node から Playwright を直接使う（`playwright-mcp/SKILL.md`「MCP が使えないとき」）。それもできなければユーザーに手動確認を依頼し、未検証と明記する |
@@ -85,7 +84,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 ### 起票フロー（共通）
 
-1. **重複チェック**: GitHub MCP の `search_issues`（`owner` / `repo` を指定、query は自然文）で近い Issue を探す。候補があれば、手順 2 の提示にリンクを載せ、選択肢に [A]（既存 Issue への追記）を足す。書き方のパターンが原因の問題（使えないコマンドの指定・古い参照・同じ誤記など）は、起票の前に同じ書き方をリポジトリ全体で Grep し、当たったうち同じ誤りの箇所を 1 つの候補にまとめる（別の語の一部として当たったものや、CHANGELOG のような履歴の記述は入れない）。同じ書き方は Open Issue の本文からも探す。ガイドや知見から写した完了条件・手順に同じ誤りが残っていることがあり、残したままだと、その Issue を `/issue-start` したときの乖離チェックで 1 件ずつ見つかって手戻りになる。`search_issues` は意味で探すので文字列の一致には使わず、Open Issue を本文ごと一覧で取って文字列で絞る（GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "body"]`、`perPage: 100`。`pageInfo.hasNextPage` が true の間は `after` に `endCursor` を渡して続ける）。`gh` なら `gh api "repos/{owner}/{repo}/issues?state=open&per_page=100" --jq '.[] | select(.pull_request == null) | select((.body // "") | contains("<書き方>")) | [.number, .title] | @tsv'`。一覧には PR も入るので、件数は同じ URL を `--jq 'length'` で取って見る。100 件ちょうどなら次のページがあるので、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す）。当たった Issue は手順 2 の提示に載せる。その本文の書き換えは GitHub 上の操作なので、起票とは別に、新旧の差分を示して確認を得てから行う（`phases/01-no-repo-change.md`「GitHub 上の操作だけで終わる Issue」手順 2）。1 か所だけで起票すると、残りの箇所は次にそのファイルを触ったセッションが見つけるたびに、別の Issue に分かれていく。まとめると粒度（`.claude/rules/git-conventions.md`「粒度」）を超えるなら、箇所で分けて起票し、互いを「## 関連Issue」に書く。原因が別々でも、同じ節を直す候補は 1 つにまとめ、目的を「その節を 1 通りに読めるようにする」のように 1 つで書く（別々に起票すると、同じ箇所を直す小さな Issue が連鎖し、並行して着手したときに衝突する）。まとめると粒度を超えるなら分け、後の候補に先の候補への `依存:` を書いて順に進める
+1. **重複チェック**: GitHub MCP の `search_issues`（`owner` / `repo` を指定、query は自然文）で近い Issue を探す。候補があれば、手順 2 の提示にリンクを載せ、選択肢に [A]（既存 Issue への追記）を足す。書き方のパターンが原因の問題（使えないコマンドの指定・古い参照・同じ誤記など）は、起票の前に同じ書き方をリポジトリ全体で Grep し、当たったうち同じ誤りの箇所を 1 つの候補にまとめる（別の語の一部として当たったものや、CHANGELOG のような履歴の記述は入れない）。同じ書き方は Open Issue の本文からも探す。`search_issues` は意味で探すので文字列の一致には使わず、Open Issue を本文ごと一覧で取って文字列で絞る（GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "body"]`、`perPage: 100`。`pageInfo.hasNextPage` が true の間は `after` に `endCursor` を渡して続ける）。`gh` なら `gh api "repos/{owner}/{repo}/issues?state=open&per_page=100" --jq '.[] | select(.pull_request == null) | select((.body // "") | contains("<書き方>")) | [.number, .title] | @tsv'`。一覧には PR も入るので、件数は同じ URL を `--jq 'length'` で取って見る。100 件ちょうどなら次のページがあるので、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる」のループで回す）。当たった Issue は手順 2 の提示に載せ、その本文の書き換えは起票とは別に、新旧の差分を示して確認を得てから行う（`phases/01-no-repo-change.md`「GitHub 上の操作だけで終わる Issue」手順 2）。原因が別々でも、同じ節を直す候補は 1 つにまとめ、目的を「その節を 1 通りに読めるようにする」のように 1 つで書く（別々に起票すると、並行して着手したときに衝突する）。まとめると粒度（`.claude/rules/git-conventions.md`「粒度」）を超えるなら分けて起票する。分けるときは、Grep でまとめた候補は箇所で分けて互いを「## 関連Issue」に書き、同じ節の候補は後の候補に先の候補への `依存:` を書いて順に進める
 2. **ユーザー確認**: 以下のフォーマットで提示する
 
    ```
@@ -111,8 +110,8 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
    [A] のときは起票せず、その既存 Issue に、見つけた内容（概要・箇所・再現手順）をコメントで追記する
 
-   還元先は、問題がワークフロー自体（`CLAUDE.md`・`.claude/`・`.github/ISSUE_TEMPLATE/`）にあるときだけ、`.claude/rules/workflow-feedback.md`「還元する / しないの判定」で決めて書く（テンプレート汎用にする前に、`phases/08-issue-recording.md` 手順 5「書き込み手順」3 と同じく、テンプレート元の取り込み済みの版の同じファイルと見比べ、プロジェクトのカスタマイズが原因でないかを確かめる）。テンプレート汎用なら [U] を推奨にする（同じファイル「テンプレート元への還元」）。[U] のときは起票せず、`phases/08-issue-recording.md` 手順 5 の知見ボードに `還元先: テンプレート汎用` で書く候補として控え、同じく手順 6 で還元する（重要度が Low なら、再発するまで記録だけになる。知見ボードへの書き込みと還元は、[U] とは別に、Phase 8 のそれぞれの手順でユーザー確認を挟む）。いまの作業を塞いでいて直さないと進めない不具合のときだけ [Y] で起票してよい。その場合も Phase 8 で還元する（テンプレート更新の取り込みでは、先行修正したファイルとして扱われる。`.claude/skills/template-update/SKILL.md`「3-way マージの定型手順」3）
-3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で **sub-issue として** 作成する。本文は `.claude/rules/git-conventions.md` の「Issue のタイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く。sub-issue の階層の上限（7 段。`You can’t add more than 7 layers of sub-issues`）で失敗したときは、同じタイトルの Issue が作られていないかを見てから（`issue_write` では作られないことを確かめてあるが、ほかの経路では確かめていない）、親を外して作り直し、同じく本文末尾に書く。子 Issue の完了条件が、作業中の親 Issue のまだマージされていない変更を前提にする（親が足す API を使う別の機能など）なら、本文の「## 関連Issue」に `依存: #<親番号>` を書き、GitHub の依存関係（blocked by）にも付ける（`.claude/skills/issue-start/dependencies.md`「付け方」）。書かないと子の PR が親より先にマージされ得る。書いておけば、子を `/issue-start` したときの Phase 1 の依存チェック（依存先が未完了なら着手前に確認）がそのまま拾う。親の変更そのもので誤りになる記述（親が変える仕様を説明している利用者向けドキュメントなど）は、子 Issue にせず、不可避な副次変更として親の PR で直す（`.claude/rules/git-conventions.md`「スコープ原則（1 Issue = 1 PR）」、`phases/03-exploration.md`「スキップ条件」）
+   還元先は、問題がワークフロー自体（`CLAUDE.md`・`.claude/`・`.github/ISSUE_TEMPLATE/`）にあるときだけ、`.claude/rules/workflow-feedback.md`「還元する / しないの判定」で決めて書く（テンプレート汎用にする前に、`phases/08-issue-recording.md` 手順 5「書き込み手順」3 のとおりテンプレート元の取り込み済みの版と見比べる）。テンプレート汎用なら [U] を推奨にする（同じファイル「テンプレート元への還元」）。[U] のときは起票せず、`phases/08-issue-recording.md` 手順 5 の知見ボードに `還元先: テンプレート汎用` で書く候補として控え、同じく手順 6 で還元する（どちらも、[U] とは別に Phase 8 のそれぞれの手順でユーザー確認を挟む）。いまの作業を塞いでいて直さないと進めない不具合のときだけ [Y] で起票してよい。その場合も Phase 8 で還元する
+3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で **sub-issue として** 作成する。本文は `.claude/rules/git-conventions.md` の「Issue のタイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く。sub-issue の階層の上限（7 段。`You can’t add more than 7 layers of sub-issues`）で失敗したときは、同じタイトルの Issue が作られていないかを見てから（`issue_write` では作られないことを確かめてあるが、ほかの経路では確かめていない）、親を外して作り直し、同じく本文末尾に書く。子 Issue の完了条件が、作業中の親 Issue のまだマージされていない変更を前提にする（親が足す API を使う別の機能など）なら、本文の「## 関連Issue」に `依存: #<親番号>` を書き、GitHub の依存関係（blocked by）にも付ける（`.claude/skills/issue-start/dependencies.md`「付け方」）。書かないと子の PR が親より先にマージされ得る。親の変更そのもので誤りになる記述（親が変える仕様を説明している利用者向けドキュメントなど）は、子 Issue にせず、不可避な副次変更として親の PR で直す（`.claude/rules/git-conventions.md`「スコープ原則（1 Issue = 1 PR）」、`phases/03-exploration.md`「スキップ条件」）
 4. **親Issueへの記録**: Phase 8 で親 Issue に子 Issue の一覧をコメントする（`phases/08-issue-recording.md`）
 
 無人起票はしない。スコープ外問題を自動修正もしない（口頭報告か起票のみ）。
@@ -124,12 +123,10 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 - **知見ボードIssue**: #195（`meta: ワークフロー改善の知見ボード`）
 - **書き込み**: Phase 8 の最後にユーザー確認を挟んで `add_issue_comment` で追記する（運用規約は `.claude/rules/workflow-feedback.md`）
 - **還元先の判定**: 各気づきに `還元先: プロジェクト固有 / テンプレート汎用` を付ける（判定表は `workflow-feedback.md`「還元する / しないの判定」）
-- **テンプレート元への還元**: テンプレート汎用で重要度が Medium 以上の気づきは、テンプレート元に Issue として起票する（Phase 8 節 6）。反映された改善は、テンプレート更新（Phase 1 手順 0.5）で戻ってくる
+- **テンプレート元への還元**: テンプレート汎用で重要度が Medium 以上の気づきは、テンプレート元に Issue として起票する（Phase 8 節 6）
 - **棚卸し**: 溜まった知見の改善Issueへの昇格は `workflow-feedback.md`「棚卸し運用」に従う（日次ルーティン `daily-triage` が正、手動棚卸しも可）
 
 ## 注意事項
 
-- すべてのブランチは `main` から派生し、`main` にマージする
 - 作業中の変更がある場合はユーザーに確認してからブランチを切り替える
 - 過去の Issue や PR から関連情報を積極的に収集する
-- 完了報告は検証結果（テスト・リント・動作確認）を添えて行う。検証できなかった項目は未検証と明記する
