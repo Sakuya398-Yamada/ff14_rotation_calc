@@ -3,7 +3,7 @@ import { resolveTimeline, calcPps } from "../resolve-timeline";
 import { calcTimelineSummary } from "../timeline-summary";
 import { calcDelayedHitBreakdown, calcEntryExpectedPotency } from "../expected-potency";
 import { DEFAULT_STATS } from "../stat-calc";
-import type { BuffDefinition, MultiTargetWindow, ResolvedDelayedHit, Skill, TimelineEntry } from "../../types/skill";
+import type { BuffDefinition, MultiTargetWindow, ResolvedDelayedHit, ResourceDefinition, Skill, TimelineEntry } from "../../types/skill";
 
 // 時間差の攻撃（ペット・分身。#957）。各攻撃は着弾時刻で PPS 区間・集計に入り、威力のバフ・クリ/DH・敵の数も着弾時刻の状態で判定する
 
@@ -225,5 +225,98 @@ describe("同じ時刻の境界（着弾を先に判定する）", () => {
     // 対照: 付与が攻撃より少しでも前なら乗る
     const buffEarlier = resolve([makeEntry("buff-ogcd"), makeEntry("pet-same-time")], { hitDelays: { "buff-ogcd": 1.99 } }).entries[1];
     expect(buffEarlier.delayedHits?.[0].buffMultiplier).toBe(1.2);
+  });
+
+  it("着弾時刻ちょうどに切れるバフは、その攻撃に乗らない", () => {
+    // short-up は 0s から 3s まで。pet-same-time を 1.65s に置くと攻撃は 3s
+    const atEnd = resolve([makeEntry("short-buff-ogcd"), makeEntry("pet-same-time", 1.65)]).entries[1];
+    expect(atEnd.recastError).toBe(false);
+    expect(atEnd.delayedHits?.map((h) => [h.time, h.buffMultiplier])).toEqual([[3, 1]]);
+
+    // 対照: 切れる少し前に着弾すれば乗る
+    const beforeEnd = resolve([makeEntry("short-buff-ogcd"), makeEntry("pet-same-time", 1.64)]).entries[1];
+    expect(beforeEnd.delayedHits?.map((h) => [h.time, h.buffMultiplier])).toEqual([[2.99, 1.2]]);
+  });
+
+  // 失効するバフが自動生成の条件バフ（歌など）かどうかで、失効を処理する経路が分かれる（expireBuffsUntil）ので、両方で確かめる
+  describe.each([
+    ["自動生成の条件バフでない", {}],
+    ["自動生成の条件バフ", { autoGenerateInterval: 100, autoGenerateWhileBuff: ["trigger"] }],
+  ])("失効をきっかけに付くバフ（onExpireApplyBuffByResource。#979）: 失効するバフが%s", (_, gate) => {
+    // trigger は 0s から 2s まで。2s の失効で、charge の量（1）に応じて contract（×1.2）を 2s から付ける。
+    // contract は guard（×1.1）と同じ排他グループなので、contract が付くと guard は外れる
+    const expireResources: ResourceDefinition[] = [{ id: "charge", maxStacks: 1, initialStacks: 1, color: "#000", ...gate }];
+    const expireBuffs: BuffDefinition[] = [
+      { ...makeBuff("trigger", 2, []), onExpireApplyBuffByResource: { resourceId: "charge", buffIds: ["contract"] } },
+      { ...makeBuff("contract", 20, [{ type: "potency", value: 1.2 }]), exclusiveGroup: "pact" },
+      { ...makeBuff("guard", 20, [{ type: "potency", value: 1.1 }]), exclusiveGroup: "pact" },
+    ];
+    const expireSkills = [
+      pet,
+      petSameTime,
+      makeOgcd({ id: "trigger-ogcd", buffApplications: ["trigger"] }),
+      makeOgcd({ id: "guard-ogcd", buffApplications: ["guard"] }),
+    ];
+    const expireSkillMap = new Map(expireSkills.map((s) => [s.id, s]));
+    const resolveExpire = (entries: TimelineEntry[]) =>
+      resolveTimeline(entries, expireSkillMap, expireResources, stats, expireBuffs).entries;
+
+    it("着弾時刻ちょうどに失効して付くバフは、その攻撃に乗らない", () => {
+      // trigger-ogcd 0s → pet-same-time 0.65s（攻撃は 2s）
+      const [triggerEntry, petEntry] = resolveExpire([makeEntry("trigger-ogcd"), makeEntry("pet-same-time")]);
+      expect(triggerEntry.startTime).toBe(0);
+      expect(petEntry.recastError).toBe(false);
+      expect(petEntry.delayedHits?.map((h) => [h.time, h.buffMultiplier])).toEqual([[2, 1]]);
+    });
+
+    it("着弾時刻ちょうどに失効して付くバフが外す排他のバフは、着弾時刻にはまだ効いているので乗る", () => {
+      // guard-ogcd 0s → trigger-ogcd 0.65s（trigger は 2.65s まで）→ pet-same-time 1.3s（攻撃は 2.65s）
+      const [, , petEntry] = resolveExpire([makeEntry("guard-ogcd"), makeEntry("trigger-ogcd"), makeEntry("pet-same-time")]);
+      expect(petEntry.recastError).toBe(false);
+      expect(petEntry.delayedHits?.map((h) => [h.time, h.buffMultiplier])).toEqual([[2.65, 1.1]]);
+    });
+
+    it("着弾時刻より前に失効して付いたバフは、エントリを挟まずに着弾しても乗る", () => {
+      // trigger-ogcd 0s → pet 0.65s（攻撃は 2.65s と 5.65s）。contract は 2s から
+      const [, petEntry] = resolveExpire([makeEntry("trigger-ogcd"), makeEntry("pet")]);
+      expect(petEntry.recastError).toBe(false);
+      expect(petEntry.delayedHits?.map((h) => [h.time, h.buffMultiplier])).toEqual([[2.65, 1.2], [5.65, 1.2]]);
+    });
+  });
+
+  it("着弾時刻に判定を挟んでも、自動生成の進め方は時間差の攻撃が無いときと変わらない", () => {
+    // song（gauge の自動生成の条件バフ）は 0s から 5s まで、cap-up（gauge の上限 1 → 5）は 2.5s から 4.5s まで。
+    // 3.65s に pet-same-time を置くと攻撃は song が切れる 5s で、cap-up はその前に切れる。対照は同じ時刻の plain-ogcd
+    const gaugeResources: ResourceDefinition[] = [{
+      id: "gauge",
+      maxStacks: 1,
+      color: "#000",
+      autoGenerateInterval: 1,
+      autoGenerateWhileBuff: ["song"],
+      autoGenerateRestartOnBuffChange: true,
+      whileBuffModifiers: [{ buffId: "cap-up", maxStacks: 5 }],
+    }];
+    const gaugeBuffs = [makeBuff("song", 5, []), makeBuff("cap-up", 2, [])];
+    const gaugeSkillMap = new Map(
+      [
+        petSameTime,
+        plainOgcd,
+        makeOgcd({ id: "song-ogcd", buffApplications: ["song"] }),
+        makeOgcd({ id: "cap-up-ogcd", buffApplications: ["cap-up"] }),
+      ].map((s) => [s.id, s])
+    );
+    const resolveGauge = (thirdSkillId: string) =>
+      resolveTimeline(
+        [makeEntry("song-ogcd"), makeEntry("cap-up-ogcd", 2.5), makeEntry(thirdSkillId, 3.65), makeEntry("plain-ogcd", 6)],
+        gaugeSkillMap,
+        gaugeResources,
+        stats,
+        gaugeBuffs
+      ).entries;
+
+    const withHit = resolveGauge("pet-same-time");
+    expect(withHit[2].delayedHits?.map((h) => h.time)).toEqual([5]);
+    const withoutHit = resolveGauge("plain-ogcd");
+    expect(withHit[3].resourceSnapshot["gauge"]).toBe(withoutHit[3].resourceSnapshot["gauge"]);
   });
 });

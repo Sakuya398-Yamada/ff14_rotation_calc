@@ -636,6 +636,7 @@ function applyResourceChange(
  * from→to へリソースを移し替える（色調反転消失時に BP→WP 戻しなど）。
  * 消失したバフを resetOnBuffEnd に持つリソースは 0 に戻す（歌の終了で詩心が消えるなど）。
  * onExpireApplyBuffByResource があれば、リセット前のリソース量に応じたバフを消失時刻から付与する（軍神の契約など）。
+ * includeCurrentTime が false なら、currentTime ちょうどに切れるバフは残す（時間差の攻撃の判定。#979）。
  */
 function expireBuffs(
   activeBuffs: ActiveBuff[],
@@ -643,12 +644,13 @@ function expireBuffs(
   buffDefMap: Map<string, BuffDefinition>,
   resourceState: ResourceSnapshot,
   resourceDefMap: Map<string, ResourceDefinition>,
-  resources: ResourceDefinition[]
+  resources: ResourceDefinition[],
+  includeCurrentTime: boolean = true
 ): void {
   // 付与に伴う排他解除の splice が逆順ループの添字を崩さないよう、付与はループの後でまとめて行う
   const buffsToApply: { buffDef: BuffDefinition; startTime: number }[] = [];
   for (let i = activeBuffs.length - 1; i >= 0; i--) {
-    if (activeBuffs[i].endTime <= currentTime) {
+    if (includeCurrentTime ? activeBuffs[i].endTime <= currentTime : activeBuffs[i].endTime < currentTime) {
       const { buffId, endTime } = activeBuffs[i];
       activeBuffs.splice(i, 1);
       const def = buffDefMap.get(buffId);
@@ -941,8 +943,14 @@ export function resolveTimeline(
   const unconfirmedProcBuffs = new Set<string>();
   // 着弾時刻まで待たせているバフの付与（付ける時刻の昇順、同じ時刻は入れた順。#948）。
   // buffIds は付けるバフ（リソースの上限は実行時から上げるので、着弾前の上限の計算に入れる）。
-  // 時間差の攻撃の判定（#957）も入れる（buffIds は空。同じ時刻のバフの付与より前に入れる）
-  const pendingBuffApplications: { time: number; entryIndex: number; buffIds: string[]; apply: (t: number) => void }[] = [];
+  // 時間差の攻撃の判定（#957）も入れる（buffIds は空で、apply の代わりに judge を持つ。同じ時刻のバフの付与より前に入れる）
+  const pendingBuffApplications: {
+    time: number;
+    entryIndex: number;
+    buffIds: string[];
+    apply?: (t: number) => void;
+    judge?: (t: number, buffs: ActiveBuff[]) => void;
+  }[] = [];
   // 待たせて付けたバフの着弾時の複製と、着弾で重なって無駄になった確率付与（付けたエントリの添字ごと。全エントリを解決してから書き戻す）
   const hitAppliedBuffs: Map<number, ActiveBuff[]> = new Map();
   const hitWastedProcs: Map<number, NonNullable<ResolvedTimelineEntry["wastedProc"]>> = new Map();
@@ -1047,35 +1055,58 @@ export function resolveTimeline(
   };
 
   /**
-   * time までに期限が切れるバフを除去する（onExpireResourceTransfer があればリソース移し替えも実施）。
-   * 自動生成の条件バフ（歌など）がエントリの間で切れる場合は、切れる時刻までの付与を先に数える。
+   * time までに切れる自動生成の条件バフ（歌など）を、切れる時刻の順に、切れる時刻までの付与を先に数えてから除去する。
    * 切れる時刻ちょうど（効果時間の残り 0 秒）の付与は、実機でも入らないので数えない。
-   * ただし autoGenerateIncludeBuffEnd のリソースは数える（黙想。実行の 3 秒後から数える近似で、15 秒目を 5 回目にするため）
+   * ただし autoGenerateIncludeBuffEnd のリソースは数える（黙想。実行の 3 秒後から数える近似で、15 秒目を 5 回目にするため）。
+   * includeTime が false なら、time ちょうどに切れるものは残す
    */
-  const expireBuffsUntil = (time: number) => {
+  const expireGateBuffsUntil = (time: number, includeTime: boolean) => {
     const gateEnds = currentActiveBuffs
-      .filter((ab) => ab.endTime <= time && resources.some((r) => r.autoGenerateWhileBuff?.includes(ab.buffId)))
+      .filter((ab) => (includeTime ? ab.endTime <= time : ab.endTime < time) && resources.some((r) => r.autoGenerateWhileBuff?.includes(ab.buffId)))
       .map((ab) => ab.endTime)
       .sort((a, b) => a - b);
     for (const end of gateEnds) {
       advanceAutoGen(end, true);
       expireBuffs(currentActiveBuffs, end, buffDefMap, resourceState, resourceDefMap, resources);
     }
+  };
+
+  /**
+   * time までに期限が切れるバフを除去する（onExpireResourceTransfer があればリソース移し替えも実施）。
+   * 自動生成の条件バフ（歌など）がエントリの間で切れる場合は、切れる時刻までの付与を先に数える（expireGateBuffsUntil）
+   */
+  const expireBuffsUntil = (time: number) => {
+    expireGateBuffsUntil(time, true);
     expireBuffs(currentActiveBuffs, time, buffDefMap, resourceState, resourceDefMap, resources);
+  };
+
+  /**
+   * 時間差の攻撃の判定に使う、time ちょうどの失効より前のバフ（#979）。time より前に切れる条件バフは expireBuffsUntil と同じ順で除去し、
+   * 残りの time より前の失効（と、それをきっかけに付くバフ）はバフとリソースの複製の上で行う。
+   * time ちょうどの失効と自動生成は、このあとの expireBuffsUntil で今までどおり進める
+   */
+  const buffsBeforeExpiryAt = (time: number): ActiveBuff[] => {
+    expireGateBuffsUntil(time, false);
+    const buffs = currentActiveBuffs.map((ab) => ({ ...ab }));
+    expireBuffs(buffs, time, buffDefMap, { ...resourceState }, resourceDefMap, resources, false);
+    return buffs.filter((ab) => ab.endTime > time);
   };
 
   /**
    * time までに着弾したバフの付与を、付ける時刻の順に行う（#948）。エントリの中と同じく、
    * その時刻まで失効させ、自動生成を進めてから付ける（歌の上書きで詩心が消える時刻なども着弾時刻になる）。
-   * 時刻ちょうどに着弾した付与も行う（詠唱がリキャストより長い GCD の次の GCD は、ちょうど詠唱完了から始まる）
+   * 時刻ちょうどに着弾した付与も行う（詠唱がリキャストより長い GCD の次の GCD は、ちょうど詠唱完了から始まる）。
+   * 時間差の攻撃（judge）は、その時刻ちょうどの失効より前に判定する。失効をきっかけにその時刻に付くバフ（軍神の契約など）も、
+   * 同じ時刻に付くバフなので乗せない（#979）
    */
   const applyPendingBuffsUntil = (time: number) => {
     while (pendingBuffApplications.length > 0 && pendingBuffApplications[0].time <= time) {
       const pending = pendingBuffApplications.shift()!;
+      if (pending.judge) pending.judge(pending.time, buffsBeforeExpiryAt(pending.time));
       expireBuffsUntil(pending.time);
       advanceAutoGen(pending.time);
       const before = new Set(currentActiveBuffs);
-      pending.apply(pending.time);
+      pending.apply?.(pending.time);
       const applied = currentActiveBuffs.filter((ab) => !before.has(ab)).map((ab) => ({ ...ab }));
       if (applied.length > 0) hitAppliedBuffs.set(pending.entryIndex, [...(hitAppliedBuffs.get(pending.entryIndex) ?? []), ...applied]);
     }
@@ -1579,30 +1610,30 @@ export function resolveTimeline(
     const activeBuffsAtUse: ActiveBuff[] = currentActiveBuffs.map((ab) => ({ ...ab }));
 
     // 時間差の攻撃（ペット・分身。#957）。威力のバフ・クリ/DH・敵の数は着弾時刻の状態で判定するので、着弾時刻まで待ち列で待たせる。
-    // 同じ時刻のバフの付与より先に判定する（その時刻に実行したスキルのバフも、その時刻に着弾して付くバフも乗らない）。
+    // 同じ時刻のバフの付与より先に判定する（その時刻に実行したスキルのバフも、その時刻に着弾して付くバフも、その時刻の失効で付くバフも乗らない）。
     // 確定クリ/DH は乗せず、バフも消費しない（プレイヤーの行動ではない）。ボス離脱（ゴースト）は見ない
     if (!hasError && skill.delayedHits) {
       const hitSkill = skill;
       const hitSkillId = resolvedSkillId;
       for (const hit of skill.delayedHits) {
         const time = Math.round((startTime + resolvedCastTime + hit.delay) * 1000) / 1000;
-        const evaluate = (t: number) => {
+        const evaluate = (t: number, buffs: ActiveBuff[]) => {
           const results = delayedHitResults.get(entryIndex) ?? [];
           results.push({
             time: t,
             potency: hit.potency,
-            buffMultiplier: getPotencyMultiplier(currentActiveBuffs, buffDefMap, hitSkillId),
-            critRateBonus: getCritRateBonus(currentActiveBuffs, buffDefMap),
-            dhRateBonus: getDhRateBonus(currentActiveBuffs, buffDefMap),
+            buffMultiplier: getPotencyMultiplier(buffs, buffDefMap, hitSkillId),
+            critRateBonus: getCritRateBonus(buffs, buffDefMap),
+            dhRateBonus: getDhRateBonus(buffs, buffDefMap),
             targetCount: getTargetCountAt(t, multiTargetWindows, hitSkill),
           });
           delayedHitResults.set(entryIndex, results);
         };
         if (time <= startTime) {
-          evaluate(startTime);
+          evaluate(startTime, currentActiveBuffs);
           continue;
         }
-        const item = { time, entryIndex, buffIds: [] as string[], apply: evaluate };
+        const item = { time, entryIndex, buffIds: [] as string[], judge: evaluate };
         const at = pendingBuffApplications.findIndex((p) => p.time >= time);
         if (at < 0) pendingBuffApplications.push(item);
         else pendingBuffApplications.splice(at, 0, item);
