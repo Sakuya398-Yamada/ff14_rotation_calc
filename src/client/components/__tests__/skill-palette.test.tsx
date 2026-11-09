@@ -121,3 +121,18 @@ describe("SkillPalette（英語）", () => {
     expect(screen.queryByText("ジョブパレット")).not.toBeInTheDocument();
   });
 });
+
+describe("SkillPalette: 時間差の攻撃 (#957)", () => {
+  it("時間差の攻撃を持つスキルは、使ったときの威力に各攻撃の威力を足して出す", () => {
+    const pet = makeSkill({
+      id: "pet",
+      potency: 0,
+      type: "ogcd",
+      delayedHits: [{ delay: 2, potency: 100 }, { delay: 5, potency: 200 }],
+    });
+    renderPalette({ skills: [pet] });
+
+    expect(screen.getByText("威力 300")).toBeInTheDocument();
+    expect(screen.getByTitle("pet (威力: 300)")).toBeInTheDocument();
+  });
+});
