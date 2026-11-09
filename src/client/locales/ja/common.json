@@ -318,6 +318,7 @@
     "comboBroken": "不成立",
     "warning": "警告",
     "unconfirmedProcBuffs": "{{names}}（確率付与。発動しない場合あり）",
+    "untargetableHit": "着弾時にボス離脱中のため威力 0（このスキルが付けるバフ・DoT も付かない）",
     "error": "エラー",
     "noErrors": "なし",
     "errors": {
@@ -405,6 +406,7 @@
     "instant": "インスタント",
     "comboBroken": "コンボ不成立",
     "unconfirmedProc": "確率付与のバフを消費",
+    "untargetableHit": "着弾時にボス離脱中（威力 0）",
     "untargetable": "ボス離脱中",
     "recastError": "リキャスト中"
   },

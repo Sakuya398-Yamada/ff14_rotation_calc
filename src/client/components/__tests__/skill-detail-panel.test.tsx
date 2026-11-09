@@ -512,6 +512,50 @@ describe("SkillDetailPanel: OR 条件のバフが未達のとき、候補をす�
   });
 });
 
+/** 0 秒のファイガは詠唱完了（約 3.5 秒）が離脱（2〜10 秒）の中に着弾する（ゴースト。#950） */
+function renderGhostFire3() {
+  const entry = resolveTimeline(
+    [{ uid: "e-1", skillId: "fire-3" }],
+    BLM.skillMap,
+    BLM.resources,
+    stats,
+    BLM.buffs,
+    [{ startTime: 2, endTime: 10 }]
+  ).entries[0];
+  render(
+    <SkillDetailPanel
+      entry={entry}
+      resolvedSkill={BLM.skillMap.get(entry.resolvedSkillId)!}
+      jobId={BLM.jobId}
+      buffDefMap={BLM.buffDefMap}
+      stats={stats}
+      onClose={vi.fn()}
+      onManualStartTimeChange={vi.fn()}
+      onProcOccurredChange={vi.fn()}
+      hitDelay={undefined}
+      onHitDelayChange={vi.fn()}
+      resources={BLM.resources}
+      onAutoGenerateProcChange={vi.fn()}
+    />
+  );
+  return entry;
+}
+
+describe("SkillDetailPanel: 着弾時にボス離脱中（ゴースト。#950）", () => {
+  it("警告を出し、期待値は 0 で計算式の行は出さず、基本威力は残す", () => {
+    const entry = renderGhostFire3();
+    expect(entry.untargetableHit).toBe(true);
+
+    expect(screen.getByText("着弾時にボス離脱中のため威力 0（このスキルが付けるバフ・DoT も付かない）")).toBeInTheDocument();
+    expect(within(screen.getByText("期待値").parentElement!).getByText("0")).toBeInTheDocument();
+    expect(screen.queryByText(/×.*=/)).not.toBeInTheDocument();
+    expect(within(screen.getByText("基本威力").parentElement!).getByText(String(entry.resolvedPotency))).toBeInTheDocument();
+    expect(entry.resolvedPotency).toBeGreaterThan(0);
+    // ハードエラーではない
+    expect(within(screen.getByText("エラー").parentElement!).getByText("なし")).toBeInTheDocument();
+  });
+});
+
 describe("SkillDetailPanel（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
@@ -532,6 +576,12 @@ describe("SkillDetailPanel（英語）", () => {
 
     expect(screen.getByText(/Buff condition not met: The Wanderer's Minuet/)).toBeInTheDocument();
     expect(screen.getByText(/Insufficient resources: Repertoire/)).toBeInTheDocument();
+  });
+
+  it("着弾時にボス離脱中の警告を英語で出す（#950）", () => {
+    renderGhostFire3();
+
+    expect(screen.getByText("Boss untargetable when it lands, so 0 potency (its buffs and DoTs are not applied)")).toBeInTheDocument();
   });
 
   it("歌の判定のボタンの読み上げ名と title を、残り秒数の英語で出す (#969)", () => {

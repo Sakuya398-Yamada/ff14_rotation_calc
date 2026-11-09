@@ -1195,12 +1195,18 @@ export function resolveTimeline(
     const hitTime = hitDelay !== undefined || resolvedCastTime > 0
       ? Math.round((startTime + resolvedCastTime + (hitDelay ?? 0)) * 1000) / 1000
       : undefined;
+    // 着弾時にボスが離脱中（ゴースト。#950）。実行時に離脱中なら untargetableError（ハードエラー）になり、
+    // 着弾時の効果も警告も出さないので、ここでは実行時の離脱を見ない
+    const hitsUntargetable = skill.target === "enemy" && untargetableWindows !== undefined && hitTime !== undefined
+      && isInUntargetableWindow(hitTime, untargetableWindows);
     const entryIndex = resolved.length;
     /**
      * このスキルが付けるバフの付与。付けるかどうかは呼び出し側が実行時に決め、付与そのもの（排他の解除・付け直し・
-     * 効果時間・延長）を着弾時刻に行う。着弾が開始より後なら待たせ、そうでなければその場で付ける（#948）
+     * 効果時間・延長）を着弾時刻に行う。着弾が開始より後なら待たせ、そうでなければその場で付ける（#948）。
+     * DoT の付与・打ち切り・延長もここを通る（#949）。着弾時にボスが離脱中なら、どれも起こさない（#950）
      */
     const scheduleBuffApplication = (buffIds: string[], apply: (t: number) => void) => {
+      if (hitsUntargetable) return;
       // 判定ごとの発生の指定は、付けたバフ（自動生成の条件バフ）の ID と付いた時刻で引く（#900）
       if (entry.autoGenerateProcOccurred) {
         const appliedAt = hitTime === undefined || hitTime <= startTime ? startTime : hitTime;
@@ -1589,9 +1595,10 @@ export function resolveTimeline(
       };
 
       // このスキルが付与するバフで上限が上がるリソースは、上がった上限で獲得を数える
-      // （ブラッドソイルはソイルの上限を 6 に上げて 3 付与する。バフの付与はリソース変動より後なので、ここで先に反映する）
+      // （ブラッドソイルはソイルの上限を 6 に上げて 3 付与する。バフの付与はリソース変動より後なので、ここで先に反映する）。
+      // 着弾時にボスが離脱中ならバフが付かないので、上限も上げない（#950）
       const appliedBuffIds = skill.buffApplications ?? [];
-      if (appliedBuffIds.length > 0) {
+      if (appliedBuffIds.length > 0 && !hitsUntargetable) {
         const buffsWithApplied: ActiveBuff[] = [
           ...currentActiveBuffs,
           ...appliedBuffIds.map((buffId) => ({ buffId, startTime, endTime: startTime })),
@@ -2040,6 +2047,7 @@ export function resolveTimeline(
       resourceErrors,
       comboErrors,
       untargetableError,
+      ...(hitsUntargetable && !hasError ? { untargetableHit: true } : {}),
       recastError,
       wsComboError,
       consumedProc,

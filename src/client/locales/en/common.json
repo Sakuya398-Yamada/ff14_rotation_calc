@@ -318,6 +318,7 @@
     "comboBroken": "Broken",
     "warning": "Warning",
     "unconfirmedProcBuffs": "{{names}} (chance-based; may not proc)",
+    "untargetableHit": "Boss untargetable when it lands, so 0 potency (its buffs and DoTs are not applied)",
     "error": "Errors",
     "noErrors": "None",
     "errors": {
@@ -405,6 +406,7 @@
     "instant": "Instant",
     "comboBroken": "Combo broken",
     "unconfirmedProc": "Consumes a chance-based buff",
+    "untargetableHit": "Boss untargetable when it lands (0 potency)",
     "untargetable": "Boss untargetable",
     "recastError": "Recast not ready"
   },

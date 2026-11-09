@@ -165,11 +165,11 @@ export function SkillLanes({
                   style={{
                     ...styles.skillIcon,
                     ...(hasError ? styles.skillIconError : {}),
-                    ...(entry.wsComboError || entry.unconfirmedProcBuffs ? styles.skillIconComboWarning : {}),
+                    ...(entry.wsComboError || entry.unconfirmedProcBuffs || entry.untargetableHit ? styles.skillIconComboWarning : {}),
                     ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
-                  title={`${name}${isAutoTransformed ? ` (← ${skillName(t, jobId, entry.skill.id)})` : ""} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${castTime > 0 ? ` ${t("skillLanes.cast", { time: castTime })}` : ` ${t("skillLanes.instant")}`}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? ` ⚠ ${t("skillLanes.comboBroken")}` : ""}${entry.unconfirmedProcBuffs ? ` ⚠ ${t("skillLanes.unconfirmedProc")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
+                  title={`${name}${isAutoTransformed ? ` (← ${skillName(t, jobId, entry.skill.id)})` : ""} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${castTime > 0 ? ` ${t("skillLanes.cast", { time: castTime })}` : ` ${t("skillLanes.instant")}`}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? ` ⚠ ${t("skillLanes.comboBroken")}` : ""}${entry.unconfirmedProcBuffs ? ` ⚠ ${t("skillLanes.unconfirmedProc")}` : ""}${entry.untargetableHit ? ` ⚠ ${t("skillLanes.untargetableHit")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
@@ -187,7 +187,7 @@ export function SkillLanes({
                 </DraggableEntryIcon>
                 <div style={{
                   ...styles.skillPotency,
-                  ...(entry.wsComboError || entry.unconfirmedProcBuffs ? { color: "var(--color-warning)" } : {}),
+                  ...(entry.wsComboError || entry.unconfirmedProcBuffs || entry.untargetableHit ? { color: "var(--color-warning)" } : {}),
                 }}>
                   {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                 </div>
@@ -225,10 +225,11 @@ export function SkillLanes({
                   style={{
                     ...styles.ogcdIcon,
                     ...(hasError ? styles.ogcdIconError : {}),
+                    ...(entry.untargetableHit ? styles.ogcdIconWarning : {}),
                     ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                   }}
-                  title={`${name} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
+                  title={`${name} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${entry.untargetableHit ? ` ⚠ ${t("skillLanes.untargetableHit")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
@@ -241,7 +242,10 @@ export function SkillLanes({
                     <ManualStartTimeBadge />
                   )}
                 </DraggableEntryIcon>
-                <div style={styles.skillPotency}>
+                <div style={{
+                  ...styles.skillPotency,
+                  ...(entry.untargetableHit ? { color: "var(--color-warning)" } : {}),
+                }}>
                   {hasError ? "-" : (expectedPot !== null ? expectedPot : buffedPotency)}
                 </div>
               </div>
