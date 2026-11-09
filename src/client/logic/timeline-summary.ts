@@ -44,7 +44,7 @@ export function calcTimelineSummary(
 
   if (lastGcdEndTime <= 0) {
     // GCD が無いと範囲が 0 秒になり PPS が決まらないので、#835 より前の集計のまま
-    // （0 〜 最後の DoT ティック、すべてのエントリ（時間差の攻撃も。#957）とティックを数える。oGCD の DoT だけのタイムラインがある）
+    // （0 〜 最後の DoT ティックか時間差の攻撃の着弾、すべてのエントリ（時間差の攻撃も。#957）とティックを数える。oGCD の DoT だけのタイムラインがある）
     const direct = result.entries.reduce((sum, entry) => {
       const skill = skillMap.get(entry.resolvedSkillId);
       return sum + calcEntryExpectedPotency(entry, skill, stats) + calcEntryDelayedHitsExpectedPotency(entry, skill, stats);
@@ -53,15 +53,18 @@ export function calcTimelineSummary(
       (sum, tick) => sum + Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus)),
       0
     );
+    // 時間差の攻撃は最後の DoT ティックより後にも着弾するので、範囲の終わりを最後の着弾まで延ばす（#957）
+    const lastDelayedHitTime = Math.max(0, ...result.entries.flatMap((entry) => (entry.delayedHits ?? []).map((hit) => hit.time)));
+    const endTime = Math.max(timelineEndTime, lastDelayedHitTime);
     const overallPps =
-      timelineEndTime > 0
-        ? calcPps(result.entries, skillMap, result.dotTicks, 0, timelineEndTime, stats, { includeEnd: true })
+      endTime > 0
+        ? calcPps(result.entries, skillMap, result.dotTicks, 0, endTime, stats, { includeEnd: true })
         : null;
     return {
       overallPps,
       totalExpectedPotency: direct + dot,
       dotExpectedPotency: dot,
-      duration: timelineEndTime,
+      duration: endTime,
       lastDotTickTime: null,
     };
   }

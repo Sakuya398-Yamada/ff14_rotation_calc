@@ -157,6 +157,9 @@ describe("PPS 区間・集計への算入", () => {
     const [first, second] = result.entries[0].delayedHits!;
     const summary = calcTimelineSummary(result, skillMap, stats);
     expect(summary.totalExpectedPotency).toBe(hitExpected(first, "pet") + hitExpected(second, "pet"));
+    // 全体の PPS も、最後の着弾（5s）までを範囲にして同じ合計で出す
+    expect(summary.duration).toBe(5);
+    expect(summary.overallPps?.totalPotency).toBe(summary.totalExpectedPotency);
   });
 });
 
