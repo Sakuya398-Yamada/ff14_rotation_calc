@@ -33,86 +33,85 @@
     "siteName": "FFXIV Rotation Calculator",
     "documentTitle": "Privacy policy | FFXIV Rotation Calculator",
     "title": "Privacy policy",
-    "intro": "This page explains what information FFXIV Rotation Calculator (\"this tool\") handles, how it is used, how long it is kept and how to request its deletion.",
-    "enactedOn": "Effective date: {{date}}",
-    "operator": {
-      "heading": "Operator",
-      "body": "This tool is run by {{name}}, an individual developer."
-    },
+    "intro": "This privacy policy (this \"Policy\") describes how {{name}}, an individual developer (\"we\", \"us\" or \"our\"), handles information about the users (\"you\") of FFXIV Rotation Calculator (the \"Service\").",
+    "establishedOn": "Effective date: {{date}}",
+    "lastRevisedOn": "Last updated: {{date}}",
+    "articleHeading": "{{number}}. {{title}}",
+    "articleReference": "Section {{number}}",
     "stored": {
-      "heading": "Information stored on the server",
-      "intro": "The following information is stored in a Cloudflare database (D1).",
+      "heading": "Information we store",
+      "intro": "We store the following information in a Cloudflare database (D1).",
       "timelinesLabel": "Saved timelines",
       "timelines": "The content you save with \"Save & share\" (job, level, placed skills, stats and so on) and its title. Anyone with the share URL can view it.",
       "ownerHashLabel": "Hash of the anonymous token",
-      "ownerHash": "A value that identifies the browser that saved a timeline. The token itself is not stored.",
+      "ownerHash": "A value that identifies the browser that saved a timeline. We do not store the token itself.",
       "discordIdLabel": "Value derived from your Discord user ID",
-      "discordId": "Stored when you log in with Discord. This tool asks Discord only for the identify scope, and of the information it receives, it uses only your user ID (your username and avatar are not stored, and your email address is not received). Your user ID itself is not stored either: the tool stores its HMAC-SHA256, computed with a key that only the operator holds. The same ID always gives the same value, so the tool can recognize your account the next time you log in, but your ID cannot be found from the value (when a deletion request arrives, the operator computes the value from the ID of the requester to find it).",
+      "discordId": "Stored when you log in with Discord. We ask Discord only for the identify scope, and of the information we receive, we use only your user ID (we do not store your username or avatar, and we do not receive your email address). We do not store your user ID itself either: we store its HMAC-SHA256, computed with a key that only we hold. The same ID always gives the same value, so we can recognize your account the next time you log in, but your ID cannot be found from the value (when we receive a deletion request, we compute the value from the requester's ID to find it).",
       "accountLinkLabel": "Links to your account",
-      "accountLink": "When you log in, timelines saved in that browser are linked to your account, so they also appear in your list when you log in from another browser.",
+      "accountLink": "When you log in, we link the timelines saved in that browser to your account, so they also appear in your list when you log in from another browser.",
       "sessionsLabel": "Login sessions",
       "sessions": "A hash of the value that keeps you logged in, and its expiry."
     },
     "accessLogs": {
       "heading": "Access logs",
-      "body": "To check that this tool works and to investigate failures, the following is recorded in Cloudflare (Workers Logs) for each request that reaches this tool's server (Cloudflare Workers): the date and time, the URL, your IP address, the location estimated from your IP address (country, region, city, postal code and latitude/longitude) and your network provider, your browser information (user agent, language and referring page), the encryption (TLS) details of the connection, and the result and duration of the processing.",
-      "redacted": "Cookie values are not recorded. The timeline IDs in share URLs and the query strings of URLs are hidden before the records are stored."
-    },
-    "cookies": {
-      "heading": "Cookies",
-      "intro": "This tool sets the following three cookies. They are used only for saving and logging in, not for advertising or analytics.",
-      "owner": "Identifies the owner of saved timelines. Its expiry is extended each time you save, view your list or delete, and it expires 400 days after it was last used. It is also deleted when you log out. If your login session expires without logging out and this cookie is linked to your account, it is deleted the next time you save, view your list or delete (when saving, it is replaced with a new one).",
-      "session": "Keeps you logged in. It expires after 30 days (extended while you use the tool, up to 1 year). It is deleted when you log out.",
-      "discordOauth": "Used only while you log in with Discord. It holds values that verify the login (state and code_verifier) and the page to return to after logging in. It expires after 10 minutes and is deleted when you return from Discord."
+      "body": "To check that the Service works and to investigate failures, we record the following information (\"access logs\") in Cloudflare (Workers Logs) for each request that reaches the Service's server (Cloudflare Workers): the date and time, the URL, your IP address, the location estimated from your IP address (country, region, city, postal code and latitude/longitude) and your network provider, your browser information (user agent, language and referring page), the encryption (TLS) details of the connection, and the result and duration of the processing.",
+      "redacted": "We do not record cookie values in access logs. We hide the timeline IDs in share URLs and the query strings of URLs before storing the records."
     },
     "browserStorage": {
       "heading": "Information kept only in your browser",
-      "body": "The timeline you are editing, your settings and recently used jobs are kept in your browser's localStorage. The only thing sent to the server is a timeline you save with \"Save & share\"."
-    },
-    "external": {
-      "heading": "External services",
-      "cloudflareLabel": "Cloudflare",
-      "cloudflare": "Hosts this tool and its database, and stores its access logs. When you open a page or save, your IP address and browser information are passed to Cloudflare.",
-      "cloudflarePolicy": "Cloudflare Privacy Policy",
-      "turnstileLabel": "Cloudflare Turnstile",
-      "turnstile": "Used for bot protection when you open the save dialog. Your IP address, browser information and similar data are passed to Cloudflare.",
-      "turnstilePolicy": "Turnstile Privacy Addendum",
-      "discordLabel": "Discord",
-      "discord": "Used for logging in. When you log in, this tool receives your user information from Discord (it uses only your user ID, and stores only a value derived from it).",
-      "discordPolicy": "Discord Privacy Policy",
-      "googleFontsLabel": "Google Fonts",
-      "googleFonts": "Used to display text. When you open a page, your IP address and browser information are passed to Google.",
-      "googleFontsPolicy": "Google Privacy Policy"
+      "body": "The timeline you are editing, your settings and your recently used jobs are kept only in your browser's localStorage. The only information sent to our server is a timeline you save with \"Save & share\"."
     },
     "use": {
-      "heading": "How information is used",
-      "body": "The information is used only to save, share, list and delete timelines, to log you in, and to check that this tool works and investigate failures. It is not used for advertising or analytics, and it is not sold or given to third parties (except where required by law)."
+      "heading": "How we use information",
+      "body": "We use the information we collect only to save, share, list and delete timelines, to log you in, and to check that the Service works and investigate failures. We do not use it for advertising or analytics, and we do not sell or provide it to third parties except where required by law."
+    },
+    "external": {
+      "heading": "Third-party services",
+      "cloudflareLabel": "Cloudflare",
+      "cloudflare": "We use Cloudflare to host the Service and its database and to store access logs. When you open a page or save a timeline, your IP address and browser information are sent to Cloudflare.",
+      "cloudflarePolicy": "Cloudflare Privacy Policy",
+      "turnstileLabel": "Cloudflare Turnstile",
+      "turnstile": "We use Turnstile for bot protection when you open the save dialog. Your IP address, browser information and similar data are sent to Cloudflare.",
+      "turnstilePolicy": "Turnstile Privacy Addendum",
+      "discordLabel": "Discord",
+      "discord": "We use Discord for logging in. When you log in, the Service receives your user information from Discord (we use only your user ID, and we store only a value derived from it).",
+      "discordPolicy": "Discord Privacy Policy",
+      "googleFontsLabel": "Google Fonts",
+      "googleFonts": "We use Google Fonts to display text. When you open a page, your IP address and browser information are sent to Google.",
+      "googleFontsPolicy": "Google Privacy Policy"
+    },
+    "cookies": {
+      "heading": "Cookies",
+      "intro": "The Service sets the following three cookies. We use them only for saving timelines and logging you in, not for advertising or analytics.",
+      "owner": "Identifies the owner of saved timelines. We extend its expiry each time you save, view your list or delete, and it expires 400 days after it was last used. We also delete it when you log out. If your login session expires without you logging out and this cookie is linked to your account, we delete it the next time you save, view your list or delete (when you save, we replace it with a new one).",
+      "session": "Keeps you logged in. It expires after 30 days (extended while you use the Service, up to 1 year). We delete it when you log out.",
+      "discordOauth": "Used only while you log in with Discord. It holds values that verify the login (state and code_verifier) and the page to return to after logging in. It expires after 10 minutes, and we delete it when you return from Discord."
     },
     "retention": {
-      "heading": "Retention",
-      "timelines": "Saved timelines have no expiry. When you delete one, it no longer appears in your list or at its share URL, but the data remains on the server. To erase it completely, send a request as described in \"Deletion requests\" below.",
-      "account": "The value derived from your Discord user ID and the links to your account also have no expiry and are kept until you request their deletion.",
-      "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and can no longer be used. Their records are deleted when you log out, and records of sessions that expired without logging out are deleted once a day.",
-      "backup": "So that the database can be restored if it breaks, it is backed up daily, and the newest 30 backups (normally 30 days' worth) are kept on a device the operator manages. Erased data normally disappears from the backups after about 30 days.",
-      "accessLogs": "Access logs are deleted automatically by Cloudflare after at most 7 days. They cannot be deleted one by one, so they remain until then even if you request deletion."
+      "heading": "Data retention",
+      "timelines": "Saved timelines have no retention period. When you delete one, it no longer appears in your list or at its share URL, but the data remains on our server. To have it erased completely, send a request as described in {{deletionArticle}}.",
+      "account": "The value derived from your Discord user ID and the links to your account also have no retention period, and we keep them until you request their deletion.",
+      "sessions": "Login sessions expire after 30 days (extended while you use the Service, up to 1 year) and can no longer be used after that. We delete their records when you log out, and we delete the records of sessions that expired without logging out once a day.",
+      "backup": "So that we can restore the database if it breaks, we back it up daily and keep the newest 30 backups (normally 30 days' worth) on a device we manage. Erased data normally disappears from the backups after about 30 days.",
+      "accessLogs": "Cloudflare deletes access logs automatically after at most 7 days. They cannot be deleted one by one, so they remain until then even if you request deletion."
     },
     "deletion": {
       "heading": "Deletion requests",
-      "how": "Send a friend request to {{discord}} on Discord, then send your request by DM.",
+      "how": "To request deletion, send a friend request to {{discord}} on Discord, then send your request by DM.",
       "accountLabel": "Account information",
-      "account": "The value derived from the user ID, the links and the sessions of the Discord account that sent the request are erased. If you also want the timelines linked to your account erased, say so in your request.",
+      "account": "We erase the value derived from the user ID, the links and the sessions of the Discord account that sent the request. If you also want the timelines linked to your account erased, say so in your request.",
       "anonymousLabel": "Timelines saved without logging in",
-      "anonymous": "First delete the timeline from the list opened by \"Save & share\" in this tool, then send your request with its share URL. Only timelines that have already been deleted are erased completely (only the owner can delete a timeline in this tool, so this confirms that you are the owner).",
-      "copies": "Copies that other people saved from your timeline (by opening its share URL and saving) are their own saves and are not erased."
+      "anonymous": "First delete the timeline from the list opened by \"Save & share\" in the Service, then send your request with its share URL. We erase completely only timelines that have already been deleted (only the owner can delete a timeline in the Service, so this confirms that you are the owner).",
+      "copies": "Copies that other users saved from your timeline (by opening its share URL and saving) are their own saves, so we do not erase them."
     },
     "contact": {
-      "heading": "Contact",
-      "body": "Questions about this page are accepted at:",
+      "heading": "Contact us",
+      "body": "If you have any questions about this Policy, contact us at:",
       "issuesLink": "GitHub Issues"
     },
     "changes": {
-      "heading": "Changes",
-      "body": "If this policy changes, this page will be updated."
+      "heading": "Changes to this policy",
+      "body": "If we change this Policy, we will update this page."
     }
   },
   "sharedTimeline": {

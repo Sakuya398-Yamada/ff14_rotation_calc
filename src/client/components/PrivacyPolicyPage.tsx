@@ -8,8 +8,33 @@ const OPERATOR_NAME = "Sakuya398-Yamada";
 // 削除の依頼を受ける Discord のアカウント（DM の送り主の ID で、削除する Discord ID の持ち主か確かめられる。#879）
 const DISCORD_CONTACT = "sakuyuno";
 const ISSUES_URL = "https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues";
-// 施行日。内容を変えたら書き換える
-const ENACTED_ON = new Date(Date.UTC(2026, 10, 9));
+
+// 文面の決まり（#992）。ほかのページのやさしい言い回し（「このツール」「消します」）に戻さない
+// - 日本語はである調。前文で定義した語（運営者・本ツール・利用者・本ポリシー）と、第2条で定義した「アクセスログ」を使う
+// - 用語: 使い道 → 利用目的、使う → 利用する（情報・外部サービス）／使用する（Cookie）、期限が切れる → 失効する、
+//   渡る → 送信される、と → 及び、〜してください → 〜すること／〜ものとする
+// - サーバー上のデータを消すのは「消去」、利用者が本ツールでする削除と Cookie を消すのは「削除」
+//   （本ツールで削除してもデータは残るので、言い分ける）
+// - 英語は we（運営者）・you（利用者）・the Service（本ツール）・this Policy を使う
+// - 見出しの番号は ARTICLES の並びから振る。条を足すときは ARTICLES と下の JSX に同じ順で足す。
+//   本文から条を指すときは、番号を文面に書かず articleReference で入れる
+// 文面を変えたら最終改定日を書き換える（制定日は変えない）
+const ESTABLISHED_ON = new Date(Date.UTC(2026, 10, 6));
+const LAST_REVISED_ON = new Date(Date.UTC(2026, 10, 9));
+
+const ARTICLES = [
+  "stored",
+  "accessLogs",
+  "browserStorage",
+  "use",
+  "external",
+  "cookies",
+  "retention",
+  "deletion",
+  "contact",
+  "changes",
+] as const;
+type ArticleId = (typeof ARTICLES)[number];
 
 const STORED_ITEMS = ["timelines", "ownerHash", "discordId", "accountLink", "sessions"] as const;
 
@@ -40,7 +65,17 @@ export function PrivacyPolicyPage() {
     document.title = t("privacyPolicyPage.documentTitle");
   }, [t]);
 
-  const enactedOn = new Intl.DateTimeFormat(lang, { dateStyle: "long", timeZone: "UTC" }).format(ENACTED_ON);
+  const dateFormat = new Intl.DateTimeFormat(lang, { dateStyle: "long", timeZone: "UTC" });
+  const articleNumber = (id: ArticleId) => ARTICLES.indexOf(id) + 1;
+  const articleHeading = (id: ArticleId) => (
+    <h2 style={styles.heading}>
+      {t("privacyPolicyPage.articleHeading", {
+        number: articleNumber(id),
+        title: t(`privacyPolicyPage.${id}.heading` as const),
+      })}
+    </h2>
+  );
+  const deletionArticle = t("privacyPolicyPage.articleReference", { number: articleNumber("deletion") });
 
   return (
     <div style={styles.page}>
@@ -52,16 +87,15 @@ export function PrivacyPolicyPage() {
       </header>
       <main style={styles.main}>
         <h1 style={styles.title}>{t("privacyPolicyPage.title")}</h1>
-        <p>{t("privacyPolicyPage.intro")}</p>
-        <p style={styles.muted}>{t("privacyPolicyPage.enactedOn", { date: enactedOn })}</p>
+        <p>{t("privacyPolicyPage.intro", { name: OPERATOR_NAME })}</p>
+        <p style={styles.muted}>
+          <span>{t("privacyPolicyPage.establishedOn", { date: dateFormat.format(ESTABLISHED_ON) })}</span>
+          <br />
+          <span>{t("privacyPolicyPage.lastRevisedOn", { date: dateFormat.format(LAST_REVISED_ON) })}</span>
+        </p>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.operator.heading")}</h2>
-          <p>{t("privacyPolicyPage.operator.body", { name: OPERATOR_NAME })}</p>
-        </section>
-
-        <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.stored.heading")}</h2>
+          {articleHeading("stored")}
           <p>{t("privacyPolicyPage.stored.intro")}</p>
           <dl>
             {STORED_ITEMS.map((id) => (
@@ -75,33 +109,23 @@ export function PrivacyPolicyPage() {
 
         {/* wrangler.jsonc の observability と、本番のログで確かめた項目に揃える（#976） */}
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.accessLogs.heading")}</h2>
+          {articleHeading("accessLogs")}
           <p>{t("privacyPolicyPage.accessLogs.body")}</p>
           <p>{t("privacyPolicyPage.accessLogs.redacted")}</p>
         </section>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.cookies.heading")}</h2>
-          <p>{t("privacyPolicyPage.cookies.intro")}</p>
-          <dl>
-            {COOKIES.map(({ name, id }) => (
-              <div key={id}>
-                <dt style={styles.term}>
-                  <code style={styles.code}>{name}</code>
-                </dt>
-                <dd style={styles.description}>{t(`privacyPolicyPage.cookies.${id}` as const)}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
-        <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.browserStorage.heading")}</h2>
+          {articleHeading("browserStorage")}
           <p>{t("privacyPolicyPage.browserStorage.body")}</p>
         </section>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.external.heading")}</h2>
+          {articleHeading("use")}
+          <p>{t("privacyPolicyPage.use.body")}</p>
+        </section>
+
+        <section>
+          {articleHeading("external")}
           <dl>
             {EXTERNAL_SERVICES.map(({ id, policyUrl }) => (
               <div key={id}>
@@ -118,21 +142,31 @@ export function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.use.heading")}</h2>
-          <p>{t("privacyPolicyPage.use.body")}</p>
+          {articleHeading("cookies")}
+          <p>{t("privacyPolicyPage.cookies.intro")}</p>
+          <dl>
+            {COOKIES.map(({ name, id }) => (
+              <div key={id}>
+                <dt style={styles.term}>
+                  <code style={styles.code}>{name}</code>
+                </dt>
+                <dd style={styles.description}>{t(`privacyPolicyPage.cookies.${id}` as const)}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.retention.heading")}</h2>
+          {articleHeading("retention")}
           <ul style={styles.list}>
             {RETENTION_ITEMS.map((id) => (
-              <li key={id}>{t(`privacyPolicyPage.retention.${id}` as const)}</li>
+              <li key={id}>{t(`privacyPolicyPage.retention.${id}` as const, { deletionArticle })}</li>
             ))}
           </ul>
         </section>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.deletion.heading")}</h2>
+          {articleHeading("deletion")}
           <p>{t("privacyPolicyPage.deletion.how", { discord: DISCORD_CONTACT })}</p>
           <dl>
             {DELETION_TARGETS.map((id) => (
@@ -146,7 +180,7 @@ export function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.contact.heading")}</h2>
+          {articleHeading("contact")}
           <p>
             {t("privacyPolicyPage.contact.body")}{" "}
             <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer" style={styles.link}>
@@ -156,7 +190,7 @@ export function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 style={styles.heading}>{t("privacyPolicyPage.changes.heading")}</h2>
+          {articleHeading("changes")}
           <p>{t("privacyPolicyPage.changes.body")}</p>
         </section>
       </main>
