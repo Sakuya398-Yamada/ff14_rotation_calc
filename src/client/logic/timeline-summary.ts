@@ -53,10 +53,14 @@ export function calcTimelineSummary(
       (sum, tick) => sum + Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus)),
       0
     );
-    // 着弾までの遅れを設定したスキル（#978）と時間差の攻撃（#957）は最後の DoT ティックより後にも着弾するので、範囲の終わりを最後の着弾まで延ばす
+    // エントリ（着弾までの遅れを設定していなければ開始時刻に着弾する。#985）・着弾までの遅れを設定したスキル（#978）・時間差の攻撃（#957）は
+    // 最後の DoT ティックより後にも着弾するので、範囲の終わりを最後の着弾まで延ばす
     const lastHitTime = Math.max(
       0,
-      ...result.entries.flatMap((entry) => [entry.hitTime ?? 0, ...(entry.delayedHits ?? []).map((hit) => hit.time)])
+      ...result.entries.flatMap((entry) => [
+        entry.hitTime ?? entry.startTime,
+        ...(entry.delayedHits ?? []).map((hit) => hit.time),
+      ])
     );
     const endTime = Math.max(timelineEndTime, lastHitTime);
     const overallPps =
