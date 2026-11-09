@@ -9,7 +9,7 @@ const OPERATOR_NAME = "Sakuya398-Yamada";
 const DISCORD_CONTACT = "sakuyuno";
 const ISSUES_URL = "https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issues";
 // 施行日。内容を変えたら書き換える
-const ENACTED_ON = new Date(Date.UTC(2026, 10, 8));
+const ENACTED_ON = new Date(Date.UTC(2026, 10, 9));
 
 const STORED_ITEMS = ["timelines", "ownerHash", "discordId", "accountLink", "sessions"] as const;
 
@@ -29,7 +29,7 @@ const EXTERNAL_SERVICES = [
 
 const DELETION_TARGETS = ["account", "anonymous"] as const;
 
-const RETENTION_ITEMS = ["timelines", "account", "sessions", "backup"] as const;
+const RETENTION_ITEMS = ["timelines", "account", "sessions", "backup", "accessLogs"] as const;
 
 export function PrivacyPolicyPage() {
   const { t } = useTranslation();
@@ -71,6 +71,13 @@ export function PrivacyPolicyPage() {
               </div>
             ))}
           </dl>
+        </section>
+
+        {/* wrangler.jsonc の observability と、本番のログで確かめた項目に揃える（#976） */}
+        <section>
+          <h2 style={styles.heading}>{t("privacyPolicyPage.accessLogs.heading")}</h2>
+          <p>{t("privacyPolicyPage.accessLogs.body")}</p>
+          <p>{t("privacyPolicyPage.accessLogs.redacted")}</p>
         </section>
 
         <section>
