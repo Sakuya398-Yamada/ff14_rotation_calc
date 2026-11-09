@@ -30,13 +30,13 @@ export function isAutoGenerateProcOccurred(
 
 /**
  * スキルが付ける条件バフの効果中にある、確率の判定。判定は条件バフが付いてから interval 秒ごとに tickCount 回ある
- * （効果が切れる時刻ちょうどは、autoGenerateIncludeBuffEnd が無ければ数えない）。判定の無いスキルは undefined
+ * （効果が切れる時刻ちょうどは、autoGenerateIncludeBuffEnd が無ければ数えない）。duration は条件バフの効果時間。判定の無いスキルは undefined
  */
 export function getAutoGenerateProcSource(
   skill: Skill,
   resources: readonly ResourceDefinition[],
   buffDefMap: ReadonlyMap<string, BuffDefinition>,
-): { buffId: string; rate: number; interval: number; tickCount: number } | undefined {
+): { buffId: string; rate: number; interval: number; tickCount: number; duration: number } | undefined {
   for (const buffId of skill.buffApplications ?? []) {
     const resource = resources.find(
       (r) => r.autoGenerateProcRate !== undefined && r.autoGenerateInterval && r.autoGenerateWhileBuff?.includes(buffId),
@@ -46,7 +46,7 @@ export function getAutoGenerateProcSource(
     const interval = resource.autoGenerateInterval!;
     const ticks = Math.round((duration / interval) * 1000) / 1000;
     const tickCount = Number.isInteger(ticks) && !resource.autoGenerateIncludeBuffEnd ? ticks - 1 : Math.floor(ticks);
-    return { buffId, rate: resource.autoGenerateProcRate!, interval, tickCount };
+    return { buffId, rate: resource.autoGenerateProcRate!, interval, tickCount, duration };
   }
   return undefined;
 }

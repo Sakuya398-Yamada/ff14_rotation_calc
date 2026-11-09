@@ -151,10 +151,10 @@ describe("BRD: 詩心・ソウルボイスは歌の効果中の 3 秒ごとの�
     expect(result[4].resourceSnapshot["repertoire"]).toBe(2);
   });
 
-  it("歌の判定の回数と間隔は、歌の効果時間と自動生成の間隔から決まる（UI で並べる数）", () => {
+  it("歌の判定の回数と間隔は、歌の効果時間と自動生成の間隔から決まる（UI で並べる数。効果時間は残り秒数の表示に使う）", () => {
     for (const song of SONGS) {
       const source = getAutoGenerateProcSource(skillMap.get(song)!, BRD_RESOURCES, buffDefMap);
-      expect(source).toEqual({ buffId: song, rate: 0.8, interval: 3, tickCount: 14 });
+      expect(source).toEqual({ buffId: song, rate: 0.8, interval: 3, tickCount: 14, duration: 45 });
     }
     expect(getAutoGenerateProcSource(skillMap.get("burst-shot")!, BRD_RESOURCES, buffDefMap)).toBeUndefined();
     expect(getAutoGenerateProcSource(skillMap.get("battle-voice")!, BRD_RESOURCES, buffDefMap)).toBeUndefined();

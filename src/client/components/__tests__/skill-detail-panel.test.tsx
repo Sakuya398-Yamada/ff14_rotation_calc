@@ -181,14 +181,24 @@ describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => 
     ["wanderers-minuet", "旅神のメヌエット"],
     ["mages-ballad", "賢人のバラード"],
     ["armys-paeon", "軍神のパイオン"],
-  ])("%s には 3〜42 秒の 14 回の判定のボタンが並ぶ", (skillId, name) => {
+  ])("%s には残り 42〜3 秒の 14 回の判定のボタンが並ぶ", (skillId, name) => {
     renderEntry(skillId);
 
     const group = screen.getByRole("group", { name: `${name}の判定` });
     const buttons = within(group).getAllByRole("button");
     expect(buttons).toHaveLength(14);
-    expect(buttons[0]).toHaveAccessibleName("3秒の判定: 未指定（発生として計算）");
-    expect(buttons[13]).toHaveAccessibleName("42秒の判定: 未指定（発生として計算）");
+    expect(buttons[0]).toHaveAccessibleName("残り42秒の判定: 未指定（発生として計算）");
+    expect(buttons[0]).toHaveAttribute("title", "残り42秒の判定: 未指定（発生として計算）");
+    expect(buttons[13]).toHaveAccessibleName("残り3秒の判定: 未指定（発生として計算）");
+  });
+
+  it("ボタンの秒数は歌の残り秒数で、左から 42s, 39s, …, 3s と並ぶ (#969)", () => {
+    renderEntry("wanderers-minuet");
+
+    const buttons = within(screen.getByRole("group", { name: "旅神のメヌエットの判定" })).getAllByRole("button");
+    expect(buttons.map((b) => b.querySelector(".num")?.textContent)).toEqual(
+      Array.from({ length: 14 }, (_, i) => `${42 - 3 * i}s`),
+    );
   });
 
   it.each([
@@ -200,14 +210,22 @@ describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => 
     expect(screen.queryByRole("group", { name: /の判定$/ })).not.toBeInTheDocument();
   });
 
-  it("未指定の判定は既定の並びの結果を示し、指定した判定はその結果を示す", () => {
+  it("未指定の判定は既定の並びの結果を示し、指定した判定はその結果を示す（#900 の形の指定が、左から同じ回の判定に効く）", () => {
     renderEntry("wanderers-minuet", [false, null, true]);
 
-    const group = screen.getByRole("group", { name: "旅神のメヌエットの判定" });
-    expect(within(group).getByRole("button", { name: "3秒の判定: 不発" })).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "6秒の判定: 未指定（発生として計算）" })).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "9秒の判定: 発生" })).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "24秒の判定: 未指定（不発として計算）" })).toBeInTheDocument();
+    const buttons = within(screen.getByRole("group", { name: "旅神のメヌエットの判定" })).getAllByRole("button");
+    expect(buttons[0]).toHaveAccessibleName("残り42秒の判定: 不発");
+    expect(buttons[1]).toHaveAccessibleName("残り39秒の判定: 未指定（発生として計算）");
+    expect(buttons[2]).toHaveAccessibleName("残り36秒の判定: 発生");
+    expect(buttons[7]).toHaveAccessibleName("残り21秒の判定: 未指定（不発として計算）");
+  });
+
+  it("左端（残り 42 秒）のボタンを押すと、1 回目（歌が付いてから 3 秒）の判定を切り替える (#969)", () => {
+    const onAutoGenerateProcChange = renderEntry("wanderers-minuet");
+
+    within(screen.getByRole("group", { name: "旅神のメヌエットの判定" })).getAllByRole("button")[0].click();
+
+    expect(onAutoGenerateProcChange).toHaveBeenCalledWith("e-1", 1, true);
   });
 
   it.each([
@@ -218,7 +236,7 @@ describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => 
     const onAutoGenerateProcChange = renderEntry("wanderers-minuet", [null, current]);
 
     within(screen.getByRole("group", { name: "旅神のメヌエットの判定" }))
-      .getByRole("button", { name: /^6秒の判定/ })
+      .getByRole("button", { name: /^残り39秒の判定/ })
       .click();
 
     expect(onAutoGenerateProcChange).toHaveBeenCalledWith("e-1", 2, next);
@@ -494,6 +512,50 @@ describe("SkillDetailPanel: OR 条件のバフが未達のとき、候補をす�
   });
 });
 
+/** 0 秒のファイガは詠唱完了（約 3.5 秒）が離脱（2〜10 秒）の中に着弾する（ゴースト。#950） */
+function renderGhostFire3() {
+  const entry = resolveTimeline(
+    [{ uid: "e-1", skillId: "fire-3" }],
+    BLM.skillMap,
+    BLM.resources,
+    stats,
+    BLM.buffs,
+    [{ startTime: 2, endTime: 10 }]
+  ).entries[0];
+  render(
+    <SkillDetailPanel
+      entry={entry}
+      resolvedSkill={BLM.skillMap.get(entry.resolvedSkillId)!}
+      jobId={BLM.jobId}
+      buffDefMap={BLM.buffDefMap}
+      stats={stats}
+      onClose={vi.fn()}
+      onManualStartTimeChange={vi.fn()}
+      onProcOccurredChange={vi.fn()}
+      hitDelay={undefined}
+      onHitDelayChange={vi.fn()}
+      resources={BLM.resources}
+      onAutoGenerateProcChange={vi.fn()}
+    />
+  );
+  return entry;
+}
+
+describe("SkillDetailPanel: 着弾時にボス離脱中（ゴースト。#950）", () => {
+  it("警告を出し、期待値は 0 で計算式の行は出さず、基本威力は残す", () => {
+    const entry = renderGhostFire3();
+    expect(entry.untargetableHit).toBe(true);
+
+    expect(screen.getByText("着弾時にボス離脱中のため威力 0（このスキルが付けるバフ・DoT も付かない）")).toBeInTheDocument();
+    expect(within(screen.getByText("期待値").parentElement!).getByText("0")).toBeInTheDocument();
+    expect(screen.queryByText(/×.*=/)).not.toBeInTheDocument();
+    expect(within(screen.getByText("基本威力").parentElement!).getByText(String(entry.resolvedPotency))).toBeInTheDocument();
+    expect(entry.resolvedPotency).toBeGreaterThan(0);
+    // ハードエラーではない
+    expect(within(screen.getByText("エラー").parentElement!).getByText("なし")).toBeInTheDocument();
+  });
+});
+
 describe("SkillDetailPanel（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
@@ -514,5 +576,21 @@ describe("SkillDetailPanel（英語）", () => {
 
     expect(screen.getByText(/Buff condition not met: The Wanderer's Minuet/)).toBeInTheDocument();
     expect(screen.getByText(/Insufficient resources: Repertoire/)).toBeInTheDocument();
+  });
+
+  it("着弾時にボス離脱中の警告を英語で出す（#950）", () => {
+    renderGhostFire3();
+
+    expect(screen.getByText("Boss untargetable when it lands, so 0 potency (its buffs and DoTs are not applied)")).toBeInTheDocument();
+  });
+
+  it("歌の判定のボタンの読み上げ名と title を、残り秒数の英語で出す (#969)", () => {
+    renderLastEntry(["wanderers-minuet"]);
+
+    const buttons = within(screen.getByRole("group", { name: "The Wanderer's Minuet procs" })).getAllByRole("button");
+    expect(buttons[0]).toHaveAccessibleName("Check at 42s remaining: unset (counted as proc)");
+    expect(buttons[0]).toHaveAttribute("title", "Check at 42s remaining: unset (counted as proc)");
+    expect(buttons[2]).toHaveAccessibleName("Check at 36s remaining: unset (counted as no proc)");
+    expect(buttons[13]).toHaveAccessibleName("Check at 3s remaining: unset (counted as proc)");
   });
 });

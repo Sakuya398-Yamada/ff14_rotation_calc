@@ -294,12 +294,12 @@
       "notOccurred": "不発"
     },
     "autoGenerateProcs": "{{name}}の判定",
-    "autoGenerateProcsHint": "押すと 未指定 → 発生 → 不発 の順に切り替わる（薄い色は未指定の判定の計算上の結果。緑は発生、赤は不発）",
+    "autoGenerateProcsHint": "秒数は歌の残り時間。押すと 未指定 → 発生 → 不発 の順に切り替わる（薄い色は未指定の判定の計算上の結果。緑は発生、赤は不発）",
     "autoGenerateProcTick": {
-      "occurred": "{{seconds}}秒の判定: 発生",
-      "notOccurred": "{{seconds}}秒の判定: 不発",
-      "defaultOccurred": "{{seconds}}秒の判定: 未指定（発生として計算）",
-      "defaultNotOccurred": "{{seconds}}秒の判定: 未指定（不発として計算）"
+      "occurred": "残り{{seconds}}秒の判定: 発生",
+      "notOccurred": "残り{{seconds}}秒の判定: 不発",
+      "defaultOccurred": "残り{{seconds}}秒の判定: 未指定（発生として計算）",
+      "defaultNotOccurred": "残り{{seconds}}秒の判定: 未指定（不発として計算）"
     },
     "close": "閉じる",
     "basePotency": "基本威力",
@@ -318,6 +318,7 @@
     "comboBroken": "不成立",
     "warning": "警告",
     "unconfirmedProcBuffs": "{{names}}（確率付与。発動しない場合あり）",
+    "untargetableHit": "着弾時にボス離脱中のため威力 0（このスキルが付けるバフ・DoT も付かない）",
     "error": "エラー",
     "noErrors": "なし",
     "errors": {
@@ -405,6 +406,7 @@
     "instant": "インスタント",
     "comboBroken": "コンボ不成立",
     "unconfirmedProc": "確率付与のバフを消費",
+    "untargetableHit": "着弾時にボス離脱中（威力 0）",
     "untargetable": "ボス離脱中",
     "recastError": "リキャスト中"
   },

@@ -294,12 +294,12 @@
       "notOccurred": "No proc"
     },
     "autoGenerateProcs": "{{name}} procs",
-    "autoGenerateProcsHint": "Click to cycle unset → proc → no proc (faded colors show how unset checks are counted; green is proc, red is no proc)",
+    "autoGenerateProcsHint": "Seconds show the song's remaining time. Click to cycle unset → proc → no proc (faded colors show how unset checks are counted; green is proc, red is no proc)",
     "autoGenerateProcTick": {
-      "occurred": "Check at {{seconds}}s: proc",
-      "notOccurred": "Check at {{seconds}}s: no proc",
-      "defaultOccurred": "Check at {{seconds}}s: unset (counted as proc)",
-      "defaultNotOccurred": "Check at {{seconds}}s: unset (counted as no proc)"
+      "occurred": "Check at {{seconds}}s remaining: proc",
+      "notOccurred": "Check at {{seconds}}s remaining: no proc",
+      "defaultOccurred": "Check at {{seconds}}s remaining: unset (counted as proc)",
+      "defaultNotOccurred": "Check at {{seconds}}s remaining: unset (counted as no proc)"
     },
     "close": "Close",
     "basePotency": "Base potency",
@@ -318,6 +318,7 @@
     "comboBroken": "Broken",
     "warning": "Warning",
     "unconfirmedProcBuffs": "{{names}} (chance-based; may not proc)",
+    "untargetableHit": "Boss untargetable when it lands, so 0 potency (its buffs and DoTs are not applied)",
     "error": "Errors",
     "noErrors": "None",
     "errors": {
@@ -405,6 +406,7 @@
     "instant": "Instant",
     "comboBroken": "Combo broken",
     "unconfirmedProc": "Consumes a chance-based buff",
+    "untargetableHit": "Boss untargetable when it lands (0 potency)",
     "untargetable": "Boss untargetable",
     "recastError": "Recast not ready"
   },
