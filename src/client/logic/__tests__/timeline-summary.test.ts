@@ -138,3 +138,30 @@ describe.each([
     expect(summary.lastDotTickTime).toBeNull();
   });
 });
+
+describe.each([
+  // ogcd-a 0s の着弾 2s。DoT が無いので最後の DoT ティック（timelineEndTime）は 0
+  { name: "DoT 無し", ids: ["ogcd-a"], hitDelays: { "ogcd-a": 2 }, hasDot: false },
+  // ogcd-dot 0s（最後のティック 15s 付近）→ ogcd-a 0.65s の着弾 20.65s
+  { name: "DoT 有り", ids: ["ogcd-dot", "ogcd-a"], hitDelays: { "ogcd-a": 20 }, hasDot: true },
+])("calcTimelineSummary: GCD が無いタイムラインの、着弾までの遅れを設定したスキル（$name）（#978）", ({ ids, hitDelays, hasDot }) => {
+  const result = resolveTimeline(ids.map(makeEntry), skillMap, [], stats, undefined, undefined, undefined, hitDelays);
+  const summary = calcTimelineSummary(result, skillMap, stats);
+  const delayed = result.entries.find((e) => e.resolvedSkillId === "ogcd-a")!;
+
+  it("前提: GCD が無く、遅れを設定したスキルは最後の DoT ティックより後に着弾する", () => {
+    expect(result.lastGcdEndTime).toBe(0);
+    expect(result.entries.every((e) => !e.recastError)).toBe(true);
+    expect(result.dotTicks.length > 0).toBe(hasDot);
+    expect(delayed.hitTime).toBeGreaterThan(result.timelineEndTime);
+  });
+
+  it("全体の PPS は最後の着弾までを範囲にし、その合計は合計期待威力と一致する", () => {
+    expect(summary.duration).toBe(delayed.hitTime);
+    expect(summary.overallPps).not.toBeNull();
+    expect(summary.overallPps?.totalPotency).toBe(summary.totalExpectedPotency);
+    expect(summary.overallPps?.dotPotency).toBe(summary.dotExpectedPotency);
+    expect((summary.overallPps?.pps ?? 0) * summary.duration).toBeCloseTo(summary.totalExpectedPotency);
+    expect(summary.lastDotTickTime).toBeNull();
+  });
+});
