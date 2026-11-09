@@ -39,6 +39,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === GCD: ルイン／炎法系（単体攻撃魔法チェーン） ===
   {
     id: "sch-ruin",
+    gameActionId: 17869,
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -50,6 +51,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "broil",
+    gameActionId: 3584,
     potency: 220,
     type: "gcd",
     target: "enemy",
@@ -62,6 +64,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "broil2",
+    gameActionId: 7435,
     potency: 240,
     type: "gcd",
     target: "enemy",
@@ -74,6 +77,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "broil3",
+    gameActionId: 16541,
     potency: 255,
     type: "gcd",
     target: "enemy",
@@ -86,6 +90,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "broil4",
+    gameActionId: 25865,
     potency: 295,
     type: "gcd",
     target: "enemy",
@@ -103,6 +108,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === GCD: ルインラ（移動用のインスタント魔法） ===
   {
     id: "sch-ruin2",
+    gameActionId: 17870,
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -121,6 +127,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === GCD: バイオ系（DoTチェーン） ===
   {
     id: "sch-bio",
+    gameActionId: 17864,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -133,6 +140,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "sch-bio2",
+    gameActionId: 17865,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -146,6 +154,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "biolysis",
+    gameActionId: 16540,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -164,6 +173,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === GCD: 破陣法系（自身の周囲への範囲攻撃魔法） ===
   {
     id: "art-of-war",
+    gameActionId: 16539,
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -179,6 +189,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "art-of-war2",
+    gameActionId: 25866,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -193,6 +204,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === oGCD: エーテルフロー関連 ===
   {
     id: "energy-drain",
+    gameActionId: 167,
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -207,6 +219,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "aetherflow",
+    gameActionId: 166,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -222,6 +235,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "dissipation",
+    gameActionId: 3587,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -238,6 +252,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === oGCD: エーテルフローを消費する回復アビリティ（威力 0。回復に回した分をリソースに反映するためだけに置く） ===
   {
     id: "lustrate",
+    gameActionId: 189,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -252,6 +267,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "sacred-soil",
+    gameActionId: 188,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -266,6 +282,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "indomitability",
+    gameActionId: 3583,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -280,6 +297,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "excogitation",
+    gameActionId: 7434,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -296,6 +314,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === oGCD: 連環計・埋伏の毒 ===
   {
     id: "chain-stratagem",
+    gameActionId: 7436,
     potency: 0,
     type: "ogcd",
     target: "enemy",
@@ -309,6 +328,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "baneful-impaction",
+    gameActionId: 37012,
     potency: 0,
     type: "ogcd",
     target: "enemy",
@@ -328,6 +348,7 @@ export const SCH_ATTACK_SKILLS: Skill[] = [
   // === oGCD: ロールアクション ===
   {
     id: "swiftcast",
+    gameActionId: 7561,
     potency: 0,
     type: "ogcd",
     target: "self",

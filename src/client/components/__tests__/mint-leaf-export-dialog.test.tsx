@@ -27,9 +27,12 @@ function stubClipboard(writeText: (text: string) => Promise<void>) {
   Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
 }
 
-function renderDialog(jobId: JobId, skillIds: string[]) {
+/** withoutGameActionIds: 全ジョブのスキルに gameActionId があるので（#964）、対応の無いスキルの表示を見るときは外して渡す */
+function renderDialog(jobId: JobId, skillIds: string[], { withoutGameActionIds = false } = {}) {
   const { skills, resources, buffs } = JOB_DATA[jobId];
-  const skillMap = new Map(skills.map((s) => [s.id, s]));
+  const skillMap = new Map(
+    skills.map((s) => [s.id, withoutGameActionIds ? { ...s, gameActionId: undefined } : s]),
+  );
   const { entries } = resolveTimeline(
     skillIds.map((skillId, i) => ({ uid: `entry-${i}`, skillId })),
     skillMap,
@@ -81,7 +84,7 @@ describe("MintLeafExportDialog", () => {
   });
 
   it("対応の無いスキルは名前を並べ、書き出すものが無ければコピーできない", () => {
-    renderDialog("whm", ["glare3", "assize", "glare3"]);
+    renderDialog("whm", ["glare3", "assize", "glare3"], { withoutGameActionIds: true });
     expect(screen.getByLabelText("Mint Leaf に貼るテキスト")).toHaveValue("");
     expect(
       screen.getByText("Mint Leaf のアクションとの対応が無いため、次のスキルは書き出していません: グレアガ, アサイズ"),
@@ -103,7 +106,7 @@ describe("MintLeafExportDialog", () => {
 
     it("見出しと、飛ばしたスキルの名前が英語で出る", async () => {
       await i18next.changeLanguage("en");
-      renderDialog("whm", ["glare3"]);
+      renderDialog("whm", ["glare3"], { withoutGameActionIds: true });
       expect(screen.getByRole("dialog", { name: "Export to Mint Leaf" })).toBeInTheDocument();
       expect(
         screen.getByText("These actions have no matching Mint Leaf action and were not exported: Glare III"),

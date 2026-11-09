@@ -60,6 +60,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "keen-edge",
+    gameActionId: 16137,
     potency: 150,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 200 },
@@ -74,6 +75,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "brutal-shell",
+    gameActionId: 16139,
     potency: 240,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -91,6 +93,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   {
     // ソイルの獲得は特性ソイルチャージ（Lv30）から（ソイルの acquiredLevel）
     id: "solid-barrel",
+    gameActionId: 16145,
     potency: 320,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -112,6 +115,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "demon-slice",
+    gameActionId: 16141,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -123,6 +127,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "demon-slaughter",
+    gameActionId: 16149,
     potency: 160,
     nonComboPotency: 100,
     type: "gcd",
@@ -142,6 +147,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   {
     // ハイパーヴェロシティ実行可は Lv86 から付く（バフの acquiredLevel）
     id: "burst-strike",
+    gameActionId: 16162,
     potency: 340,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 420 }],
     type: "gcd",
@@ -157,6 +163,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   {
     // フェイテッドブランド実行可は Lv96 から付く（バフの acquiredLevel）
     id: "fated-circle",
+    gameActionId: 16163,
     potency: 300,
     type: "gcd",
     keepsCombo: true,
@@ -171,6 +178,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "double-down",
+    gameActionId: 25760,
     potency: 1000,
     type: "gcd",
     keepsCombo: true,
@@ -189,6 +197,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
     // 使うと段のバフでサベッジクロウ → ウィケッドタロンに変化する（変化中はビートファングのチャージを使わない）。
     // ジャギュラーリップ実行可は Lv70 から付く（バフの acquiredLevel）
     id: "gnashing-fang",
+    gameActionId: 16146,
     potency: 330,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 440 }],
     type: "gcd",
@@ -209,6 +218,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "savage-claw",
+    gameActionId: 16147,
     potency: 410,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 500 }],
     type: "gcd",
@@ -224,6 +234,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "wicked-talon",
+    gameActionId: 16150,
     potency: 490,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 560 }],
     type: "gcd",
@@ -245,6 +256,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   {
     // 「〜実行可」の効果中だけ、対応するアクションに変化する。どれも無ければ実行できない
     id: "continuation",
+    gameActionId: 16155,
     potency: 0,
     type: "ogcd",
     target: "enemy",
@@ -264,6 +276,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "jugular-rip",
+    gameActionId: 16156,
     potency: 180,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 220 }],
     type: "ogcd",
@@ -278,6 +291,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "abdomen-tear",
+    gameActionId: 16157,
     potency: 220,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 260 }],
     type: "ogcd",
@@ -292,6 +306,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "eye-gouge",
+    gameActionId: 16158,
     potency: 260,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 300 }],
     type: "ogcd",
@@ -306,6 +321,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hypervelocity",
+    gameActionId: 25759,
     potency: 140,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 180 }],
     type: "ogcd",
@@ -320,6 +336,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "fated-brand",
+    gameActionId: 36936,
     potency: 120,
     type: "ogcd",
     target: "enemy",
@@ -339,6 +356,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   {
     // ソニックブレイク実行可は Lv54 から付く（バフの acquiredLevel）
     id: "no-mercy",
+    gameActionId: 16138,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -351,6 +369,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "sonic-break",
+    gameActionId: 16153,
     potency: 340,
     type: "gcd",
     keepsCombo: true,
@@ -366,6 +385,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   {
     // 実行には敵の対象が要る。ソイルの獲得は Lv88 から 3（特性ソイルチャージ効果アップ）。ハートコンボ実行可は Lv100 から付く
     id: "bloodfest",
+    gameActionId: 16164,
     potency: 0,
     type: "ogcd",
     target: "enemy",
@@ -381,6 +401,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   {
     // 使うと段のバフでルーラー・オブ・ハート → エンド・オブ・ハートに変化する
     id: "reign-of-beasts",
+    gameActionId: 36937,
     potency: 800,
     type: "gcd",
     keepsCombo: true,
@@ -401,6 +422,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "noble-blood",
+    gameActionId: 36938,
     potency: 900,
     type: "gcd",
     keepsCombo: true,
@@ -417,6 +439,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "lion-heart",
+    gameActionId: 36939,
     potency: 1000,
     type: "gcd",
     keepsCombo: true,
@@ -437,6 +460,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "lightning-shot",
+    gameActionId: 16143,
     potency: 150,
     type: "gcd",
     keepsCombo: true,
@@ -448,6 +472,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "danger-zone",
+    gameActionId: 16144,
     potency: 250,
     type: "ogcd",
     target: "enemy",
@@ -459,6 +484,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blasting-zone",
+    gameActionId: 16165,
     potency: 720,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 800 }],
     type: "ogcd",
@@ -472,6 +498,7 @@ export const GNB_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "bow-shock",
+    gameActionId: 16159,
     potency: 150,
     type: "ogcd",
     target: "enemy",
