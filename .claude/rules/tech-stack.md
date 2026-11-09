@@ -38,11 +38,12 @@
                ├ /en/*   → Hono → Static Assets の /en/（英語の en/index.html。バインディング ASSETS）
                ├ /t/*    → Hono → Static Assets の /（index.html）
                └ それ以外 → Static Assets（dist/client。未知のパスは index.html）
-             ※ 共有 URL（/t/*・/en/t/*）の応答には Hono が X-Robots-Tag: noindex を付ける（#837）
+             ※ 共有 URL（/t/*・/en/t/*）の応答には Hono が X-Robots-Tag: noindex（#837）と Referrer-Policy: strict-origin（#976）を付ける
 [Cron Trigger（毎日 UTC 19:00 = JST 04:00。wrangler.jsonc の triggers）] → 同じ Worker の scheduled → D1 の期限切れのセッションの行を消す（#919）
 ```
 
 - 配信 URL: `https://ff14-rotation-calc.forestry-for.workers.dev`（独自ドメインは使わない）
+- ログ: Workers Logs（`wrangler.jsonc` の `observability`。#976）。ダッシュボードの Worker の Observability タブで見る。呼び出しごとの記録（URL・IP・位置・CPU 時間）が残り、Cron の成否も Cron の呼び出しの `outcome` で見られる。Cookie の値と URL の中の長い ID は Cloudflare が `REDACTED` にし、クエリ文字列は `redact_query_string` で消す。`referer` の中の ID は伏せられないので、共有 URL のページは Referrer-Policy でパスを送らせない。`observability` を消すと `wrangler deploy` が無効にして送る。残す項目・期間を変えたらプライバシーポリシー（`PrivacyPolicyPage.tsx`）も直す。Free は 2026-12-01 から 1 日 0.5 GB・保存 7 日（それまでは 1 日 20 万件・3 日）
 - D1 のバックアップ: 自宅サーバーの cron が毎日 `scripts/d1-backup.sh`（`wrangler d1 export --remote`）で取る。手順と復元は `docs/d1-backup.md`。エクスポートは仮想テーブル（FTS5 等）を含む DB では使えないので、仮想テーブルを足す Issue ではこの手順も見直す
 - `vite build` はフロントを `dist/client` に、Worker を `dist/ff14_rotation_calc` に出力し、デプロイ用の設定 `dist/ff14_rotation_calc/wrangler.json` を生成する。Vite の `root` が `src/client` なので、リポジトリ直下の `wrangler deploy` はこの生成設定を自動では見つけない。デプロイは `npm run deploy`（`--config` で生成設定を指定）を使う
 

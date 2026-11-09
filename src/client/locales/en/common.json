@@ -53,6 +53,11 @@
       "sessionsLabel": "Login sessions",
       "sessions": "A hash of the value that keeps you logged in, and its expiry."
     },
+    "accessLogs": {
+      "heading": "Access logs",
+      "body": "To check that this tool works and to investigate failures, the following is recorded in Cloudflare (Workers Logs) for each request that reaches this tool's server (Cloudflare Workers): the date and time, the URL, your IP address, the location estimated from your IP address (country, region, city, postal code and latitude/longitude) and your network provider, your browser information (user agent, language and referring page), the encryption (TLS) details of the connection, and the result and duration of the processing.",
+      "redacted": "Cookie values are not recorded. The timeline IDs in share URLs and the query strings of URLs are hidden before the records are stored."
+    },
     "cookies": {
       "heading": "Cookies",
       "intro": "This tool sets the following three cookies. They are used only for saving and logging in, not for advertising or analytics.",
@@ -67,7 +72,7 @@
     "external": {
       "heading": "External services",
       "cloudflareLabel": "Cloudflare",
-      "cloudflare": "Hosts this tool and its database. When you open a page or save, your IP address and browser information are passed to Cloudflare.",
+      "cloudflare": "Hosts this tool and its database, and stores its access logs. When you open a page or save, your IP address and browser information are passed to Cloudflare.",
       "cloudflarePolicy": "Cloudflare Privacy Policy",
       "turnstileLabel": "Cloudflare Turnstile",
       "turnstile": "Used for bot protection when you open the save dialog. Your IP address, browser information and similar data are passed to Cloudflare.",
@@ -81,14 +86,15 @@
     },
     "use": {
       "heading": "How information is used",
-      "body": "The information is used only to save, share, list and delete timelines and to log you in. It is not used for advertising or analytics, and it is not sold or given to third parties (except where required by law)."
+      "body": "The information is used only to save, share, list and delete timelines, to log you in, and to check that this tool works and investigate failures. It is not used for advertising or analytics, and it is not sold or given to third parties (except where required by law)."
     },
     "retention": {
       "heading": "Retention",
       "timelines": "Saved timelines have no expiry. When you delete one, it no longer appears in your list or at its share URL, but the data remains on the server. To erase it completely, send a request as described in \"Deletion requests\" below.",
       "account": "The value derived from your Discord user ID and the links to your account also have no expiry and are kept until you request their deletion.",
       "sessions": "Login sessions expire after 30 days (extended while you use the tool, up to 1 year) and can no longer be used. Their records are deleted when you log out, and records of sessions that expired without logging out are deleted once a day.",
-      "backup": "So that the database can be restored if it breaks, it is backed up daily, and the newest 30 backups (normally 30 days' worth) are kept on a device the operator manages. Erased data normally disappears from the backups after about 30 days."
+      "backup": "So that the database can be restored if it breaks, it is backed up daily, and the newest 30 backups (normally 30 days' worth) are kept on a device the operator manages. Erased data normally disappears from the backups after about 30 days.",
+      "accessLogs": "Access logs are deleted automatically by Cloudflare after at most 7 days. They cannot be deleted one by one, so they remain until then even if you request deletion."
     },
     "deletion": {
       "heading": "Deletion requests",

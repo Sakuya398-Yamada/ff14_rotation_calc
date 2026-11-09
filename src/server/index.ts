@@ -16,21 +16,25 @@ app.route("/api/me", createMeRoute(getDb));
 
 // 共有 URL（/t/<id>・/en/t/<id>）は利用者のタイムラインなので、検索結果に載せない。robots.txt で塞ぐとクローラーが
 // noindex を読めず、リンクされた URL が中身の無いまま載ることがあるので、ヘッダーで外す（#837）。
+// このページから呼ぶ API の Referer にも共有 URL の ID が載り、Workers Logs にそのまま残るので、オリジンだけを送らせる（#976）。
 // ASSETS.fetch の応答はヘッダーを書き換えられないので、詰め直してから付ける
-function withNoindex(res: Response): Response {
+function withSharedPageHeaders(res: Response): Response {
   const copy = new Response(res.body, res);
   copy.headers.set("X-Robots-Tag", "noindex");
+  copy.headers.set("Referrer-Policy", "strict-origin");
   return copy;
 }
 
 // /t/ 配下も run_worker_first で Worker に来る。SPA のフォールバックと同じく、ルートの index.html を返す
-app.get("/t/*", async (c) => withNoindex(await c.env.ASSETS.fetch(new Request(new URL("/", c.req.url), c.req.raw))));
+app.get("/t/*", async (c) =>
+  withSharedPageHeaders(await c.env.ASSETS.fetch(new Request(new URL("/", c.req.url), c.req.raw))),
+);
 
 // /en/ 配下は run_worker_first で Worker に来る。SPA のフォールバックはルートの index.html（日本語）を返すので、英語の HTML を返す。
 // /en/index.html を取ると html_handling が /en へ 307 で戻すので、/en/ を取る。/en/ 配下にほかのアセットは無い
 app.get("/en/*", async (c) => {
   const res = await c.env.ASSETS.fetch(new Request(new URL("/en/", c.req.url), c.req.raw));
-  return c.req.path.startsWith("/en/t/") ? withNoindex(res) : res;
+  return c.req.path.startsWith("/en/t/") ? withSharedPageHeaders(res) : res;
 });
 
 export default {

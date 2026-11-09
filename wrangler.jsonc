@@ -46,6 +46,16 @@
 			"migrations_dir": "migrations"
 		}
 	],
+	// Workers Logs（ダッシュボードの Observability タブ）。書かないと wrangler deploy が { enabled: false } を送り、
+	// ダッシュボードで有効にしても次のデプロイで無効に戻る（#976）。呼び出しごとの記録（URL・IP・位置・CPU 時間）を残す。
+	// Cookie の値と URL の中の長い ID は Cloudflare が REDACTED にし、クエリ文字列は redact_query_string で消す。
+	// referer の中の ID は伏せられないので、共有 URL のページは Referrer-Policy でパスを送らせない（src/server/index.ts）。
+	// 残す記録と期間はプライバシーポリシー（src/client/components/PrivacyPolicyPage.tsx）に書いているので、変えたらそちらも直す
+	"observability": {
+		"enabled": true,
+		"redact_query_string": true,
+		"logs": { "invocation_logs": true }
+	},
 	// ログアウトせずに期限が切れたセッションの行を 1 日 1 回消す（src/server/index.ts の scheduled。#919）。時刻は UTC で、19:00 は JST の 04:00。
 	// D1 のバックアップ（JST 04:30。docs/d1-backup.md）より前に消し、エクスポート中に D1 が止まる時間とも重ねない。
 	// Cron Trigger は本番だけに付き、プレビューでは動かない。ローカルでも自動では動かないので、npm run dev 中に /cdn-cgi/local/scheduled を開いて呼ぶ

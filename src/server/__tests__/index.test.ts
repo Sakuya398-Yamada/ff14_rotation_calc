@@ -78,6 +78,27 @@ describe("共有 URL（/t/*・/en/t/*）を検索結果から外す", () => {
   });
 });
 
+// 共有 URL のページから呼ぶ API（/api/timelines/<id> など）の Referer に ID が載ると、Workers Logs に ID がそのまま残る（#976）
+describe("共有 URL（/t/*・/en/t/*）から送る Referer にパスを載せない", () => {
+  const ID = "V1StGXR8_Z5jdHi6B-myT";
+
+  it.each([`/t/${ID}`, `/en/t/${ID}`])("%s には Referrer-Policy: strict-origin を付ける", async (path) => {
+    const { env } = envWithAssets();
+    const res = await app.request(`http://localhost${path}`, {}, env);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Referrer-Policy")).toBe("strict-origin");
+  });
+
+  it("/en/ には Referrer-Policy を付けない", async () => {
+    const { env } = envWithAssets();
+    const res = await app.request("http://localhost/en/", {}, env);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Referrer-Policy")).toBeNull();
+  });
+});
+
 describe("ログインの API（#876）", () => {
   it("/api/auth/discord と /api/me を登録している（クライアント ID が無ければ 404・ログインできない）", async () => {
     const { env } = envWithAssets();

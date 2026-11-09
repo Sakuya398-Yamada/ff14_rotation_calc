@@ -76,6 +76,30 @@ describe("PrivacyPolicyPage", () => {
     expect(screen.getByText(/ログアウトせずに期限が切れたものも 1 日 1 回まとめて消します/)).toBeInTheDocument();
   });
 
+  // wrangler.jsonc の observability（呼び出しごとの記録を残し、クエリ文字列を伏せる）と、本番のログで確かめた項目（#976）
+  it("アクセスの記録として、IP アドレス・位置・ブラウザの情報を Workers Logs に保存すると書いている", () => {
+    render(<PrivacyPolicyPage />);
+    expect(screen.getByRole("heading", { level: 2, name: "アクセスの記録" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/次の記録を Cloudflare（Workers Logs）に保存します。日時、URL、IP アドレス、IP アドレスから推定した位置（国・地域・市区町村・郵便番号・緯度経度）と回線の事業者、ブラウザの情報（User-Agent・言語・参照元のページ）、通信の暗号化（TLS）の情報/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/ログイン、このツールの動作の確認と障害の調査のためだけに使います/)).toBeInTheDocument();
+  });
+
+  it("アクセスの記録に Cookie の値は残さず、共有 URL の ID とクエリ文字列は伏せると書いている", () => {
+    render(<PrivacyPolicyPage />);
+    expect(
+      screen.getByText("Cookie の値は記録しません。共有 URL のタイムラインの ID と、URL のクエリ文字列は、伏せてから保存します。")
+    ).toBeInTheDocument();
+  });
+
+  it("アクセスの記録は最長 7 日で消え、削除の依頼を受けても期間が過ぎるまで残ると書いている", () => {
+    render(<PrivacyPolicyPage />);
+    expect(
+      screen.getByText(/アクセスの記録は、最長 7 日で Cloudflare が自動で消します。記録を 1 件ずつ消すことはできないので、削除の依頼を受けても、期間が過ぎるまで残ります/)
+    ).toBeInTheDocument();
+  });
+
   describe("英語", () => {
     beforeEach(() => i18next.changeLanguage("en"));
     afterEach(() => i18next.changeLanguage("ja"));
@@ -118,6 +142,29 @@ describe("PrivacyPolicyPage", () => {
     it("ログアウトせずに期限が切れたセッションの記録も、1 日 1 回消すと書いている", () => {
       render(<PrivacyPolicyPage />);
       expect(screen.getByText(/records of sessions that expired without logging out are deleted once a day/)).toBeInTheDocument();
+    });
+
+    it("アクセスの記録として、IP アドレス・位置・ブラウザの情報を Workers Logs に保存すると書いている", () => {
+      render(<PrivacyPolicyPage />);
+      expect(screen.getByRole("heading", { level: 2, name: "Access logs" })).toBeInTheDocument();
+      expect(
+        screen.getByText(/is recorded in Cloudflare \(Workers Logs\) for each request that reaches this tool's server \(Cloudflare Workers\): the date and time, the URL, your IP address, the location estimated from your IP address \(country, region, city, postal code and latitude\/longitude\) and your network provider, your browser information \(user agent, language and referring page\), the encryption \(TLS\) details of the connection/)
+      ).toBeInTheDocument();
+      expect(screen.getByText(/to log you in, and to check that this tool works and investigate failures/)).toBeInTheDocument();
+    });
+
+    it("アクセスの記録に Cookie の値は残さず、共有 URL の ID とクエリ文字列は伏せると書いている", () => {
+      render(<PrivacyPolicyPage />);
+      expect(
+        screen.getByText("Cookie values are not recorded. The timeline IDs in share URLs and the query strings of URLs are hidden before the records are stored.")
+      ).toBeInTheDocument();
+    });
+
+    it("アクセスの記録は最長 7 日で消え、削除の依頼を受けても期間が過ぎるまで残ると書いている", () => {
+      render(<PrivacyPolicyPage />);
+      expect(
+        screen.getByText(/Access logs are deleted automatically by Cloudflare after at most 7 days\. They cannot be deleted one by one, so they remain until then even if you request deletion/)
+      ).toBeInTheDocument();
     });
   });
 });
