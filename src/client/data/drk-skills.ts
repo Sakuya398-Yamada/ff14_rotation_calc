@@ -63,6 +63,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "hard-slash",
+    gameActionId: 3617,
     potency: 150,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 180 },
@@ -77,6 +78,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "syphon-strike",
+    gameActionId: 3623,
     potency: 240,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -94,6 +96,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "souleater",
+    gameActionId: 3632,
     potency: 320,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -115,6 +118,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "unleash",
+    gameActionId: 3621,
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -127,6 +131,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stalwart-soul",
+    gameActionId: 16468,
     potency: 140,
     nonComboPotency: 100,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 160, nonComboPotency: 120 }],
@@ -143,6 +148,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   {
     // 遠隔攻撃の魔法。シャドウストライドのリキャスト短縮（Lv84）は、シャドウストライドが計算の対象外なので表さない
     id: "unmend",
+    gameActionId: 3624,
     potency: 150,
     type: "gcd",
     keepsCombo: true,
@@ -159,6 +165,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   {
     // デリリアム中は、Lv68〜95 ではブラックブラッドを消費せずに使え（drk-buffs.ts）、Lv96 からはレッドデリリアムに変化する
     id: "bloodspiller",
+    gameActionId: 7392,
     potency: 500,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 600 }],
     type: "gcd",
@@ -173,6 +180,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "quietus",
+    gameActionId: 7391,
     potency: 200,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 240 }],
     type: "gcd",
@@ -190,6 +198,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
     // デリリアム中のブラッドスピラーの変化先。使うと段のバフでカマパンス → トアクリーバーに変化する。
     // デリリアムのスタックは drk-buffs.ts の consumeOnGcd で 1 つ消費する（変化先の 3 つとインペイルメントで計 3 回）
     id: "scarlet-delirium",
+    gameActionId: 36928,
     potency: 620,
     type: "gcd",
     keepsCombo: true,
@@ -208,6 +217,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "comeuppance",
+    gameActionId: 36929,
     potency: 720,
     type: "gcd",
     keepsCombo: true,
@@ -223,6 +233,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "torcleaver",
+    gameActionId: 36930,
     potency: 820,
     type: "gcd",
     keepsCombo: true,
@@ -239,6 +250,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   {
     // デリリアム中のクワイタスの変化先。デリリアムのコンボ（レッドデリリアム → カマパンス → トアクリーバー）を途切れさせる
     id: "impalement",
+    gameActionId: 36931,
     potency: 300,
     type: "gcd",
     keepsCombo: true,
@@ -255,6 +267,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   {
     // 影身具現で付く「ディセスティーム実行可」を消費する
     id: "disesteem",
+    gameActionId: 36932,
     potency: 1000,
     type: "gcd",
     keepsCombo: true,
@@ -275,6 +288,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   {
     // 暗黒は効果中に付け直すと 30 秒延長、上限 60 秒（drk-buffs.ts の maxDuration）
     id: "edge-of-darkness",
+    gameActionId: 16467,
     potency: 300,
     type: "ogcd",
     target: "enemy",
@@ -288,6 +302,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "flood-of-darkness",
+    gameActionId: 16466,
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -303,6 +318,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "edge-of-shadow",
+    gameActionId: 16470,
     potency: 460,
     type: "ogcd",
     target: "enemy",
@@ -317,6 +333,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "flood-of-shadow",
+    gameActionId: 16469,
     potency: 160,
     type: "ogcd",
     target: "enemy",
@@ -337,6 +354,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   {
     // ブラッドデリリアム（3 スタック）とブラッドウェポン（3 スタック）を付与する。Lv68 でブラッドウェポンから変化（Lv70 からを扱うので、変化前は定義しない）
     id: "delirium",
+    gameActionId: 7390,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -354,6 +372,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
     // Lv88 で 1 回の威力が 340 → 420、Lv90 で 3 回目が漆黒の波動からシャドウブリンガー（570）に、Lv100 で 5 回目がカーヴ・アンド・スピットから
     // ディセスティーム（620）に変わる（中国版クライアントの説明文・The Balance）。分身には暗黒が乗らない（drk-buffs.ts の暗黒の対象から外す）
     id: "living-shadow",
+    gameActionId: 16472,
     potency: 1700,
     traitPotencyOverrides: [
       { traitLevel: 88, potency: 2100 },
@@ -374,6 +393,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
     // 足元の設置範囲に 15 秒。置いた瞬間に 1 回入り、そのあと 3 秒おきに 5 回（The Balance・consolegameswiki）。
     // 置いた瞬間の 1 回を直接の威力、残りを DoT で表す（DoT は 1 体分）。効果中はソルト・アンド・ダークを使える
     id: "salted-earth",
+    gameActionId: 3639,
     potency: 50,
     type: "ogcd",
     target: "enemy",
@@ -389,6 +409,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "salt-and-darkness",
+    gameActionId: 25755,
     potency: 500,
     type: "ogcd",
     target: "enemy",
@@ -404,6 +425,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "abyssal-drain",
+    gameActionId: 3641,
     potency: 240,
     type: "ogcd",
     target: "enemy",
@@ -418,6 +440,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "carve-and-spit",
+    gameActionId: 3643,
     potency: 510,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 540 }],
     type: "ogcd",
@@ -431,6 +454,7 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "shadowbringer",
+    gameActionId: 25757,
     potency: 600,
     type: "ogcd",
     target: "enemy",

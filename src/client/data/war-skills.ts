@@ -53,6 +53,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "heavy-swing",
+    gameActionId: 31,
     potency: 150,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 200 },
@@ -67,6 +68,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "maim",
+    gameActionId: 37,
     potency: 250,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -84,6 +86,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "storms-path",
+    gameActionId: 42,
     potency: 380,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -101,6 +104,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "storms-eye",
+    gameActionId: 45,
     potency: 380,
     nonComboPotency: 100,
     traitPotencyOverrides: [
@@ -123,6 +127,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "overpower",
+    gameActionId: 41,
     potency: 110,
     type: "gcd",
     target: "enemy",
@@ -135,6 +140,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   {
     // ビーストゲージの獲得は特性インナービーストマスタリー（Lv74）から
     id: "mythril-tempest",
+    gameActionId: 16462,
     potency: 140,
     nonComboPotency: 100,
     traitPotencyOverrides: [{ traitLevel: 74, comboResourceChanges: [{ resourceId: "beast-gauge", amount: 20 }] }],
@@ -154,6 +160,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "inner-beast",
+    gameActionId: 49,
     potency: 330,
     type: "gcd",
     keepsCombo: true,
@@ -166,6 +173,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "fell-cleave",
+    gameActionId: 3549,
     potency: 520,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 580 }],
     type: "gcd",
@@ -182,6 +190,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "inner-chaos",
+    gameActionId: 16465,
     potency: 700,
     type: "gcd",
     keepsCombo: true,
@@ -199,6 +208,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "steel-cyclone",
+    gameActionId: 51,
     potency: 160,
     type: "gcd",
     keepsCombo: true,
@@ -212,6 +222,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "decimate",
+    gameActionId: 3550,
     potency: 180,
     type: "gcd",
     keepsCombo: true,
@@ -228,6 +239,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "chaotic-cyclone",
+    gameActionId: 16463,
     potency: 200,
     type: "gcd",
     keepsCombo: true,
@@ -250,6 +262,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "berserk",
+    gameActionId: 38,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -264,6 +277,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   {
     // 原初の激震実行可の間は原初の激震に変化する。プライマルレンド実行可は Lv90 から付く（バフの acquiredLevel）
     id: "inner-release",
+    gameActionId: 7389,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -279,6 +293,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "primal-wrath",
+    gameActionId: 36924,
     potency: 700,
     type: "ogcd",
     target: "enemy",
@@ -294,6 +309,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   {
     // ルイネーター実行可の間はルイネーターに変化する（Lv100）
     id: "primal-rend",
+    gameActionId: 25753,
     potency: 720,
     type: "gcd",
     keepsCombo: true,
@@ -312,6 +328,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "primal-ruination",
+    gameActionId: 36925,
     potency: 800,
     type: "gcd",
     keepsCombo: true,
@@ -333,6 +350,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "tomahawk",
+    gameActionId: 46,
     potency: 150,
     type: "gcd",
     keepsCombo: true,
@@ -345,6 +363,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   {
     // 原初の混沌は Lv72 から付く（バフの acquiredLevel）
     id: "infuriate",
+    gameActionId: 52,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -359,6 +378,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "upheaval",
+    gameActionId: 7387,
     potency: 400,
     traitPotencyOverrides: [{ traitLevel: 94, potency: 420 }],
     type: "ogcd",
@@ -372,6 +392,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "orogeny",
+    gameActionId: 25752,
     potency: 150,
     type: "ogcd",
     target: "enemy",
@@ -386,6 +407,7 @@ export const WAR_ATTACK_SKILLS: Skill[] = [
   {
     // 最大チャージ数は特性オンスロート効果アップ（Lv88）で 2 → 3
     id: "onslaught",
+    gameActionId: 7386,
     potency: 150,
     type: "ogcd",
     target: "enemy",

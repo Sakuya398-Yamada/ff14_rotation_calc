@@ -38,6 +38,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === GCD: マレフィク系（単体攻撃魔法チェーン） ===
   {
     id: "malefic",
+    gameActionId: 3596,
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -49,6 +50,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "malefic2",
+    gameActionId: 3598,
     potency: 160,
     type: "gcd",
     target: "enemy",
@@ -61,6 +63,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "malefic3",
+    gameActionId: 7442,
     potency: 190,
     type: "gcd",
     target: "enemy",
@@ -73,6 +76,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "malefic4",
+    gameActionId: 16555,
     potency: 230,
     type: "gcd",
     target: "enemy",
@@ -85,6 +89,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "fall-malefic",
+    gameActionId: 25871,
     potency: 250,
     type: "gcd",
     target: "enemy",
@@ -102,6 +107,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === GCD: コンバス系（DoTチェーン） ===
   {
     id: "combust",
+    gameActionId: 3599,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -114,6 +120,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "combust2",
+    gameActionId: 3608,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -127,6 +134,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "combust3",
+    gameActionId: 16554,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -145,6 +153,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === GCD: グラビデ系（対象とその周囲への範囲攻撃魔法） ===
   {
     id: "gravity",
+    gameActionId: 3615,
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -158,6 +167,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "gravity2",
+    gameActionId: 25872,
     potency: 130,
     type: "gcd",
     target: "enemy",
@@ -176,6 +186,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === GCD: マクロコスモス ===
   {
     id: "macrocosmos",
+    gameActionId: 25874,
     potency: 250,
     type: "gcd",
     target: "enemy",
@@ -196,6 +207,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === oGCD: ディヴィネーション・オラクル ===
   {
     id: "divination",
+    gameActionId: 16552,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -209,6 +221,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "oracle",
+    gameActionId: 37029,
     potency: 860,
     type: "ogcd",
     target: "enemy",
@@ -227,6 +240,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === oGCD: ライトスピード ===
   {
     id: "lightspeed",
+    gameActionId: 3606,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -243,6 +257,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === oGCD: ドロー・クラウンロード ===
   {
     id: "astral-draw",
+    gameActionId: 37017,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -264,6 +279,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "umbral-draw",
+    gameActionId: 37018,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -281,6 +297,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "lord-of-crowns",
+    gameActionId: 7444,
     potency: 400,
     type: "ogcd",
     target: "enemy",
@@ -299,6 +316,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === oGCD: アーサリースター ===
   {
     id: "earthly-star",
+    gameActionId: 7439,
     potency: 0,
     type: "ogcd",
     // 地面に設置するため、ボスが離脱中でも置ける
@@ -312,6 +330,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stellar-detonation",
+    gameActionId: 8324,
     // 巨星の支配者中（設置から 10 秒以降）の威力
     potency: 310,
     type: "ogcd",
@@ -332,6 +351,7 @@ export const AST_ATTACK_SKILLS: Skill[] = [
   // === oGCD: ロールアクション ===
   {
     id: "swiftcast",
+    gameActionId: 7561,
     potency: 0,
     type: "ogcd",
     target: "self",

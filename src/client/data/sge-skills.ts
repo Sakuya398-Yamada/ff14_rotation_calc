@@ -50,6 +50,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: ドシス系（単体攻撃魔法チェーン） ===
   {
     id: "dosis",
+    gameActionId: 24283,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -66,6 +67,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "dosis2",
+    gameActionId: 24306,
     potency: 320,
     type: "gcd",
     target: "enemy",
@@ -79,6 +81,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "dosis3",
+    gameActionId: 24312,
     potency: 330,
     type: "gcd",
     target: "enemy",
@@ -97,6 +100,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: エウクラシア・ドシス系（DoT。エウクラシア中のドシス系の変化先） ===
   {
     id: "eukrasian-dosis",
+    gameActionId: 24293,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -117,6 +121,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "eukrasian-dosis2",
+    gameActionId: 24308,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -133,6 +138,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "eukrasian-dosis3",
+    gameActionId: 24314,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -155,6 +161,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: エウクラシア ===
   {
     id: "eukrasia",
+    gameActionId: 24290,
     potency: 0,
     type: "gcd",
     target: "self",
@@ -169,6 +176,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: フレグマ系（チャージ式の範囲攻撃魔法） ===
   {
     id: "phlegma",
+    gameActionId: 24289,
     potency: 230,
     type: "gcd",
     target: "enemy",
@@ -189,6 +197,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "phlegma2",
+    gameActionId: 24307,
     potency: 490,
     type: "gcd",
     target: "enemy",
@@ -205,6 +214,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "phlegma3",
+    gameActionId: 24313,
     potency: 690,
     type: "gcd",
     target: "enemy",
@@ -222,6 +232,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: トキシコン系（アダーステックを消費する範囲攻撃魔法） ===
   {
     id: "toxikon",
+    gameActionId: 24304,
     potency: 240,
     type: "gcd",
     target: "enemy",
@@ -241,6 +252,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "toxikon2",
+    gameActionId: 24316,
     potency: 330,
     type: "gcd",
     target: "enemy",
@@ -262,6 +274,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: ディスクラシア系（自身の周囲への範囲攻撃魔法） ===
   {
     id: "dyskrasia",
+    gameActionId: 24297,
     potency: 160,
     type: "gcd",
     target: "enemy",
@@ -274,6 +287,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "dyskrasia2",
+    gameActionId: 24315,
     potency: 170,
     type: "gcd",
     target: "enemy",
@@ -287,6 +301,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "eukrasian-dyskrasia",
+    gameActionId: 37032,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -307,6 +322,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: プネウマ ===
   {
     id: "pneuma",
+    gameActionId: 24318,
     potency: 330,
     type: "gcd",
     target: "enemy",
@@ -328,6 +344,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === GCD: ディアグノシス（アダーステックの補充用。威力 0） ===
   {
     id: "diagnosis",
+    gameActionId: 24284,
     potency: 0,
     type: "gcd",
     target: "party",
@@ -340,6 +357,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "eukrasian-diagnosis",
+    gameActionId: 24291,
     potency: 0,
     type: "gcd",
     target: "party",
@@ -359,6 +377,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === oGCD: プシュケー ===
   {
     id: "psyche",
+    gameActionId: 37033,
     potency: 690,
     type: "ogcd",
     target: "enemy",
@@ -375,6 +394,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === oGCD: アダーガルを消費する回復アビリティ（威力 0。回復に回した分をリソースに反映するためだけに置く） ===
   {
     id: "druochole",
+    gameActionId: 24296,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -389,6 +409,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "kerachole",
+    gameActionId: 24298,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -403,6 +424,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "ixochole",
+    gameActionId: 24299,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -417,6 +439,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "taurochole",
+    gameActionId: 24303,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -431,6 +454,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "rhizomata",
+    gameActionId: 24309,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -447,6 +471,7 @@ export const SGE_ATTACK_SKILLS: Skill[] = [
   // === oGCD: ロールアクション ===
   {
     id: "swiftcast",
+    gameActionId: 7561,
     potency: 0,
     type: "ogcd",
     target: "self",

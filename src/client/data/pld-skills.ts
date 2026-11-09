@@ -53,6 +53,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   // === GCD: 単体 WS コンボ ===
   {
     id: "fast-blade",
+    gameActionId: 9,
     potency: 150,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 200 },
@@ -68,6 +69,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "riot-blade",
+    gameActionId: 15,
     potency: 260,
     nonComboPotency: 100,
     // Lv84〜93 のコンボ時威力 300 は推定（冒頭コメント）
@@ -86,6 +88,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "royal-authority",
+    gameActionId: 3539,
     potency: 360,
     nonComboPotency: 100,
     // Lv84〜93 のコンボ時威力 400 は推定（冒頭コメント）
@@ -108,6 +111,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   // === GCD: 範囲 WS コンボ ===
   {
     id: "total-eclipse",
+    gameActionId: 7381,
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -121,6 +125,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "prominence",
+    gameActionId: 16457,
     potency: 220,
     nonComboPotency: 100,
     // コンボ成立時の神聖魔法効果アップは Lv72 特性「プロミネンス効果アップ」から
@@ -140,6 +145,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   // === GCD: コンボ対象外の WS ===
   {
     id: "shield-lob",
+    gameActionId: 24,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -151,6 +157,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "goring-blade",
+    gameActionId: 3538,
     potency: 700,
     type: "gcd",
     target: "enemy",
@@ -166,6 +173,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   // === GCD: ロイエ系（ロイエ実行可 → ゲベート実行可 → グラブカッマー実行可） ===
   {
     id: "atonement",
+    gameActionId: 16460,
     potency: 360,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 400 },
@@ -189,6 +197,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "supplication",
+    gameActionId: 36918,
     potency: 380,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 420 },
@@ -208,6 +217,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "sepulchre",
+    gameActionId: 36919,
     potency: 400,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 440 },
@@ -228,6 +238,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   // === GCD: ホーリー系（神聖魔法効果アップ中・レクイエスカット中は詠唱なしの隠しスキルに変化） ===
   {
     id: "holy-spirit",
+    gameActionId: 7384,
     potency: 300,
     traitPotencyOverrides: [
       { traitLevel: 84, potency: 350 },
@@ -249,6 +260,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "holy-spirit-divine-might",
+    gameActionId: 7384,
     potency: 400,
     // Lv84〜93 の 450 は推定（冒頭コメント）
     traitPotencyOverrides: [
@@ -267,6 +279,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "holy-spirit-requiescat",
+    gameActionId: 7384,
     potency: 600,
     // Lv84〜93 の 650 は推定（冒頭コメント）。レクイエスカットはバフの consumeOnGcd で消費する
     traitPotencyOverrides: [
@@ -284,6 +297,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "holy-circle",
+    gameActionId: 16458,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -302,6 +316,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "holy-circle-divine-might",
+    gameActionId: 16458,
     potency: 250,
     type: "gcd",
     target: "enemy",
@@ -316,6 +331,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "holy-circle-requiescat",
+    gameActionId: 16458,
     potency: 350,
     type: "gcd",
     target: "enemy",
@@ -331,6 +347,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   // === GCD: コンフィテオル系（コンフィテオル実行可 → 段のバフでブレード・オブ・フェイス → トゥルース → ヴァラー） ===
   {
     id: "confiteor",
+    gameActionId: 16459,
     potency: 420,
     // Lv94 未満の 420 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 500 }],
@@ -357,6 +374,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "confiteor-requiescat",
+    gameActionId: 16459,
     potency: 920,
     // Lv94 未満の 920 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 1000 }],
@@ -376,6 +394,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blade-of-faith",
+    gameActionId: 25748,
     potency: 220,
     // Lv94 未満の 220 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 260 }],
@@ -396,6 +415,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blade-of-faith-requiescat",
+    gameActionId: 25748,
     potency: 720,
     // Lv94 未満の 720 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 760 }],
@@ -415,6 +435,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blade-of-truth",
+    gameActionId: 25749,
     potency: 320,
     // Lv94 未満の 320 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 380 }],
@@ -435,6 +456,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blade-of-truth-requiescat",
+    gameActionId: 25749,
     potency: 820,
     // Lv94 未満の 820 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 880 }],
@@ -454,6 +476,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blade-of-valor",
+    gameActionId: 25750,
     potency: 420,
     // Lv94 未満の 420 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 500 }],
@@ -475,6 +498,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blade-of-valor-requiescat",
+    gameActionId: 25750,
     potency: 920,
     // Lv94 未満の 920 は推定（冒頭コメント）
     traitPotencyOverrides: [{ traitLevel: 94, potency: 1000 }],
@@ -496,6 +520,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   // === oGCD ===
   {
     id: "fight-or-flight",
+    gameActionId: 20,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -509,6 +534,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "spirits-within",
+    gameActionId: 29,
     potency: 270,
     type: "ogcd",
     target: "enemy",
@@ -520,6 +546,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "expiacion",
+    gameActionId: 25747,
     potency: 450,
     type: "ogcd",
     target: "enemy",
@@ -535,6 +562,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "circle-of-scorn",
+    gameActionId: 23,
     potency: 140,
     type: "ogcd",
     target: "enemy",
@@ -550,6 +578,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "intervene",
+    gameActionId: 16461,
     potency: 150,
     type: "ogcd",
     target: "enemy",
@@ -562,6 +591,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "requiescat",
+    gameActionId: 7383,
     potency: 320,
     type: "ogcd",
     target: "enemy",
@@ -575,6 +605,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "imperator",
+    gameActionId: 36921,
     potency: 580,
     type: "ogcd",
     target: "enemy",
@@ -591,6 +622,7 @@ export const PLD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blade-of-honor",
+    gameActionId: 36922,
     potency: 1000,
     type: "ogcd",
     target: "enemy",

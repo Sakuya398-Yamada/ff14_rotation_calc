@@ -36,6 +36,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: ストーン系（単体攻撃魔法チェーン） ===
   {
     id: "stone",
+    gameActionId: 119,
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -47,6 +48,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone2",
+    gameActionId: 127,
     potency: 190,
     type: "gcd",
     target: "enemy",
@@ -59,6 +61,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone3",
+    gameActionId: 3568,
     potency: 220,
     type: "gcd",
     target: "enemy",
@@ -71,6 +74,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone4",
+    gameActionId: 7431,
     potency: 260,
     type: "gcd",
     target: "enemy",
@@ -83,6 +87,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "glare",
+    gameActionId: 16533,
     potency: 290,
     type: "gcd",
     target: "enemy",
@@ -95,6 +100,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "glare3",
+    gameActionId: 25859,
     potency: 310,
     type: "gcd",
     target: "enemy",
@@ -112,6 +118,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: エアロ系（DoTチェーン） ===
   {
     id: "aero",
+    gameActionId: 121,
     potency: 50,
     type: "gcd",
     target: "enemy",
@@ -124,6 +131,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "aero2",
+    gameActionId: 132,
     potency: 50,
     type: "gcd",
     target: "enemy",
@@ -137,6 +145,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "dia",
+    gameActionId: 16532,
     potency: 65,
     type: "gcd",
     target: "enemy",
@@ -155,6 +164,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: ホーリー系（範囲攻撃魔法チェーン） ===
   {
     id: "holy",
+    gameActionId: 139,
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -168,6 +178,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "holy3",
+    gameActionId: 25860,
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -183,6 +194,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: グレアジャ（神速魔効果アップ Lv92） ===
   {
     id: "glare4",
+    gameActionId: 37009,
     potency: 640,
     type: "gcd",
     target: "enemy",
@@ -201,6 +213,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === GCD: リリー関連 ===
   {
     id: "heart-of-solace",
+    gameActionId: 16531,
     potency: 0,
     type: "gcd",
     target: "party",
@@ -215,6 +228,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "heart-of-rapture",
+    gameActionId: 16534,
     potency: 0,
     type: "gcd",
     target: "party",
@@ -229,6 +243,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "heart-of-misery",
+    gameActionId: 16535,
     potency: 1240,
     type: "gcd",
     target: "enemy",
@@ -250,6 +265,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   // === oGCD ===
   {
     id: "assize",
+    gameActionId: 3571,
     potency: 400,
     type: "ogcd",
     target: "enemy",
@@ -263,6 +279,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "presence-of-mind",
+    gameActionId: 136,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -275,6 +292,7 @@ export const WHM_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "swiftcast",
+    gameActionId: 7561,
     potency: 0,
     type: "ogcd",
     target: "self",
