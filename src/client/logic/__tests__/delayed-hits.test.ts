@@ -283,4 +283,40 @@ describe("同じ時刻の境界（着弾を先に判定する）", () => {
       expect(petEntry.delayedHits?.map((h) => [h.time, h.buffMultiplier])).toEqual([[2.65, 1.2], [5.65, 1.2]]);
     });
   });
+
+  it("着弾時刻に判定を挟んでも、自動生成の進め方は時間差の攻撃が無いときと変わらない", () => {
+    // song（gauge の自動生成の条件バフ）は 0s から 5s まで、cap-up（gauge の上限 1 → 5）は 2.5s から 4.5s まで。
+    // 3.65s に pet-same-time を置くと攻撃は song が切れる 5s で、cap-up はその前に切れる。対照は同じ時刻の plain-ogcd
+    const gaugeResources: ResourceDefinition[] = [{
+      id: "gauge",
+      maxStacks: 1,
+      color: "#000",
+      autoGenerateInterval: 1,
+      autoGenerateWhileBuff: ["song"],
+      autoGenerateRestartOnBuffChange: true,
+      whileBuffModifiers: [{ buffId: "cap-up", maxStacks: 5 }],
+    }];
+    const gaugeBuffs = [makeBuff("song", 5, []), makeBuff("cap-up", 2, [])];
+    const gaugeSkillMap = new Map(
+      [
+        petSameTime,
+        plainOgcd,
+        makeOgcd({ id: "song-ogcd", buffApplications: ["song"] }),
+        makeOgcd({ id: "cap-up-ogcd", buffApplications: ["cap-up"] }),
+      ].map((s) => [s.id, s])
+    );
+    const resolveGauge = (thirdSkillId: string) =>
+      resolveTimeline(
+        [makeEntry("song-ogcd"), makeEntry("cap-up-ogcd", 2.5), makeEntry(thirdSkillId, 3.65), makeEntry("plain-ogcd", 6)],
+        gaugeSkillMap,
+        gaugeResources,
+        stats,
+        gaugeBuffs
+      ).entries;
+
+    const withHit = resolveGauge("pet-same-time");
+    expect(withHit[2].delayedHits?.map((h) => h.time)).toEqual([5]);
+    const withoutHit = resolveGauge("plain-ogcd");
+    expect(withHit[3].resourceSnapshot["gauge"]).toBe(withoutHit[3].resourceSnapshot["gauge"]);
+  });
 });
