@@ -5,6 +5,8 @@ import { render, screen, cleanup, fireEvent, within } from "@testing-library/rea
 import "@testing-library/jest-dom/vitest";
 import { App } from "../App";
 import type { MyTimelineItem } from "../../logic/my-timelines";
+import { DEFAULT_STATS } from "../../logic/stat-calc";
+import { STORAGE_KEY, serializeAppState } from "../../logic/timeline-storage";
 
 // jsdom は HTMLDialogElement の showModal / close を実装していないため最小限の代替を入れる
 beforeAll(() => {
@@ -277,5 +279,38 @@ describe("App のログイン", () => {
         "/api/auth/discord?returnTo=%2Fen%2F"
       );
     });
+  });
+});
+
+describe("App の PPS 範囲選択の「全体」(#987)", () => {
+  /** 集計の項目の値（ラベルの次の要素の文字列） */
+  function summaryValue(label: string) {
+    const region = screen.getByRole("region", { name: "集計" });
+    return within(region).getByText(label).nextElementSibling?.textContent;
+  }
+
+  it("GCD が無いタイムラインでも、範囲選択を開いたときと「全体」ボタンの区間の PPS が、集計の PPS 全体と同じになる", () => {
+    // ボウショックは GCD のリキャストを発生させない oGCD の DoT
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      serializeAppState({
+        selectedJob: "gnb",
+        level: 100,
+        entries: [{ uid: "bow-shock-1", skillId: "bow-shock" }],
+        stats: DEFAULT_STATS,
+        untargetableWindows: [],
+        multiTargetWindows: [],
+      })
+    );
+    render(<App />);
+    const overall = summaryValue("PPS 全体");
+    expect(overall).toMatch(/^\d+\.\d{2}$/);
+    expect(Number(overall)).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByTitle("PPS範囲選択"));
+    expect(summaryValue("PPS 区間")).toBe(overall);
+
+    fireEvent.click(screen.getByTitle("全体範囲にリセット"));
+    expect(summaryValue("PPS 区間")).toBe(overall);
   });
 });

@@ -15,6 +15,7 @@ import { Timeline } from "../Timeline";
 import { DELETE_ZONE_ID } from "../timeline/dnd-types";
 import { resolveTimeline } from "../../logic/resolve-timeline";
 import { calcEntryDelayedHitsExpectedPotency, calcEntryExpectedPotency } from "../../logic/expected-potency";
+import { calcTimelineSummary } from "../../logic/timeline-summary";
 import {
   getAllSkillMapForLevel,
   getBuffsForLevel,
@@ -127,7 +128,7 @@ function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {})
     rangePps: null,
     ppsRange: null,
     onPpsRangeChange: vi.fn(),
-    lastGcdEndTime: 0,
+    overallEndTime: 0,
     selectedEntryUid: null,
     onSelectEntry: vi.fn(),
     ...overrides,
@@ -465,9 +466,11 @@ describe("Timeline: PPS 範囲選択を開いたときの初期区間 (#884)", (
   /** PPS 範囲選択を開いた直後の区間と、続けて「全体」ボタンを押した後の区間を返す */
   function openPpsRangeAndReset(entries: TimelineEntry[]) {
     const result = resolveTimeline(entries, jobASkillMap, [], defaultStats, [], []);
+    // App と同じく、集計の所要時間を「全体」の区間の終わりとして渡す（#987）
+    const overallEndTime = calcTimelineSummary(result, jobASkillMap, defaultStats).duration;
     const { props } = renderTimeline({
       resolvedEntries: result.entries,
-      lastGcdEndTime: result.lastGcdEndTime,
+      overallEndTime,
     });
 
     fireEvent.click(screen.getByTitle("PPS範囲選択"));

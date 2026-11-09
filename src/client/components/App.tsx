@@ -530,7 +530,7 @@ export function App() {
               rangePps={rangePps}
               ppsRange={ppsRange}
               onPpsRangeChange={setPpsRange}
-              lastGcdEndTime={timelineResult.lastGcdEndTime}
+              overallEndTime={summary.duration}
               selectedEntryUid={selectedEntryUid}
               onSelectEntry={setSelectedEntryUid}
             />

@@ -25,7 +25,10 @@ export interface TimelineSummary {
   overallPps: PpsResult | null;
   totalExpectedPotency: number;
   dotExpectedPotency: number;
-  /** 所要時間（最後の GCD のリキャスト完了。詠唱がリキャストより長ければ詠唱完了） */
+  /**
+   * 所要時間（最後の GCD のリキャスト完了。詠唱がリキャストより長ければ詠唱完了。GCD が無ければ最後の DoT ティックか最後の着弾）。
+   * PPS 区間の「全体」ボタンと、範囲選択を開いたときの初期区間の終わりにも使う（#987）
+   */
   duration: number;
   /** DoT が所要時間より後まで続くときの、最後の DoT ティックの時刻。続かなければ null */
   lastDotTickTime: number | null;
@@ -33,7 +36,8 @@ export interface TimelineSummary {
 
 /**
  * 集計行の値。範囲は PPS 区間の「全体」ボタンと同じ 0 〜 最後の GCD のリキャスト完了（詠唱がリキャストより長ければ
- * 詠唱完了。#901）で、それより後の DoT ティックと、それより後に着弾するエントリは数えない（#835）
+ * 詠唱完了。#901）で、それより後の DoT ティックと、それより後に着弾するエントリは数えない（#835）。
+ * GCD が無いときは 0 〜 最後の DoT ティックか最後の着弾で、すべてのエントリとティックを数える
  */
 export function calcTimelineSummary(
   result: SummarySource,

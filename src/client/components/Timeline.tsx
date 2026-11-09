@@ -44,7 +44,7 @@ interface TimelineProps {
   rangePps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
   ppsRange: PpsRange | null;
   onPpsRangeChange: (range: PpsRange | null) => void;
-  lastGcdEndTime: number;
+  overallEndTime: number;
   selectedEntryUid: string | null;
   onSelectEntry: (uid: string | null) => void;
 }
@@ -70,7 +70,7 @@ export function Timeline({
   rangePps,
   ppsRange,
   onPpsRangeChange,
-  lastGcdEndTime,
+  overallEndTime,
   selectedEntryUid,
   onSelectEntry,
 }: TimelineProps) {
@@ -339,14 +339,14 @@ export function Timeline({
         setShowPpsRange={setShowPpsRange}
         ppsRange={ppsRange}
         onPpsRangeChange={onPpsRangeChange}
-        lastGcdEndTime={lastGcdEndTime}
+        overallEndTime={overallEndTime}
       />
 
       {showPpsRange && (
         <PpsRangeEditor
           ppsRange={ppsRange}
           onPpsRangeChange={onPpsRangeChange}
-          lastGcdEndTime={lastGcdEndTime}
+          overallEndTime={overallEndTime}
           rangePps={rangePps}
         />
       )}

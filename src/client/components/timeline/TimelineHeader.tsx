@@ -26,7 +26,7 @@ interface TimelineHeaderProps {
   setShowPpsRange: Dispatch<SetStateAction<boolean>>;
   ppsRange: PpsRange | null;
   onPpsRangeChange: (range: PpsRange | null) => void;
-  lastGcdEndTime: number;
+  overallEndTime: number;
 }
 
 /** タイムライン上部のヘッダー（レーン表示トグル群・エディタ開閉） */
@@ -53,7 +53,7 @@ export function TimelineHeader({
   setShowPpsRange,
   ppsRange,
   onPpsRangeChange,
-  lastGcdEndTime,
+  overallEndTime,
 }: TimelineHeaderProps) {
   const { t } = useTranslation();
   const arrow = (open: boolean) => (open ? "▼" : "▶");
@@ -128,7 +128,7 @@ export function TimelineHeader({
             const next = !showPpsRange;
             setShowPpsRange(next);
             if (next && !ppsRange) {
-              onPpsRangeChange({ startTime: 0, endTime: lastGcdEndTime });
+              onPpsRangeChange({ startTime: 0, endTime: overallEndTime });
             }
             if (!next) {
               onPpsRangeChange(null);
