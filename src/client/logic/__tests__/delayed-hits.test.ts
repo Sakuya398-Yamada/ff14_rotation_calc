@@ -103,6 +103,19 @@ describe("時間差の攻撃の着弾時刻", () => {
   });
 });
 
+describe("既知の制限", () => {
+  it("着弾時刻にボスが離脱中でも、時間差の攻撃は数える（ゴーストは扱わない）", () => {
+    // 離脱は 1s〜3s。pet の攻撃は 2s（離脱中）と 5s
+    const result = resolveTimeline([makeEntry("pet")], skillMap, [], stats, buffs, [{ startTime: 1, endTime: 3 }]);
+    const petEntry = result.entries[0];
+    expect(petEntry.untargetableError).toBe(false);
+    const [first] = petEntry.delayedHits!;
+    expect(first.time).toBe(2);
+    expect(calcPps(result.entries, skillMap, result.dotTicks, 1, 3, stats).directPotency).toBe(hitExpected(first, "pet"));
+    expect(hitExpected(first, "pet")).toBeGreaterThan(0);
+  });
+});
+
 describe("PPS 区間・集計への算入", () => {
   // gcd-a(100) 0s → pet 0.65s（攻撃は 2.65s に 100、5.65s に 200）
   const entries = [makeEntry("gcd-a"), makeEntry("pet")];
