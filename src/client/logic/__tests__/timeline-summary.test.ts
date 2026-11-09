@@ -118,7 +118,8 @@ describe("calcTimelineSummary: DoT が最後の GCD より後まで続かない�
 });
 
 describe.each([
-  { name: "oGCD だけ", ids: ["ogcd-a", "ogcd-b"], hasDot: false },
+  // oGCD を 2 つ並べると、#985 で 2 つ目の開始時刻までが範囲になり全体の PPS が出るので、範囲が 0 秒のままの 1 つだけにする
+  { name: "oGCD だけ", ids: ["ogcd-a"], hasDot: false },
   { name: "oGCD の DoT がある", ids: ["ogcd-a", "ogcd-dot"], hasDot: true },
 ])("calcTimelineSummary: GCD が無いタイムライン（$name）（#835）", ({ ids, hasDot }) => {
   const result = resolve(ids);
@@ -158,6 +159,38 @@ describe.each([
 
   it("全体の PPS は最後の着弾までを範囲にし、その合計は合計期待威力と一致する", () => {
     expect(summary.duration).toBe(delayed.hitTime);
+    expect(summary.overallPps).not.toBeNull();
+    expect(summary.overallPps?.totalPotency).toBe(summary.totalExpectedPotency);
+    expect(summary.overallPps?.dotPotency).toBe(summary.dotExpectedPotency);
+    expect((summary.overallPps?.pps ?? 0) * summary.duration).toBeCloseTo(summary.totalExpectedPotency);
+    expect(summary.lastDotTickTime).toBeNull();
+  });
+});
+
+describe.each([
+  // ogcd-dot 0s（最後のティック 15s 付近）→ ogcd-a を 20s に手で置く
+  {
+    name: "DoT 有り・最後の DoT ティックより後に手で置く",
+    entries: [makeEntry("ogcd-dot"), { ...makeEntry("ogcd-a"), manualStartTime: 20 }],
+    hasDot: true,
+  },
+  // ogcd-a 0s → ogcd-b 0.65s。DoT が無いので最後の DoT ティック（timelineEndTime）は 0
+  { name: "DoT 無し・oGCD を 2 つ並べる", entries: [makeEntry("ogcd-a"), makeEntry("ogcd-b")], hasDot: false },
+])("calcTimelineSummary: GCD が無いタイムラインの、着弾までの遅れを設定していないスキル（$name）（#985）", ({ entries, hasDot }) => {
+  const result = resolveTimeline(entries, skillMap, [], stats);
+  const summary = calcTimelineSummary(result, skillMap, stats);
+  const last = result.entries[result.entries.length - 1];
+
+  it("前提: GCD が無く、最後のエントリは着弾時刻を持たず、最後の DoT ティックより後に開始する", () => {
+    expect(result.lastGcdEndTime).toBe(0);
+    expect(result.entries.every((e) => !e.recastError)).toBe(true);
+    expect(result.dotTicks.length > 0).toBe(hasDot);
+    expect(last.hitTime).toBeUndefined();
+    expect(last.startTime).toBeGreaterThan(result.timelineEndTime);
+  });
+
+  it("全体の PPS は最後のエントリの開始時刻までを範囲にし、その合計は合計期待威力と一致する", () => {
+    expect(summary.duration).toBe(last.startTime);
     expect(summary.overallPps).not.toBeNull();
     expect(summary.overallPps?.totalPotency).toBe(summary.totalExpectedPotency);
     expect(summary.overallPps?.dotPotency).toBe(summary.dotExpectedPotency);
