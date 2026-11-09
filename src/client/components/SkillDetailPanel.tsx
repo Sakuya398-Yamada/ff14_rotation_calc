@@ -5,7 +5,7 @@ import { getAutoGenerateProcSource, isAutoGenerateProcOccurred } from "../logic/
 import type { JobId } from "../data/job-registry";
 import { buffName, skillName } from "../logic/display-names";
 import { calcExpectedMultiplier } from "../logic/stat-calc";
-import { calcDelayedHitBreakdown, calcEntryPotencyBreakdown } from "../logic/expected-potency";
+import { calcDelayedHitBreakdown, calcDelayedHitExpectedMultiplier, calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
 import {
   describeBuffEffects,
@@ -195,7 +195,7 @@ export function SkillDetailPanel({
   // 時間差の攻撃（#957）。各攻撃の期待値は、着弾時刻のバフ・クリ/DH・敵の数で出す
   const delayedHitRows = (entry.delayedHits ?? []).map((hit) => ({
     hit,
-    expectedMul: calcExpectedMultiplier(stats, hit.critRateBonus, hit.dhRateBonus),
+    expectedMul: calcDelayedHitExpectedMultiplier(hit, stats),
     breakdown: calcDelayedHitBreakdown(hit, resolvedSkill, stats),
   }));
   const delayedPotency = delayedHitRows.reduce((sum, row) => sum + row.hit.potency, 0);

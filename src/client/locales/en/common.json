@@ -256,6 +256,7 @@
   "buffFormat": {
     "effects": {
       "potency": "Potency ×{{value}}",
+      "potencyAdd": "Potency +{{value}}",
       "guaranteedCrit": "Guaranteed critical hit",
       "guaranteedDh": "Guaranteed direct hit",
       "instantCast": "Instant cast"

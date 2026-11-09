@@ -11,6 +11,8 @@ function describeEffectBody(effect: BuffEffect): string | null {
   switch (effect.type) {
     case "potency":
       return i18next.t("buffFormat.effects.potency", { value: effect.value.toFixed(2) });
+    case "potencyAdd":
+      return i18next.t("buffFormat.effects.potencyAdd", { value: effect.value });
     case "critRate":
       return `CRT+${formatRate(effect.value)}`;
     case "dhRate":

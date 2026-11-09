@@ -256,6 +256,7 @@
   "buffFormat": {
     "effects": {
       "potency": "威力×{{value}}",
+      "potencyAdd": "威力+{{value}}",
       "guaranteedCrit": "確定CRT",
       "guaranteedDh": "確定DH",
       "instantCast": "即時詠唱"

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTimeline, calcPps } from "../resolve-timeline";
 import { calcTimelineSummary } from "../timeline-summary";
 import { calcDelayedHitBreakdown, calcEntryExpectedPotency } from "../expected-potency";
-import { DEFAULT_STATS } from "../stat-calc";
+import { DEFAULT_STATS, calcDetMultiplier, calcExpectedMultiplier } from "../stat-calc";
 import type { BuffDefinition, MultiTargetWindow, ResolvedDelayedHit, ResourceDefinition, Skill, TimelineEntry } from "../../types/skill";
 
 // 時間差の攻撃（ペット・分身。#957）。各攻撃は着弾時刻で PPS 区間・集計に入り、威力のバフ・クリ/DH・敵の数も着弾時刻の状態で判定する
@@ -367,5 +367,113 @@ describe("同じ時刻の境界（着弾を先に判定する）", () => {
     expect(withHit[2].delayedHits?.map((h) => h.time)).toEqual([5]);
     const withoutHit = resolveGauge("plain-ogcd");
     expect(withHit[3].resourceSnapshot["gauge"]).toBe(withoutHit[3].resourceSnapshot["gauge"]);
+  });
+});
+
+describe("消費したリソース・当てた WS の回数で決まる威力（#958）", () => {
+  const charge: ResourceDefinition = { id: "charge", maxStacks: 100, color: "#000" };
+  const extBuffs = [...buffs, makeBuff("ws-up", 20, [{ type: "potency", value: 1.5, appliesToSkillIds: ["counter"] }])];
+  const gain = makeSkill({ id: "gain", resourceChanges: [{ resourceId: "charge", amount: 30 }] });
+  const scaledPet = makeOgcd({
+    id: "scaled-pet",
+    resourceChanges: [{ resourceId: "charge", amount: -50 }],
+    consumeAllOfResource: "charge",
+    delayedHits: [
+      { delay: 2, potency: 200, potencyScaling: { resourceId: "charge", minAmount: 50, minPotency: 100, maxAmount: 100, maxPotency: 200 } },
+    ],
+  });
+  const counter = makeOgcd({
+    id: "counter",
+    delayedHits: [{ delay: 10, potency: 300, potencyPerWeaponskill: { potency: 100, maxCount: 3 }, snapshotAtUse: true, noCritDh: true }],
+  });
+  const wsUpOgcd = makeOgcd({ id: "ws-up-ogcd", buffApplications: ["ws-up"] });
+  const extSkillMap = new Map([...skillMap, ...[gain, scaledPet, counter, wsUpOgcd].map((s) => [s.id, s] as const)]);
+  const resolveExt = (
+    entries: TimelineEntry[],
+    untargetableWindows?: { startTime: number; endTime: number }[],
+    hitDelays?: Record<string, number>
+  ) => resolveTimeline(entries, extSkillMap, [charge], stats, extBuffs, untargetableWindows, undefined, hitDelays);
+
+  it.each([
+    [2, 60, 120],
+    [3, 90, 180],
+    [4, 120, 200],
+  ])("消費前のリソースで威力が決まる（gain %i 回 = %i で %i。上限で止まる）", (gains, amount, potency) => {
+    const entries = resolveExt([...Array.from({ length: gains }, () => makeEntry("gain")), makeEntry("scaled-pet")]).entries;
+    const petEntry = entries[gains];
+    expect(entries[gains - 1].resourceSnapshot["charge"]).toBe(Math.min(amount, 100));
+    expect(petEntry.resourceErrors).toEqual([]);
+    expect(petEntry.resourceSnapshot["charge"]).toBe(0);
+    expect(petEntry.delayedHits?.map((h) => h.potency)).toEqual([potency]);
+  });
+
+  it("使ってから着弾までに当てた GCD の回数 × 威力（上限の回数まで）が入る", () => {
+    // counter は 0s。GCD は 0.65・3.15・5.65・8.15s（4 回。上限 3 回）
+    const four = resolveExt([makeEntry("counter"), ...Array.from({ length: 4 }, () => makeEntry("gcd-a"))]).entries;
+    expect(four.slice(1).map((e) => e.startTime)).toEqual([0.65, 3.15, 5.65, 8.15]);
+    expect(four[0].delayedHits?.map((h) => [h.time, h.potency])).toEqual([[10, 300]]);
+    // 2 回なら 200。GCD が無ければ 0
+    const two = resolveExt([makeEntry("counter"), makeEntry("gcd-a"), makeEntry("gcd-a")]).entries;
+    expect(two[0].delayedHits?.map((h) => h.potency)).toEqual([200]);
+    expect(resolveExt([makeEntry("counter")]).entries[0].delayedHits?.map((h) => h.potency)).toEqual([0]);
+  });
+
+  it("使う前の GCD・着弾時刻ちょうど以降の GCD・エラーの GCD・ボス離脱中に着弾した GCD は数えない", () => {
+    // 0s の GCD は counter（0.65s）より前。counter の着弾は 10.65s。10.65s ちょうどの GCD は数えない
+    const boundary = resolveExt([
+      makeEntry("gcd-a"),
+      makeEntry("counter"),
+      makeEntry("gcd-a", 3),
+      makeEntry("gcd-a", 10.65),
+    ]).entries;
+    expect(boundary[1].startTime).toBe(0.65);
+    expect(boundary[3].startTime).toBe(10.65);
+    expect(boundary[3].recastError).toBe(false);
+    expect(boundary[1].delayedHits?.map((h) => [h.time, h.potency])).toEqual([[10.65, 100]]);
+    // 着弾時刻の直前（10.6s）の GCD は数える
+    const before = resolveExt([makeEntry("gcd-a"), makeEntry("counter"), makeEntry("gcd-a", 3), makeEntry("gcd-a", 10.6)]).entries;
+    expect(before[1].delayedHits?.map((h) => h.potency)).toEqual([200]);
+
+    // 2 回目の GCD は GCD のリキャスト中（エラー）
+    const withError = resolveExt([makeEntry("counter"), makeEntry("gcd-a"), makeEntry("gcd-a", 1.5)]).entries;
+    expect(withError[2].recastError).toBe(true);
+    expect(withError[0].delayedHits?.map((h) => h.potency)).toEqual([100]);
+
+    // 4〜5s はボス離脱。GCD の着弾は 1s 遅れ（0.65s → 1.65s、3.15s → 4.15s）。2 回目はゴースト
+    const ghost = resolveExt([makeEntry("counter"), makeEntry("gcd-a"), makeEntry("gcd-a")], [{ startTime: 4, endTime: 5 }], { "gcd-a": 1 }).entries;
+    expect(ghost[2].untargetableError).toBe(false);
+    expect(ghost[2].untargetableHit).toBe(true);
+    expect(ghost[0].delayedHits?.map((h) => h.potency)).toEqual([100]);
+    // 着弾の遅れがあれば、着弾時刻で数える。9s に使った GCD は counter の着弾（10s）より前に使ったが、着弾は 10s ちょうどなので数えない
+    const late = resolveExt([makeEntry("counter"), makeEntry("gcd-a"), makeEntry("gcd-a", 9)], undefined, { "gcd-a": 1 }).entries;
+    expect(late[2].recastError).toBe(false);
+    expect(late[2].hitTime).toBe(10);
+    expect(late[0].delayedHits?.map((h) => [h.time, h.potency])).toEqual([[10, 100]]);
+
+    // counter より前に置いた GCD は、着弾が counter の使用より後でも数えない（0s に使い、1s に着弾。counter は 0.65s）
+    const earlier = resolveExt([makeEntry("gcd-a"), makeEntry("counter"), makeEntry("gcd-a")], undefined, { "gcd-a": 1 }).entries;
+    expect(earlier[0].hitTime).toBe(1);
+    expect(earlier[1].startTime).toBe(0.65);
+    expect(earlier[1].delayedHits?.map((h) => h.potency)).toEqual([100]);
+  });
+
+  it("snapshotAtUse の攻撃は、威力のバフを使ったときの状態で決め、noCritDh の攻撃はクリ/DH の期待値を持たない", () => {
+    // 使った後に付けたバフは乗らない
+    const after = resolveExt([makeEntry("counter"), makeEntry("ws-up-ogcd"), makeEntry("crit-ogcd"), makeEntry("gcd-a")]).entries;
+    const [afterHit] = after[0].delayedHits!;
+    expect(afterHit.buffMultiplier).toBe(1);
+    expect(afterHit.critRateBonus).toBe(0);
+    expect(afterHit.noCritDh).toBe(true);
+    // 使う前に付けたバフは、着弾までに切れても乗る（short-up は 3 秒）
+    const before = resolveExt([makeEntry("ws-up-ogcd"), makeEntry("short-buff-ogcd"), makeEntry("counter"), makeEntry("gcd-a")]).entries;
+    const [beforeHit] = before[2].delayedHits!;
+    expect(beforeHit.time).toBeGreaterThan(3);
+    expect(beforeHit.buffMultiplier).toBeCloseTo(1.8, 10);
+
+    // 期待値は DET の倍率だけ（クリ/DH の期待値を含めない）
+    const buffed = Math.floor(100 * beforeHit.buffMultiplier);
+    const total = calcDelayedHitBreakdown(beforeHit, counter, stats).total;
+    expect(total).toBe(Math.floor(buffed * calcDetMultiplier(stats)));
+    expect(total).toBeLessThan(Math.floor(buffed * calcExpectedMultiplier(stats)));
   });
 });

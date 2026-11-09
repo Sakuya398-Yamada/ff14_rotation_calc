@@ -439,6 +439,34 @@ function getPotencyMultiplier(
   return multiplier;
 }
 
+/** アクティブなバフから、威力に足す値（potencyAdd）の合計を計算する。appliesToSkillIds の扱いは getPotencyMultiplier と同じ（#958） */
+function getPotencyAddition(
+  activeBuffs: ActiveBuff[],
+  buffDefMap: Map<string, BuffDefinition>,
+  targetSkillId: string
+): number {
+  let addition = 0;
+  for (const ab of activeBuffs) {
+    const def = buffDefMap.get(ab.buffId);
+    if (!def) continue;
+    for (const effect of def.effects) {
+      if (effect.type !== "potencyAdd") continue;
+      if (effect.appliesToSkillIds && !effect.appliesToSkillIds.includes(targetSkillId)) continue;
+      addition += effect.value;
+    }
+  }
+  return addition;
+}
+
+/** potencyScaling（Skill・DelayedHit 共通）: リソース量から威力を線形補間で求める */
+function scalePotency(scaling: NonNullable<Skill["potencyScaling"]>, resourceState: ResourceSnapshot): number {
+  const { resourceId, minAmount, minPotency, maxAmount, maxPotency } = scaling;
+  const currentAmount = resourceState[resourceId] ?? 0;
+  const clamped = Math.max(minAmount, Math.min(currentAmount, maxAmount));
+  const ratio = (clamped - minAmount) / (maxAmount - minAmount);
+  return Math.floor(minPotency + (maxPotency - minPotency) * ratio);
+}
+
 /**
  * DoTストリーム: 同一スキルIDのDoTの適用履歴を管理する。
  * FF14のDoTはサーバーティック（3秒間隔）で発動し、再適用時にティックタイマーはリセットされない。
@@ -1112,6 +1140,19 @@ export function resolveTimeline(
     }
   };
 
+  /**
+   * fromIndex のエントリより後に使った、エラーの無い GCD（WS）のうち、着弾（hitTime。無ければ開始時刻）が [from, until) に入り、
+   * ボス離脱中に着弾していないものの数（ワイルドファイア。#958）。時間差の攻撃の判定（judge）から呼ぶ。
+   * 判定は until 以降に始まるエントリより前に走るので、until より前に着弾するエントリはすべて resolved にある
+   */
+  const countWeaponskillsLanded = (fromIndex: number, from: number, until: number): number =>
+    resolved.filter((e, i) => {
+      if (i <= fromIndex || skillMap.get(e.resolvedSkillId)?.type !== "gcd") return false;
+      if (e.resourceErrors.length > 0 || e.comboErrors.length > 0 || e.untargetableError || e.recastError || e.untargetableHit) return false;
+      const landedAt = e.hitTime ?? e.startTime;
+      return landedAt >= from && landedAt < until;
+    }).length;
+
   for (const entry of entries) {
     const originalSkill = skillMap.get(entry.skillId);
     if (!originalSkill) continue;
@@ -1481,11 +1522,7 @@ export function resolveTimeline(
 
     // potencyScaling: リソース量に応じた威力スケーリング（線形補間）
     if (skill.potencyScaling) {
-      const { resourceId, minAmount, minPotency, maxAmount, maxPotency } = skill.potencyScaling;
-      const currentAmount = resourceState[resourceId] ?? 0;
-      const clamped = Math.max(minAmount, Math.min(currentAmount, maxAmount));
-      const ratio = (clamped - minAmount) / (maxAmount - minAmount);
-      resolvedPotency = Math.floor(minPotency + (maxPotency - minPotency) * ratio);
+      resolvedPotency = scalePotency(skill.potencyScaling, resourceState);
     }
 
     // potencyByResourceAmount: リソース量に応じた段階威力（量 0 はリソース不足エラー側で扱うため基本威力のまま）
@@ -1496,6 +1533,9 @@ export function resolveTimeline(
         resolvedPotency = potencies[Math.min(currentAmount, potencies.length) - 1];
       }
     }
+
+    // potencyAdd: 威力に足すバフ（機工士のオーバーヒートの +20。#958）。消費前のバフで判定し、倍率を掛ける前に足す
+    resolvedPotency += getPotencyAddition(currentActiveBuffs, buffDefMap, resolvedSkillId);
 
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
     const untargetableError = skill.target === "enemy" && untargetableWindows
@@ -1612,22 +1652,29 @@ export function resolveTimeline(
     // 時間差の攻撃（ペット・分身。#957）。威力のバフ・クリ/DH・敵の数は着弾時刻の状態で判定するので、着弾時刻まで待ち列で待たせる。
     // 同じ時刻のバフの付与より先に判定する（その時刻に実行したスキルのバフも、その時刻に着弾して付くバフも、その時刻の失効で付くバフも乗らない）。
     // 確定クリ/DH は乗せず、バフも消費しない（プレイヤーの行動ではない）。ボス離脱（ゴースト）は見ない
+    // 威力のリソース比例（potencyScaling）は消費前の量で、WS の回数（potencyPerWeaponskill）は着弾の判定時に決める（#958）
     if (!hasError && skill.delayedHits) {
       const hitSkill = skill;
       const hitSkillId = resolvedSkillId;
-      for (const { delay, potency, ...area } of skill.delayedHits) {
-        const time = Math.round((startTime + resolvedCastTime + delay) * 1000) / 1000;
+      const useTime = startTime + resolvedCastTime;
+      for (const { delay, potency, potencyScaling, potencyPerWeaponskill, snapshotAtUse, noCritDh, ...area } of skill.delayedHits) {
+        const time = Math.round((useTime + delay) * 1000) / 1000;
+        const scaledPotency = potencyScaling ? scalePotency(potencyScaling, resourceState) : potency;
         const evaluate = (t: number, buffs: ActiveBuff[]) => {
           const results = delayedHitResults.get(entryIndex) ?? [];
+          const potencyBuffs = snapshotAtUse ? activeBuffsAtUse : buffs;
           results.push({
             time: t,
-            potency,
-            buffMultiplier: getPotencyMultiplier(buffs, buffDefMap, hitSkillId),
-            critRateBonus: getCritRateBonus(buffs, buffDefMap),
-            dhRateBonus: getDhRateBonus(buffs, buffDefMap),
+            potency: potencyPerWeaponskill
+              ? potencyPerWeaponskill.potency * Math.min(countWeaponskillsLanded(entryIndex, useTime, t), potencyPerWeaponskill.maxCount)
+              : scaledPotency,
+            buffMultiplier: getPotencyMultiplier(potencyBuffs, buffDefMap, hitSkillId),
+            critRateBonus: noCritDh ? 0 : getCritRateBonus(buffs, buffDefMap),
+            dhRateBonus: noCritDh ? 0 : getDhRateBonus(buffs, buffDefMap),
             targetCount: getTargetCountAt(t, multiTargetWindows, hitSkill),
             // 攻撃の範囲（#977）。合計威力を出すときに、使ったスキルの範囲より優先する
             ...area,
+            ...(noCritDh ? { noCritDh } : {}),
           });
           delayedHitResults.set(entryIndex, results);
         };

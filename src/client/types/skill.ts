@@ -78,8 +78,22 @@ export type DelayedHitArea = Pick<Skill, "maxTargets" | "falloffRate" | "falloff
 export interface DelayedHit extends DelayedHitArea {
   /** 使用時刻（詠唱があれば詠唱完了）から着弾までの秒数。スキルに設定した着弾までの遅れ（hitDelays）は足さない */
   delay: number;
-  /** 威力 */
+  /** 威力。potencyScaling / potencyPerWeaponskill を持つ攻撃は最大の威力（パレットの表示に使う） */
   potency: number;
+  /**
+   * 使用前のリソース量に応じた威力（意味は Skill の同名の項目と同じ線形補間。機工士のオートマトン・クイーンは消費したバッテリーで変わる。#958）。
+   * 量は使用時の消費の前に読む
+   */
+  potencyScaling?: Skill["potencyScaling"];
+  /**
+   * 使ってから着弾までに当てた WS の回数で威力を決める（機工士のワイルドファイア。#958）。威力 = potency × min(回数, maxCount)。
+   * 数えるのは、このスキルより後に使った、エラーの無い GCD のうち、着弾（着弾までの遅れがあれば着弾時刻）が [使用時刻, この攻撃の着弾時刻) に入るもの
+   */
+  potencyPerWeaponskill?: { potency: number; maxCount: number };
+  /** 威力のバフ（buffMultiplier）を、着弾時刻ではなく使用時の状態で判定する（DoT と同じ扱い。ワイルドファイア） */
+  snapshotAtUse?: boolean;
+  /** クリティカル・ダイレクトヒットが発生しない（期待値は DET の倍率だけ。ワイルドファイア） */
+  noCritDh?: boolean;
 }
 
 /** 時間差の攻撃 1 回分の計算結果。威力のバフ・クリ/DH・敵の数は、着弾時刻の状態で判定する（#957）。範囲は攻撃の定義から写す（#977） */
@@ -96,6 +110,8 @@ export interface ResolvedDelayedHit extends DelayedHitArea {
   dhRateBonus: number;
   /** 着弾時刻の敵の数。合計威力は攻撃の範囲（DelayedHitArea。無ければ使ったスキルの範囲）で決まる */
   targetCount: number;
+  /** クリティカル・ダイレクトヒットが発生しない（DelayedHit.noCritDh を写す） */
+  noCritDh?: boolean;
 }
 
 /** サポートするプレイヤーレベル */
@@ -460,7 +476,7 @@ export interface CharacterStats {
 }
 
 /** バフ・デバフのエフェクト種別 */
-export type BuffEffectType = "speed" | "potency" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "consumeOnAction" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride" | "castTimeMultiplier";
+export type BuffEffectType = "speed" | "potency" | "potencyAdd" | "critRate" | "dhRate" | "guaranteedCrit" | "guaranteedDh" | "consumeOnGcd" | "consumeOnAction" | "instantCast" | "resourceCostMultiplier" | "resourceGainOnSkill" | "bypassCombo" | "applyBuffOnSkill" | "applyBuffOnDeplete" | "recastOverride" | "castTimeMultiplier";
 
 /** バフ・デバフの効果 */
 export interface BuffEffect {
@@ -470,6 +486,7 @@ export interface BuffEffect {
    * 効果量
    * - speed: GCD乗算倍率（0.8 = GCD×0.8）
    * - potency: 威力乗算倍率（1.1 = 威力×1.1）
+   * - potencyAdd: 威力に足す値（20 = 威力+20。倍率を掛ける前に足す。appliesToSkillIds で対象限定、機工士のオーバーヒート等）
    * - critRate: クリティカル発生率加算値（0.1 = +10%）
    * - dhRate: ダイレクトヒット発生率加算値（0.1 = +10%）
    * - guaranteedCrit: 次のWS使用時にクリティカル率を100%にする（値は未使用、appliesToSkillIds で対象限定。確定になった WS でスタックを 1 消費）
