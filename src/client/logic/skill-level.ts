@@ -22,6 +22,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
   let resourceChanges = skill.resourceChanges;
   let buffConsumptionAnyOf = skill.buffConsumptionAnyOf;
   let conditionalPotencyBuffs = skill.conditionalPotencyBuffs;
+  let delayedHits = skill.delayedHits;
 
   // traitLevelの昇順で適用（低い方から順に上書き）
   const sorted = [...skill.traitPotencyOverrides].sort((a, b) => a.traitLevel - b.traitLevel);
@@ -41,6 +42,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
       if (override.resourceChanges !== undefined) resourceChanges = override.resourceChanges;
       if (override.buffConsumptionAnyOf !== undefined) buffConsumptionAnyOf = override.buffConsumptionAnyOf;
       if (override.conditionalPotencyBuffs !== undefined) conditionalPotencyBuffs = override.conditionalPotencyBuffs;
+      if (override.delayedHits !== undefined) delayedHits = override.delayedHits;
     }
   }
 
@@ -58,7 +60,8 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     comboResourceChanges === skill.comboResourceChanges &&
     resourceChanges === skill.resourceChanges &&
     buffConsumptionAnyOf === skill.buffConsumptionAnyOf &&
-    conditionalPotencyBuffs === skill.conditionalPotencyBuffs
+    conditionalPotencyBuffs === skill.conditionalPotencyBuffs &&
+    delayedHits === skill.delayedHits
   ) {
     return skill;
   }
@@ -79,6 +82,7 @@ function applyTraitOverrides(skill: Skill, level: number): Skill {
     resourceChanges,
     buffConsumptionAnyOf,
     conditionalPotencyBuffs,
+    delayedHits,
   };
 }
 

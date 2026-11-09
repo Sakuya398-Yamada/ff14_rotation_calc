@@ -1,6 +1,6 @@
 import type { CharacterStats, PpsRange, Skill, TimelineResult } from "../types/skill";
 import { calcPps } from "./resolve-timeline";
-import { calcEntryExpectedPotency } from "./expected-potency";
+import { calcEntryDelayedHitsExpectedPotency, calcEntryExpectedPotency } from "./expected-potency";
 import { calcExpectedMultiplier } from "./stat-calc";
 
 type PpsResult = ReturnType<typeof calcPps>;
@@ -44,11 +44,11 @@ export function calcTimelineSummary(
 
   if (lastGcdEndTime <= 0) {
     // GCD が無いと範囲が 0 秒になり PPS が決まらないので、#835 より前の集計のまま
-    // （0 〜 最後の DoT ティック、すべてのエントリとティックを数える。oGCD の DoT だけのタイムラインがある）
-    const direct = result.entries.reduce(
-      (sum, entry) => sum + calcEntryExpectedPotency(entry, skillMap.get(entry.resolvedSkillId), stats),
-      0
-    );
+    // （0 〜 最後の DoT ティック、すべてのエントリ（時間差の攻撃も。#957）とティックを数える。oGCD の DoT だけのタイムラインがある）
+    const direct = result.entries.reduce((sum, entry) => {
+      const skill = skillMap.get(entry.resolvedSkillId);
+      return sum + calcEntryExpectedPotency(entry, skill, stats) + calcEntryDelayedHitsExpectedPotency(entry, skill, stats);
+    }, 0);
     const dot = result.dotTicks.reduce(
       (sum, tick) => sum + Math.floor(tick.potency * calcExpectedMultiplier(stats, tick.critRateBonus, tick.dhRateBonus)),
       0

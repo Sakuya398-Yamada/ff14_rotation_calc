@@ -17,9 +17,10 @@ import type {
   TimelineResult,
   BossUntargetableWindow,
   MultiTargetWindow,
+  ResolvedDelayedHit,
 } from "../types/skill";
 import { calcGcd, calcExpectedMultiplier } from "./stat-calc";
-import { calcEntryExpectedPotency } from "./expected-potency";
+import { calcDelayedHitBreakdown, calcEntryExpectedPotency } from "./expected-potency";
 import { isAutoGenerateProcOccurred } from "./auto-generate-proc";
 
 /** DoTティック間隔（秒） */
@@ -939,11 +940,14 @@ export function resolveTimeline(
   // 1 未満の確率付与だけで付き、確定付与で付け直されていないバフ（自動消費したエントリで警告する）
   const unconfirmedProcBuffs = new Set<string>();
   // 着弾時刻まで待たせているバフの付与（付ける時刻の昇順、同じ時刻は入れた順。#948）。
-  // buffIds は付けるバフ（リソースの上限は実行時から上げるので、着弾前の上限の計算に入れる）
+  // buffIds は付けるバフ（リソースの上限は実行時から上げるので、着弾前の上限の計算に入れる）。
+  // 時間差の攻撃の判定（#957）も入れる（buffIds は空。同じ時刻のバフの付与より前に入れる）
   const pendingBuffApplications: { time: number; entryIndex: number; buffIds: string[]; apply: (t: number) => void }[] = [];
   // 待たせて付けたバフの着弾時の複製と、着弾で重なって無駄になった確率付与（付けたエントリの添字ごと。全エントリを解決してから書き戻す）
   const hitAppliedBuffs: Map<number, ActiveBuff[]> = new Map();
   const hitWastedProcs: Map<number, NonNullable<ResolvedTimelineEntry["wastedProc"]>> = new Map();
+  // 時間差の攻撃の計算結果（使ったエントリの添字ごと、着弾時刻の順。全エントリを解決してから書き戻す。#957）
+  const delayedHitResults: Map<number, ResolvedDelayedHit[]> = new Map();
   // 自動生成の判定ごとの発生の指定（TimelineEntry.autoGenerateProcOccurred）。キーは「付けたバフの ID@付いた時刻」（#900）
   const autoGenerateProcSpecs = new Map<string, (boolean | null)[]>();
 
@@ -1574,6 +1578,37 @@ export function resolveTimeline(
     // 参照を共有すると使用時点のスタック数を表示できない（#388）。
     const activeBuffsAtUse: ActiveBuff[] = currentActiveBuffs.map((ab) => ({ ...ab }));
 
+    // 時間差の攻撃（ペット・分身。#957）。威力のバフ・クリ/DH・敵の数は着弾時刻の状態で判定するので、着弾時刻まで待ち列で待たせる。
+    // 同じ時刻のバフの付与より先に判定する（その時刻に実行したスキルのバフも、その時刻に着弾して付くバフも乗らない）。
+    // 確定クリ/DH は乗せず、バフも消費しない（プレイヤーの行動ではない）。ボス離脱（ゴースト）は見ない
+    if (!hasError && skill.delayedHits) {
+      const hitSkill = skill;
+      const hitSkillId = resolvedSkillId;
+      for (const hit of skill.delayedHits) {
+        const time = Math.round((startTime + resolvedCastTime + hit.delay) * 1000) / 1000;
+        const evaluate = (t: number) => {
+          const results = delayedHitResults.get(entryIndex) ?? [];
+          results.push({
+            time: t,
+            potency: hit.potency,
+            buffMultiplier: getPotencyMultiplier(currentActiveBuffs, buffDefMap, hitSkillId),
+            critRateBonus: getCritRateBonus(currentActiveBuffs, buffDefMap),
+            dhRateBonus: getDhRateBonus(currentActiveBuffs, buffDefMap),
+            targetCount: getTargetCountAt(t, multiTargetWindows, hitSkill),
+          });
+          delayedHitResults.set(entryIndex, results);
+        };
+        if (time <= startTime) {
+          evaluate(startTime);
+          continue;
+        }
+        const item = { time, entryIndex, buffIds: [] as string[], apply: evaluate };
+        const at = pendingBuffApplications.findIndex((p) => p.time >= time);
+        if (at < 0) pendingBuffApplications.push(item);
+        else pendingBuffApplications.splice(at, 0, item);
+      }
+    }
+
     if (!hasError) {
       const onResourceApplied = (def: ResourceDefinition, amount: number) => {
         // リソースが最大未満になったら自動生成タイマーを開始
@@ -2081,6 +2116,7 @@ export function resolveTimeline(
   applyPendingBuffsUntil(Infinity);
   for (const [index, applied] of hitAppliedBuffs) resolved[index].hitAppliedBuffs = applied;
   for (const [index, wasted] of hitWastedProcs) resolved[index].wastedProc = wasted;
+  for (const [index, hits] of delayedHitResults) resolved[index].delayedHits = hits;
 
   // 段差を描く自動生成（黙想）は、最後のエントリの後も条件バフが切れるまで数える。
   // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない
@@ -2185,7 +2221,8 @@ export function resolveTimeline(
 
 /**
  * 指定範囲内のPPS（Power Per Second）を計算する。
- * - 直接威力: 着弾時刻（hitTime。着弾までの遅れを設定していなければ startTime）が範囲内にあるスキルの威力を合算（resolvedPotencyを使用。#901）
+ * - 直接威力: 着弾時刻（hitTime。着弾までの遅れを設定していなければ startTime）が範囲内にあるスキルの威力を合算（resolvedPotencyを使用。#901）。
+ *   時間差の攻撃（delayedHits）は、各攻撃の着弾時刻で同じく判定して足す（#957）
  * - DoT威力: time が範囲内にあるDoTティックの威力を合算
  * - PPS = 合計威力 / 範囲の秒数
  * - 範囲は既定で [rangeStart, rangeEnd) の半開区間（隣り合う区間で境界を二重に数えない）。
@@ -2212,6 +2249,11 @@ export function calcPps(
     if (inRange(entry.hitTime ?? entry.startTime, options.includeEnd === true || options.includeEndEntries === true)) {
       const skill = skillMap.get(entry.resolvedSkillId);
       directPotency += calcEntryExpectedPotency(entry, skill, stats);
+    }
+    for (const hit of entry.delayedHits ?? []) {
+      if (inRange(hit.time, options.includeEnd === true || options.includeEndEntries === true)) {
+        directPotency += calcDelayedHitBreakdown(hit, skillMap.get(entry.resolvedSkillId), stats).total;
+      }
     }
   }
 
