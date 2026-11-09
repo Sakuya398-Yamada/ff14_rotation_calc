@@ -198,3 +198,27 @@ describe.each([
     expect(summary.lastDotTickTime).toBeNull();
   });
 });
+
+describe.each([
+  { name: "oGCD の DoT だけ", entries: [makeEntry("ogcd-dot")], hitDelays: undefined },
+  // ogcd-dot 0s（最後のティック 15s 付近）→ ogcd-a 0.65s の着弾 20.65s
+  { name: "着弾までの遅れを設定したスキルがある", entries: [makeEntry("ogcd-dot"), makeEntry("ogcd-a")], hitDelays: { "ogcd-a": 20 } },
+  // ogcd-a 0s → ogcd-b 0.65s
+  { name: "遅れの設定が無い oGCD が 2 つ", entries: [makeEntry("ogcd-a"), makeEntry("ogcd-b")], hitDelays: undefined },
+])("calcTimelineSummary: GCD が無いタイムラインの「全体」の区間（$name）（#987）", ({ entries, hitDelays }) => {
+  const result = resolveTimeline(entries, skillMap, [], stats, undefined, undefined, undefined, hitDelays);
+  const summary = calcTimelineSummary(result, skillMap, stats);
+
+  it("前提: GCD が無く、全体の PPS が出る", () => {
+    expect(result.lastGcdEndTime).toBe(0);
+    expect(result.entries.every((e) => !e.recastError)).toBe(true);
+    expect(summary.duration).toBeGreaterThan(0);
+    expect(summary.overallPps).not.toBeNull();
+  });
+
+  it("「全体」ボタンと範囲選択を開いたときの初期区間（0 〜 所要時間）の PPS は、PPS 全体と一致する", () => {
+    // App は所要時間を「全体」の区間の終わりとして PpsRangeEditor・TimelineHeader に渡す
+    const fullRange = { startTime: 0, endTime: summary.duration };
+    expect(calcRangePps(result, skillMap, fullRange, stats)).toEqual(summary.overallPps);
+  });
+});

@@ -8,7 +8,7 @@ const zoneStyles = zoneEditorStyles("--color-zone-pps");
 interface PpsRangeEditorProps {
   ppsRange: PpsRange | null;
   onPpsRangeChange: (range: PpsRange | null) => void;
-  lastGcdEndTime: number;
+  overallEndTime: number;
   rangePps: { pps: number; totalPotency: number; directPotency: number; dotPotency: number } | null;
 }
 
@@ -16,7 +16,7 @@ interface PpsRangeEditorProps {
 export function PpsRangeEditor({
   ppsRange,
   onPpsRangeChange,
-  lastGcdEndTime,
+  overallEndTime,
   rangePps,
 }: PpsRangeEditorProps) {
   const { t } = useTranslation();
@@ -39,7 +39,7 @@ export function PpsRangeEditor({
               if (isNaN(val) || val < 0) return;
               onPpsRangeChange({
                 startTime: val,
-                endTime: ppsRange?.endTime ?? lastGcdEndTime,
+                endTime: ppsRange?.endTime ?? overallEndTime,
               });
             }}
           />
@@ -51,7 +51,7 @@ export function PpsRangeEditor({
             type="number"
             step="0.5"
             min="0"
-            value={ppsRange?.endTime ?? lastGcdEndTime}
+            value={ppsRange?.endTime ?? overallEndTime}
             style={zoneStyles.input}
             onChange={(e) => {
               const val = parseFloat(e.target.value);
@@ -66,7 +66,7 @@ export function PpsRangeEditor({
         </label>
         <button
           style={zoneStyles.actionButton}
-          onClick={() => onPpsRangeChange({ startTime: 0, endTime: lastGcdEndTime })}
+          onClick={() => onPpsRangeChange({ startTime: 0, endTime: overallEndTime })}
           title={t("ppsRangeEditor.resetTitle")}
         >
           {t("ppsRangeEditor.reset")}
