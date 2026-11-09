@@ -15,6 +15,10 @@ import { MNK_RESOURCES } from "../../data/mnk-resources";
 import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
 import { BLM_BUFFS } from "../../data/blm-buffs";
 import { BLM_RESOURCES } from "../../data/blm-resources";
+import { DRK_ATTACK_SKILLS } from "../../data/drk-skills";
+import { DRK_BUFFS } from "../../data/drk-buffs";
+import { DRK_RESOURCES } from "../../data/drk-resources";
+import { calcDelayedHitBreakdown } from "../../logic/expected-potency";
 import type { BuffDefinition, CharacterStats, ResourceDefinition, Skill } from "../../types/skill";
 import type { JobId } from "../../data/job-registry";
 
@@ -47,6 +51,7 @@ function setupJob(jobId: JobId, skills: Skill[], buffs: BuffDefinition[], resour
 const BRD = setupJob("brd", BRD_ATTACK_SKILLS, BRD_BUFFS, BRD_RESOURCES);
 const MNK = setupJob("mnk", MNK_ATTACK_SKILLS, MNK_BUFFS, MNK_RESOURCES);
 const BLM = setupJob("blm", BLM_ATTACK_SKILLS, BLM_BUFFS, BLM_RESOURCES);
+const DRK = setupJob("drk", DRK_ATTACK_SKILLS, DRK_BUFFS, DRK_RESOURCES);
 
 /** skillIds を解決し、最後のエントリの詳細パネルを描画する */
 function renderLastEntry(skillIds: string[], job = BRD) {
@@ -415,6 +420,28 @@ describe("SkillDetailPanel: 着弾までの遅れ (#901)", () => {
 
     expect(screen.getByRole("spinbutton", { name: "着弾までの遅れ" })).toHaveValue(null);
     expect(screen.queryByText(/着弾:/)).not.toBeInTheDocument();
+  });
+});
+
+describe("SkillDetailPanel: 時間差の攻撃 (#957)", () => {
+  it("影身具現は、基本威力と期待値に分身の攻撃の合計を出し、攻撃ごとに着弾時刻と計算式を並べる", () => {
+    const [entry] = resolveTimeline([{ uid: "e-1", skillId: "living-shadow" }], DRK.skillMap, DRK.resources, stats, DRK.buffs).entries;
+    const skill = DRK.skillMap.get("living-shadow")!;
+    const hitTotals = entry.delayedHits!.map((hit) => calcDelayedHitBreakdown(hit, skill, stats).total);
+    // 前提: 使ったときの威力は無く、期待値はクリ/DH の期待値で威力より大きい
+    expect(entry.resolvedPotency).toBe(0);
+    expect(hitTotals[0]).toBeGreaterThan(420);
+
+    renderLastEntry(["living-shadow"], DRK);
+
+    expect(within(screen.getByText("基本威力").parentElement!).getByText("2450")).toBeInTheDocument();
+    const expectedTotal = hitTotals.reduce((sum, v) => sum + v, 0);
+    expect(within(screen.getByText("期待値").parentElement!).getByText(String(expectedTotal))).toBeInTheDocument();
+    const times = ["6.80", "11.16", "13.34", "15.52", "17.70"];
+    const potencies = [420, 570, 420, 420, 620];
+    times.forEach((time, i) => {
+      expect(screen.getByText(new RegExp(`^（着弾: ${time}s） ${potencies[i]} × 1\\.00 × [0-9.]+ = ${hitTotals[i]}$`))).toBeInTheDocument();
+    });
   });
 });
 

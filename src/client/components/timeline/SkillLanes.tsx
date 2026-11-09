@@ -4,7 +4,7 @@ import type { Skill, ResolvedTimelineEntry, CharacterStats } from "../../types/s
 import type { JobId } from "../../data/job-registry";
 import { skillName } from "../../logic/display-names";
 import type { DisplayEntry } from "./types";
-import { calcEntryPotencyBreakdown } from "../../logic/expected-potency";
+import { calcEntryDelayedHitsExpectedPotency, calcEntryPotencyBreakdown } from "../../logic/expected-potency";
 import {
   formatConsumedProc,
   formatProcOccurred,
@@ -32,6 +32,11 @@ interface SkillLanesProps {
   draggingEntryUid: string | null;
   labelBg: string;
   onSelectEntry: (uid: string | null) => void;
+}
+
+/** 時間差の攻撃（#957）のバフ込みの威力の合計。持たないエントリは 0 */
+function delayedHitsBuffedPotency(entry: ResolvedTimelineEntry): number {
+  return (entry.delayedHits ?? []).reduce((sum, hit) => sum + Math.floor(hit.potency * hit.buffMultiplier), 0);
 }
 
 /** dnd-kit のドラッグ元となるタイムラインエントリのアイコン（タッチ・マウス両対応） */
@@ -95,11 +100,15 @@ export function SkillLanes({
             const hasError = entriesWithErrors.has(entry.uid);
             const recast = getResolvedEntryRecast(entry, entry.skill);
             const castTime = entry.castTime;
-            const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
+            // 時間差の攻撃（#957）は、各攻撃の威力と期待値を足して出す
+            const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier) + delayedHitsBuffedPotency(entry);
             const breakdown = stats && entry.resolvedPotency > 0 && !hasError
               ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
               : null;
-            const expectedPot = breakdown ? breakdown.total : null;
+            const delayedExpected = stats && entry.delayedHits
+              ? calcEntryDelayedHitsExpectedPotency(entry, entry.displaySkill, stats)
+              : null;
+            const expectedPot = breakdown || delayedExpected !== null ? (breakdown?.total ?? 0) + (delayedExpected ?? 0) : null;
             const targetBreakdown = formatTargetBreakdown(breakdown, t);
             const consumedProcLabel = entry.consumedProc
               ? ` / ${formatConsumedProc(entry.consumedProc, jobId)}`
@@ -203,11 +212,15 @@ export function SkillLanes({
         <div style={styles.laneContent}>
           {ogcdEntries.map((entry) => {
             const hasError = entriesWithErrors.has(entry.uid);
-            const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
+            // 時間差の攻撃（#957）は、各攻撃の威力と期待値を足して出す
+            const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier) + delayedHitsBuffedPotency(entry);
             const breakdown = stats && entry.resolvedPotency > 0 && !hasError
               ? calcEntryPotencyBreakdown(entry, entry.displaySkill, stats)
               : null;
-            const expectedPot = breakdown ? breakdown.total : null;
+            const delayedExpected = stats && entry.delayedHits
+              ? calcEntryDelayedHitsExpectedPotency(entry, entry.displaySkill, stats)
+              : null;
+            const expectedPot = breakdown || delayedExpected !== null ? (breakdown?.total ?? 0) + (delayedExpected ?? 0) : null;
             const targetBreakdown = formatTargetBreakdown(breakdown, t);
             const name = skillName(t, jobId, entry.displaySkill.id);
             return (

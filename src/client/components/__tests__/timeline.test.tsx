@@ -14,7 +14,7 @@ import {
 import { Timeline } from "../Timeline";
 import { DELETE_ZONE_ID } from "../timeline/dnd-types";
 import { resolveTimeline } from "../../logic/resolve-timeline";
-import { calcEntryExpectedPotency } from "../../logic/expected-potency";
+import { calcEntryDelayedHitsExpectedPotency, calcEntryExpectedPotency } from "../../logic/expected-potency";
 import {
   getAllSkillMapForLevel,
   getBuffsForLevel,
@@ -272,6 +272,27 @@ function renderBrd(skillIds: string[]) {
     buffs: BRD_BUFFS,
   });
 }
+
+describe("Timeline: 時間差の攻撃 (#957)", () => {
+  it("時間差の攻撃を持つ oGCD は、各攻撃の威力と期待値の合計を出す", () => {
+    const petSkill = makeSkill({
+      id: "test-pet",
+      potency: 0,
+      type: "ogcd",
+      delayedHits: [{ delay: 2, potency: 100 }, { delay: 5, potency: 200 }],
+    });
+    const skillMap = new Map([...jobASkills, petSkill].map((s) => [s.id, s]));
+    const resolvedEntries = resolve([makeEntry(petSkill.id)], skillMap);
+    const expected = calcEntryDelayedHitsExpectedPotency(resolvedEntries[0], petSkill, defaultStats);
+    // 前提: 期待値はクリ/DH の期待値で、威力の合計（300）と別の値になる
+    expect(expected).toBeGreaterThan(300);
+
+    renderTimeline({ resolvedEntries, skills: [...jobASkills, petSkill], allSkillMap: skillMap });
+
+    expect(screen.getByTitle(new RegExp(`^test-pet \\(威力: 300 / 期待値: ${expected}\\)`))).toBeInTheDocument();
+    expect(screen.getByText(String(expected))).toBeInTheDocument();
+  });
+});
 
 describe("Timeline: ホークアイの発動確率 (#615)", () => {
   it("バーストショット → リフルジェントアローは、リフルジェントアローのツールチップに 35.0% が出る", () => {
