@@ -49,6 +49,7 @@
 	// Workers Logs（ダッシュボードの Observability タブ）。書かないと wrangler deploy が { enabled: false } を送り、
 	// ダッシュボードで有効にしても次のデプロイで無効に戻る（#976）。呼び出しごとの記録（URL・IP・位置・CPU 時間）を残す。
 	// Cookie の値と URL の中の長い ID は Cloudflare が REDACTED にし、クエリ文字列は redact_query_string で消す。
+	// referer の中の ID は伏せられないので、共有 URL のページは Referrer-Policy でパスを送らせない（src/server/index.ts）。
 	// 残す記録と期間はプライバシーポリシー（src/client/components/PrivacyPolicyPage.tsx）に書いているので、変えたらそちらも直す
 	"observability": {
 		"enabled": true,
