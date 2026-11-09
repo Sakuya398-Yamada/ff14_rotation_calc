@@ -75,7 +75,6 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 - **Export to Mint Leaf**: Turns the current timeline into text that you can paste into the "Import / Export" box on [Mint Leaf](https://mint-leaf.thebalanceffxiv.com/) (The Balance's rotation builder), and lets you copy it
   - The job, level and title are not included in the text. Choose them at the top of the Mint Leaf page
   - Only the order of actions and the GCD recast and cast times (as calculated by this tool, including skill speed and buffs) are exported. Manual start times, oGCD weave timing and buffs are not exported
-  - Currently only Black Mage is supported. Actions of other jobs are not exported, and the names of the actions that were not exported are shown
 
 ### Summary bar (below the header)
 
