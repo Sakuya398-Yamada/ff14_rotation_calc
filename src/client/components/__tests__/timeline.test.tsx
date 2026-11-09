@@ -32,6 +32,7 @@ import { WAR_BUFFS } from "../../data/war-buffs";
 import { WAR_RESOURCES } from "../../data/war-resources";
 import { PX_PER_SEC } from "../timeline/constants";
 import type {
+  BuffDefinition,
   Skill,
   TimelineEntry,
   CharacterStats,
@@ -291,6 +292,26 @@ describe("Timeline: 時間差の攻撃 (#957)", () => {
 
     expect(screen.getByTitle(new RegExp(`^test-pet \\(威力: 300 / 期待値: ${expected}\\)`))).toBeInTheDocument();
     expect(screen.getByText(String(expected))).toBeInTheDocument();
+  });
+
+  it("使ったときのバフの倍率は、使ったときの威力が無ければツールチップに出さない", () => {
+    const petSkill = makeSkill({
+      id: "test-pet",
+      potency: 0,
+      type: "ogcd",
+      delayedHits: [{ delay: 2, potency: 100 }],
+    });
+    const buffSkill = makeSkill({ id: "test-buff", potency: 0, type: "ogcd", buffApplications: ["test-up"] });
+    const buffs: BuffDefinition[] = [{ id: "test-up", icon: "", duration: 20, effects: [{ type: "potency", value: 1.05 }], color: "#000" }];
+    const skillMap = new Map([...jobASkills, petSkill, buffSkill].map((s) => [s.id, s]));
+    const resolvedEntries = resolveTimeline([makeEntry(buffSkill.id), makeEntry(petSkill.id)], skillMap, [], defaultStats, buffs, []).entries;
+    // 前提: 使ったときにバフが乗っていて、着弾時刻にも乗っている
+    expect(resolvedEntries[1].buffMultiplier).toBe(1.05);
+    expect(resolvedEntries[1].delayedHits?.[0].buffMultiplier).toBe(1.05);
+
+    renderTimeline({ resolvedEntries, skills: [...jobASkills, petSkill, buffSkill], allSkillMap: skillMap, buffs });
+
+    expect(screen.getByTitle(/^test-pet \(威力: 105 \/ 期待値: \d+\)/)).toBeInTheDocument();
   });
 });
 
