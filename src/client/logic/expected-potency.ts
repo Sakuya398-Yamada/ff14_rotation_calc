@@ -1,4 +1,4 @@
-import type { CharacterStats, ResolvedTimelineEntry, Skill } from "../types/skill";
+import type { CharacterStats, ResolvedDelayedHit, ResolvedTimelineEntry, Skill } from "../types/skill";
 import { calcExpectedMultiplier } from "./stat-calc";
 
 /**
@@ -10,6 +10,7 @@ import { calcExpectedMultiplier } from "./stat-calc";
  * - 着弾時にボスが離脱中（`untargetableHit`。ゴースト）のエントリも 0（#950）
  * - 単体スキル（`maxTargets` 未設定 or ≤1）または `entry.targetCount` ≤1 のとき 1 体分のみ
  * - 複数体時は `min(targetCount, maxTargets)` 体まで、`falloffStartTarget` (default 2) 以降は `(1 - falloffRate)` (default 0) 倍に減衰
+ * - 時間差の攻撃（`entry.delayedHits`）は含めない。着弾時刻ごとに `calcDelayedHitBreakdown` で数える（#957）
  */
 export function calcEntryExpectedPotency(
   entry: ResolvedTimelineEntry,
@@ -41,11 +42,43 @@ export function calcEntryPotencyBreakdown(
     return { total: 0, targets: [], singleTargetPotency: 0 };
   }
 
-  const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-  const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
+  return calcHitBreakdown(entry.resolvedPotency, entry.buffMultiplier, entry.critRateBonus, entry.dhRateBonus, entry.targetCount ?? 1, skill, stats);
+}
+
+/**
+ * 時間差の攻撃 1 回分の期待威力の内訳（#957）。計算規則は `calcEntryPotencyBreakdown` と同じで、バフ倍率・クリ/DH・敵の数は
+ * 着弾時刻の値を使う。対象数の上限と減衰は使ったスキル（`skill`）のもの。ハードエラーのエントリは時間差の攻撃を持たない
+ */
+export function calcDelayedHitBreakdown(
+  hit: ResolvedDelayedHit,
+  skill: Skill | undefined,
+  stats: CharacterStats
+): { total: number; targets: number[]; singleTargetPotency: number } {
+  return calcHitBreakdown(hit.potency, hit.buffMultiplier, hit.critRateBonus, hit.dhRateBonus, hit.targetCount, skill, stats);
+}
+
+/** エントリの時間差の攻撃（`entry.delayedHits`）の期待威力の合計。持たなければ 0（#957） */
+export function calcEntryDelayedHitsExpectedPotency(
+  entry: ResolvedTimelineEntry,
+  skill: Skill | undefined,
+  stats: CharacterStats
+): number {
+  return (entry.delayedHits ?? []).reduce((sum, hit) => sum + calcDelayedHitBreakdown(hit, skill, stats).total, 0);
+}
+
+function calcHitBreakdown(
+  potency: number,
+  buffMultiplier: number,
+  critRateBonus: number,
+  dhRateBonus: number,
+  targetCount: number,
+  skill: Skill | undefined,
+  stats: CharacterStats
+): { total: number; targets: number[]; singleTargetPotency: number } {
+  const buffedPotency = Math.floor(potency * buffMultiplier);
+  const entryMul = calcExpectedMultiplier(stats, critRateBonus, dhRateBonus);
   const singleTargetPotency = Math.floor(buffedPotency * entryMul);
 
-  const targetCount = entry.targetCount ?? 1;
   const maxTargets = skill?.maxTargets ?? 1;
   if (maxTargets <= 1 || targetCount <= 1) {
     return { total: singleTargetPotency, targets: [singleTargetPotency], singleTargetPotency };

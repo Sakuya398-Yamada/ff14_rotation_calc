@@ -14,7 +14,7 @@ import {
 import { Timeline } from "../Timeline";
 import { DELETE_ZONE_ID } from "../timeline/dnd-types";
 import { resolveTimeline } from "../../logic/resolve-timeline";
-import { calcEntryExpectedPotency } from "../../logic/expected-potency";
+import { calcEntryDelayedHitsExpectedPotency, calcEntryExpectedPotency } from "../../logic/expected-potency";
 import {
   getAllSkillMapForLevel,
   getBuffsForLevel,
@@ -32,6 +32,7 @@ import { WAR_BUFFS } from "../../data/war-buffs";
 import { WAR_RESOURCES } from "../../data/war-resources";
 import { PX_PER_SEC } from "../timeline/constants";
 import type {
+  BuffDefinition,
   Skill,
   TimelineEntry,
   CharacterStats,
@@ -272,6 +273,47 @@ function renderBrd(skillIds: string[]) {
     buffs: BRD_BUFFS,
   });
 }
+
+describe("Timeline: 時間差の攻撃 (#957)", () => {
+  it("時間差の攻撃を持つ oGCD は、各攻撃の威力と期待値の合計を出す", () => {
+    const petSkill = makeSkill({
+      id: "test-pet",
+      potency: 0,
+      type: "ogcd",
+      delayedHits: [{ delay: 2, potency: 100 }, { delay: 5, potency: 200 }],
+    });
+    const skillMap = new Map([...jobASkills, petSkill].map((s) => [s.id, s]));
+    const resolvedEntries = resolve([makeEntry(petSkill.id)], skillMap);
+    const expected = calcEntryDelayedHitsExpectedPotency(resolvedEntries[0], petSkill, defaultStats);
+    // 前提: 期待値はクリ/DH の期待値で、威力の合計（300）と別の値になる
+    expect(expected).toBeGreaterThan(300);
+
+    renderTimeline({ resolvedEntries, skills: [...jobASkills, petSkill], allSkillMap: skillMap });
+
+    expect(screen.getByTitle(new RegExp(`^test-pet \\(威力: 300 / 期待値: ${expected}\\)`))).toBeInTheDocument();
+    expect(screen.getByText(String(expected))).toBeInTheDocument();
+  });
+
+  it("使ったときのバフの倍率は、使ったときの威力が無ければツールチップに出さない", () => {
+    const petSkill = makeSkill({
+      id: "test-pet",
+      potency: 0,
+      type: "ogcd",
+      delayedHits: [{ delay: 2, potency: 100 }],
+    });
+    const buffSkill = makeSkill({ id: "test-buff", potency: 0, type: "ogcd", buffApplications: ["test-up"] });
+    const buffs: BuffDefinition[] = [{ id: "test-up", icon: "", duration: 20, effects: [{ type: "potency", value: 1.05 }], color: "#000" }];
+    const skillMap = new Map([...jobASkills, petSkill, buffSkill].map((s) => [s.id, s]));
+    const resolvedEntries = resolveTimeline([makeEntry(buffSkill.id), makeEntry(petSkill.id)], skillMap, [], defaultStats, buffs, []).entries;
+    // 前提: 使ったときにバフが乗っていて、着弾時刻にも乗っている
+    expect(resolvedEntries[1].buffMultiplier).toBe(1.05);
+    expect(resolvedEntries[1].delayedHits?.[0].buffMultiplier).toBe(1.05);
+
+    renderTimeline({ resolvedEntries, skills: [...jobASkills, petSkill, buffSkill], allSkillMap: skillMap, buffs });
+
+    expect(screen.getByTitle(/^test-pet \(威力: 105 \/ 期待値: \d+\)/)).toBeInTheDocument();
+  });
+});
 
 describe("Timeline: ホークアイの発動確率 (#615)", () => {
   it("バーストショット → リフルジェントアローは、リフルジェントアローのツールチップに 35.0% が出る", () => {

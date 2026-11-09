@@ -64,6 +64,32 @@ export interface TraitPotencyOverride {
   buffConsumptionAnyOf?: Skill["buffConsumptionAnyOf"];
   /** 変更後のバフ有効時の威力上書き（配列ごと置き換える。undefinedの場合は変更なし） */
   conditionalPotencyBuffs?: Skill["conditionalPotencyBuffs"];
+  /** 変更後の時間差の攻撃（配列ごと置き換える。undefinedの場合は変更なし。例: 影身具現の分身の攻撃は Lv88 で 340 → 420） */
+  delayedHits?: DelayedHit[];
+}
+
+/** 使用から決まった遅れで入る攻撃（ペット・分身。#957） */
+export interface DelayedHit {
+  /** 使用時刻（詠唱があれば詠唱完了）から着弾までの秒数。スキルに設定した着弾までの遅れ（hitDelays）は足さない */
+  delay: number;
+  /** 威力 */
+  potency: number;
+}
+
+/** 時間差の攻撃 1 回分の計算結果。威力のバフ・クリ/DH・敵の数は、着弾時刻の状態で判定する（#957） */
+export interface ResolvedDelayedHit {
+  /** 着弾時刻（秒） */
+  time: number;
+  /** 威力 */
+  potency: number;
+  /** 着弾時刻の威力倍率（使ったスキルの ID で appliesToSkillIds を引く） */
+  buffMultiplier: number;
+  /** 着弾時刻のクリティカル発生率ボーナス */
+  critRateBonus: number;
+  /** 着弾時刻のダイレクトヒット発生率ボーナス */
+  dhRateBonus: number;
+  /** 着弾時刻の敵の数。合計威力は使ったスキルの maxTargets / falloffRate / falloffStartTarget で決まる */
+  targetCount: number;
 }
 
 /** サポートするプレイヤーレベル */
@@ -153,6 +179,11 @@ export interface Skill {
    * 効果中でなければ何もしない。上限はそのバフの BuffDefinition.maxDuration（付与時刻から数える。未設定なら上限なし）
    */
   buffExtensions?: { buffId: string; seconds: number }[];
+  /**
+   * 使用から決まった遅れで入る攻撃（ペット・分身。#957）。各攻撃は着弾時刻で PPS 区間・集計に入り、威力のバフ・クリ/DH・
+   * 敵の数も着弾時刻の状態で判定する。確定クリ/DH は乗らず、バフも消費しない。potency（使ったときの威力）とは別に数える
+   */
+  delayedHits?: DelayedHit[];
   /** DoT威力（1ティックあたり。基本値。特性適用前） */
   dotPotency?: number;
   /** DoT持続時間（秒）。dotPotency設定時は必須 */
@@ -755,4 +786,6 @@ export interface ResolvedTimelineEntry {
    * 合計威力計算は `Skill.maxTargets` で頭打ち、`falloffRate` / `falloffStartTarget` で減衰される。
    */
   targetCount: number;
+  /** 時間差の攻撃（Skill.delayedHits）の計算結果。着弾時刻の順。ハードエラーのエントリは持たない（#957） */
+  delayedHits?: ResolvedDelayedHit[];
 }

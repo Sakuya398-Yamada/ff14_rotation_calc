@@ -5,7 +5,7 @@ import { getAutoGenerateProcSource, isAutoGenerateProcOccurred } from "../logic/
 import type { JobId } from "../data/job-registry";
 import { buffName, skillName } from "../logic/display-names";
 import { calcExpectedMultiplier } from "../logic/stat-calc";
-import { calcEntryPotencyBreakdown } from "../logic/expected-potency";
+import { calcDelayedHitBreakdown, calcEntryPotencyBreakdown } from "../logic/expected-potency";
 import { getBuffContributions } from "../logic/buff-contribution";
 import {
   describeBuffEffects,
@@ -192,7 +192,18 @@ export function SkillDetailPanel({
   const breakdown = !hasError && entry.resolvedPotency > 0
     ? calcEntryPotencyBreakdown(entry, resolvedSkill, stats)
     : null;
-  const expectedValue = breakdown ? breakdown.total : singleTargetExpected;
+  // 時間差の攻撃（#957）。各攻撃の期待値は、着弾時刻のバフ・クリ/DH・敵の数で出す
+  const delayedHitRows = (entry.delayedHits ?? []).map((hit) => ({
+    hit,
+    expectedMul: calcExpectedMultiplier(stats, hit.critRateBonus, hit.dhRateBonus),
+    breakdown: calcDelayedHitBreakdown(hit, resolvedSkill, stats),
+  }));
+  const delayedPotency = delayedHitRows.reduce((sum, row) => sum + row.hit.potency, 0);
+  const delayedExpected = delayedHitRows.length > 0 ? delayedHitRows.reduce((sum, row) => sum + row.breakdown.total, 0) : null;
+  const directExpected = breakdown ? breakdown.total : singleTargetExpected;
+  const expectedValue = directExpected !== null || delayedExpected !== null
+    ? (directExpected ?? 0) + (delayedExpected ?? 0)
+    : null;
   const isMultiTargetHit = breakdown !== null && breakdown.targets.length > 1;
 
   const errorMessages: string[] = [];
@@ -373,7 +384,7 @@ export function SkillDetailPanel({
       <div style={styles.metrics}>
         <div style={styles.cell}>
           <div style={styles.cellLabel}>{t("skillDetailPanel.basePotency")}</div>
-          <div className="num" style={styles.cellValue}>{entry.resolvedPotency}</div>
+          <div className="num" style={styles.cellValue}>{entry.resolvedPotency + delayedPotency}</div>
           {entry.consumedProc && (
             <div className="num" style={styles.expectedFormula}>
               {formatConsumedProc(entry.consumedProc, jobId)}
@@ -451,6 +462,14 @@ export function SkillDetailPanel({
               {" = "}{breakdown.total}
             </div>
           )}
+          {delayedHitRows.map(({ hit, expectedMul: hitExpectedMul, breakdown: hitBreakdown }, i) => (
+            <div key={i} className="num" style={styles.expectedFormula}>
+              {t("skillDetailPanel.hitTime", { time: hit.time.toFixed(2) })}{" "}
+              {hitBreakdown.targets.length > 1
+                ? `${t("skillDetailPanel.firstTarget", { potency: hitBreakdown.singleTargetPotency })}${hitBreakdown.targets.slice(1).map((potency, i) => ` / ${t("skillDetailPanel.nthTarget", { n: i + 2, potency })}`).join("")} = ${hitBreakdown.total}`
+                : `${hit.potency} × ${hit.buffMultiplier.toFixed(2)} × ${hitExpectedMul.toFixed(3)} = ${hitBreakdown.total}`}
+            </div>
+          ))}
         </div>
 
         <div style={styles.cell}>

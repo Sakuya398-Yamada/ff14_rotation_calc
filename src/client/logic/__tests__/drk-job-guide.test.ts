@@ -103,7 +103,6 @@ describe("DRK: レベルごとの威力", () => {
     [70, "carve-and-spit", 510], [90, "carve-and-spit", 510], [100, "carve-and-spit", 540],
     [70, "edge-of-darkness", 300], [70, "flood-of-darkness", 100],
     [80, "edge-of-shadow", 460], [100, "flood-of-shadow", 160],
-    [80, "living-shadow", 1700], [90, "living-shadow", 2250], [100, "living-shadow", 2450],
     [100, "abyssal-drain", 240], [100, "salted-earth", 50], [100, "unmend", 150], [100, "unleash", 120],
   ])("Lv%i の %s は %i", (level, skillId, potency) => {
     const [e] = setup(level).resolve([skillId]);
@@ -197,7 +196,10 @@ describe("DRK: MP と暗黒", () => {
     const e = setup(100).resolve(["edge-of-shadow", "living-shadow", "carve-and-spit"]);
     e.forEach(expectNoError);
     expect(hasBuff(e[1], "darkside")).toBe(true);
-    expect(e[1].buffMultiplier).toBe(1);
+    // 暗黒は 0s から 30s まで。分身の攻撃（最後は 0.65 + 17.7 秒）はすべてその中
+    expect(buffOf(e[0], "darkside")?.endTime).toBe(30);
+    expect(e[1].delayedHits?.at(-1)?.time).toBeLessThan(30);
+    expect(e[1].delayedHits?.map((h) => h.buffMultiplier)).toEqual([1, 1, 1, 1, 1]);
     expect(e[2].buffMultiplier).toBeCloseTo(1.1);
   });
 
@@ -319,7 +321,7 @@ describe("DRK: 影身具現", () => {
 
     const e = resolve(["living-shadow", "disesteem", "disesteem"]);
     e.slice(0, 2).forEach(expectNoError);
-    expect(e[0].resolvedPotency).toBe(2450);
+    expect(e[0].delayedHits?.reduce((sum, h) => sum + h.potency, 0)).toBe(2450);
     expect(buffOf(e[0], "scorn")?.endTime).toBe(30);
     expect(e[1].resolvedPotency).toBe(1000);
     expect(e[2].comboErrors.map((x) => x.buffId)).toContain("scorn");
@@ -331,17 +333,33 @@ describe("DRK: 影身具現", () => {
     expect(hasBuff(e, "scorn")).toBe(false);
   });
 
-  it("近似: 分身 5 回分の威力を、使用した時刻に 1 体分だけ計上する（敵が複数でも増えない）", () => {
+  it.each<[PlayerLevel, number[], number]>([
+    [80, [340, 340, 340, 340, 340], 1700],
+    // Lv88 はパレットのレベルに無いが、特性（分身の攻撃 340 → 420）の境目なので確かめる
+    [88 as PlayerLevel, [420, 420, 420, 420, 420], 2100],
+    [90, [420, 570, 420, 420, 420], 2250],
+    [100, [420, 570, 420, 420, 620], 2450],
+  ])("Lv%i: 分身の攻撃は使用の 6.8・11.16・13.34・15.52・17.7 秒後に %j の威力で入り、合計は %i", (level, potencies, total) => {
+    const [shadow] = setup(level).resolve(["living-shadow"]);
+    expectNoError(shadow);
+    // 使ったときの威力は無く、威力はすべて時間差の攻撃で入る
+    expect(shadow.resolvedPotency).toBe(0);
+    expect(shadow.delayedHits?.map((h) => h.time)).toEqual([6.8, 11.16, 13.34, 15.52, 17.7]);
+    expect(shadow.delayedHits?.map((h) => h.potency)).toEqual(potencies);
+    expect(potencies.reduce((sum, p) => sum + p, 0)).toBe(total);
+  });
+
+  it("分身の攻撃は、敵が複数でも 1 体分のまま（範囲は #977）", () => {
     const result = setup(100).resolveFull(
       ["living-shadow", "salted-earth"],
       [{ startTime: 0, endTime: 30, targetCount: 3 }],
     );
     const [shadow, saltedEarth] = result.entries;
-    expect(shadow.startTime).toBe(0);
-    expect(shadow.resolvedPotency).toBe(2450);
-    expect(shadow.targetCount).toBe(3);
-    // 範囲攻撃のソルトアースは 3 体分になるが、影身具現は 1 体分のまま
+    // 範囲攻撃のソルトアースは 3 体分になるが、影身具現（maxTargets 無し）の攻撃は 1 体分
     expect(saltedEarth.targetCount).toBe(3);
+    expect(shadow.delayedHits?.map((h) => h.targetCount)).toEqual([3, 3, 3, 3, 3]);
+    const skill = DRK_ATTACK_SKILLS.find((s) => s.id === "living-shadow")!;
+    expect(skill.maxTargets).toBeUndefined();
     expect(result.dotTicks.filter((t) => t.skillId === "living-shadow")).toEqual([]);
   });
 });

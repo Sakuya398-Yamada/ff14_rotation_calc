@@ -33,6 +33,11 @@ function CollapsibleSection({ title, defaultOpen = true, children }: Collapsible
   );
 }
 
+/** パレットに出す威力。時間差の攻撃（#957）の威力も足す（影身具現は使ったときの威力が 0 で、分身の攻撃の合計を出す） */
+function paletteSkillPotency(skill: Skill): number {
+  return skill.potency + (skill.delayedHits ?? []).reduce((sum, hit) => sum + hit.potency, 0);
+}
+
 /** dnd-kit のドラッグ元となるスキルカード（タッチ・マウス両対応） */
 function PaletteSkillCard({ jobId, skill }: { jobId: JobId; skill: Skill }) {
   const { t } = useTranslation();
@@ -57,7 +62,7 @@ function PaletteSkillCard({ jobId, skill }: { jobId: JobId; skill: Skill }) {
         touchAction: "manipulation",
         ...(isDragging ? { opacity: 0.5 } : {}),
       }}
-      title={t("skillPalette.cardTitle", { name, potency: skill.potency })}
+      title={t("skillPalette.cardTitle", { name, potency: paletteSkillPotency(skill) })}
     >
       <img
         src={skill.icon}
@@ -67,7 +72,7 @@ function PaletteSkillCard({ jobId, skill }: { jobId: JobId; skill: Skill }) {
       />
       <div style={styles.skillInfo}>
         <div style={styles.skillName}>{name}</div>
-        <div className="num" style={styles.skillPotency}>{t("skillPalette.potency", { potency: skill.potency })}</div>
+        <div className="num" style={styles.skillPotency}>{t("skillPalette.potency", { potency: paletteSkillPotency(skill) })}</div>
       </div>
     </div>
   );
