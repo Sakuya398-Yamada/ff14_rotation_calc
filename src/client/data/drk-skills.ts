@@ -36,6 +36,10 @@ const EDGE_FLOOD = { cooldown: 1, cooldownGroup: "edge-flood" };
 const CARVE_DRAIN = { cooldown: 60, cooldownGroup: "carve-and-spit" };
 /** デリリアムのコンボ（レッドデリリアム → カマパンス → トアクリーバー）の段のバフ。インペイルメントで途切れる */
 const DELIRIUM_COMBO_BUFFS = ["comeuppance-ready", "torcleaver-ready"];
+/** 英雄の影身の攻撃の、使用からの秒数（The Balance。6.8 秒後から約 2.18 秒おきの 6 行動のうち、2 回目のシャドウストライドを除く） */
+const LIVING_SHADOW_HIT_DELAYS = [6.8, 11.16, 13.34, 15.52, 17.7];
+const livingShadowHits = (potencies: number[]) =>
+  LIVING_SHADOW_HIT_DELAYS.map((delay, i) => ({ delay, potency: potencies[i] }));
 
 /**
  * 暗黒騎士（DRK）攻撃スキル定義（Lv100まで）
@@ -348,17 +352,20 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
     buffApplications: ["delirium", "blood-weapon"],
   },
   {
-    // 英雄の影身は使用の約 6.8 秒後から約 2.18 秒おきに 5 回攻撃する（The Balance）。時間差の攻撃を表す仕組みが無いので、
-    // 5 回分の合計を使用時の威力にまとめて計上する近似（ダメージの時刻は実機より 6.8〜17.7 秒早い。範囲攻撃も 1 体分）。
+    // 英雄の影身は、使用の約 6.8 秒後から約 2.18 秒おきに 6 回行動する（The Balance の advanced guide）。2 回目のシャドウストライドは
+    // ダメージが無いので、攻撃は使用の 6.8・11.16・13.34・15.52・17.7 秒後の 5 回（時間差の攻撃。#957）。時刻は分身が行動する時刻で、
+    // 各行動の着弾の遅れ（プレイヤーの同じアクションと同じ 0.6〜1.65 秒）は足さない。範囲攻撃も 1 体分（#977）。
     // Lv100 は アビサルドレイン 420・シャドウブリンガー 570・漆黒の剣 420・ブラッドスピラー 420・ディセスティーム 620 で計 2450。
-    // Lv88 で 1 回の威力が 340 → 420、Lv90 で 3 回目が漆黒の波動からシャドウブリンガー（570）に、Lv100 で 5 回目がカーヴ・アンド・スピットから
-    // ディセスティーム（620）に変わる（中国版クライアントの説明文・The Balance）。分身には暗黒が乗らない（drk-buffs.ts の暗黒の対象から外す）
+    // Lv88 で 1 回の威力が 340 → 420、Lv90 で 2 回目の攻撃が漆黒の波動からシャドウブリンガー（570）に、Lv100 で 5 回目の攻撃が
+    // カーヴ・アンド・スピットからディセスティーム（620）に変わる（中国版クライアントの説明文・The Balance・consolegameswiki）。
+    // 分身には暗黒が乗らない（drk-buffs.ts の暗黒の対象から外す）。ほかのバフは各攻撃の時点の状態で乗る（The Balance）
     id: "living-shadow",
-    potency: 1700,
+    potency: 0,
+    delayedHits: livingShadowHits([340, 340, 340, 340, 340]),
     traitPotencyOverrides: [
-      { traitLevel: 88, potency: 2100 },
-      { traitLevel: 90, potency: 2250 },
-      { traitLevel: 100, potency: 2450 },
+      { traitLevel: 88, delayedHits: livingShadowHits([420, 420, 420, 420, 420]) },
+      { traitLevel: 90, delayedHits: livingShadowHits([420, 570, 420, 420, 420]) },
+      { traitLevel: 100, delayedHits: livingShadowHits([420, 570, 420, 420, 620]) },
     ],
     type: "ogcd",
     target: "enemy",
