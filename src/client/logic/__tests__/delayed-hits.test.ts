@@ -50,6 +50,23 @@ const petAoe = makeOgcd({
   falloffRate: 0.5,
   delayedHits: [{ delay: 2, potency: 100 }, { delay: 5, potency: 100 }],
 });
+// 攻撃ごとの範囲（#977）。使ったスキルは単体
+const petHitAoe = makeOgcd({
+  id: "pet-hit-aoe",
+  delayedHits: [{ delay: 2, potency: 100, maxTargets: 2, falloffRate: 0.5 }, { delay: 3, potency: 100 }],
+});
+// 攻撃ごとの範囲（#977）。使ったスキルも範囲を持つ
+const petAoeHitOverride = makeOgcd({
+  id: "pet-aoe-hit-override",
+  maxTargets: 3,
+  falloffRate: 0.5,
+  delayedHits: [
+    { delay: 1, potency: 100, maxTargets: Infinity },
+    { delay: 2, potency: 100, maxTargets: Infinity, falloffRate: 0.25, falloffStartTarget: 3 },
+    { delay: 3, potency: 100, maxTargets: 1 },
+    { delay: 4, potency: 100 },
+  ],
+});
 const castPet = makeSkill({ id: "cast-pet", potency: 0, castTime: 2, delayedHits: [{ delay: 1, potency: 100 }] });
 const petSameTime = makeOgcd({ id: "pet-same-time", delayedHits: [{ delay: 1.35, potency: 100 }] });
 const cooldownPet = makeOgcd({ id: "cooldown-pet", cooldown: 60, delayedHits: [{ delay: 2, potency: 100 }] });
@@ -60,7 +77,7 @@ const critOgcd = makeOgcd({ id: "crit-ogcd", buffApplications: ["crit-up"] });
 const surgeOgcd = makeOgcd({ id: "surge-ogcd", buffApplications: ["surge"] });
 
 const skillMap = new Map(
-  [gcdA, pet, petAoe, castPet, petSameTime, cooldownPet, plainOgcd, buffOgcd, shortBuffOgcd, critOgcd, surgeOgcd].map((s) => [s.id, s])
+  [gcdA, pet, petAoe, petHitAoe, petAoeHitOverride, castPet, petSameTime, cooldownPet, plainOgcd, buffOgcd, shortBuffOgcd, critOgcd, surgeOgcd].map((s) => [s.id, s])
 );
 
 function resolve(entries: TimelineEntry[], options: { hitDelays?: Record<string, number>; multiTargetWindows?: MultiTargetWindow[] } = {}) {
@@ -194,6 +211,38 @@ describe("着弾時刻の状態での判定", () => {
     expect(firstBreakdown.targets).toHaveLength(1);
     const single = secondBreakdown.singleTargetPotency;
     expect(secondBreakdown.targets).toEqual([single, Math.floor(single * 0.5), Math.floor(single * 0.5)]);
+  });
+
+  it("攻撃が範囲を持てば、使ったスキルが単体でも、その攻撃の対象数の上限と減衰で複数体に入る（#977）", () => {
+    const windows = [{ startTime: 0, endTime: 10, targetCount: 3 }];
+    const [entry] = resolve([makeEntry("pet-hit-aoe")], { multiTargetWindows: windows }).entries;
+    const [aoeHit, plainHit] = entry.delayedHits!;
+    expect([aoeHit.targetCount, plainHit.targetCount]).toEqual([3, 3]);
+
+    const aoeBreakdown = calcDelayedHitBreakdown(aoeHit, petHitAoe, stats);
+    const single = aoeBreakdown.singleTargetPotency;
+    expect(aoeBreakdown.targets).toEqual([single, Math.floor(single * 0.5)]);
+    // 範囲を持たない攻撃は、使ったスキル（単体）のとおり 1 体分
+    expect(calcDelayedHitBreakdown(plainHit, petHitAoe, stats).targets).toEqual([single]);
+  });
+
+  it("攻撃の範囲は、使ったスキルの範囲より優先し、項目ごとには混ぜない（#977）", () => {
+    const windows = [{ startTime: 0, endTime: 10, targetCount: 4 }];
+    const [entry] = resolve([makeEntry("pet-aoe-hit-override")], { multiTargetWindows: windows }).entries;
+    const breakdowns = entry.delayedHits!.map((hit) => calcDelayedHitBreakdown(hit, petAoeHitOverride, stats));
+    const single = breakdowns[0].singleTargetPotency;
+    const half = Math.floor(single * 0.5);
+    const reduced = Math.floor(single * 0.75);
+    expect(breakdowns.map((b) => b.targets)).toEqual([
+      // 対象数の上限だけを持つ攻撃に、使ったスキルの減衰（50%）は掛けない
+      [single, single, single, single],
+      // 減衰の始まり（3 体目）も攻撃のもの
+      [single, single, reduced, reduced],
+      // 単体の攻撃は、使ったスキルが範囲を持っても 1 体分
+      [single],
+      // 範囲を持たない攻撃は、使ったスキルの範囲（3 体まで、2 体目以降 50% 減）
+      [single, half, half],
+    ]);
   });
 
   it("確定クリティカルは時間差の攻撃に乗らず、消費もされない", () => {

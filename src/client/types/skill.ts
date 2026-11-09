@@ -68,16 +68,22 @@ export interface TraitPotencyOverride {
   delayedHits?: DelayedHit[];
 }
 
+/**
+ * 時間差の攻撃の範囲（意味は Skill の同名の項目と同じ。#977）。攻撃が maxTargets を持てば 3 つともその攻撃の値を使い、
+ * 持たなければ使ったスキルの 3 つを使う（項目ごとには混ぜない）
+ */
+export type DelayedHitArea = Pick<Skill, "maxTargets" | "falloffRate" | "falloffStartTarget">;
+
 /** 使用から決まった遅れで入る攻撃（ペット・分身。#957） */
-export interface DelayedHit {
+export interface DelayedHit extends DelayedHitArea {
   /** 使用時刻（詠唱があれば詠唱完了）から着弾までの秒数。スキルに設定した着弾までの遅れ（hitDelays）は足さない */
   delay: number;
   /** 威力 */
   potency: number;
 }
 
-/** 時間差の攻撃 1 回分の計算結果。威力のバフ・クリ/DH・敵の数は、着弾時刻の状態で判定する（#957） */
-export interface ResolvedDelayedHit {
+/** 時間差の攻撃 1 回分の計算結果。威力のバフ・クリ/DH・敵の数は、着弾時刻の状態で判定する（#957）。範囲は攻撃の定義から写す（#977） */
+export interface ResolvedDelayedHit extends DelayedHitArea {
   /** 着弾時刻（秒） */
   time: number;
   /** 威力 */
@@ -88,7 +94,7 @@ export interface ResolvedDelayedHit {
   critRateBonus: number;
   /** 着弾時刻のダイレクトヒット発生率ボーナス */
   dhRateBonus: number;
-  /** 着弾時刻の敵の数。合計威力は使ったスキルの maxTargets / falloffRate / falloffStartTarget で決まる */
+  /** 着弾時刻の敵の数。合計威力は攻撃の範囲（DelayedHitArea。無ければ使ったスキルの範囲）で決まる */
   targetCount: number;
 }
 

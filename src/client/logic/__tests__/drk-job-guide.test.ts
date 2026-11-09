@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { resolveTimeline } from "../resolve-timeline";
+import { calcPps, resolveTimeline } from "../resolve-timeline";
+import { calcDelayedHitBreakdown } from "../expected-potency";
+import { DEFAULT_STATS } from "../stat-calc";
 import {
   getAllSkillMapForLevel,
   getBuffsForLevel,
@@ -33,7 +35,7 @@ function setup(level: PlayerLevel = 100) {
       multiTargetWindows,
     );
   const resolve = (ids: (string | TimelineEntry)[]) => resolveFull(ids).entries;
-  return { skills, resolve, resolveFull };
+  return { skills, skillMap, resolve, resolveFull };
 }
 
 function expectNoError(e: ResolvedTimelineEntry) {
@@ -340,27 +342,44 @@ describe("DRK: 影身具現", () => {
     [90, [420, 570, 420, 420, 420], 2250],
     [100, [420, 570, 420, 420, 620], 2450],
   ])("Lv%i: 分身の攻撃は使用の 6.8・11.16・13.34・15.52・17.7 秒後に %j の威力で入り、合計は %i", (level, potencies, total) => {
-    const [shadow] = setup(level).resolve(["living-shadow"]);
+    const { resolve, skillMap } = setup(level);
+    const [shadow] = resolve(["living-shadow"]);
     expectNoError(shadow);
     // 使ったときの威力は無く、威力はすべて時間差の攻撃で入る
     expect(shadow.resolvedPotency).toBe(0);
     expect(shadow.delayedHits?.map((h) => h.time)).toEqual([6.8, 11.16, 13.34, 15.52, 17.7]);
     expect(shadow.delayedHits?.map((h) => h.potency)).toEqual(potencies);
     expect(potencies.reduce((sum, p) => sum + p, 0)).toBe(total);
+    // 敵が 1 体なら、範囲攻撃の攻撃も 1 体分（#977）
+    const skill = skillMap.get("living-shadow");
+    expect(shadow.delayedHits?.map((h) => calcDelayedHitBreakdown(h, skill, DEFAULT_STATS).targets.length)).toEqual([1, 1, 1, 1, 1]);
   });
 
-  it("分身の攻撃は、敵が複数でも 1 体分のまま（範囲は #977）", () => {
-    const result = setup(100).resolveFull(
-      ["living-shadow", "salted-earth"],
-      [{ startTime: 0, endTime: 30, targetCount: 3 }],
-    );
-    const [shadow, saltedEarth] = result.entries;
-    // 範囲攻撃のソルトアースは 3 体分になるが、影身具現（maxTargets 無し）の攻撃は 1 体分
-    expect(saltedEarth.targetCount).toBe(3);
+  // 分身の攻撃は、アビサルドレイン・漆黒の波動（Lv90 からシャドウブリンガー）・漆黒の剣・ブラッドスピラー・
+  // カーヴ・アンド・スピット（Lv100 からディセスティーム）の順（#977）
+  it.each<[PlayerLevel, ("全体" | "全体・2 体目以降 25% 減" | "単体")[]]>([
+    [80, ["全体", "全体", "単体", "単体", "単体"]],
+    [88 as PlayerLevel, ["全体", "全体", "単体", "単体", "単体"]],
+    [90, ["全体", "全体・2 体目以降 25% 減", "単体", "単体", "単体"]],
+    [100, ["全体", "全体・2 体目以降 25% 減", "単体", "単体", "全体・2 体目以降 25% 減"]],
+  ])("Lv%i: 3 体の区間では、分身の各攻撃が %j の範囲で入る（#977）", (level, areas) => {
+    const { resolveFull, skillMap } = setup(level);
+    const result = resolveFull(["living-shadow"], [{ startTime: 0, endTime: 30, targetCount: 3 }]);
+    const [shadow] = result.entries;
+    expectNoError(shadow);
     expect(shadow.delayedHits?.map((h) => h.targetCount)).toEqual([3, 3, 3, 3, 3]);
-    const skill = DRK_ATTACK_SKILLS.find((s) => s.id === "living-shadow")!;
-    expect(skill.maxTargets).toBeUndefined();
-    expect(result.dotTicks.filter((t) => t.skillId === "living-shadow")).toEqual([]);
+
+    const skill = skillMap.get("living-shadow");
+    const breakdowns = shadow.delayedHits!.map((h) => calcDelayedHitBreakdown(h, skill, DEFAULT_STATS));
+    const expected = breakdowns.map(({ singleTargetPotency: s }, i) => {
+      if (areas[i] === "全体") return [s, s, s];
+      if (areas[i] === "全体・2 体目以降 25% 減") return [s, Math.floor(s * 0.75), Math.floor(s * 0.75)];
+      return [s];
+    });
+    expect(breakdowns.map((b) => b.targets)).toEqual(expected);
+    // 集計（PPS）にも、各攻撃の複数体分の合計が入る
+    const total = expected.flat().reduce((sum, p) => sum + p, 0);
+    expect(calcPps(result.entries, skillMap, result.dotTicks, 0, 30, DEFAULT_STATS).directPotency).toBe(total);
   });
 });
 
