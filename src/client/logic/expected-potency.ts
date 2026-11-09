@@ -1,4 +1,4 @@
-import type { CharacterStats, ResolvedDelayedHit, ResolvedTimelineEntry, Skill } from "../types/skill";
+import type { CharacterStats, DelayedHitArea, ResolvedDelayedHit, ResolvedTimelineEntry, Skill } from "../types/skill";
 import { calcExpectedMultiplier } from "./stat-calc";
 
 /**
@@ -47,14 +47,16 @@ export function calcEntryPotencyBreakdown(
 
 /**
  * 時間差の攻撃 1 回分の期待威力の内訳（#957）。計算規則は `calcEntryPotencyBreakdown` と同じで、バフ倍率・クリ/DH・敵の数は
- * 着弾時刻の値を使う。対象数の上限と減衰は使ったスキル（`skill`）のもの。ハードエラーのエントリは時間差の攻撃を持たない
+ * 着弾時刻の値を使う。対象数の上限と減衰は、攻撃が `maxTargets` を持てば攻撃のもの、持たなければ使ったスキル（`skill`）のもの（#977）。
+ * ハードエラーのエントリは時間差の攻撃を持たない
  */
 export function calcDelayedHitBreakdown(
   hit: ResolvedDelayedHit,
   skill: Skill | undefined,
   stats: CharacterStats
 ): { total: number; targets: number[]; singleTargetPotency: number } {
-  return calcHitBreakdown(hit.potency, hit.buffMultiplier, hit.critRateBonus, hit.dhRateBonus, hit.targetCount, skill, stats);
+  const area = hit.maxTargets !== undefined ? hit : skill;
+  return calcHitBreakdown(hit.potency, hit.buffMultiplier, hit.critRateBonus, hit.dhRateBonus, hit.targetCount, area, stats);
 }
 
 /** エントリの時間差の攻撃（`entry.delayedHits`）の期待威力の合計。持たなければ 0（#957） */
@@ -72,21 +74,21 @@ function calcHitBreakdown(
   critRateBonus: number,
   dhRateBonus: number,
   targetCount: number,
-  skill: Skill | undefined,
+  area: DelayedHitArea | undefined,
   stats: CharacterStats
 ): { total: number; targets: number[]; singleTargetPotency: number } {
   const buffedPotency = Math.floor(potency * buffMultiplier);
   const entryMul = calcExpectedMultiplier(stats, critRateBonus, dhRateBonus);
   const singleTargetPotency = Math.floor(buffedPotency * entryMul);
 
-  const maxTargets = skill?.maxTargets ?? 1;
+  const maxTargets = area?.maxTargets ?? 1;
   if (maxTargets <= 1 || targetCount <= 1) {
     return { total: singleTargetPotency, targets: [singleTargetPotency], singleTargetPotency };
   }
 
   const effectiveTargets = Math.min(maxTargets, targetCount);
-  const falloffRate = skill?.falloffRate ?? 0;
-  const falloffStart = skill?.falloffStartTarget ?? 2;
+  const falloffRate = area?.falloffRate ?? 0;
+  const falloffStart = area?.falloffStartTarget ?? 2;
   const reducedPotency = Math.floor(singleTargetPotency * (1 - falloffRate));
 
   const targets: number[] = [];

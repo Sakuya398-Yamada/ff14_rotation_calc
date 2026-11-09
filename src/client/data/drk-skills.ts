@@ -1,4 +1,4 @@
-import type { Skill } from "../types/skill";
+import type { DelayedHit, Skill } from "../types/skill";
 
 import hardSlashIcon from "../assets/icons/drk/Hard_Slash.png";
 import syphonStrikeIcon from "../assets/icons/drk/Syphon_Strike.png";
@@ -38,8 +38,12 @@ const CARVE_DRAIN = { cooldown: 60, cooldownGroup: "carve-and-spit" };
 const DELIRIUM_COMBO_BUFFS = ["comeuppance-ready", "torcleaver-ready"];
 /** 英雄の影身の攻撃の、使用からの秒数（The Balance。6.8 秒後から約 2.18 秒おきの 6 行動のうち、2 回目のシャドウストライドを除く） */
 const LIVING_SHADOW_HIT_DELAYS = [6.8, 11.16, 13.34, 15.52, 17.7];
-const livingShadowHits = (potencies: number[]) =>
-  LIVING_SHADOW_HIT_DELAYS.map((delay, i) => ({ delay, potency: potencies[i] }));
+const livingShadowHits = (hits: Omit<DelayedHit, "delay">[]): DelayedHit[] =>
+  LIVING_SHADOW_HIT_DELAYS.map((delay, i) => ({ delay, ...hits[i] }));
+/** 英雄の影身の範囲攻撃（アビサルドレイン・漆黒の波動）。減衰なし */
+const shadowAoe = (potency: number): Omit<DelayedHit, "delay"> => ({ potency, maxTargets: Infinity });
+/** 英雄の影身の範囲攻撃（シャドウブリンガー・ディセスティーム）。2 体目以降は威力 25% 減 */
+const shadowAoeFalloff = (potency: number): Omit<DelayedHit, "delay"> => ({ potency, maxTargets: Infinity, falloffRate: 0.25 });
 
 /**
  * 暗黒騎士（DRK）攻撃スキル定義（Lv100まで）
@@ -372,19 +376,25 @@ export const DRK_ATTACK_SKILLS: Skill[] = [
   {
     // 英雄の影身は、使用の約 6.8 秒後から約 2.18 秒おきに 6 回行動する（The Balance の advanced guide）。2 回目のシャドウストライドは
     // ダメージが無いので、攻撃は使用の 6.8・11.16・13.34・15.52・17.7 秒後の 5 回（時間差の攻撃。#957）。時刻は分身が行動する時刻で、
-    // 各行動の着弾の遅れ（プレイヤーの同じアクションと同じ 0.6〜1.65 秒）は足さない。範囲攻撃も 1 体分（#977）。
+    // 各行動の着弾の遅れ（プレイヤーの同じアクションと同じ 0.6〜1.65 秒）は足さない。
     // Lv100 は アビサルドレイン 420・シャドウブリンガー 570・漆黒の剣 420・ブラッドスピラー 420・ディセスティーム 620 で計 2450。
     // Lv88 で 1 回の威力が 340 → 420、Lv90 で 2 回目の攻撃が漆黒の波動からシャドウブリンガー（570）に、Lv100 で 5 回目の攻撃が
     // カーヴ・アンド・スピットからディセスティーム（620）に変わる（中国版クライアントの説明文・The Balance・consolegameswiki）。
+    // 範囲（#977）: アビサルドレインは対象を中心に範囲で減衰なし、シャドウブリンガー・ディセスティームは前方直線範囲で 2 体目以降 25% 減
+    // （公式ジョブガイド・The Balance・中国版クライアントの説明文）。漆黒の波動は前方直線範囲（XIVAPI の Action 17907）で、減衰は
+    // どの情報源にも無いので、プレイヤーの漆黒の波動と同じ減衰なしと推定した。漆黒の剣・ブラッドスピラー・カーヴ・アンド・スピットは単体。
     // 分身には暗黒が乗らない（drk-buffs.ts の暗黒の対象から外す）。ほかのバフは各攻撃の時点の状態で乗る（The Balance）
     id: "living-shadow",
     gameActionId: 16472,
     potency: 0,
-    delayedHits: livingShadowHits([340, 340, 340, 340, 340]),
+    delayedHits: livingShadowHits([shadowAoe(340), shadowAoe(340), { potency: 340 }, { potency: 340 }, { potency: 340 }]),
     traitPotencyOverrides: [
-      { traitLevel: 88, delayedHits: livingShadowHits([420, 420, 420, 420, 420]) },
-      { traitLevel: 90, delayedHits: livingShadowHits([420, 570, 420, 420, 420]) },
-      { traitLevel: 100, delayedHits: livingShadowHits([420, 570, 420, 420, 620]) },
+      { traitLevel: 88, delayedHits: livingShadowHits([shadowAoe(420), shadowAoe(420), { potency: 420 }, { potency: 420 }, { potency: 420 }]) },
+      { traitLevel: 90, delayedHits: livingShadowHits([shadowAoe(420), shadowAoeFalloff(570), { potency: 420 }, { potency: 420 }, { potency: 420 }]) },
+      {
+        traitLevel: 100,
+        delayedHits: livingShadowHits([shadowAoe(420), shadowAoeFalloff(570), { potency: 420 }, { potency: 420 }, shadowAoeFalloff(620)]),
+      },
     ],
     type: "ogcd",
     target: "enemy",

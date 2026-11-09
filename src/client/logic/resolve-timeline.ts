@@ -1615,17 +1615,19 @@ export function resolveTimeline(
     if (!hasError && skill.delayedHits) {
       const hitSkill = skill;
       const hitSkillId = resolvedSkillId;
-      for (const hit of skill.delayedHits) {
-        const time = Math.round((startTime + resolvedCastTime + hit.delay) * 1000) / 1000;
+      for (const { delay, potency, ...area } of skill.delayedHits) {
+        const time = Math.round((startTime + resolvedCastTime + delay) * 1000) / 1000;
         const evaluate = (t: number, buffs: ActiveBuff[]) => {
           const results = delayedHitResults.get(entryIndex) ?? [];
           results.push({
             time: t,
-            potency: hit.potency,
+            potency,
             buffMultiplier: getPotencyMultiplier(buffs, buffDefMap, hitSkillId),
             critRateBonus: getCritRateBonus(buffs, buffDefMap),
             dhRateBonus: getDhRateBonus(buffs, buffDefMap),
             targetCount: getTargetCountAt(t, multiTargetWindows, hitSkill),
+            // 攻撃の範囲（#977）。合計威力を出すときに、使ったスキルの範囲より優先する
+            ...area,
           });
           delayedHitResults.set(entryIndex, results);
         };
