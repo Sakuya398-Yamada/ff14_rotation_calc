@@ -84,7 +84,7 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 | PPS (overall) | Total expected potency ÷ duration (the PPS of the same range as "All" in "PPS range") |
 | PPS (range) | PPS of the range set with "PPS range" |
 | DoT expected potency | The DoT part of the total expected potency |
-| Duration | Time until the end of the last GCD's recast (or the end of its cast, if the cast is longer than the recast). When DoTs tick after that, the time of the last DoT tick is shown next to it (without GCDs, the time of the last DoT tick) |
+| Duration | Time until the end of the last GCD's recast (or the end of its cast, if the cast is longer than the recast). When DoTs tick after that, the time of the last DoT tick is shown next to it (without GCDs, the time of the last DoT tick or the last time an action lands, whichever is later) |
 
 ### Job palette (left side)
 
