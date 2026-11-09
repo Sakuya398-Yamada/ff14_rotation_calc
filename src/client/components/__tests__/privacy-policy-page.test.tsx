@@ -169,7 +169,7 @@ describe("PrivacyPolicyPage", () => {
 
     it("制定日と最終改定日を並べて出す", () => {
       render(<PrivacyPolicyPage />);
-      expect(screen.getByText("Effective date: November 6, 2026")).toBeInTheDocument();
+      expect(screen.getByText("First published: November 6, 2026")).toBeInTheDocument();
       expect(screen.getByText(/^Last updated: [A-Z][a-z]+ \d{1,2}, \d{4}$/)).toBeInTheDocument();
     });
 
