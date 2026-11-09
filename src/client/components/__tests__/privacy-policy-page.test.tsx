@@ -81,7 +81,7 @@ describe("PrivacyPolicyPage", () => {
     render(<PrivacyPolicyPage />);
     expect(screen.getByRole("heading", { level: 2, name: "アクセスの記録" })).toBeInTheDocument();
     expect(
-      screen.getByText(/次の記録を Cloudflare（Workers Logs）に保存します。日時、URL、IP アドレス、IP アドレスから推定した位置（国・地域・市区町村・郵便番号・緯度経度）と回線の事業者、ブラウザの情報/)
+      screen.getByText(/次の記録を Cloudflare（Workers Logs）に保存します。日時、URL、IP アドレス、IP アドレスから推定した位置（国・地域・市区町村・郵便番号・緯度経度）と回線の事業者、ブラウザの情報（User-Agent・言語・参照元のページ）、通信の暗号化（TLS）の情報/)
     ).toBeInTheDocument();
     expect(screen.getByText(/ログイン、このツールの動作の確認と障害の調査のためだけに使います/)).toBeInTheDocument();
   });
@@ -148,7 +148,7 @@ describe("PrivacyPolicyPage", () => {
       render(<PrivacyPolicyPage />);
       expect(screen.getByRole("heading", { level: 2, name: "Access logs" })).toBeInTheDocument();
       expect(
-        screen.getByText(/is recorded in Cloudflare \(Workers Logs\) for each request that reaches this tool's server \(Cloudflare Workers\): the date and time, the URL, your IP address, the location estimated from your IP address \(country, region, city, postal code and latitude\/longitude\) and your network provider, your browser information/)
+        screen.getByText(/is recorded in Cloudflare \(Workers Logs\) for each request that reaches this tool's server \(Cloudflare Workers\): the date and time, the URL, your IP address, the location estimated from your IP address \(country, region, city, postal code and latitude\/longitude\) and your network provider, your browser information \(user agent, language and referring page\), the encryption \(TLS\) details of the connection/)
       ).toBeInTheDocument();
       expect(screen.getByText(/to log you in, and to check that this tool works and investigate failures/)).toBeInTheDocument();
     });

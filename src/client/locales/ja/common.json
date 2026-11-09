@@ -55,7 +55,7 @@
     },
     "accessLogs": {
       "heading": "アクセスの記録",
-      "body": "動作の確認と障害の調査のため、このツールのサーバー（Cloudflare Workers）に届いた通信ごとに、次の記録を Cloudflare（Workers Logs）に保存します。日時、URL、IP アドレス、IP アドレスから推定した位置（国・地域・市区町村・郵便番号・緯度経度）と回線の事業者、ブラウザの情報（User-Agent・言語・参照元のページ）、処理の結果と時間。",
+      "body": "動作の確認と障害の調査のため、このツールのサーバー（Cloudflare Workers）に届いた通信ごとに、次の記録を Cloudflare（Workers Logs）に保存します。日時、URL、IP アドレス、IP アドレスから推定した位置（国・地域・市区町村・郵便番号・緯度経度）と回線の事業者、ブラウザの情報（User-Agent・言語・参照元のページ）、通信の暗号化（TLS）の情報、処理の結果と時間。",
       "redacted": "Cookie の値は記録しません。共有 URL のタイムラインの ID と、URL のクエリ文字列は、伏せてから保存します。"
     },
     "cookies": {

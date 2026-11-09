@@ -55,7 +55,7 @@
     },
     "accessLogs": {
       "heading": "Access logs",
-      "body": "To check that this tool works and to investigate failures, the following is recorded in Cloudflare (Workers Logs) for each request that reaches this tool's server (Cloudflare Workers): the date and time, the URL, your IP address, the location estimated from your IP address (country, region, city, postal code and latitude/longitude) and your network provider, your browser information (user agent, language and referring page), and the result and duration of the processing.",
+      "body": "To check that this tool works and to investigate failures, the following is recorded in Cloudflare (Workers Logs) for each request that reaches this tool's server (Cloudflare Workers): the date and time, the URL, your IP address, the location estimated from your IP address (country, region, city, postal code and latitude/longitude) and your network provider, your browser information (user agent, language and referring page), the encryption (TLS) details of the connection, and the result and duration of the processing.",
       "redacted": "Cookie values are not recorded. The timeline IDs in share URLs and the query strings of URLs are hidden before the records are stored."
     },
     "cookies": {
