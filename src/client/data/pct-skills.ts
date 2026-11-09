@@ -47,6 +47,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "fire-in-red",
+    gameActionId: 34650,
     potency: 490,
     type: "gcd",
     keepsCombo: true,
@@ -71,6 +72,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "aero-in-green",
+    gameActionId: 34651,
     potency: 530,
     type: "gcd",
     keepsCombo: true,
@@ -92,6 +94,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "water-in-blue",
+    gameActionId: 34652,
     potency: 570,
     type: "gcd",
     keepsCombo: true,
@@ -120,6 +123,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "blizzard-in-cyan",
+    gameActionId: 34653,
     potency: 860,
     type: "gcd",
     keepsCombo: true,
@@ -145,6 +149,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stone-in-yellow",
+    gameActionId: 34654,
     potency: 900,
     type: "gcd",
     keepsCombo: true,
@@ -167,6 +172,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "thunder-in-magenta",
+    gameActionId: 34655,
     potency: 940,
     type: "gcd",
     keepsCombo: true,
@@ -195,6 +201,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "hammer-stamp",
+    gameActionId: 34678,
     potency: 560,
     type: "gcd",
     target: "enemy",
@@ -223,6 +230,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "hammer-brush",
+    gameActionId: 34679,
     potency: 580,
     type: "gcd",
     target: "enemy",
@@ -245,6 +253,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "polishing-hammer",
+    gameActionId: 34680,
     potency: 600,
     type: "gcd",
     target: "enemy",
@@ -270,6 +279,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "holy-in-white",
+    gameActionId: 34662,
     potency: 570,
     type: "gcd",
     keepsCombo: true,
@@ -293,6 +303,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "comet-in-black",
+    gameActionId: 34663,
     potency: 940,
     type: "gcd",
     keepsCombo: true,
@@ -319,6 +330,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "star-prism",
+    gameActionId: 34681,
     potency: 1100,
     type: "gcd",
     keepsCombo: true,
@@ -339,6 +351,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "rainbow-drip",
+    gameActionId: 34688,
     potency: 1000,
     type: "gcd",
     keepsCombo: true,
@@ -361,6 +374,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "creature-motif",
+    gameActionId: 34689,
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -376,6 +390,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "weapon-motif",
+    gameActionId: 34690,
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -391,6 +406,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "landscape-motif",
+    gameActionId: 34691,
     potency: 0,
     type: "gcd",
     keepsCombo: true,
@@ -410,6 +426,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "pom-muse",
+    gameActionId: 34670,
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -441,6 +458,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "winged-muse",
+    gameActionId: 34671,
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -468,6 +486,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "clawed-muse",
+    gameActionId: 34672,
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -489,6 +508,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "fanged-muse",
+    gameActionId: 34673,
     potency: 800,
     type: "ogcd",
     target: "enemy",
@@ -514,6 +534,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "mog-of-the-ages",
+    gameActionId: 34676,
     potency: 1000,
     type: "ogcd",
     target: "enemy",
@@ -537,6 +558,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "retribution-of-the-madeen",
+    gameActionId: 34677,
     potency: 1100,
     type: "ogcd",
     target: "enemy",
@@ -558,6 +580,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "steel-muse",
+    gameActionId: 34674,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -582,6 +605,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "subtractive-palette",
+    gameActionId: 34683,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -606,6 +630,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "scenic-muse",
+    gameActionId: 34675,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -621,6 +646,7 @@ export const PCT_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "swiftcast",
+    gameActionId: 7561,
     potency: 0,
     type: "ogcd",
     target: "self",

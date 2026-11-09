@@ -169,6 +169,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 双竜脚: 型成立（またはバイパス）時に壱の功力を付与
   {
     id: "dragon-kick",
+    gameActionId: 74,
     potency: 240,
     type: "gcd",
     target: "enemy",
@@ -188,6 +189,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 連撃: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
   {
     id: "bootshine",
+    gameActionId: 53,
     potency: 180,
     type: "gcd",
     target: "enemy",
@@ -205,6 +207,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "bootshine-fury",
+    gameActionId: 53,
     potency: 380,
     type: "gcd",
     target: "enemy",
@@ -222,6 +225,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 猿舞連撃（Lv92: 連撃から変化）: 壱の型ボーナス（確定クリティカル）は型成立前提で常時適用する
   {
     id: "leaping-opo",
+    gameActionId: 36945,
     potency: 260,
     type: "gcd",
     target: "enemy",
@@ -239,6 +243,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "leaping-opo-fury",
+    gameActionId: 36945,
     potency: 460,
     type: "gcd",
     target: "enemy",
@@ -258,6 +263,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 双掌打: 型成立時に弐の功力を付与
   {
     id: "twin-snakes",
+    gameActionId: 61,
     potency: 340,
     type: "gcd",
     target: "enemy",
@@ -276,6 +282,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "true-strike",
+    gameActionId: 54,
     potency: 260,
     type: "gcd",
     target: "enemy",
@@ -292,6 +299,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "true-strike-fury",
+    gameActionId: 54,
     potency: 460,
     type: "gcd",
     target: "enemy",
@@ -308,6 +316,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 竜頷正拳撃（Lv92: 正拳突きから変化）
   {
     id: "rising-raptor",
+    gameActionId: 36946,
     potency: 340,
     type: "gcd",
     target: "enemy",
@@ -324,6 +333,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "rising-raptor-fury",
+    gameActionId: 36946,
     potency: 540,
     type: "gcd",
     target: "enemy",
@@ -342,6 +352,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 破砕拳: 威力 280 / 320（Lv84）/ 360（Lv94）+ 背面ボーナス60（方向指定成功前提）。型成立時に参の功力を2付与
   {
     id: "demolish",
+    gameActionId: 66,
     potency: 340,
     type: "gcd",
     target: "enemy",
@@ -361,6 +372,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 崩拳: 威力 230 / 270（Lv84）+ 側面ボーナス60（方向指定成功前提）
   {
     id: "snap-punch",
+    gameActionId: 56,
     potency: 290,
     type: "gcd",
     target: "enemy",
@@ -378,6 +390,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 崩拳（功力）: 威力 380 / 420（Lv84）+ 側面ボーナス60（方向指定成功前提）
   {
     id: "snap-punch-fury",
+    gameActionId: 56,
     potency: 440,
     type: "gcd",
     target: "enemy",
@@ -394,6 +407,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 虎襲崩拳（Lv92: 崩拳から変化）: 威力310 + 側面ボーナス60 = 370（方向指定成功前提）
   {
     id: "pouncing-coeurl",
+    gameActionId: 36947,
     potency: 370,
     type: "gcd",
     target: "enemy",
@@ -411,6 +425,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 虎襲崩拳（功力）: 威力460 + 側面ボーナス60 = 520（方向指定成功前提）
   {
     id: "pouncing-coeurl-fury",
+    gameActionId: 36947,
     potency: 520,
     type: "gcd",
     target: "enemy",
@@ -429,6 +444,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 壊神衝: 壱の型成立時は威力120（型ボーナス）
   {
     id: "arm-of-the-destroyer",
+    gameActionId: 62,
     potency: 120,
     nonComboPotency: 110,
     type: "gcd",
@@ -445,6 +461,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 壊神脚（Lv82: 壊神衝から変化）: 壱の型ボーナスは確定クリティカル（型成立前提で常時適用）
   {
     id: "shadow-of-the-destroyer",
+    gameActionId: 25767,
     potency: 120,
     type: "gcd",
     target: "enemy",
@@ -460,6 +477,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "four-point-fury",
+    gameActionId: 16473,
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -474,6 +492,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "rockbreaker",
+    gameActionId: 70,
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -492,6 +511,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 演武: 零の型を付与
   {
     id: "form-shift",
+    gameActionId: 4262,
     potency: 0,
     type: "gcd",
     target: "self",
@@ -505,6 +525,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 六合星導脚: 710（Lv94 から 780）+ 闘気1つにつき80。闘気を全消費（リキャスト4秒）
   {
     id: "six-sided-star",
+    gameActionId: 16476,
     potency: 710,
     type: "gcd",
     target: "enemy",
@@ -533,6 +554,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "masterful-blitz",
+    gameActionId: 25764,
     potency: 0,
     type: "gcd",
     target: "enemy",
@@ -546,6 +568,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 闘魂旋風脚: 陰陽の闘気 + チャクラ3つ。両闘気を消費（夢幻闘舞と同じ扱い）。Lv90 から夢幻闘舞に変化
   {
     id: "tornado-kick",
+    gameActionId: 3543,
     potency: 1200,
     type: "gcd",
     target: "enemy",
@@ -568,6 +591,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 夢幻闘舞（Lv90: 闘魂旋風脚から変化）: 陰陽の闘気 + チャクラ3つ。両闘気を消費
   {
     id: "phantom-rush",
+    gameActionId: 25769,
     potency: 1400,
     type: "gcd",
     target: "enemy",
@@ -589,6 +613,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 蒼気砲: 同種チャクラ3つ。陰の闘気を付与。Lv92 から真空波に変化
   {
     id: "elixir-field",
+    gameActionId: 3545,
     potency: 800,
     type: "gcd",
     target: "enemy",
@@ -611,6 +636,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 真空波（Lv92: 蒼気砲から変化）: 同種チャクラ3つ。陰の闘気を付与
   {
     id: "elixir-burst",
+    gameActionId: 36948,
     potency: 900,
     type: "gcd",
     target: "enemy",
@@ -628,6 +654,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 爆裂脚: 3種チャクラ。陽の闘気を付与。Lv86 から鳳凰の舞に変化
   {
     id: "flint-strike",
+    gameActionId: 25882,
     potency: 800,
     type: "gcd",
     target: "enemy",
@@ -647,6 +674,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 鳳凰の舞（Lv86: 爆裂脚から変化）: 3種チャクラ。陽の闘気を付与
   {
     id: "rising-phoenix",
+    gameActionId: 25768,
     potency: 900,
     type: "gcd",
     target: "enemy",
@@ -664,6 +692,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 天宙脚: 2+1のチャクラ。ゲーム内では陰優先（陰保有時は陽）だが、常に陰を付与する近似
   {
     id: "celestial-revolution",
+    gameActionId: 25765,
     potency: 600,
     type: "gcd",
     target: "enemy",
@@ -683,6 +712,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 絶空拳: 疾風の極意使用後のみ実行可（前方直線範囲）
   {
     id: "winds-reply",
+    gameActionId: 36949,
     potency: 1040,
     type: "gcd",
     target: "enemy",
@@ -698,6 +728,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 乾坤闘気弾: 紅蓮の極意使用後のみ実行可。零の型を付与
   {
     id: "fires-reply",
+    gameActionId: 36950,
     potency: 1400,
     type: "gcd",
     target: "enemy",
@@ -717,6 +748,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 鉄山闘気: 闘気を1つ開く（Lv54で陰陽闘気に変化）。闘気 5 未満で実行でき、ウェポンスキルと同じ GCD リキャストを発生させる
   {
     id: "steeled-meditation",
+    gameActionId: 36940,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -734,6 +766,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "forbidden-meditation",
+    gameActionId: 36942,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -753,6 +786,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 鉄山靠: 闘気5消費（Lv54で陰陽闘気斬に変化）
   {
     id: "steel-peak",
+    gameActionId: 25761,
     potency: 180,
     type: "ogcd",
     target: "enemy",
@@ -766,6 +800,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "the-forbidden-chakra",
+    gameActionId: 3547,
     potency: 310,
     type: "ogcd",
     target: "enemy",
@@ -782,6 +817,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 空鳴拳: 闘気5消費・前方直線範囲（Lv74で万象闘気圏に変化。減衰なし）
   {
     id: "howling-fist",
+    gameActionId: 25763,
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -796,6 +832,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "enlightenment",
+    gameActionId: 16474,
     potency: 160,
     type: "ogcd",
     target: "enemy",
@@ -815,6 +852,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 踏鳴: 3スタック付与。WS を型不問で成立させ、ビーストチャクラを獲得できる。ビーストチャクラが無いときだけ実行できる
   {
     id: "perfect-balance",
+    gameActionId: 69,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -834,6 +872,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 紅蓮の極意: 与ダメージ15%上昇 + 乾坤闘気弾実行可を付与
   {
     id: "riddle-of-fire",
+    gameActionId: 7395,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -847,6 +886,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 疾風の極意: オートアタック間隔短縮 + 絶空拳実行可を付与
   {
     id: "riddle-of-wind",
+    gameActionId: 25766,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -860,6 +900,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 桃園結義: 与ダメージ5%上昇 + WS使用時に闘気獲得（自身の WS による獲得は桃園結義効果アップ（Lv88）から）
   {
     id: "brotherhood",
+    gameActionId: 7396,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -874,6 +915,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 金剛の極意: 被ダメージ軽減（防御アビリティ。リキャスト管理用）
   {
     id: "riddle-of-earth",
+    gameActionId: 7394,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -887,6 +929,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // マントラ: HP回復効果上昇（回復アビリティ。リキャスト管理用）
   {
     id: "mantra",
+    gameActionId: 65,
     potency: 0,
     type: "ogcd",
     target: "party",
@@ -900,6 +943,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 抜重歩法: 移動アビリティ（2チャージ。抜重歩法効果アップ（Lv84）から3チャージ）
   {
     id: "thunderclap",
+    gameActionId: 25762,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -919,6 +963,7 @@ export const MNK_ATTACK_SKILLS: Skill[] = [
   // 実装していないため、バフ effects は空。リキャスト枠の管理用途で配置可能。
   {
     id: "true-north",
+    gameActionId: 7546,
     potency: 0,
     type: "ogcd",
     target: "self",

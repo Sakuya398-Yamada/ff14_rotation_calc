@@ -101,11 +101,28 @@ describe("toMintLeafText: 黒魔道士", () => {
       "3577 GCD 2.5 0",
     ]);
   });
+});
 
-  it("全スキル（隠しスキルを含む）に gameActionId がある", () => {
-    const missing = allSkills
+describe("toMintLeafText: 全ジョブ", () => {
+  it.each(Object.entries(JOB_DATA))("%s の全スキル（隠しスキルを含む）に gameActionId がある", (_jobId, { skills }) => {
+    const missing = skills
       .filter((s) => !Number.isInteger(s.gameActionId) || (s.gameActionId ?? 0) <= 0)
       .map((s) => s.id);
     expect(missing).toEqual([]);
+  });
+
+  it("黒魔道士以外でも、自動変化したスキルは変化後のアクションの ID で書き出す（賢者のエウクラシア・ドシスIII）", () => {
+    const { skills: allSkills } = JOB_DATA.sge;
+    const buffs = getBuffsForLevel(JOB_DATA.sge.buffs, 100);
+    const resources = getResourcesForLevel(JOB_DATA.sge.resources, 100);
+    const buffIds = new Set(buffs.map((b) => b.id));
+    const resourceIds = new Set(resources.map((r) => r.id));
+    const skills = getSkillsForLevel(allSkills, 100, buffIds, resourceIds);
+    const skillMap = getAllSkillMapForLevel(allSkills, skills, 100, buffIds, resourceIds);
+    const { entries } = resolveTimeline([entry("eukrasia"), entry("dosis3")], skillMap, resources, undefined, buffs);
+
+    expect(entries.map((e) => e.resolvedSkillId)).toEqual(["eukrasia", "eukrasian-dosis3"]);
+    // エウクラシア 24290・エウクラシア・ドシスIII 24314
+    expect(toMintLeafText(entries, skillMap).text.split("\n").map((line) => line.split(" ")[0])).toEqual(["24290", "24314"]);
   });
 });

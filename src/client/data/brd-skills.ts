@@ -60,6 +60,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "heavy-shot",
+    gameActionId: 97,
     potency: 160,
     type: "gcd",
     target: "enemy",
@@ -72,6 +73,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "straight-shot",
+    gameActionId: 98,
     potency: 200,
     type: "gcd",
     target: "enemy",
@@ -86,6 +88,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "venomous-bite",
+    gameActionId: 100,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -98,6 +101,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "windbite",
+    gameActionId: 113,
     potency: 60,
     type: "gcd",
     target: "enemy",
@@ -110,6 +114,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "iron-jaws",
+    gameActionId: 3560,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -128,6 +133,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "caustic-bite",
+    gameActionId: 7406,
     potency: 150,
     type: "gcd",
     target: "enemy",
@@ -144,6 +150,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stormbite",
+    gameActionId: 7407,
     potency: 100,
     type: "gcd",
     target: "enemy",
@@ -160,6 +167,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "refulgent-arrow",
+    gameActionId: 7409,
     potency: 280,
     type: "gcd",
     target: "enemy",
@@ -185,6 +193,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "burst-shot",
+    gameActionId: 16495,
     potency: 220,
     type: "gcd",
     target: "enemy",
@@ -202,6 +211,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "quick-nock",
+    gameActionId: 106,
     potency: 110,
     type: "gcd",
     target: "enemy",
@@ -216,6 +226,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "wide-volley",
+    gameActionId: 36974,
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -233,6 +244,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "shadowbite",
+    gameActionId: 16494,
     potency: 200,
     type: "gcd",
     target: "enemy",
@@ -260,6 +272,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "ladonsbite",
+    gameActionId: 25783,
     potency: 140,
     type: "gcd",
     target: "enemy",
@@ -279,6 +292,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "apex-arrow",
+    gameActionId: 16496,
     potency: 700,
     type: "gcd",
     target: "enemy",
@@ -301,6 +315,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "blast-arrow",
+    gameActionId: 25784,
     potency: 700,
     type: "gcd",
     target: "enemy",
@@ -315,6 +330,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "resonant-arrow",
+    gameActionId: 36976,
     potency: 640,
     type: "gcd",
     target: "enemy",
@@ -329,6 +345,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "radiant-encore",
+    gameActionId: 36977,
     potency: 1100,
     type: "gcd",
     target: "enemy",
@@ -351,6 +368,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "bloodletter",
+    gameActionId: 110,
     potency: 130,
     type: "ogcd",
     target: "enemy",
@@ -366,6 +384,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "rain-of-death",
+    gameActionId: 117,
     potency: 100,
     type: "ogcd",
     target: "enemy",
@@ -383,6 +402,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "empyreal-arrow",
+    gameActionId: 3558,
     potency: 260,
     type: "ogcd",
     target: "enemy",
@@ -399,6 +419,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "pitch-perfect",
+    gameActionId: 7404,
     potency: 360,
     type: "ogcd",
     target: "enemy",
@@ -420,6 +441,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "sidewinder",
+    gameActionId: 3562,
     potency: 400,
     type: "ogcd",
     target: "enemy",
@@ -431,6 +453,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "heartbreak-shot",
+    gameActionId: 36975,
     potency: 180,
     type: "ogcd",
     target: "enemy",
@@ -449,6 +472,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "raging-strikes",
+    gameActionId: 101,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -461,6 +485,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "barrage",
+    gameActionId: 107,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -473,6 +498,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "battle-voice",
+    gameActionId: 118,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -485,6 +511,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "radiant-finale",
+    gameActionId: 25785,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -506,6 +533,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "mages-ballad",
+    gameActionId: 114,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -522,6 +550,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "armys-paeon",
+    gameActionId: 116,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -537,6 +566,7 @@ export const BRD_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "wanderers-minuet",
+    gameActionId: 3559,
     potency: 0,
     type: "ogcd",
     target: "self",

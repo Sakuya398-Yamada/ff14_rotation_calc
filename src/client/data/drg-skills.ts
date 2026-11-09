@@ -59,6 +59,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "true-thrust",
+    gameActionId: 75,
     potency: 170,
     type: "gcd",
     target: "enemy",
@@ -73,6 +74,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "vorpal-thrust",
+    gameActionId: 78,
     potency: 250,
     nonComboPotency: 100,
     comboFrom: ["true-thrust", "raiden-thrust"],
@@ -88,6 +90,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "full-thrust",
+    gameActionId: 84,
     potency: 380,
     nonComboPotency: 100,
     comboFrom: ["vorpal-thrust"],
@@ -101,6 +104,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     // 竜牙竜爪: コンボ成立時威力 300 + 側面ボーナス 40 = 340、コンボ不成立時 140 + 40 = 180（方向指定成功前提）
     id: "fang-and-claw",
+    gameActionId: 3554,
     potency: 340,
     nonComboPotency: 180,
     comboFrom: ["full-thrust", "heavens-thrust"],
@@ -119,6 +123,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "disembowel",
+    gameActionId: 87,
     potency: 210,
     nonComboPotency: 100,
     comboFrom: ["true-thrust", "raiden-thrust"],
@@ -136,6 +141,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     // 桜華狂咲: コンボ成立時威力 220 + 背面ボーナス 40 = 260、コンボ不成立時 100 + 40 = 140（方向指定成功前提。継続ダメージは方向指定の影響を受けない）
     id: "chaos-thrust",
+    gameActionId: 88,
     potency: 260,
     nonComboPotency: 140,
     comboFrom: ["disembowel"],
@@ -151,6 +157,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     // 竜尾大車輪: コンボ成立時威力 300 + 背面ボーナス 40 = 340、コンボ不成立時 140 + 40 = 180（方向指定成功前提）
     id: "wheeling-thrust",
+    gameActionId: 3556,
     potency: 340,
     nonComboPotency: 180,
     comboFrom: ["chaos-thrust", "chaotic-spring"],
@@ -169,6 +176,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "drakesbane",
+    gameActionId: 36952,
     potency: 460,
     type: "gcd",
     target: "enemy",
@@ -189,6 +197,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "raiden-thrust",
+    gameActionId: 16479,
     potency: 320,
     type: "gcd",
     target: "enemy",
@@ -207,6 +216,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "piercing-talon",
+    gameActionId: 90,
     potency: 150,
     type: "gcd",
     keepsCombo: true,
@@ -228,6 +238,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "doom-spike",
+    gameActionId: 86,
     potency: 110,
     type: "gcd",
     target: "enemy",
@@ -241,6 +252,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "sonic-thrust",
+    gameActionId: 7397,
     potency: 120,
     nonComboPotency: 100,
     comboFrom: ["doom-spike", "draconian-fury"],
@@ -255,6 +267,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "coerthan-torment",
+    gameActionId: 16477,
     potency: 150,
     nonComboPotency: 100,
     comboFrom: ["sonic-thrust"],
@@ -269,6 +282,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "draconian-fury",
+    gameActionId: 25770,
     potency: 130,
     type: "gcd",
     target: "enemy",
@@ -288,6 +302,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "heavens-thrust",
+    gameActionId: 25771,
     potency: 400,
     nonComboPotency: 160,
     comboFrom: ["vorpal-thrust", "lance-barrage"],
@@ -305,6 +320,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   {
     // 桜華繚乱: コンボ成立時威力 300 + 背面ボーナス 40 = 340、コンボ不成立時 140 + 40 = 180（方向指定成功前提。継続ダメージは方向指定の影響を受けない）
     id: "chaotic-spring",
+    gameActionId: 25772,
     potency: 340,
     nonComboPotency: 180,
     comboFrom: ["disembowel", "spiral-blow"],
@@ -320,6 +336,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "lance-barrage",
+    gameActionId: 36954,
     potency: 340,
     nonComboPotency: 130,
     comboFrom: ["true-thrust", "raiden-thrust"],
@@ -333,6 +350,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "spiral-blow",
+    gameActionId: 36955,
     potency: 300,
     nonComboPotency: 140,
     comboFrom: ["true-thrust", "raiden-thrust"],
@@ -351,6 +369,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "life-surge",
+    gameActionId: 83,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -366,6 +385,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "lance-charge",
+    gameActionId: 85,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -378,6 +398,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "battle-litany",
+    gameActionId: 3557,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -394,6 +415,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "jump",
+    gameActionId: 92,
     potency: 320,
     type: "ogcd",
     target: "enemy",
@@ -406,6 +428,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "high-jump",
+    gameActionId: 16478,
     potency: 400,
     type: "ogcd",
     target: "enemy",
@@ -419,6 +442,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "mirage-dive",
+    gameActionId: 7399,
     potency: 380,
     type: "ogcd",
     target: "enemy",
@@ -431,6 +455,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "dragonfire-dive",
+    gameActionId: 96,
     potency: 500,
     type: "ogcd",
     target: "enemy",
@@ -446,6 +471,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "rise-of-the-dragon",
+    gameActionId: 36953,
     potency: 550,
     type: "ogcd",
     target: "enemy",
@@ -460,6 +486,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "stardiver",
+    gameActionId: 16480,
     potency: 720,
     type: "ogcd",
     target: "enemy",
@@ -480,6 +507,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "starcross",
+    gameActionId: 36956,
     potency: 1000,
     type: "ogcd",
     target: "enemy",
@@ -500,6 +528,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "geirskogul",
+    gameActionId: 3555,
     potency: 260,
     type: "ogcd",
     target: "enemy",
@@ -518,6 +547,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "nastrond",
+    gameActionId: 7400,
     potency: 600,
     type: "ogcd",
     target: "enemy",
@@ -535,6 +565,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "wyrmwind-thrust",
+    gameActionId: 25773,
     potency: 420,
     type: "ogcd",
     target: "enemy",
@@ -559,6 +590,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // ============================================================
   {
     id: "elusive-jump",
+    gameActionId: 94,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -571,6 +603,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   },
   {
     id: "winged-glide",
+    gameActionId: 36951,
     potency: 0,
     type: "ogcd",
     target: "self",
@@ -591,6 +624,7 @@ export const DRG_ATTACK_SKILLS: Skill[] = [
   // 実装していないため、バフ effects は空。リキャスト枠の管理用途で配置可能。
   {
     id: "true-north",
+    gameActionId: 7546,
     potency: 0,
     type: "ogcd",
     target: "self",
