@@ -229,6 +229,9 @@
   "jobPicker": {
     "triggerLabel": "ジョブとレベルを選択（現在: {{job}} Lv{{level}}）",
     "panelLabel": "ジョブとレベルを選択",
+    "mode": "モード",
+    "modeReborn": "リボーン",
+    "modeEvolved": "エヴォルヴ",
     "level": "レベル",
     "levelNote": "Lv100 以外のスキルの有無・威力は参考値（α版）",
     "levelWarning": "Lv{{level}}の威力値は正確でない可能性があります",
