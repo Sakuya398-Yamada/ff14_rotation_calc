@@ -182,7 +182,7 @@ describe("resolveStateAt: 時刻 t のリソース（#1000）", () => {
     expect(resourceAt(delayed.stateAt(entries, ballad.startTime + 1.5), "repertoire")).toEqual({ resourceId: "repertoire", value: 0, maxStacks: 0 });
   });
 
-  it("手動の開始時刻で時刻が逆戻りしたエントリは入らないが、リキャストエラーで効果が無いので値は変わらない（既知の制限）", () => {
+  it("手動の開始時刻で時刻が逆戻りしたエントリは入らない。手動で早く置いたエントリ自身はリキャストエラーで効果が無い", () => {
     // 30 秒に置いた GCD の後ろに、5 秒に置いたソラスを並べる。自動の開始時刻より早いのでリキャストエラーになり、リリーを使わない
     const entries = [entry("glare3"), entry("glare3", 30), entry("heart-of-solace", 5)];
     const e = whm.resolve(entries).entries;
@@ -341,7 +341,21 @@ describe("getRecastStatesAt: 時刻 t のリキャスト（#1000）", () => {
     expect(states).toEqual([{ skillId: "bloodletter", ...expected }, { skillId: "rain-of-death", ...expected }]);
   });
 
-  it("最後のエントリより後の詩心の付与による短縮は、残り秒数には入るが、レーンの区間（実際に戻る時刻）には入らない（#898 の既知の制限）", () => {
+  it("時刻が逆戻りした後に自動配置したスキルは、t より前にエラー無しで置かれても t の状態に入らない（既知の制限）", () => {
+    // 100 秒に置いた oGCD の後ろに、5 秒に置いた oGCD（リキャストエラー）を並べると、エラーでもアニメーションロックは進むので、
+    // 次に自動配置した single は 5.65 秒にエラー無しで置かれる。計算は配列の順に進めるので、t = 10 の状態は 100 秒の oGCD の手前で止まる
+    const ogcd = makeSkill({ id: "ogcd", type: "ogcd", recastTime: 0.65 });
+    const map = new Map([...syntheticMap, [ogcd.id, ogcd]]);
+    const entries = [entry("plain"), entry("ogcd", 100), entry("ogcd", 5), entry("single")];
+    const e = resolveTimeline(entries, map, [], undefined, []).entries;
+    expect(e[2].recastError).toBe(true);
+    expect(e[3]).toMatchObject({ startTime: 5.65, recastError: false, cooldownEndTime: 65.65 });
+    const state = resolveStateAt(entries, map, [], undefined, [], undefined, undefined, undefined, 10);
+    // レーンでは 10 秒がリキャストの区間に入るが、計算の状態には使ったことが入らず、使用可能になる
+    expect(getRecastStatesAt(state, e, map)).toEqual([{ skillId: "single", available: true, remaining: 0, actualEndTime: 65.65 }]);
+  });
+
+  it("最後のエントリより後の詩心の付与による短縮は、残り秒数には入るが、レーンの区間（実際に戻る時刻）には入らない（#898 の既知の制限。#1007）", () => {
     const entries = [entry("mages-ballad"), entry("heartbreak-shot")];
     const e = brd.resolve(entries).entries;
     const ballad = e[0].startTime;

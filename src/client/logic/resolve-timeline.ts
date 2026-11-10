@@ -914,7 +914,9 @@ export function resolveTimeline(
  * 時刻 time の状態（#1000）。time までに始まるエントリ（time ちょうども含む）を resolveTimeline と同じく解決し、
  * エントリの前と同じ順（着弾した付与 → 時間切れ → 自動生成）で time まで進める。引数は resolveTimeline と同じ。
  * 状態を進める処理は、途中の時刻で 1 回余計に呼ぶと後のエントリの結果が変わり得る（自動生成のタイマーの再開・上限の差し替え）ので、
- * 本番の計算の途中では取り出さず、time で止めた別の計算で求める
+ * 本番の計算の途中では取り出さず、time で止めた別の計算で求める。
+ * 配列の順に進めるので、手動の開始時刻で時刻が逆戻りする並びでは、time より後に始まるエントリより後ろのエントリは、
+ * time 以前にエラー無しで置かれたものも入らない
  */
 export function resolveStateAt(
   entries: TimelineEntry[],
