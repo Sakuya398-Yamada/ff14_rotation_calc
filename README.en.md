@@ -53,7 +53,7 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 ## Basic workflow
 
 1. **Select a job and level**
-   - Press the job picker at the top of the screen (the button with the selected job's name), then choose a supported job and level in the panel that opens
+   - Press the job picker at the top of the screen (the button with the selected job's name), then choose a supported job and level in the panel that opens (the mode stays on Reborn Mode)
 2. **Place actions on the timeline**
    - Drag and drop action icons from the job palette onto the timeline on the right
 3. **Reorder them on the timeline**
@@ -69,7 +69,8 @@ To request another job, please [open an issue](#bugs-requests-and-contact).
 
 - **Job picker**: A button showing the selected job and level. Press it to open a panel where you can choose a job and level
   - You can filter jobs by name or abbreviation (e.g. "black", "BLM"). Recently used jobs are also listed. Unsupported jobs cannot be selected
-  - **Level (alpha)**: Choose from 70 / 80 / 90 / 100. Below Lv100, action availability and potencies are for reference only, so this is an alpha feature
+  - **Mode**: Calculations use Reborn Mode (the same controls as before). Evolved Mode (from patch 8.0) is not supported and cannot be selected
+  - **Level (alpha)**: Choose from 70 / 80 / 90 / 100. Below Lv100, action availability and potencies are for reference only, so this is an alpha feature. Lv110 (from patch 8.0) is not supported and cannot be selected
 - **Settings** (gear button): Change the display language (日本語 / English), the theme (Light / Dark / Match OS) and the accent color
   - Selecting **日本語** under Language opens the same page in Japanese. The timeline you are working on is kept (on the Japanese version, select **English** to come back)
   - Under **Account**, "Log in with Discord" logs you in with your Discord account. While you are logged in, a "Log out" button appears in the same place. Once logged in, you can see the list of saved timelines in other browsers and on other devices too (see "[I want to find a saved timeline later](#q-i-want-to-find-a-saved-timeline-later)" in the FAQ). The information handled for logging in is described in the "Privacy policy" in the same section

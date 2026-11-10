@@ -229,6 +229,9 @@
   "jobPicker": {
     "triggerLabel": "Select job and level (current: {{job}} Lv{{level}})",
     "panelLabel": "Select job and level",
+    "mode": "Mode",
+    "modeReborn": "Reborn",
+    "modeEvolved": "Evolved",
     "level": "Level",
     "levelNote": "Below Lv100, action availability and potencies are for reference only (alpha)",
     "levelWarning": "Potencies at Lv{{level}} may not be accurate",

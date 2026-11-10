@@ -87,6 +87,23 @@ describe("JobPicker", () => {
     expect(props.onLevelChange).toHaveBeenCalledExactlyOnceWith(90);
   });
 
+  it("モードはリボーンが選ばれた状態で、エヴォルヴは「未対応」で押せない", () => {
+    renderPicker();
+    const mode = within(openPicker()).getByRole("group", { name: "モード" });
+    expect(within(mode).getByRole("button", { name: "リボーン" })).toHaveAttribute("aria-pressed", "true");
+    const evolved = within(mode).getByRole("button", { name: /エヴォルヴ/ });
+    expect(evolved).toBeDisabled();
+    expect(evolved).toHaveTextContent("未対応");
+  });
+
+  it("Lv110 は「未対応」で押せない", () => {
+    renderPicker();
+    const level = within(openPicker()).getByRole("group", { name: "レベル" });
+    const lv110 = within(level).getByRole("button", { name: /^110/ });
+    expect(lv110).toBeDisabled();
+    expect(lv110).toHaveTextContent("未対応");
+  });
+
   it("Lv100未満のとき警告が表示され、Lv100では表示されない", () => {
     const { props, rerender } = renderPicker({ level: 90 });
     openPicker();
@@ -130,6 +147,11 @@ describe("JobPicker（英語）", () => {
     const dialog = screen.getByRole("dialog", { name: "Select job and level" });
 
     expect(within(dialog).getByText("Potencies at Lv90 may not be accurate")).toBeInTheDocument();
+    const mode = within(dialog).getByRole("group", { name: "Mode" });
+    expect(within(mode).getByRole("button", { name: "Reborn" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(mode).getByRole("button", { name: /Evolved/ })).toHaveTextContent("Not supported");
+    const level = within(dialog).getByRole("group", { name: "Level" });
+    expect(within(level).getByRole("button", { name: /^110/ })).toHaveTextContent("Not supported");
     expect(within(dialog).getByText("Magical Ranged DPS")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /^[A-Z]{3}\s?Black Mage$/ })).toBeEnabled();
     expect(within(dialog).getByRole("button", { name: /Ninja/ })).toBeDisabled();
