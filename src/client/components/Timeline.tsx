@@ -5,6 +5,7 @@ import type { Skill, ResolvedTimelineEntry, ResourceDefinition, BuffDefinition, 
 import { TIMELINE_DROPZONE_ID } from "./timeline/dnd-types";
 import { calcGcd } from "../logic/stat-calc";
 import { computeBuffTimespans } from "../logic/buff-timespans";
+import { buildCooldownSpans } from "../logic/recast-state";
 import { PX_PER_SEC, LANE_LABEL_WIDTH } from "./timeline/constants";
 import { styles } from "./timeline/styles";
 import { useTimelineDnd } from "./timeline/use-timeline-dnd";
@@ -201,24 +202,7 @@ export function Timeline({
   });
 
   // 個別リキャスト（クールダウン）のスパン: skillId → [{startTime, endTime, icon}]
-  const cooldownSpans = useMemo(() => {
-    const spans: Map<string, { startTime: number; endTime: number; icon: string }[]> = new Map();
-    for (const entry of resolvedEntries) {
-      const skill = skillMap.get(entry.resolvedSkillId) ?? skillMap.get(entry.skillId);
-      if (!skill || skill.cooldown === undefined) continue;
-      // エラーなしで実行されたスキルのみクールダウンを記録
-      if (entry.recastError || entry.resourceErrors.length > 0 || entry.comboErrors.length > 0 || entry.untargetableError) continue;
-      if (!spans.has(skill.id)) {
-        spans.set(skill.id, []);
-      }
-      spans.get(skill.id)!.push({
-        startTime: entry.startTime,
-        endTime: entry.cooldownEndTime ?? Math.round((entry.startTime + skill.cooldown) * 1000) / 1000,
-        icon: skill.icon,
-      });
-    }
-    return spans;
-  }, [resolvedEntries, skillMap]);
+  const cooldownSpans = useMemo(() => buildCooldownSpans(resolvedEntries, skillMap), [resolvedEntries, skillMap]);
 
   // リキャスト付きスキルが存在するか
   const hasRecastSkills = cooldownSpans.size > 0;
