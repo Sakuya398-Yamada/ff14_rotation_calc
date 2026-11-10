@@ -22,6 +22,13 @@ export interface ResourceChange {
    * 例: エンピリアルアローの詩心付与 — 歌の実行中のみ。
    */
   requiredBuffAnyOf?: string[];
+  /**
+   * 獲得（amount が正）の発生確率（0〜1。踊り子のフェザーの 50%。#959）。
+   * レーンの量はホークアイと同じく出た扱いで数え（TimelineEntry.procOccurred が false なら数えない）、
+   * 裏で量の確率の分布を持つ。このリソースを消費するスキルの威力は、消費する量以上ある確率を掛けた期待値にする（ResolvedTimelineEntry.consumedResourceProc）。
+   * 分布を追うのは resourceChanges / comboResourceChanges の変動だけで、それ以外の経路（自動生成・解除など）で量を変えるリソースには付けない
+   */
+  procRate?: number;
 }
 
 /** バフスタック消費（スキル使用時） */
@@ -167,9 +174,10 @@ export interface Skill {
   /** 使用時に付与するバフのIDリスト */
   buffApplications?: string[];
   /**
-   * buffApplications で付与するバフの付与確率（0〜1。キーの無いバフは確定付与）。
+   * buffApplications と comboBuffApplications で付与するバフの付与確率（0〜1。キーの無いバフは確定付与）。
    * タイムライン上は確定で付き、1 未満の確率だけで付いたバフを自動消費すると ResolvedTimelineEntry.unconfirmedProcBuffs で警告する。
-   * 確定扱いに戻すのは buffApplications の確定付与だけ（comboBuffApplications 等の付与経路は見ない）
+   * 確定扱いに戻すのは buffApplications と comboBuffApplications の確定付与だけ（ほかの付与経路は見ない）。
+   * 期待値で撃ったスキル（consumedProc・consumedResourceProc の確率が 1 未満）の付与確率には、撃てた確率を掛ける（#959）
    */
   buffApplicationProcRates?: Record<string, number>;
   /** 使用時に消費するバフスタック */
@@ -757,6 +765,11 @@ export interface ResolvedTimelineEntry {
    * 乱れ撃ちのような確定のバフを消費したときは無い
    */
   consumedProc?: { buffId: string; procRate: number; fallbackSkillId?: string };
+  /**
+   * 確率で得るリソース（ResourceChange.procRate）を消費して、威力を期待値に補正したときの、リソースと、消費する量以上あった確率。
+   * 確定の獲得しかしていないリソースの消費では無い（#959）
+   */
+  consumedResourceProc?: { resourceId: string; procRate: number };
   /**
    * 確率付与（buffApplicationProcRates）が、すでに付いているバフに重なって無駄になる確率（付与時点の P × 付与確率）。
    * 効いているバフに重ねたときだけ持つ（#842）

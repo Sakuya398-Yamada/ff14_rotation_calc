@@ -66,6 +66,25 @@ function calcLiveProcRate(sources: { endTime: number; rate: number }[] | undefin
 }
 
 /**
+ * 確率で得るリソース（ResourceChange.procRate）の量の分布 dist（添字が量）に、amount の変動を確率 rate で当てた分布を返す。
+ * 増えた分は max で頭打ちにし、減らす変動は量が足りるときだけ減らす（足りなければ、そのスキルは撃っていない）。#959
+ */
+function applyResourceDistChange(dist: number[], amount: number, rate: number, max: number): number[] {
+  const next = dist.map((p) => p * (1 - rate));
+  while (next.length <= max) next.push(0);
+  dist.forEach((p, n) => {
+    const to = amount < 0 && n < -amount ? n : Math.min(max, n + amount);
+    next[to] += p * rate;
+  });
+  return next;
+}
+
+/** 分布 dist で、量が amount 以上ある確率 */
+function probAtLeast(dist: number[], amount: number): number {
+  return dist.reduce((acc, p, n) => (n >= amount ? acc + p : acc), 0);
+}
+
+/**
  * 自動生成タイマーの状態。
  * リソースが最大未満になった時点からタイマーが開始し、
  * interval秒経過ごとに1つ生成される。最大に達するとタイマー停止。
@@ -969,6 +988,12 @@ export function resolveTimeline(
   const procSources = new Map<string, { endTime: number; rate: number }[]>();
   // 1 未満の確率付与だけで付き、確定付与で付け直されていないバフ（自動消費したエントリで警告する）
   const unconfirmedProcBuffs = new Set<string>();
+  // 確率付与の対象になるバフ。確定付与で付けたら、付与元を確率 1 の 1 つに置き換える（あとで確率付与が重なっても確定のまま数えるため。#959）
+  const procTrackedBuffIds = new Set(
+    [...skillMap.values()].flatMap((s) => Object.keys(s.buffApplicationProcRates ?? {})),
+  );
+  // 確率で得たリソース（ResourceChange.procRate）の量の分布（添字が量。確率の獲得が 1 度でもあったリソースだけ持つ。#959）
+  const resourceProcDists = new Map<string, number[]>();
   // 着弾時刻まで待たせているバフの付与（付ける時刻の昇順、同じ時刻は入れた順。#948）。
   // buffIds は付けるバフ（リソースの上限は実行時から上げるので、着弾前の上限の計算に入れる）。
   // 時間差の攻撃の判定（#957）も入れる（buffIds は空で、apply の代わりに judge を持つ。同じ時刻のバフの付与より前に入れる）
@@ -1539,6 +1564,19 @@ export function resolveTimeline(
     // potencyAdd: 威力に足すバフ（機工士のオーバーヒートの +20。#958）。消費前のバフで判定し、倍率を掛ける前に足す
     resolvedPotency += getPotencyAddition(currentActiveBuffs, buffDefMap, resolvedSkillId);
 
+    // 確率で得たリソースの消費: 消費する量以上ある確率 P を威力に掛けて期待値にする（無ければ撃っていない。#959）
+    let consumedResourceProc: ResolvedTimelineEntry["consumedResourceProc"];
+    for (const change of effectiveResourceChanges ?? []) {
+      if (change.amount >= 0 || change.skipIfInsufficient || change.resourceId === skippedResourceId) continue;
+      const dist = resourceProcDists.get(change.resourceId);
+      if (!dist) continue;
+      const procRate = probAtLeast(dist, -change.amount);
+      resolvedPotency = Math.floor(resolvedPotency * procRate);
+      consumedResourceProc = { resourceId: change.resourceId, procRate };
+    }
+    // このスキルを撃てた確率（期待値で撃ったとき 1 未満）。確率付与・確率で得るリソースの確率に掛ける（#959）
+    const executedRate = (consumedProc?.procRate ?? 1) * (consumedResourceProc?.procRate ?? 1);
+
     // ボス離脱中チェック（敵対象スキルのみ。味方対象・自己対象はボス離脱中でも実行可）
     const untargetableError = skill.target === "enemy" && untargetableWindows
       ? isInUntargetableWindow(startTime, untargetableWindows)
@@ -1710,6 +1748,27 @@ export function resolveTimeline(
           }
         }
       };
+      // 確率で得る獲得（ResourceChange.procRate）は、発生しなかったと指定したものと撃てなかったもの（撃てた確率 0）を数えない。
+      // 発生したと指定したものは確率 1。量の分布は、確率の獲得のあったリソースだけ、量を変える前の値から追う（#959）
+      const applySkillResourceChanges = (changes: ResourceChange[]) => {
+        const rates = new Map<ResourceChange, number>();
+        const kept = changes.filter((c) => {
+          if (c.amount <= 0 || c.procRate === undefined) return true;
+          const rate = entry.procOccurred === true ? 1 : c.procRate * executedRate;
+          if (entry.procOccurred === false || rate === 0) return false;
+          rates.set(c, rate);
+          return true;
+        });
+        for (const c of [...kept.filter((k) => k.amount < 0), ...kept.filter((k) => k.amount > 0)]) {
+          const def = resourceDefMap.get(c.resourceId);
+          if (!def || c.skipIfInsufficient) continue;
+          const dist = resourceProcDists.get(c.resourceId)
+            ?? (rates.has(c) ? Array.from({ length: def.maxStacks + 1 }, (_, n) => (n === (resourceState[c.resourceId] ?? 0) ? 1 : 0)) : undefined);
+          if (!dist) continue;
+          resourceProcDists.set(c.resourceId, applyResourceDistChange(dist, c.amount, rates.get(c) ?? 1, def.maxStacks));
+        }
+        applyResourceChanges(resourceState, kept, resourceDefMap, resources, onResourceApplied);
+      };
 
       // このスキルが付与するバフで上限が上がるリソースは、上がった上限で獲得を数える
       // （ブラッドソイルはソイルの上限を 6 に上げて 3 付与する。バフの付与はリソース変動より後なので、ここで先に反映する）。
@@ -1735,7 +1794,7 @@ export function resolveTimeline(
             )
           : effectiveResourceChanges;
         const redirected = applyBuffRedirects(filtered, currentActiveBuffs, buffDefMap, resourceDefMap, resourceState);
-        applyResourceChanges(resourceState, redirected, resourceDefMap, resources, onResourceApplied);
+        applySkillResourceChanges(redirected);
       }
 
       // buffSkippableResource: リソース消費をスキップした分、バフを1スタック消費
@@ -1756,7 +1815,7 @@ export function resolveTimeline(
       // コンボ成立時のみのリソース変動を適用
       if (!wsComboError && skill.comboResourceChanges) {
         const comboRedirected = applyBuffRedirects(skill.comboResourceChanges, currentActiveBuffs, buffDefMap, resourceDefMap, resourceState);
-        applyResourceChanges(resourceState, comboRedirected, resourceDefMap, resources, onResourceApplied);
+        applySkillResourceChanges(comboRedirected);
       }
 
       // consumeAllOfResource: 指定リソースを全消費（resourceChangesの消費を上書き）
@@ -1886,9 +1945,9 @@ export function resolveTimeline(
         }
       }
 
-      // バフ適用: スキルにbuffApplicationsがあればアクティブバフに追加
-      if (skill.buffApplications) {
-        for (const buffId of skill.buffApplications) {
+      // バフ適用（buffApplications と、コンボ成立時の comboBuffApplications）。付与確率は buffApplicationProcRates
+      const applySkillBuffs = (buffIds: string[]) => {
+        for (const buffId of buffIds) {
           const buffDef = buffDefMap.get(buffId);
           if (!buffDef) continue;
 
@@ -1896,7 +1955,10 @@ export function resolveTimeline(
           const isUncertainProc = procRate !== undefined && procRate < 1;
           // 確率付与を「発生しなかった」と指定した付与元は、付与も延長も付与元の蓄積もしない (#838)
           if (isUncertainProc && entry.procOccurred === false) continue;
-          const rate = isUncertainProc && entry.procOccurred === true ? 1 : procRate;
+          // 期待値で撃ったスキルの確率付与は、撃てた確率を掛ける。撃てなかった（0）なら付けない (#959)
+          let rate = procRate;
+          if (isUncertainProc) rate = entry.procOccurred === true ? 1 : procRate * executedRate;
+          if (rate === 0) continue;
 
           scheduleBuffApplication([buffId], (t) => {
             // 排他グループのバフを解除
@@ -1928,6 +1990,9 @@ export function resolveTimeline(
               }
               sources.push({ endTime: newBuff.endTime, rate });
               procSources.set(buffId, sources);
+            } else if (procTrackedBuffIds.has(buffId)) {
+              // 確定付与は、それまでの付与元を確率 1 の 1 つに置き換える。あとで確率付与が重なっても、この効果時間のうちは確定で数える (#959)
+              procSources.set(buffId, [{ endTime: newBuff.endTime, rate: 1 }]);
             }
             // 確定で付いている間に確率付与が重なっても確定のまま。確定付与で付け直したら確定に戻す
             if (rate !== undefined && rate < 1) {
@@ -1940,7 +2005,8 @@ export function resolveTimeline(
             }
           });
         }
-      }
+      };
+      if (skill.buffApplications) applySkillBuffs(skill.buffApplications);
 
       // buffExtensions: 効果中のバフだけを延長する（原初の解放の戦嵐 +10 秒。上限は maxDuration）。
       // 付け直しと同じく着弾時刻を使用時刻にし、延長前の区間はこの時刻で表示を区切る。着弾までに切れたバフは延長しない
@@ -1958,13 +2024,7 @@ export function resolveTimeline(
       }
 
       // コンボ成立時のみのバフ適用
-      if (!wsComboError && skill.comboBuffApplications) {
-        for (const buffId of skill.comboBuffApplications) {
-          const buffDef = buffDefMap.get(buffId);
-          if (!buffDef) continue;
-          scheduleBuffApplication([buffId], (t) => applyBuffAt(currentActiveBuffs, buffDef, t, buffDefMap, resourceState, resources));
-        }
-      }
+      if (!wsComboError && skill.comboBuffApplications) applySkillBuffs(skill.comboBuffApplications);
 
       // applyBuffOnSkill: アクティブバフの effects に applyBuffOnSkill があり、
       // appliesToSkillIds に resolvedSkillId が含まれる場合、appliedBuffId を付与する。
@@ -2168,6 +2228,7 @@ export function resolveTimeline(
       recastError,
       wsComboError,
       consumedProc,
+      ...(consumedResourceProc ? { consumedResourceProc } : {}),
       wastedProc,
       ...(consumedUnconfirmed.length > 0 ? { unconfirmedProcBuffs: consumedUnconfirmed } : {}),
       ...(hitTime !== undefined ? { hitTime } : {}),
