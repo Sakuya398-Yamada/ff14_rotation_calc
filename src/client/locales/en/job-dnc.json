@@ -1,0 +1,214 @@
+{
+  "skills": {
+    "cascade": {
+      "name": "Cascade"
+    },
+    "fountain": {
+      "name": "Fountain"
+    },
+    "windmill": {
+      "name": "Windmill"
+    },
+    "bladeshower": {
+      "name": "Bladeshower"
+    },
+    "reverse-cascade": {
+      "name": "Reverse Cascade"
+    },
+    "fountainfall": {
+      "name": "Fountainfall"
+    },
+    "rising-windmill": {
+      "name": "Rising Windmill"
+    },
+    "bloodshower": {
+      "name": "Bloodshower"
+    },
+    "standard-step": {
+      "name": "Standard Step"
+    },
+    "standard-finish": {
+      "name": "Standard Finish"
+    },
+    "single-standard-finish": {
+      "name": "Single Standard Finish"
+    },
+    "double-standard-finish": {
+      "name": "Double Standard Finish"
+    },
+    "finishing-move": {
+      "name": "Finishing Move"
+    },
+    "technical-step": {
+      "name": "Technical Step"
+    },
+    "technical-finish": {
+      "name": "Technical Finish"
+    },
+    "single-technical-finish": {
+      "name": "Single Technical Finish"
+    },
+    "double-technical-finish": {
+      "name": "Double Technical Finish"
+    },
+    "triple-technical-finish": {
+      "name": "Triple Technical Finish"
+    },
+    "quadruple-technical-finish": {
+      "name": "Quadruple Technical Finish"
+    },
+    "tillana": {
+      "name": "Tillana"
+    },
+    "emboite": {
+      "name": "Emboite"
+    },
+    "entrechat": {
+      "name": "Entrechat"
+    },
+    "jete": {
+      "name": "Jete"
+    },
+    "pirouette": {
+      "name": "Pirouette"
+    },
+    "saber-dance": {
+      "name": "Saber Dance"
+    },
+    "dance-of-the-dawn": {
+      "name": "Dance of the Dawn"
+    },
+    "starfall-dance": {
+      "name": "Starfall Dance"
+    },
+    "last-dance": {
+      "name": "Last Dance"
+    },
+    "fan-dance": {
+      "name": "Fan Dance"
+    },
+    "fan-dance-ii": {
+      "name": "Fan Dance II"
+    },
+    "fan-dance-iii": {
+      "name": "Fan Dance III"
+    },
+    "fan-dance-iv": {
+      "name": "Fan Dance IV"
+    },
+    "devilment": {
+      "name": "Devilment"
+    },
+    "flourish": {
+      "name": "Flourish"
+    }
+  },
+  "buffs": {
+    "standard-step": {
+      "name": "Standard Step",
+      "shortName": "Std.\nStep"
+    },
+    "technical-step": {
+      "name": "Technical Step",
+      "shortName": "Tech.\nStep"
+    },
+    "dancing": {
+      "name": "Dancing",
+      "shortName": "Dancing"
+    },
+    "standard-finish-1": {
+      "name": "Standard Finish (2%)",
+      "shortName": "Std.\n2%"
+    },
+    "standard-finish-2": {
+      "name": "Standard Finish (5%)",
+      "shortName": "Std.\n5%"
+    },
+    "technical-finish-1": {
+      "name": "Technical Finish (1%)",
+      "shortName": "Tech.\n1%"
+    },
+    "technical-finish-2": {
+      "name": "Technical Finish (2%)",
+      "shortName": "Tech.\n2%"
+    },
+    "technical-finish-3": {
+      "name": "Technical Finish (3%)",
+      "shortName": "Tech.\n3%"
+    },
+    "technical-finish-4": {
+      "name": "Technical Finish (5%)",
+      "shortName": "Tech.\n5%"
+    },
+    "esprit-standard": {
+      "name": "Esprit (Standard)",
+      "shortName": "Esprit\nStd."
+    },
+    "esprit-technical": {
+      "name": "Esprit (Technical)",
+      "shortName": "Esprit\nTech."
+    },
+    "devilment": {
+      "name": "Devilment",
+      "shortName": "Devil-\nment"
+    },
+    "silken-symmetry": {
+      "name": "Silken Symmetry",
+      "shortName": "Silken\nSym."
+    },
+    "silken-flow": {
+      "name": "Silken Flow",
+      "shortName": "Silken\nFlow"
+    },
+    "flourishing-symmetry": {
+      "name": "Flourishing Symmetry",
+      "shortName": "Flour.\nSym."
+    },
+    "flourishing-flow": {
+      "name": "Flourishing Flow",
+      "shortName": "Flour.\nFlow"
+    },
+    "threefold-fan-dance": {
+      "name": "Threefold Fan Dance",
+      "shortName": "Three-\nfold"
+    },
+    "fourfold-fan-dance": {
+      "name": "Fourfold Fan Dance",
+      "shortName": "Four-\nfold"
+    },
+    "finishing-move-ready": {
+      "name": "Finishing Move Ready",
+      "shortName": "Fin.Move\nReady"
+    },
+    "flourishing-finish": {
+      "name": "Flourishing Finish",
+      "shortName": "Flour.\nFinish"
+    },
+    "dance-of-the-dawn-ready": {
+      "name": "Dance of the Dawn Ready",
+      "shortName": "Dawn\nReady"
+    },
+    "last-dance-ready": {
+      "name": "Last Dance Ready",
+      "shortName": "Last D.\nReady"
+    },
+    "flourishing-starfall": {
+      "name": "Flourishing Starfall",
+      "shortName": "Flour.\nStarfall"
+    }
+  },
+  "resources": {
+    "dnc-feather": {
+      "name": "Fourfold Feathers",
+      "shortName": "Feathers"
+    },
+    "esprit": {
+      "name": "Esprit",
+      "shortName": "Esprit"
+    },
+    "dance-steps": {
+      "name": "Steps",
+      "shortName": "Steps"
+    }
+  }
+}

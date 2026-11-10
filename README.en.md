@@ -37,6 +37,7 @@ The following jobs are currently supported.
 | GNB | Gunbreaker |
 | DRK | Dark Knight |
 | MCH | Machinist |
+| DNC | Dancer |
 
 To request another job, please [open an issue](#bugs-requests-and-contact).
 
@@ -146,7 +147,7 @@ Icons are registered one by one when a job or action is added. Some may be missi
 
 ### Q. The job I want to use is not supported
 
-Currently only 15 jobs are supported: WHM / DRG / BRD / PCT / BLM / SAM / MNK / SCH / AST / SGE / PLD / WAR / GNB / DRK / MCH. Other jobs will be added over time. Requests are welcome in Issues.
+Currently only 16 jobs are supported: WHM / DRG / BRD / PCT / BLM / SAM / MNK / SCH / AST / SGE / PLD / WAR / GNB / DRK / MCH / DNC. Other jobs will be added over time. Requests are welcome in Issues.
 
 ### Q. Is my data saved?
 

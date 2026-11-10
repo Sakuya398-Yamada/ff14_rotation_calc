@@ -43,10 +43,13 @@ import { DRK_BUFFS } from "./drk-buffs";
 import { MCH_ATTACK_SKILLS } from "./mch-skills";
 import { MCH_RESOURCES } from "./mch-resources";
 import { MCH_BUFFS } from "./mch-buffs";
+import { DNC_ATTACK_SKILLS } from "./dnc-skills";
+import { DNC_RESOURCES } from "./dnc-resources";
+import { DNC_BUFFS } from "./dnc-buffs";
 import type { Skill, BuffDefinition, ResourceDefinition } from "../types/skill";
 
 /** ジョブID */
-export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge" | "pld" | "war" | "gnb" | "drk" | "mch";
+export type JobId = "whm" | "drg" | "brd" | "pct" | "blm" | "sam" | "mnk" | "sch" | "ast" | "sge" | "pld" | "war" | "gnb" | "drk" | "mch" | "dnc";
 
 /** ジョブデータ定義 */
 export interface JobData {
@@ -76,4 +79,5 @@ export const JOB_DATA: Record<JobId, JobData> = {
   gnb: { abbreviation: "GNB", skills: GNB_ATTACK_SKILLS, buffs: GNB_BUFFS, resources: GNB_RESOURCES },
   drk: { abbreviation: "DRK", skills: DRK_ATTACK_SKILLS, buffs: DRK_BUFFS, resources: DRK_RESOURCES },
   mch: { abbreviation: "MCH", skills: MCH_ATTACK_SKILLS, buffs: MCH_BUFFS, resources: MCH_RESOURCES },
+  dnc: { abbreviation: "DNC", skills: DNC_ATTACK_SKILLS, buffs: DNC_BUFFS, resources: DNC_RESOURCES },
 };

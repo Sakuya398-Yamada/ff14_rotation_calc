@@ -1,0 +1,214 @@
+{
+  "skills": {
+    "cascade": {
+      "name": "カスケード"
+    },
+    "fountain": {
+      "name": "ファウンテン"
+    },
+    "windmill": {
+      "name": "ウィンドミル"
+    },
+    "bladeshower": {
+      "name": "ブレードシャワー"
+    },
+    "reverse-cascade": {
+      "name": "リバースカスケード"
+    },
+    "fountainfall": {
+      "name": "ファウンテンフォール"
+    },
+    "rising-windmill": {
+      "name": "ライジングウィンドミル"
+    },
+    "bloodshower": {
+      "name": "ブラッドシャワー"
+    },
+    "standard-step": {
+      "name": "スタンダードステップ"
+    },
+    "standard-finish": {
+      "name": "スタンダードフィニッシュ"
+    },
+    "single-standard-finish": {
+      "name": "シングル・スタンダードフィニッシュ"
+    },
+    "double-standard-finish": {
+      "name": "ダブル・スタンダードフィニッシュ"
+    },
+    "finishing-move": {
+      "name": "フィニシングムーブ"
+    },
+    "technical-step": {
+      "name": "テクニカルステップ"
+    },
+    "technical-finish": {
+      "name": "テクニカルフィニッシュ"
+    },
+    "single-technical-finish": {
+      "name": "シングル・テクニカルフィニッシュ"
+    },
+    "double-technical-finish": {
+      "name": "ダブル・テクニカルフィニッシュ"
+    },
+    "triple-technical-finish": {
+      "name": "トリプル・テクニカルフィニッシュ"
+    },
+    "quadruple-technical-finish": {
+      "name": "クワッド・テクニカルフィニッシュ"
+    },
+    "tillana": {
+      "name": "ティラナ"
+    },
+    "emboite": {
+      "name": "薔薇のアンボワテ"
+    },
+    "entrechat": {
+      "name": "小鳥のアントルシャ"
+    },
+    "jete": {
+      "name": "緑葉のジュテ"
+    },
+    "pirouette": {
+      "name": "金冠のピルエッテ"
+    },
+    "saber-dance": {
+      "name": "剣の舞い"
+    },
+    "dance-of-the-dawn": {
+      "name": "暁の舞い"
+    },
+    "starfall-dance": {
+      "name": "流星の舞い"
+    },
+    "last-dance": {
+      "name": "ラストダンス"
+    },
+    "fan-dance": {
+      "name": "扇の舞い【序】"
+    },
+    "fan-dance-ii": {
+      "name": "扇の舞い【破】"
+    },
+    "fan-dance-iii": {
+      "name": "扇の舞い【急】"
+    },
+    "fan-dance-iv": {
+      "name": "扇の舞い【終】"
+    },
+    "devilment": {
+      "name": "攻めのタンゴ"
+    },
+    "flourish": {
+      "name": "フラリッシュ"
+    }
+  },
+  "buffs": {
+    "standard-step": {
+      "name": "スタンダードステップ",
+      "shortName": "ｽﾀﾝﾀﾞｰﾄﾞ\nｽﾃｯﾌﾟ"
+    },
+    "technical-step": {
+      "name": "テクニカルステップ",
+      "shortName": "ﾃｸﾆｶﾙ\nｽﾃｯﾌﾟ"
+    },
+    "dancing": {
+      "name": "ダンスモード",
+      "shortName": "ﾀﾞﾝｽ\nﾓｰﾄﾞ"
+    },
+    "standard-finish-1": {
+      "name": "スタンダードフィニッシュ（2%）",
+      "shortName": "ｽﾀﾝﾀﾞｰﾄﾞ\n2%"
+    },
+    "standard-finish-2": {
+      "name": "スタンダードフィニッシュ（5%）",
+      "shortName": "ｽﾀﾝﾀﾞｰﾄﾞ\n5%"
+    },
+    "technical-finish-1": {
+      "name": "テクニカルフィニッシュ（1%）",
+      "shortName": "ﾃｸﾆｶﾙ\n1%"
+    },
+    "technical-finish-2": {
+      "name": "テクニカルフィニッシュ（2%）",
+      "shortName": "ﾃｸﾆｶﾙ\n2%"
+    },
+    "technical-finish-3": {
+      "name": "テクニカルフィニッシュ（3%）",
+      "shortName": "ﾃｸﾆｶﾙ\n3%"
+    },
+    "technical-finish-4": {
+      "name": "テクニカルフィニッシュ（5%）",
+      "shortName": "ﾃｸﾆｶﾙ\n5%"
+    },
+    "esprit-standard": {
+      "name": "エスプリ（スタンダード）",
+      "shortName": "ｴｽﾌﾟﾘ\nｽﾀﾝﾀﾞｰﾄﾞ"
+    },
+    "esprit-technical": {
+      "name": "エスプリ（テクニカル）",
+      "shortName": "ｴｽﾌﾟﾘ\nﾃｸﾆｶﾙ"
+    },
+    "devilment": {
+      "name": "攻めのタンゴ",
+      "shortName": "攻めの\nタンゴ"
+    },
+    "silken-symmetry": {
+      "name": "対称投擲",
+      "shortName": "対称\n投擲"
+    },
+    "silken-flow": {
+      "name": "非対称投擲",
+      "shortName": "非対称\n投擲"
+    },
+    "flourishing-symmetry": {
+      "name": "対称投擲：フラリッシュ",
+      "shortName": "対称\nﾌﾗﾘｯｼｭ"
+    },
+    "flourishing-flow": {
+      "name": "非対称投擲：フラリッシュ",
+      "shortName": "非対称\nﾌﾗﾘｯｼｭ"
+    },
+    "threefold-fan-dance": {
+      "name": "扇の舞い【急】実行可",
+      "shortName": "【急】\n実行可"
+    },
+    "fourfold-fan-dance": {
+      "name": "扇の舞い【終】実行可",
+      "shortName": "【終】\n実行可"
+    },
+    "finishing-move-ready": {
+      "name": "フィニシングムーブ実行可",
+      "shortName": "ﾌｨﾆｼﾝｸﾞ\n実行可"
+    },
+    "flourishing-finish": {
+      "name": "ティラナ実行可",
+      "shortName": "ﾃｨﾗﾅ\n実行可"
+    },
+    "dance-of-the-dawn-ready": {
+      "name": "暁の舞い実行可",
+      "shortName": "暁の舞い\n実行可"
+    },
+    "last-dance-ready": {
+      "name": "ラストダンス実行可",
+      "shortName": "ﾗｽﾄﾀﾞﾝｽ\n実行可"
+    },
+    "flourishing-starfall": {
+      "name": "流星の舞い実行可",
+      "shortName": "流星\n実行可"
+    }
+  },
+  "resources": {
+    "dnc-feather": {
+      "name": "幻扇",
+      "shortName": "幻扇"
+    },
+    "esprit": {
+      "name": "エスプリ",
+      "shortName": "エスプリ"
+    },
+    "dance-steps": {
+      "name": "ステップ",
+      "shortName": "ステップ"
+    }
+  }
+}
