@@ -106,6 +106,7 @@ export const XXX_RESOURCES: ResourceDefinition[] = [
 |---|---|---|
 | `speed` | GCD 乗算（0.8 = 20% 短縮） | `whm-buffs.ts` の `presence-of-mind`（神速魔）、`sam-buffs.ts` の `fuka`（風花） |
 | `potency` | 威力乗算（1.13 = +13%） | `sam-buffs.ts` の `fugetsu`（風月） |
+| `potencyAdd` | 威力に足す値（20 = 威力 +20。倍率を掛ける前に足す）。`appliesToSkillIds` で対象スキルを限る | `mch-buffs.ts` の `overheated`（オーバーヒート） |
 | `instantCast` | 詠唱 0 化、GCD 使用時に自動消費 | `whm-buffs.ts` の `swiftcast`（迅速魔） |
 | `critRate` / `dhRate` | クリ率／DH 率の加算 | |
 | `guaranteedCrit` / `guaranteedDh` | 次の WS で確定クリ／DH | |
@@ -164,7 +165,10 @@ export const XXX_BUFFS: BuffDefinition[] = [
 | 特性による威力上書き | `traitPotencyOverrides` | `whm-skills.ts` の `glare3`・`dia` |
 | 詠唱 | `castTime` | `whm-skills.ts` の `stone`, `sam-skills.ts` の `iaijutsu` |
 | DoT | `dotPotency` + `dotDuration` | `whm-skills.ts` の `aero`, `sam-skills.ts` の `higanbana` |
+| 時間差の攻撃（ペット・分身。使用から決まった遅れで入る攻撃） | `delayedHits[]`（攻撃ごとに `delay`（使用時刻から着弾までの秒数。詠唱があれば詠唱完了から数える）と `potency`）。スキル自体に威力が無ければ `potency: 0`。威力のバフ・クリ/DH・敵の数は着弾時刻の状態で判定し、確定クリ/DH は乗らず、バフも消費しない。特性で攻撃が変わるなら `traitPotencyOverrides` の `delayedHits`（配列ごと置き換える） | `drk-skills.ts` の `living-shadow`（影身具現。`livingShadowHits` で 5 回の攻撃を組み立てる） |
+| 時間差の攻撃 1 回ごとの範囲・威力 | `delayedHits` の各要素の項目。範囲は `maxTargets` + `falloffRate` + `falloffStartTarget`（攻撃が `maxTargets` を持てば 3 つともその攻撃の値を、持たなければ使ったスキルの値を使う）。威力は `potencyScaling`（リソース量に比例。量は消費の前に読む）か `potencyPerWeaponskill: { potency, maxCount }`（使ってから着弾までに当てた WS の回数（`maxCount` 回まで）× この `potency`）で決め、どちらかを持つ攻撃の `potency` には最大の威力を書く（パレットの表示用）。`snapshotAtUse: true` で威力のバフを使用時の状態で判定し（DoT と同じ）、`noCritDh: true` でクリティカル・ダイレクトヒットを出さない | `drk-skills.ts` の `living-shadow`（範囲。`shadowAoe`・`shadowAoeFalloff`）、`mch-skills.ts` の `automaton-queen`（オートマトン・クイーン。`potencyScaling` を `petHit` で組み立てる）・`wildfire`（ワイルドファイア。`potencyPerWeaponskill`・`snapshotAtUse`・`noCritDh`。`wildfireHit`） |
 | リソース増減 | `resourceChanges[]` | `whm-skills.ts` の `heart-of-solace`, `sam-skills.ts` の `hakaze` |
+| リソース量に応じた威力 | `potencyScaling`（`resourceId` の量を `minAmount`〜`maxAmount` に収め、`minPotency`〜`maxPotency` を線形補間する。量は消費の前に読む）。リソースを全部使うなら `consumeAllOfResource` と併せる | `brd-skills.ts` の `apex-arrow`（エイペックスアロー。ソウルボイス 20〜100 で威力 140〜700） |
 | バフ付与 | `buffApplications[]` | `whm-skills.ts` の `presence-of-mind`・`swiftcast` |
 | バフ消費 | `buffConsumptions[]` | `whm-skills.ts` の `glare4` |
 | WS コンボ | `comboFrom` + `nonComboPotency` + `comboBuffApplications` + `comboResourceChanges`。コンボの起点・継続でない GCD には `keepsCombo: true` を付ける（付けないと、その GCD を挟んだときにコンボが途切れる。`ws-combo-keeps-combo.test.ts` が付け忘れを検出する）。同じテストの「対象のジョブがある」は対象ジョブを固定の集合で持つので、`comboFrom` を持つジョブを足したら集合にジョブ ID を足す（足さないと赤になる） | `sam-skills.ts` の `jinpu`・`shifu`、`sam-skills.ts` の `enpi`（燕飛。`keepsCombo`） |
