@@ -15,8 +15,11 @@ export const JOB_ROLES: { id: JobRole; color: string }[] = [
 
 export interface CatalogJob {
   id: string;
-  abbreviation: string;
+  /** 公式の略称が未発表のジョブ（8.0 の新ジョブ）は持たない。バッジは色だけになる（#1003） */
+  abbreviation?: string;
   role: JobRole;
+  /** エヴォルヴモードにしか無いジョブ。エヴォルヴを実装したら、エヴォルヴ側の一覧に移す（#1002・#1003） */
+  evolvedOnly?: boolean;
 }
 
 /**
@@ -28,6 +31,7 @@ export const JOB_CATALOG: CatalogJob[] = [
   { id: "war", abbreviation: "WAR", role: "tank" },
   { id: "drk", abbreviation: "DRK", role: "tank" },
   { id: "gnb", abbreviation: "GNB", role: "tank" },
+  { id: "bastion", role: "tank", evolvedOnly: true },
   { id: "whm", abbreviation: "WHM", role: "healer" },
   { id: "sch", abbreviation: "SCH", role: "healer" },
   { id: "ast", abbreviation: "AST", role: "healer" },
@@ -41,6 +45,7 @@ export const JOB_CATALOG: CatalogJob[] = [
   { id: "brd", abbreviation: "BRD", role: "ranged" },
   { id: "mch", abbreviation: "MCH", role: "ranged" },
   { id: "dnc", abbreviation: "DNC", role: "ranged" },
+  { id: "zephyr", role: "ranged", evolvedOnly: true },
   { id: "blm", abbreviation: "BLM", role: "caster" },
   { id: "smn", abbreviation: "SMN", role: "caster" },
   { id: "rdm", abbreviation: "RDM", role: "caster" },

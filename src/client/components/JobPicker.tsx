@@ -23,7 +23,7 @@ interface JobPickerProps {
 function matchesQuery(job: CatalogJob, query: string, t: TFunction): boolean {
   const q = query.trim().toLowerCase();
   if (q === "") return true;
-  return [jobName(t, job.id, "ja"), jobName(t, job.id, "en"), job.abbreviation].some((text) =>
+  return [jobName(t, job.id, "ja"), jobName(t, job.id, "en"), job.abbreviation ?? ""].some((text) =>
     text.toLowerCase().includes(q)
   );
 }
@@ -222,7 +222,11 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                         disabled={!implemented}
                         aria-pressed={on}
                         onClick={() => implemented && pickJob(job.id as JobId)}
-                        title={implemented ? name : t("jobPicker.unsupportedTitle", { job: name })}
+                        title={
+                          implemented
+                            ? name
+                            : t(job.evolvedOnly ? "jobPicker.evolvedOnlyTitle" : "jobPicker.unsupportedTitle", { job: name })
+                        }
                         style={{
                           ...styles.jobButton,
                           ...(on ? styles.jobButtonOn : {}),
@@ -234,6 +238,7 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                         </span>
                         <span style={styles.jobText}>
                           {name}
+                          {job.evolvedOnly && <span style={styles.unsupported}>{t("jobPicker.evolvedOnly")}</span>}
                           {!implemented && <span style={styles.unsupported}>{t("jobPicker.unsupported")}</span>}
                         </span>
                       </button>

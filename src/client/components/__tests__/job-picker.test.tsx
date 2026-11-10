@@ -96,6 +96,39 @@ describe("JobPicker", () => {
     expect(evolved).toHaveTextContent("未対応");
   });
 
+  // 8.0 の新ジョブは公式の略称が未発表なので、バッジはロールの色だけにする（#1003）
+  it("8.0 の新ジョブはロールの区分に略称無し・エヴォルヴ専用の注記・「未対応」で並び、押せない", () => {
+    renderPicker();
+    const dialog = openPicker();
+    for (const [name, role, color] of [
+      ["バスティオン", "タンク", "#3a64b8"],
+      ["ゼファー", "遠隔物理DPS", "#b23a3a"],
+    ]) {
+      const group = within(dialog).getByText(role).parentElement!;
+      const button = within(group).getByRole("button", { name: new RegExp(`^${name}`) });
+      expect(button).toBeDisabled();
+      expect(button).toHaveTextContent("エヴォルヴ専用");
+      expect(button).toHaveTextContent("未対応");
+      expect(button).toHaveAttribute("title", `${name}（エヴォルヴモード専用・未対応）`);
+      const badge = button.firstElementChild!;
+      expect(badge).toBeEmptyDOMElement();
+      expect(badge).toHaveStyle({ backgroundColor: color });
+    }
+  });
+
+  it("8.0 の新ジョブも日英の名前で絞り込める", () => {
+    renderPicker();
+    const dialog = openPicker();
+    const search = within(dialog).getByRole("searchbox");
+    fireEvent.change(search, { target: { value: "bastion" } });
+    expect(within(dialog).getByRole("button", { name: /バスティオン/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /ゼファー/ })).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "ゼファー" } });
+    expect(within(dialog).getByRole("button", { name: /ゼファー/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /バスティオン/ })).not.toBeInTheDocument();
+  });
+
   it("Lv110 は「未対応」で押せない", () => {
     renderPicker();
     const level = within(openPicker()).getByRole("group", { name: "レベル" });
@@ -161,6 +194,27 @@ describe("JobPicker（英語）", () => {
     );
     fireEvent.change(within(dialog).getByRole("searchbox", { name: "Search jobs" }), { target: { value: "zzz" } });
     expect(within(dialog).getByText("No matching jobs")).toBeInTheDocument();
+  });
+
+  it("8.0 の新ジョブのエヴォルヴ専用の注記を英語で出し、日英の名前で絞り込める", () => {
+    renderPicker();
+    fireEvent.click(screen.getByRole("button", { name: /Select job and level/ }));
+    const dialog = screen.getByRole("dialog", { name: "Select job and level" });
+    const group = within(dialog).getByText("Physical Ranged DPS").parentElement!;
+    const zephyr = within(group).getByRole("button", { name: /^Zephyr/ });
+    expect(zephyr).toBeDisabled();
+    expect(zephyr).toHaveTextContent("Evolved only");
+    expect(zephyr).toHaveTextContent("Not supported");
+    expect(zephyr).toHaveAttribute("title", "Zephyr (Evolved Mode only, not supported)");
+
+    const search = within(dialog).getByRole("searchbox", { name: "Search jobs" });
+    fireEvent.change(search, { target: { value: "zephyr" } });
+    expect(within(dialog).getByRole("button", { name: /Zephyr/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /Bastion/ })).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "バスティオン" } });
+    expect(within(dialog).getByRole("button", { name: /Bastion/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /Zephyr/ })).not.toBeInTheDocument();
   });
 
   it("英語の表示中でも日本語名で絞り込める", () => {
