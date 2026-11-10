@@ -36,10 +36,10 @@ describe("JobPicker", () => {
     expect(button).toHaveTextContent("遠隔魔法DPS · Lv90");
   });
 
-  it("実装済み14ジョブは選べ、未実装ジョブは「未対応」で選べない", () => {
+  it("実装済み15ジョブは選べ、未実装ジョブは「未対応」で選べない", () => {
     renderPicker();
     const dialog = openPicker();
-    for (const name of ["白魔道士", "竜騎士", "詩人", "ピクトマンサー", "黒魔道士", "侍", "モンク", "学者", "占星術師", "賢者", "ナイト", "戦士", "ガンブレイカー", "暗黒騎士"]) {
+    for (const name of ["白魔道士", "竜騎士", "詩人", "ピクトマンサー", "黒魔道士", "侍", "モンク", "学者", "占星術師", "賢者", "ナイト", "戦士", "ガンブレイカー", "暗黒騎士", "機工士"]) {
       expect(within(dialog).getByRole("button", { name: new RegExp(`^[A-Z]{3}\\s?${name}$`) })).toBeEnabled();
     }
     const ninja = within(dialog).getByRole("button", { name: /忍者/ });

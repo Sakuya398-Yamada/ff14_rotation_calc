@@ -1,0 +1,112 @@
+{
+  "skills": {
+    "heated-split-shot": {
+      "name": "ヒートスプリットショット"
+    },
+    "heated-slug-shot": {
+      "name": "ヒートスラッグショット"
+    },
+    "heated-clean-shot": {
+      "name": "ヒートクリーンショット"
+    },
+    "spread-shot": {
+      "name": "スプレッドショット"
+    },
+    "scattergun": {
+      "name": "スキャッターガン"
+    },
+    "bioblaster": {
+      "name": "バイオブラスト"
+    },
+    "hot-shot": {
+      "name": "ホットショット"
+    },
+    "air-anchor": {
+      "name": "エアアンカー"
+    },
+    "drill": {
+      "name": "ドリル"
+    },
+    "chain-saw": {
+      "name": "回転のこぎり"
+    },
+    "excavator": {
+      "name": "エクスカベーター"
+    },
+    "full-metal-field": {
+      "name": "フルメタルバースト"
+    },
+    "hypercharge": {
+      "name": "ハイパーチャージ"
+    },
+    "blazing-shot": {
+      "name": "ブレイズショット"
+    },
+    "auto-crossbow": {
+      "name": "オートボウガン"
+    },
+    "reassemble": {
+      "name": "整備"
+    },
+    "gauss-round": {
+      "name": "ガウスラウンド"
+    },
+    "ricochet": {
+      "name": "リコシェット"
+    },
+    "double-check": {
+      "name": "ダブルチェック"
+    },
+    "checkmate": {
+      "name": "チェックメイト"
+    },
+    "wildfire": {
+      "name": "ワイルドファイア"
+    },
+    "barrel-stabilizer": {
+      "name": "バレルヒーター"
+    },
+    "rook-autoturret": {
+      "name": "オートタレット・ルーク"
+    },
+    "automaton-queen": {
+      "name": "オートマトン・クイーン"
+    }
+  },
+  "buffs": {
+    "reassembled": {
+      "name": "整備",
+      "shortName": "整備"
+    },
+    "overheated": {
+      "name": "オーバーヒート",
+      "shortName": "ｵｰﾊﾞｰ\nﾋｰﾄ"
+    },
+    "hypercharged": {
+      "name": "ハイパーチャージ実行可",
+      "shortName": "ﾊｲﾊﾟｰ\n実行可"
+    },
+    "full-metal-machinist": {
+      "name": "フルメタルバースト実行可",
+      "shortName": "ﾌﾙﾒﾀﾙ\n実行可"
+    },
+    "excavator-ready": {
+      "name": "エクスカベーター実行可",
+      "shortName": "ｴｸｽｶ\n実行可"
+    },
+    "wildfire": {
+      "name": "ワイルドファイア",
+      "shortName": "ﾜｲﾙﾄﾞ\nﾌｧｲｱ"
+    }
+  },
+  "resources": {
+    "heat": {
+      "name": "ヒート",
+      "shortName": "ヒート"
+    },
+    "battery": {
+      "name": "バッテリー",
+      "shortName": "ﾊﾞｯﾃﾘｰ"
+    }
+  }
+}

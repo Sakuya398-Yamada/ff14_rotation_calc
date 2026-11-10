@@ -1,0 +1,112 @@
+{
+  "skills": {
+    "heated-split-shot": {
+      "name": "Heated Split Shot"
+    },
+    "heated-slug-shot": {
+      "name": "Heated Slug Shot"
+    },
+    "heated-clean-shot": {
+      "name": "Heated Clean Shot"
+    },
+    "spread-shot": {
+      "name": "Spread Shot"
+    },
+    "scattergun": {
+      "name": "Scattergun"
+    },
+    "bioblaster": {
+      "name": "Bioblaster"
+    },
+    "hot-shot": {
+      "name": "Hot Shot"
+    },
+    "air-anchor": {
+      "name": "Air Anchor"
+    },
+    "drill": {
+      "name": "Drill"
+    },
+    "chain-saw": {
+      "name": "Chain Saw"
+    },
+    "excavator": {
+      "name": "Excavator"
+    },
+    "full-metal-field": {
+      "name": "Full Metal Field"
+    },
+    "hypercharge": {
+      "name": "Hypercharge"
+    },
+    "blazing-shot": {
+      "name": "Blazing Shot"
+    },
+    "auto-crossbow": {
+      "name": "Auto Crossbow"
+    },
+    "reassemble": {
+      "name": "Reassemble"
+    },
+    "gauss-round": {
+      "name": "Gauss Round"
+    },
+    "ricochet": {
+      "name": "Ricochet"
+    },
+    "double-check": {
+      "name": "Double Check"
+    },
+    "checkmate": {
+      "name": "Checkmate"
+    },
+    "wildfire": {
+      "name": "Wildfire"
+    },
+    "barrel-stabilizer": {
+      "name": "Barrel Stabilizer"
+    },
+    "rook-autoturret": {
+      "name": "Rook Autoturret"
+    },
+    "automaton-queen": {
+      "name": "Automaton Queen"
+    }
+  },
+  "buffs": {
+    "reassembled": {
+      "name": "Reassembled",
+      "shortName": "Reas-\nsembled"
+    },
+    "overheated": {
+      "name": "Overheated",
+      "shortName": "Over-\nheated"
+    },
+    "hypercharged": {
+      "name": "Hypercharged",
+      "shortName": "Hyper-\ncharged"
+    },
+    "full-metal-machinist": {
+      "name": "Full Metal Machinist",
+      "shortName": "Full\nMetal"
+    },
+    "excavator-ready": {
+      "name": "Excavator Ready",
+      "shortName": "Excav.\nReady"
+    },
+    "wildfire": {
+      "name": "Wildfire",
+      "shortName": "Wildfire"
+    }
+  },
+  "resources": {
+    "heat": {
+      "name": "Heat",
+      "shortName": "Heat"
+    },
+    "battery": {
+      "name": "Battery",
+      "shortName": "Battery"
+    }
+  }
+}

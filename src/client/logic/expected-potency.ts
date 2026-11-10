@@ -1,5 +1,5 @@
 import type { CharacterStats, DelayedHitArea, ResolvedDelayedHit, ResolvedTimelineEntry, Skill } from "../types/skill";
-import { calcExpectedMultiplier } from "./stat-calc";
+import { calcDetMultiplier, calcExpectedMultiplier } from "./stat-calc";
 
 /**
  * 1 エントリ分の期待威力（クリ/DH 期待値・バフ倍率・複数体合計を全て反映した値）。
@@ -42,7 +42,8 @@ export function calcEntryPotencyBreakdown(
     return { total: 0, targets: [], singleTargetPotency: 0 };
   }
 
-  return calcHitBreakdown(entry.resolvedPotency, entry.buffMultiplier, entry.critRateBonus, entry.dhRateBonus, entry.targetCount ?? 1, skill, stats);
+  const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
+  return calcHitBreakdown(entry.resolvedPotency, entry.buffMultiplier, entryMul, entry.targetCount ?? 1, skill);
 }
 
 /**
@@ -56,7 +57,12 @@ export function calcDelayedHitBreakdown(
   stats: CharacterStats
 ): { total: number; targets: number[]; singleTargetPotency: number } {
   const area = hit.maxTargets !== undefined ? hit : skill;
-  return calcHitBreakdown(hit.potency, hit.buffMultiplier, hit.critRateBonus, hit.dhRateBonus, hit.targetCount, area, stats);
+  return calcHitBreakdown(hit.potency, hit.buffMultiplier, calcDelayedHitExpectedMultiplier(hit, stats), hit.targetCount, area);
+}
+
+/** 時間差の攻撃 1 回分のクリ/DH の期待値を含む倍率。クリ/DH が発生しない攻撃（`noCritDh`。ワイルドファイア。#958）は DET の倍率だけ */
+export function calcDelayedHitExpectedMultiplier(hit: ResolvedDelayedHit, stats: CharacterStats): number {
+  return hit.noCritDh ? calcDetMultiplier(stats) : calcExpectedMultiplier(stats, hit.critRateBonus, hit.dhRateBonus);
 }
 
 /** エントリの時間差の攻撃（`entry.delayedHits`）の期待威力の合計。持たなければ 0（#957） */
@@ -71,14 +77,11 @@ export function calcEntryDelayedHitsExpectedPotency(
 function calcHitBreakdown(
   potency: number,
   buffMultiplier: number,
-  critRateBonus: number,
-  dhRateBonus: number,
+  entryMul: number,
   targetCount: number,
-  area: DelayedHitArea | undefined,
-  stats: CharacterStats
+  area: DelayedHitArea | undefined
 ): { total: number; targets: number[]; singleTargetPotency: number } {
   const buffedPotency = Math.floor(potency * buffMultiplier);
-  const entryMul = calcExpectedMultiplier(stats, critRateBonus, dhRateBonus);
   const singleTargetPotency = Math.floor(buffedPotency * entryMul);
 
   const maxTargets = area?.maxTargets ?? 1;

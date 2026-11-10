@@ -36,6 +36,12 @@ describe("describeBuffEffects", () => {
     ).toEqual(["威力×1.10", "CRT+10%", "DH+20%", "GCD×0.8", "確定CRT", "確定DH", "即時詠唱"]);
   });
 
+  it("威力に足すバフは「威力+N」にする（#958）", () => {
+    expect(describeBuffEffects(makeBuff([{ type: "potencyAdd", value: 20, appliesToSkillIds: ["blazing-shot"] }]))).toEqual([
+      "威力+20（一部スキル）",
+    ]);
+  });
+
   it("対象スキル限定の威力バフは「一部スキル」と添える", () => {
     expect(describeBuffEffects(makeBuff([{ type: "potency", value: 1.8, appliesToSkillIds: ["fire"] }]))).toEqual([
       "威力×1.80（一部スキル）",
@@ -160,9 +166,10 @@ describe("buff-format（英語）", () => {
           { type: "potency", value: 1.1 },
           { type: "guaranteedCrit", value: 1 },
           { type: "instantCast", value: 0, appliesToSkillIds: ["fire-3"] },
+          { type: "potencyAdd", value: 20 },
         ])
       )
-    ).toEqual(["Potency ×1.10", "Guaranteed critical hit", "Instant cast (some actions)"]);
+    ).toEqual(["Potency ×1.10", "Guaranteed critical hit", "Instant cast (some actions)", "Potency +20"]);
     expect(formatConsumedProc({ buffId: "hawks-eye", procRate: 0.35, fallbackSkillId: "burst-shot" }, "brd")).toBe(
       "Hawk's Eye proc chance 35.0% (Burst Shot if it doesn't proc)",
     );
