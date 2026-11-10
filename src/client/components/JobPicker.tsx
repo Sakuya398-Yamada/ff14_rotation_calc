@@ -36,7 +36,7 @@ function roleOf(job: CatalogJob) {
 function UnsupportedSegment({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   return (
-    <button type="button" disabled style={styles.segmentDisabled}>
+    <button type="button" disabled aria-pressed={false} style={styles.segmentDisabled}>
       <span style={styles.segmentStack}>
         {children}
         <span style={styles.unsupported}>{t("jobPicker.unsupported")}</span>
