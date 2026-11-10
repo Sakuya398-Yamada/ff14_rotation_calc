@@ -239,6 +239,16 @@ describe("DNC: ステップとフィニッシュ", () => {
     expect(last(e).resourceSnapshot["dance-steps"]).toBe(0);
   });
 
+  it.each<[number, number]>([
+    [0, 1],
+    [1, 1.02],
+    [2, 1.05],
+  ])("スタンダードステップのあとステップ %i 回のフィニッシュで、次の WS の与ダメージは %s 倍", (steps, multiplier) => {
+    const e = setup().resolve([...standard(steps), "cascade"]);
+    expectNoError(last(e));
+    expect(last(e).buffMultiplier).toBeCloseTo(multiplier);
+  });
+
   it("スタンダードフィニッシュとテクニカルフィニッシュの与ダメージ上昇は重なって乗る", () => {
     const e = setup().resolve([...standard(2), ...technical(4), "cascade"]);
     expect(last(e).buffMultiplier).toBeCloseTo(1.05 * 1.05);
