@@ -21,7 +21,7 @@
   # 1. ジョブガイドの生 HTML を取得（URL は WebFetch / 検索で特定済みのもの）
   curl -sL "https://jp.finalfantasyxiv.com/jobguide/blackmage/" -o "${TMPDIR:-/tmp}/jobguide.html"
 
-  # 2. タグ除去してスキル名の前後220字の原文を抽出
+  # 2. タグ除去して、PvE 欄に出たスキル名の前後220字の原文だけを抽出
   node -e '
   const fs = require("fs");
   const text = fs.readFileSync(process.argv[1], "utf8")
@@ -30,10 +30,14 @@
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ");
   const name = process.argv[2];
+  // PvE 欄の終わりは「PatchX.Y…のPvP全般のアップデート内容は」の行（PvP 欄の終わりにも同じ行があるので、最初の出現で切る）
+  const end = text.search(/Patch ?[\d.]+.{0,40}PvP全般のアップデート内容は/);
+  if (end === -1) console.error("PvE 欄の終わりの行が見つからないので、ページ全体を探す");
+  const pve = end === -1 ? text : text.slice(0, end);
   let i = -1;
-  while ((i = text.indexOf(name, i + 1)) !== -1) {
-    console.log("--- match at " + i + " ---");
-    console.log(text.slice(Math.max(0, i - 220), i + 220));
+  while ((i = pve.indexOf(name, i + 1)) !== -1) {
+    console.log("--- " + (end === -1 ? "match" : "PvE match") + " at " + i + " ---");
+    console.log(pve.slice(Math.max(0, i - 220), i + 220));
     console.log();
   }
   ' "${TMPDIR:-/tmp}/jobguide.html" "ハイファイラ"
@@ -42,7 +46,7 @@
   運用上の注意:
 
   - 出力ファイルはセッションの scratchpad ディレクトリ等の一時領域に置く（リポジトリ直下に残さない）
-  - **同一スキル名は PvE 欄と PvP 欄の両方にマッチする**。抽出結果ごとに周辺原文を読み、どちらの欄の記述かを必ず判別する（PvP 欄は威力の桁が大きい・「PvP」見出しが近傍に出る等で見分けられる）
+  - 標準エラーに「PvE 欄の終わりの行が見つからない」と出たら、ページ全体を探していて、同じスキル名が PvP 欄にも当たる。抽出結果ごとに周辺原文で欄を見分け（PvP 欄は威力の桁が大きい・「PvP」見出しが近傍に出る等）、境界の行の書き方が変わっていないかを、後述「PvE / PvP 欄の境界」の表のジョブガイドの行と照らしてスニペットの判定を見直す
   - 減衰・条件付き効果は「対象数に応じて威力が減少」等の**原文の有無**で判定する。原文に記載がなければ減衰なしと確定してよい（#273 で PvE 欄原文により「減衰記載があるのはフレア/フレアスター/ファウルのみ」と確定した実績）
 - **特性習得前の値（Lv100 未満で使う値）の出典**: ジョブガイドは Lv100 時点の値しか載せないので、新規ジョブの追加や既存ジョブへの特性の反映で特性習得前の値が要るときは、次の順で取る（#498 で確定した手順）
   1. 各版のパッチノートの PvE 欄から「修得時の威力」の履歴（「アクション威力アップIII修得時の威力が 640 → 680 に変更されます」のような行。特性名の I〜III はジョブ・版で変わる）を抜き出す。上のスニペットに検索語 `修得時の威力` を渡せば取れる。各版の URL は後述「パッチ追従の検証（定型）」① のパッチノート一覧から取る
