@@ -106,7 +106,7 @@
   "buffs": {
     "standard-step": {
       "name": "Standard Step",
-      "shortName": "Standard\nStep"
+      "shortName": "Std.\nStep"
     },
     "technical-step": {
       "name": "Technical Step",
@@ -118,11 +118,11 @@
     },
     "standard-finish-1": {
       "name": "Standard Finish (2%)",
-      "shortName": "Standard\n2%"
+      "shortName": "Std.\n2%"
     },
     "standard-finish-2": {
       "name": "Standard Finish (5%)",
-      "shortName": "Standard\n5%"
+      "shortName": "Std.\n5%"
     },
     "technical-finish-1": {
       "name": "Technical Finish (1%)",
