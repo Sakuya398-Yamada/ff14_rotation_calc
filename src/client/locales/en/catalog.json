@@ -12,6 +12,9 @@
     "gnb": {
       "name": "Gunbreaker"
     },
+    "bastion": {
+      "name": "Bastion"
+    },
     "whm": {
       "name": "White Mage"
     },
@@ -50,6 +53,9 @@
     },
     "dnc": {
       "name": "Dancer"
+    },
+    "zephyr": {
+      "name": "Zephyr"
     },
     "blm": {
       "name": "Black Mage"

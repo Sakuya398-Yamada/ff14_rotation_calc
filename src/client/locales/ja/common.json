@@ -240,6 +240,8 @@
     "recent": "最近使ったジョブ",
     "noMatch": "該当するジョブがありません",
     "unsupportedTitle": "{{job}}（未対応）",
+    "evolvedOnlyTitle": "{{job}}（エヴォルヴモード専用・未対応）",
+    "evolvedOnly": "エヴォルヴ専用",
     "unsupported": "未対応"
   },
   "skillPalette": {

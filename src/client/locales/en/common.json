@@ -240,6 +240,8 @@
     "recent": "Recently used jobs",
     "noMatch": "No matching jobs",
     "unsupportedTitle": "{{job}} (not supported)",
+    "evolvedOnlyTitle": "{{job}} (Evolved Mode only, not supported)",
+    "evolvedOnly": "Evolved only",
     "unsupported": "Not supported"
   },
   "skillPalette": {
