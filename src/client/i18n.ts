@@ -9,6 +9,7 @@ import enJobBrd from "./locales/en/job-brd.json";
 import enJobDrg from "./locales/en/job-drg.json";
 import enJobDrk from "./locales/en/job-drk.json";
 import enJobMch from "./locales/en/job-mch.json";
+import enJobDnc from "./locales/en/job-dnc.json";
 import enJobGnb from "./locales/en/job-gnb.json";
 import enJobMnk from "./locales/en/job-mnk.json";
 import enJobPct from "./locales/en/job-pct.json";
@@ -26,6 +27,7 @@ import jaJobBrd from "./locales/ja/job-brd.json";
 import jaJobDrg from "./locales/ja/job-drg.json";
 import jaJobDrk from "./locales/ja/job-drk.json";
 import jaJobMch from "./locales/ja/job-mch.json";
+import jaJobDnc from "./locales/ja/job-dnc.json";
 import jaJobGnb from "./locales/ja/job-gnb.json";
 import jaJobMnk from "./locales/ja/job-mnk.json";
 import jaJobPct from "./locales/ja/job-pct.json";
@@ -49,6 +51,7 @@ export const resources = {
     "job-drg": jaJobDrg,
     "job-drk": jaJobDrk,
     "job-mch": jaJobMch,
+    "job-dnc": jaJobDnc,
     "job-gnb": jaJobGnb,
     "job-mnk": jaJobMnk,
     "job-pct": jaJobPct,
@@ -68,6 +71,7 @@ export const resources = {
     "job-drg": enJobDrg satisfies typeof jaJobDrg,
     "job-drk": enJobDrk satisfies typeof jaJobDrk,
     "job-mch": enJobMch satisfies typeof jaJobMch,
+    "job-dnc": enJobDnc satisfies typeof jaJobDnc,
     "job-gnb": enJobGnb satisfies typeof jaJobGnb,
     "job-mnk": enJobMnk satisfies typeof jaJobMnk,
     "job-pct": enJobPct satisfies typeof jaJobPct,
