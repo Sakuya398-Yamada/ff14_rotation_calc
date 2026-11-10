@@ -9,6 +9,8 @@ import { loadRecentJobs, pushRecentJob, saveRecentJobs } from "../logic/recent-j
 import { jobName, roleName } from "../logic/display-names";
 
 const SUPPORTED_LEVELS: PlayerLevel[] = [70, 80, 90, 100];
+// パッチ 8.0 で上限が 110 になる。スキルデータが出るまで「未対応」で並べる（#1002）
+const UNSUPPORTED_LEVEL = 110;
 
 interface JobPickerProps {
   selectedJob: JobId;
@@ -28,6 +30,19 @@ function matchesQuery(job: CatalogJob, query: string, t: TFunction): boolean {
 
 function roleOf(job: CatalogJob) {
   return JOB_ROLES.find((r) => r.id === job.role)!;
+}
+
+/** 押せない選択肢。ジョブのボタンと同じく、ラベルの下に「未対応」を出す */
+function UnsupportedSegment({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
+  return (
+    <button type="button" disabled style={styles.segmentDisabled}>
+      <span style={styles.segmentStack}>
+        {children}
+        <span style={styles.unsupported}>{t("jobPicker.unsupported")}</span>
+      </span>
+    </button>
+  );
 }
 
 /** ヘッダーのジョブ・レベル選択（ボタン＋ロール別パネル） */
@@ -116,9 +131,20 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
             close(true);
           }}
         >
+          {/* エヴォルヴのデータを入れるまで、モードは状態に持たずリボーンで固定する（#1002） */}
+          <fieldset style={styles.modeFieldset}>
+            <legend style={styles.legend}>{t("jobPicker.mode")}</legend>
+            <div style={styles.modeSegmented}>
+              <button type="button" aria-pressed={true} style={{ ...styles.segmentOn, fontFamily: "inherit" }}>
+                {t("jobPicker.modeReborn")}
+              </button>
+              <UnsupportedSegment>{t("jobPicker.modeEvolved")}</UnsupportedSegment>
+            </div>
+          </fieldset>
+
           <fieldset style={styles.levelFieldset}>
             <legend style={styles.legend}>{t("jobPicker.level")}</legend>
-            <div style={styles.segmented}>
+            <div style={styles.levelSegmented}>
               {SUPPORTED_LEVELS.map((lv) => {
                 const on = lv === level;
                 return (
@@ -134,6 +160,9 @@ export function JobPicker({ selectedJob, level, onJobChange, onLevelChange }: Jo
                   </button>
                 );
               })}
+              <UnsupportedSegment>
+                <span className="num">{UNSUPPORTED_LEVEL}</span>
+              </UnsupportedSegment>
             </div>
             <span style={styles.note}>{t("jobPicker.levelNote")}</span>
             {level < 100 && (
@@ -233,6 +262,14 @@ const segmentBase: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const segmentedBase: React.CSSProperties = {
+  display: "grid",
+  gap: "var(--space-1)",
+  padding: "var(--space-1)",
+  borderRadius: "var(--radius-lg)",
+  background: "var(--color-bg)",
+};
+
 const styles: Record<string, React.CSSProperties> = {
   root: {
     position: "relative",
@@ -290,6 +327,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--color-text)",
     boxShadow: "0 12px 32px rgba(0, 0, 0, 0.18)",
   },
+  modeFieldset: {
+    margin: 0,
+    padding: 0,
+    border: "none",
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "var(--space-2) var(--space-3)",
+  },
   levelFieldset: {
     margin: 0,
     padding: "0 0 14px",
@@ -307,19 +353,32 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "12px",
     fontWeight: 700,
   },
-  segmented: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-    gap: "var(--space-1)",
-    padding: "var(--space-1)",
-    borderRadius: "var(--radius-lg)",
-    background: "var(--color-bg)",
+  modeSegmented: {
+    ...segmentedBase,
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  },
+  levelSegmented: {
+    ...segmentedBase,
+    // 110（未対応）の列は、英語の「Not supported」が 70〜100 の幅に収まらないので中身の幅にする
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr)) auto",
   },
   segment: segmentBase,
   segmentOn: {
     ...segmentBase,
     background: "var(--color-raised)",
     borderColor: "var(--color-field)",
+  },
+  segmentDisabled: {
+    ...segmentBase,
+    fontFamily: "inherit",
+    opacity: 0.45,
+    cursor: "not-allowed",
+  },
+  segmentStack: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    lineHeight: 1.2,
   },
   note: {
     fontSize: "11px",
