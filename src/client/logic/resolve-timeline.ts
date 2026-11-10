@@ -15,6 +15,7 @@ import type {
   ResourceTick,
   ActiveDoT,
   TimelineResult,
+  TimelineStateAt,
   BossUntargetableWindow,
   MultiTargetWindow,
   ResolvedDelayedHit,
@@ -906,6 +907,63 @@ export function resolveTimeline(
   /** 実行されたスキル（resolvedSkillId）の ID → 実行から着弾までの遅れ（秒）。設定したスキルのエントリだけが hitTime を持つ（#901） */
   hitDelays?: Record<string, number>
 ): TimelineResult {
+  return runTimeline(entries, skillMap, resources, stats, buffs, untargetableWindows, multiTargetWindows, hitDelays);
+}
+
+/**
+ * 時刻 time の状態（#1000）。time までに始まるエントリ（time ちょうども含む）を resolveTimeline と同じく解決し、
+ * エントリの前と同じ順（着弾した付与 → 時間切れ → 自動生成）で time まで進める。引数は resolveTimeline と同じ。
+ * 状態を進める処理は、途中の時刻で 1 回余計に呼ぶと後のエントリの結果が変わり得る（自動生成のタイマーの再開・上限の差し替え）ので、
+ * 本番の計算の途中では取り出さず、time で止めた別の計算で求める
+ */
+export function resolveStateAt(
+  entries: TimelineEntry[],
+  skillMap: Map<string, Skill>,
+  resources: ResourceDefinition[],
+  stats: CharacterStats | undefined,
+  buffs: BuffDefinition[] | undefined,
+  untargetableWindows: BossUntargetableWindow[] | undefined,
+  multiTargetWindows: MultiTargetWindow[] | undefined,
+  hitDelays: Record<string, number> | undefined,
+  time: number
+): TimelineStateAt {
+  return runTimeline(entries, skillMap, resources, stats, buffs, untargetableWindows, multiTargetWindows, hitDelays, time);
+}
+
+function runTimeline(
+  entries: TimelineEntry[],
+  skillMap: Map<string, Skill>,
+  resources: ResourceDefinition[],
+  stats?: CharacterStats,
+  buffs?: BuffDefinition[],
+  untargetableWindows?: BossUntargetableWindow[],
+  multiTargetWindows?: MultiTargetWindow[],
+  hitDelays?: Record<string, number>,
+  stopAt?: undefined
+): TimelineResult;
+function runTimeline(
+  entries: TimelineEntry[],
+  skillMap: Map<string, Skill>,
+  resources: ResourceDefinition[],
+  stats: CharacterStats | undefined,
+  buffs: BuffDefinition[] | undefined,
+  untargetableWindows: BossUntargetableWindow[] | undefined,
+  multiTargetWindows: MultiTargetWindow[] | undefined,
+  hitDelays: Record<string, number> | undefined,
+  stopAt: number
+): TimelineStateAt;
+function runTimeline(
+  entries: TimelineEntry[],
+  skillMap: Map<string, Skill>,
+  resources: ResourceDefinition[],
+  stats?: CharacterStats,
+  buffs?: BuffDefinition[],
+  untargetableWindows?: BossUntargetableWindow[],
+  multiTargetWindows?: MultiTargetWindow[],
+  hitDelays?: Record<string, number>,
+  /** 指定すると、この時刻より後に始まるエントリの手前で止め、この時刻の状態を返す（resolveStateAt） */
+  stopAt?: number
+): TimelineResult | TimelineStateAt {
   const resolved: ResolvedTimelineEntry[] = [];
   const resourceDefMap = new Map(resources.map((r) => [r.id, r]));
   const buffDefMap = new Map((buffs ?? []).map((b) => [b.id, b]));
@@ -1002,16 +1060,22 @@ export function resolveTimeline(
    * 自動生成リソースを time まで進める。上限（whileBuffModifiers の maxStacks）・付与ごとのリキャスト短縮・
    * 条件バフ（autoGenerateWhileBuff）は、呼び出し時点のアクティブバフで判定する
    */
-  const advanceAutoGen = (time: number, excludeTime: boolean = false) => {
-    // whileBuffModifiers の maxStacks を、現在のバフで反映した定義に差し替える。
-    // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う。
-    // 着弾を待っているバフも、上限だけは実行時から上げる（リソースの獲得が実行時なので。ブラッドソイル。#948）
-    const capBuffs = pendingBuffApplications.length > 0
+  /**
+   * リソースの上限（whileBuffModifiers の maxStacks）を決めるバフ。
+   * 着弾を待っているバフも、上限だけは実行時から上げる（リソースの獲得が実行時なので。ブラッドソイル。#948）
+   */
+  const getCapBuffs = (): ActiveBuff[] =>
+    pendingBuffApplications.length > 0
       ? [
           ...currentActiveBuffs,
           ...pendingBuffApplications.flatMap((p) => p.buffIds.map((buffId) => ({ buffId, startTime: p.time, endTime: p.time }))),
         ]
       : currentActiveBuffs;
+
+  const advanceAutoGen = (time: number, excludeTime: boolean = false) => {
+    // whileBuffModifiers の maxStacks を、現在のバフで反映した定義に差し替える。
+    // 以降のキャップ判定（自動生成・リソース変動）は resourceDefMap の定義を使う
+    const capBuffs = getCapBuffs();
     for (const res of resources) {
       if (!res.whileBuffModifiers) continue;
       resourceDefMap.set(res.id, { ...res, maxStacks: getEffectiveMaxStacks(res, capBuffs) });
@@ -1172,11 +1236,6 @@ export function resolveTimeline(
       startTime = entry.manualStartTime !== undefined
         ? Math.round(entry.manualStartTime * 1000) / 1000
         : autoStartTime;
-
-      // 着弾した付与を付けてから、期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      applyPendingBuffsUntil(startTime);
-      expireBuffsUntil(startTime);
-
     } else {
       // GCD リキャストも発生させる oGCD（黙想・鉄山闘気等）は、GCD と同じくリキャスト明けを待つ
       autoStartTime = originalSkill.triggersGcdRecast
@@ -1186,13 +1245,17 @@ export function resolveTimeline(
       startTime = entry.manualStartTime !== undefined
         ? Math.round(entry.manualStartTime * 1000) / 1000
         : autoStartTime;
-
-      // 着弾した付与を付けてから、期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）
-      applyPendingBuffsUntil(startTime);
-      expireBuffsUntil(startTime);
-
-      actionAvailableAt = startTime + originalSkill.animationLock;
     }
+
+    // resolveStateAt: stopAt より後に始まるエントリの手前で、状態に触れずに止める
+    if (stopAt !== undefined && startTime > stopAt) break;
+
+    // 着弾した付与を付けてから、期限切れバフを除去（onExpireResourceTransfer があればリソース移し替えも実施）。
+    // resolveStateAt の止めた後も同じ順で進めるので、順を変えるときはそちらも揃える
+    applyPendingBuffsUntil(startTime);
+    expireBuffsUntil(startTime);
+
+    if (originalSkill.type !== "gcd") actionAvailableAt = startTime + originalSkill.animationLock;
 
     // 自動変化チェック: バフ条件 / リソース条件を満たす場合、変化先スキルに差し替え（チェーン対応）
     let skill = originalSkill;
@@ -2183,6 +2246,26 @@ export function resolveTimeline(
       castTime: resolvedCastTime,
       targetCount,
     });
+  }
+
+  // resolveStateAt: エントリの前と同じ順で stopAt まで進め、その時刻の状態を返す（#1000）
+  if (stopAt !== undefined) {
+    applyPendingBuffsUntil(stopAt);
+    expireBuffsUntil(stopAt);
+    advanceAutoGen(stopAt);
+    const capBuffs = getCapBuffs();
+    const charges: TimelineStateAt["charges"] = {};
+    for (const [chargeKey, state] of skillChargeState) {
+      const spans = chargeSpans.get(chargeKey);
+      const atStop = { ...state };
+      if (spans) recoverCharges(atStop, stopAt, spans.cooldown, spans.maxCharges);
+      charges[chargeKey] = atStop;
+    }
+    return {
+      time: stopAt,
+      resources: resources.map((r) => ({ resourceId: r.id, value: resourceState[r.id] ?? 0, maxStacks: getEffectiveMaxStacks(r, capBuffs) })),
+      charges,
+    };
   }
 
   // 最後のエントリまでに戻らなかったチャージは、計算のタイマーを複製して先に進め、戻る時刻を求める。
