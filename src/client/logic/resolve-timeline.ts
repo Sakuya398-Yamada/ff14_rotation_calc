@@ -1143,7 +1143,9 @@ export function resolveTimeline(
   /**
    * fromIndex のエントリより後に使った、エラーの無い GCD（WS）のうち、着弾（hitTime。無ければ開始時刻）が [from, until) に入り、
    * ボス離脱中に着弾していないものの数（ワイルドファイア。#958）。時間差の攻撃の判定（judge）から呼ぶ。
-   * 判定は until 以降に始まるエントリより前に走るので、until より前に着弾するエントリはすべて resolved にある
+   * 判定は until 以降に始まるエントリより前に走るので、until より前に着弾するエントリはすべて resolved にある。
+   * 例外: 手動の開始時刻でエラーになったエントリの後は、自動配置の GCD が配列で前のエントリより早い時刻に戻ることがあり、
+   * 判定が済んだ後に置かれたその GCD は数えない（時刻の逆転は既存の挙動で、バフの付与・失効の順も同じく崩れる）
    */
   const countWeaponskillsLanded = (fromIndex: number, from: number, until: number): number =>
     resolved.filter((e, i) => {
