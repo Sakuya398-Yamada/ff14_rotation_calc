@@ -686,6 +686,40 @@ export interface TimelineResult {
   timelineEndTime: number;
 }
 
+/** 時刻 t のリソースの値と上限（#1000） */
+export interface ResourceStateAt {
+  resourceId: string;
+  value: number;
+  /** その時刻の上限（whileBuffModifiers の maxStacks。着弾を待っているバフも入れる。リソースレーンと同じ） */
+  maxStacks: number;
+}
+
+/** resolveStateAt の結果。t までのエントリ（t ちょうども含む）・自動生成・バフの時間切れを反映した状態（#1000） */
+export interface TimelineStateAt {
+  time: number;
+  /** resolveStateAt に渡したリソースの順 */
+  resources: ResourceStateAt[];
+  /**
+   * chargeKey（cooldownGroup。無ければスキル ID）ごとのチャージ。t までに使ったものだけ持つ。
+   * nextChargeAt は次のチャージが戻る時刻で、t までのリキャスト短縮だけを反映する（満タンなら null）
+   */
+  charges: Record<string, { charges: number; nextChargeAt: number | null }>;
+}
+
+/** 時刻 t のリキャスト付きスキルの状態（#1000） */
+export interface RecastStateAt {
+  skillId: string;
+  /** 使用可能か（チャージ式はチャージが 1 つ以上残っているか） */
+  available: boolean;
+  /** その時刻のゲーム内のリキャスト表示の残り秒数（t までの短縮だけを反映）。チャージ式は次のチャージが戻るまで。リキャスト中でなければ 0 */
+  remaining: number;
+  /** t より後の短縮も込みで、リキャスト（チャージ式は次のチャージ）が実際に戻る時刻。リキャストのレーンの区間の終わり。リキャスト中でなければ無い */
+  actualEndTime?: number;
+  /** チャージ式（maxCharges が 2 以上）だけ持つ。cooldownGroup を共有するスキルはグループ全体で数える */
+  charges?: number;
+  maxCharges?: number;
+}
+
 /** リソースのエラーの種類。insufficient: 必要量に足りない / overMax: resourceMaxConditions の上限を超えている */
 export type ResourceErrorKind = "insufficient" | "overMax";
 
