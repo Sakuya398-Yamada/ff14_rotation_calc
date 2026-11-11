@@ -836,10 +836,14 @@ export interface ResolvedTimelineEntry {
   pendingBuffIds?: string[];
   /** 威力バフの合成倍率（1.0 = バフなし） */
   buffMultiplier: number;
-  /** クリティカル発生率ボーナス（0.0 = バフなし、0.1 = +10%） */
+  /** クリティカル発生率ボーナス（0.0 = バフなし、0.1 = +10%）。確定クリティカルでも 1 に上書きしない（#1004） */
   critRateBonus: number;
-  /** ダイレクトヒット発生率ボーナス（0.0 = バフなし、0.1 = +10%） */
+  /** ダイレクトヒット発生率ボーナス（0.0 = バフなし、0.1 = +10%）。確定ダイレクトヒットでも 1 に上書きしない（#1004） */
   dhRateBonus: number;
+  /** 確定クリティカル（スキル自身か、効いているバフによる）。期待値では critRateBonus がダメージの上昇に換算される */
+  guaranteedCrit?: true;
+  /** 確定ダイレクトヒット（スキル自身か、効いているバフによる）。期待値では dhRateBonus がダメージの上昇に換算される */
+  guaranteedDh?: true;
   /** このエントリ実行後、次のGCDが使用可能になる時刻（秒） */
   gcdAvailableAt: number;
   /** このエントリ実行後、次のアクション（GCD/oGCD問わず）が使用可能になる時刻（秒） */

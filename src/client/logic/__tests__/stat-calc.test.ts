@@ -7,6 +7,7 @@ import {
   calcDetMultiplier,
   calcGcd,
   calcExpectedMultiplier,
+  calcAutoDhBonus,
 } from "../stat-calc";
 import type { CharacterStats } from "../../types/skill";
 
@@ -119,5 +120,36 @@ describe("calcExpectedMultiplier", () => {
   it("発生率は 1 を超えないようクランプされる", () => {
     // critRate / dhRate とも 1 にクランプ → 1.000 * 1.4 * 1.25 = 1.75
     expect(calcExpectedMultiplier(DEFAULT_STATS, 2, 2)).toBeCloseTo(1.75, 10);
+  });
+});
+
+describe("calcAutoDhBonus（#1004）", () => {
+  it("基準値（DH=420）で 0、DH=2000 で floor(140 * 1580 / 2780) / 1000 = 0.079 を返す", () => {
+    expect(calcAutoDhBonus(DEFAULT_STATS)).toBe(0);
+    expect(calcAutoDhBonus(makeStats({ directHit: 2000 }))).toBe(0.079);
+  });
+});
+
+describe("calcExpectedMultiplier の確定クリティカル・ダイレクトヒット（#1004）", () => {
+  it("率の上昇が無ければ、今までどおりクリ倍率 × 1.25 になる", () => {
+    expect(calcExpectedMultiplier(DEFAULT_STATS, 0, 0, { crit: true, dh: true })).toBeCloseTo(1.4 * 1.25, 10);
+  });
+
+  it("確定クリでは、率の上昇が クリ倍率 × floor3(1 + (クリ倍率 − 1) × 上昇) に換算される", () => {
+    // CRIT=2000: クリ倍率 1.513。floor3(1 + 0.513 * 0.1) = floor3(1.0513) = 1.051。DH は確定でなく発生率 0 なので 1
+    expect(calcExpectedMultiplier(makeStats({ critical: 2000 }), 0.1, 0, { crit: true })).toBeCloseTo(1.513 * 1.051, 10);
+  });
+
+  it("確定 DH では、率の上昇が 1.25 × floor3(1 + 0.25 × 上昇) に換算される（浮動小数の誤差で 1 つ下に落ちない）", () => {
+    // 1 + 0.25 * 0.06 = 1.015 は、そのまま 1000 倍して切り捨てると 1014 になる
+    expect(calcExpectedMultiplier(DEFAULT_STATS, 0, 0.06, { dh: true })).toBeCloseTo(1.02 * 1.25 * 1.015, 10);
+  });
+
+  it("確定 DH では、意志力の倍率に DH のステータスによる倍率を足して小数 3 桁で切り捨てる", () => {
+    // DET=2000: 1.078、DH=2000: +0.079 → 1.157。クリは確定でなく、発生率 5%
+    const stats = makeStats({ determination: 2000, directHit: 2000 });
+    expect(calcExpectedMultiplier(stats, 0, 0, { dh: true })).toBeCloseTo(1.157 * 1.02 * 1.25, 10);
+    // 確定でなければ DH のステータスの倍率は足さない（DH=2000 の発生率 floor(550 * 1580 / 2780) / 1000 = 0.312）
+    expect(calcExpectedMultiplier(stats)).toBeCloseTo(1.078 * 1.02 * (1 + 0.312 * 0.25), 10);
   });
 });

@@ -53,8 +53,8 @@ describe("ResolvedTimelineEntry.activeBuffsAtUse", () => {
 
     const gcdEntry = result.entries[1];
 
-    // guaranteedCrit が効いているので critRateBonus は 1（100%）
-    expect(gcdEntry.critRateBonus).toBe(1);
+    // guaranteedCrit が効いているので確定クリティカルになる
+    expect(gcdEntry.guaranteedCrit).toBe(true);
 
     // activeBuffs（post-consumption）には残っていない
     expect(gcdEntry.activeBuffs.some((ab) => ab.buffId === "life-surge")).toBe(false);

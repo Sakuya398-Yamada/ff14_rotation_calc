@@ -42,7 +42,7 @@ export function calcEntryPotencyBreakdown(
     return { total: 0, targets: [], singleTargetPotency: 0 };
   }
 
-  const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
+  const entryMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus, { crit: entry.guaranteedCrit, dh: entry.guaranteedDh });
   return calcHitBreakdown(entry.resolvedPotency, entry.buffMultiplier, entryMul, entry.targetCount ?? 1, skill);
 }
 

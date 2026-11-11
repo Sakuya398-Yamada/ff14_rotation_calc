@@ -294,8 +294,8 @@ describe("DNC: 攻めのタンゴ・フラリッシュと実行可のバフ", ()
     expect(e[1].critRateBonus).toBeCloseTo(0.2);
     expect(e[1].dhRateBonus).toBeCloseTo(0.2);
     expect(e[2].resolvedPotency).toBe(600);
-    expect(e[2].critRateBonus).toBe(1);
-    expect(e[2].dhRateBonus).toBe(1);
+    expect(e[2].guaranteedCrit).toBe(true);
+    expect(e[2].guaranteedDh).toBe(true);
   });
 
   it("スタンダードフィニッシュのあとはラストダンスを使える（Lv90 では付かない）", () => {
