@@ -31,6 +31,9 @@ import { GNB_RESOURCES } from "../../data/gnb-resources";
 import { WAR_ATTACK_SKILLS } from "../../data/war-skills";
 import { WAR_BUFFS } from "../../data/war-buffs";
 import { WAR_RESOURCES } from "../../data/war-resources";
+import { DNC_ATTACK_SKILLS } from "../../data/dnc-skills";
+import { DNC_BUFFS } from "../../data/dnc-buffs";
+import { DNC_RESOURCES } from "../../data/dnc-resources";
 import { PX_PER_SEC } from "../timeline/constants";
 import type {
   BuffDefinition,
@@ -400,6 +403,82 @@ describe("Timeline: ホークアイの発生の有無の指定 (#838)", () => {
     renderBrdEntries([makeEntry("barrage"), { ...makeEntry("refulgent-arrow"), procOccurred: false }]);
 
     expect(screen.queryByTitle(/^ホークアイ: /)).not.toBeInTheDocument();
+  });
+});
+
+describe("Timeline: 踊り子の確率付与・幻扇の発生の指定 (#1005)", () => {
+  const dncBuffIds = new Set(DNC_BUFFS.map((b) => b.id));
+  const dncResourceIds = new Set(DNC_RESOURCES.map((r) => r.id));
+  const dncSkills = getSkillsForLevel(DNC_ATTACK_SKILLS, 100, dncBuffIds, dncResourceIds);
+  const dncSkillMap = getAllSkillMapForLevel(DNC_ATTACK_SKILLS, dncSkills, 100, dncBuffIds, dncResourceIds);
+
+  function renderDncEntries(entries: TimelineEntry[]) {
+    const resolvedEntries = resolveTimeline(entries, dncSkillMap, DNC_RESOURCES, defaultStats, DNC_BUFFS).entries;
+    renderTimeline({
+      jobId: "dnc",
+      skills: dncSkills,
+      allSkillMap: dncSkillMap,
+      resolvedEntries,
+      resources: DNC_RESOURCES,
+      buffs: DNC_BUFFS,
+    });
+  }
+
+  it.each([
+    ["cascade", "カスケード", true, "対称投擲: 発生"],
+    ["cascade", "カスケード", false, "対称投擲: 不発"],
+    ["reverse-cascade", "リバースカスケード", true, "幻扇: 発生"],
+  ] as const)("%s（%s）に procOccurred = %s を指定すると、ツールチップとバッジに「%s」が出る", (skillId, name, procOccurred, label) => {
+    renderDncEntries([{ ...makeEntry(skillId), procOccurred }]);
+
+    expect(screen.getByTitle(new RegExp(`^${name} \\(威力: `))).toHaveAttribute("title", expect.stringContaining(` ${label}`));
+    expect(screen.getByTitle(label)).toBeInTheDocument();
+  });
+
+  // コンボで付く非対称投擲は、コンボが切れていると付かないので指定も解決で無視される
+  it("コンボが切れたファウンテンに指定が残っていても出さない", () => {
+    renderDncEntries([{ ...makeEntry("fountain"), procOccurred: true }]);
+
+    expect(screen.getByTitle(/^ファウンテン \(威力: /)).not.toHaveAttribute("title", expect.stringContaining("非対称投擲: "));
+    expect(screen.queryByTitle(/^非対称投擲: /)).not.toBeInTheDocument();
+  });
+
+  it("カスケード → カスケードの 2 つ目のツールチップに上書き確率が出る", () => {
+    renderDncEntries([makeEntry("cascade"), makeEntry("cascade")]);
+
+    expect(screen.getAllByTitle(/^カスケード \(威力: /)[1]).toHaveAttribute(
+      "title",
+      expect.stringContaining(" / 対称投擲上書き確率 25.0%"),
+    );
+  });
+
+  it("リバースカスケードの幻扇を「発生」にすると、扇の舞い【序】のツールチップの幻扇がある確率が 100% になる", () => {
+    renderDncEntries([makeEntry("cascade"), { ...makeEntry("reverse-cascade"), procOccurred: true }, makeEntry("fan-dance")]);
+
+    expect(screen.getByTitle(/^扇の舞い【序】 \(威力: /)).toHaveAttribute(
+      "title",
+      expect.stringContaining(" / 幻扇がある確率 100.0%"),
+    );
+  });
+
+  // 扇の舞い【序】は oGCD で、GCD とは別にツールチップを組んでいる
+  it("扇の舞い【序】に procOccurred を指定すると、ツールチップとバッジに「扇の舞い【急】実行可: 不発」が出る", () => {
+    renderDncEntries([{ ...makeEntry("fan-dance"), procOccurred: false }]);
+
+    expect(screen.getByTitle(/^扇の舞い【序】 \(威力: /)).toHaveAttribute(
+      "title",
+      expect.stringContaining(" 扇の舞い【急】実行可: 不発"),
+    );
+    expect(screen.getByTitle("扇の舞い【急】実行可: 不発")).toBeInTheDocument();
+  });
+
+  it("期待値のままなら、扇の舞い【序】のツールチップに幻扇がある確率が出る", () => {
+    renderDncEntries([makeEntry("cascade"), makeEntry("reverse-cascade"), makeEntry("fan-dance")]);
+
+    expect(screen.getByTitle(/^扇の舞い【序】 \(威力: /)).toHaveAttribute(
+      "title",
+      expect.stringContaining(" / 幻扇がある確率 25.0%"),
+    );
   });
 });
 

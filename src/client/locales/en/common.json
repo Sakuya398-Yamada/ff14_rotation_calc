@@ -269,6 +269,7 @@
     "someSkills": "{{effect}} (some actions)",
     "consumedProc": "{{name}} proc chance {{rate}}",
     "consumedProcWithFallback": "{{name}} proc chance {{rate}} ({{skill}} if it doesn't proc)",
+    "consumedResourceProc": "chance of having {{name}} {{rate}}",
     "wastedProc": "{{name}} overwrite chance {{rate}}",
     "procOccurred": "{{name}}: proc",
     "procNotOccurred": "{{name}}: no proc"

@@ -11,9 +11,10 @@ import {
   describeBuffEffects,
   formatBuffRemaining,
   formatConsumedProc,
+  formatConsumedResourceProc,
   formatWastedProc,
-  isProcOutcomeSource,
-  PROC_OUTCOME_BUFF_ID,
+  getProcOutcomeName,
+  isProcOutcomeBuff,
 } from "../logic/buff-format";
 import { formatResourceErrors } from "../logic/resource-error-format";
 import { formatComboErrors } from "../logic/combo-error-format";
@@ -136,7 +137,7 @@ export function SkillDetailPanel({
   };
 
   const isManual = entry.manualStartTime !== undefined;
-  const procBuffName = buffName(t, jobId, PROC_OUTCOME_BUFF_ID);
+  const procOutcomeName = getProcOutcomeName(resolvedSkill, jobId, !entry.wsComboError);
   const resolvedSkillName = skillName(t, jobId, resolvedSkill.id);
   const autoGenerateProcSource = getAutoGenerateProcSource(resolvedSkill, resources, buffDefMap);
 
@@ -337,9 +338,9 @@ export function SkillDetailPanel({
             </span>
           )}
         </div>
-        {isProcOutcomeSource(resolvedSkill) && (
-          <div role="group" aria-label={t("skillDetailPanel.procOutcome", { name: procBuffName })} style={styles.procOutcomeRow}>
-            <span style={styles.headerStartTimeLabel}>{procBuffName}</span>
+        {procOutcomeName !== undefined && (
+          <div role="group" aria-label={t("skillDetailPanel.procOutcome", { name: procOutcomeName })} style={styles.procOutcomeRow}>
+            <span style={styles.headerStartTimeLabel}>{procOutcomeName}</span>
             {PROC_OUTCOME_OPTIONS.map(({ id, value }) => {
               const selected = entry.procOccurred === value;
               return (
@@ -357,7 +358,7 @@ export function SkillDetailPanel({
           </div>
         )}
         {/* 発生指定の行の外に置く。行の中だと、狭い画面で行ごと縮んでボタンの文字が折り返す */}
-        {entry.wastedProc?.buffId === PROC_OUTCOME_BUFF_ID && (
+        {entry.wastedProc && isProcOutcomeBuff(entry.wastedProc.buffId) && (
           <span className="num" style={styles.headerAutoHint}>
             {formatWastedProc(entry.wastedProc, jobId)}
           </span>
@@ -388,6 +389,11 @@ export function SkillDetailPanel({
           {entry.consumedProc && (
             <div className="num" style={styles.expectedFormula}>
               {formatConsumedProc(entry.consumedProc, jobId)}
+            </div>
+          )}
+          {entry.consumedResourceProc && (
+            <div className="num" style={styles.expectedFormula}>
+              {formatConsumedResourceProc(entry.consumedResourceProc, jobId)}
             </div>
           )}
         </div>

@@ -4,16 +4,23 @@ import {
   describeBuffEffects,
   formatBuffRemaining,
   formatConsumedProc,
+  formatConsumedResourceProc,
   formatProcRate,
   formatProcRateShort,
   formatWastedProc,
-  isProcOutcomeSource,
+  getProcOutcomeName,
 } from "../buff-format";
 import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
 import { BRD_ATTACK_SKILLS } from "../../data/brd-skills";
 import { BRD_BUFFS } from "../../data/brd-buffs";
 import { BRD_RESOURCES } from "../../data/brd-resources";
-import type { BuffDefinition, PlayerLevel } from "../../types/skill";
+import { DNC_ATTACK_SKILLS } from "../../data/dnc-skills";
+import { DNC_BUFFS } from "../../data/dnc-buffs";
+import { DNC_RESOURCES } from "../../data/dnc-resources";
+import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
+import { BLM_BUFFS } from "../../data/blm-buffs";
+import { BLM_RESOURCES } from "../../data/blm-resources";
+import type { BuffDefinition, PlayerLevel, ResourceDefinition, Skill } from "../../types/skill";
 
 function makeBuff(effects: BuffDefinition["effects"]): BuffDefinition {
   return { id: "b", icon: "", duration: 10, effects, color: "#ffffff" };
@@ -130,27 +137,92 @@ describe("formatWastedProc", () => {
   });
 });
 
+describe("formatConsumedResourceProc", () => {
+  it("リソース名を引いて「<リソース名>がある確率 xx.x%」にする (#1005)", () => {
+    expect(formatConsumedResourceProc({ resourceId: "dnc-feather", procRate: 0.75 }, "dnc")).toBe("幻扇がある確率 75.0%");
+  });
+});
+
+function skillMapAt(level: PlayerLevel, skills: Skill[], buffs: BuffDefinition[], resources: ResourceDefinition[]) {
+  const buffIds = new Set(buffs.map((b) => b.id));
+  const resourceIds = new Set(resources.map((r) => r.id));
+  return getAllSkillMapForLevel(skills, getSkillsForLevel(skills, level, buffIds, resourceIds), level, buffIds, resourceIds);
+}
+
 // 付与元かはレベル調整後のスキルで決まる。バイト系のホークアイ付与は Lv76 の特性から (#426 / #838)
-describe("isProcOutcomeSource", () => {
-  function brdSkillAt(level: PlayerLevel, skillId: string) {
-    const buffIds = new Set(BRD_BUFFS.map((b) => b.id));
-    const resourceIds = new Set(BRD_RESOURCES.map((r) => r.id));
-    const skills = getSkillsForLevel(BRD_ATTACK_SKILLS, level, buffIds, resourceIds);
-    return getAllSkillMapForLevel(BRD_ATTACK_SKILLS, skills, level, buffIds, resourceIds).get(skillId)!;
-  }
+describe("getProcOutcomeName", () => {
+  const brdSkillAt = (level: PlayerLevel, skillId: string) =>
+    skillMapAt(level, BRD_ATTACK_SKILLS, BRD_BUFFS, BRD_RESOURCES).get(skillId)!;
+  const dncSkillMap = skillMapAt(100, DNC_ATTACK_SKILLS, DNC_BUFFS, DNC_RESOURCES);
 
   it.each([
-    [100, "iron-jaws", true],
-    [70, "iron-jaws", false],
-    [70, "heavy-shot", true],
-    [100, "refulgent-arrow", false],
+    [100, "iron-jaws", "ホークアイ"],
+    [70, "iron-jaws", undefined],
+    [70, "heavy-shot", "ホークアイ"],
+    [100, "refulgent-arrow", undefined],
   ] as const)("Lv%i の %s は %s", (level, skillId, expected) => {
-    expect(isProcOutcomeSource(brdSkillAt(level, skillId))).toBe(expected);
+    expect(getProcOutcomeName(brdSkillAt(level, skillId), "brd", true)).toBe(expected);
   });
 
   it("確率 1 の付与は確定なので付与元に数えない", () => {
     const skill = { ...brdSkillAt(100, "burst-shot"), buffApplicationProcRates: { "hawks-eye": 1 } };
-    expect(isProcOutcomeSource(skill)).toBe(false);
+    expect(getProcOutcomeName(skill, "brd", true)).toBeUndefined();
+  });
+
+  // 確率付与のバフと、確率で得るリソースのどちらかを持つ踊り子のスキルは、全部指定できる (#1005)
+  const dncProcSkillIds = [...dncSkillMap.values()]
+    .filter((skill) =>
+      Object.values(skill.buffApplicationProcRates ?? {}).some((rate) => rate < 1) ||
+      [...(skill.resourceChanges ?? []), ...(skill.comboResourceChanges ?? [])].some((c) => c.amount > 0 && c.procRate !== undefined),
+    )
+    .map((skill) => skill.id);
+
+  it("踊り子の確率付与・フェザーのスキルを、データから 10 個洗い出せる", () => {
+    expect(dncProcSkillIds.sort()).toEqual([
+      "bladeshower", "bloodshower", "cascade", "fan-dance", "fan-dance-ii",
+      "fountain", "fountainfall", "reverse-cascade", "rising-windmill", "windmill",
+    ]);
+  });
+
+  it.each([
+    ["cascade", "対称投擲"],
+    ["windmill", "対称投擲"],
+    ["fountain", "非対称投擲"],
+    ["bladeshower", "非対称投擲"],
+    ["fan-dance", "扇の舞い【急】実行可"],
+    ["fan-dance-ii", "扇の舞い【急】実行可"],
+    ["reverse-cascade", "幻扇"],
+    ["fountainfall", "幻扇"],
+    ["rising-windmill", "幻扇"],
+    ["bloodshower", "幻扇"],
+  ])("踊り子の %s は %s", (skillId, expected) => {
+    expect(getProcOutcomeName(dncSkillMap.get(skillId)!, "dnc", true)).toBe(expected);
+  });
+
+  // コンボで付くバフ（comboBuffApplications）は、コンボが成立したときだけ付く
+  it.each(["fountain", "bladeshower"])("コンボが切れた %s は付与元に数えない", (skillId) => {
+    expect(getProcOutcomeName(dncSkillMap.get(skillId)!, "dnc", false)).toBeUndefined();
+  });
+
+  it("コンボで確率で得るリソース（comboResourceChanges）は、コンボが成立したときだけ数える", () => {
+    const skill: Skill = {
+      ...dncSkillMap.get("fountain")!,
+      comboBuffApplications: undefined,
+      comboResourceChanges: [{ resourceId: "dnc-feather", amount: 1, procRate: 0.5 }],
+    };
+    expect(getProcOutcomeName(skill, "dnc", true)).toBe("幻扇");
+    expect(getProcOutcomeName(skill, "dnc", false)).toBeUndefined();
+  });
+
+  it("コンボに関係ない付与元は、コンボが切れていても数える", () => {
+    expect(getProcOutcomeName(dncSkillMap.get("cascade")!, "dnc", false)).toBe("対称投擲");
+  });
+
+  // 黒魔道士のファイアスターターは対象外のまま (#838)
+  it("ファイアのファイアスターターは付与元に数えない", () => {
+    const fire = skillMapAt(100, BLM_ATTACK_SKILLS, BLM_BUFFS, BLM_RESOURCES).get("fire")!;
+    expect(fire.buffApplicationProcRates?.firestarter).toBeLessThan(1);
+    expect(getProcOutcomeName(fire, "blm", true)).toBeUndefined();
   });
 });
 
@@ -174,5 +246,8 @@ describe("buff-format（英語）", () => {
       "Hawk's Eye proc chance 35.0% (Burst Shot if it doesn't proc)",
     );
     expect(formatWastedProc({ buffId: "hawks-eye", rate: 0.35 * 0.35 }, "brd")).toBe("Hawk's Eye overwrite chance 12.3%");
+    expect(formatConsumedResourceProc({ resourceId: "dnc-feather", procRate: 0.75 }, "dnc")).toBe(
+      "chance of having Fourfold Feathers 75.0%",
+    );
   });
 });

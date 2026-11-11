@@ -1,7 +1,7 @@
 import i18next from "i18next";
 import type { JobId } from "../data/job-registry";
 import type { ActiveBuff, BuffDefinition, BuffEffect, ResolvedTimelineEntry, Skill } from "../types/skill";
-import { buffName, skillName } from "./display-names";
+import { buffName, resourceName, skillName } from "./display-names";
 
 function formatRate(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
@@ -81,6 +81,17 @@ export function formatConsumedProc(
     : i18next.t("buffFormat.consumedProc", { name, rate });
 }
 
+/** 確率で得るリソースを消費したときの、期待値の補正に使った確率。例: "幻扇がある確率 50.0%" (#1005) */
+export function formatConsumedResourceProc(
+  consumedResourceProc: NonNullable<ResolvedTimelineEntry["consumedResourceProc"]>,
+  jobId: JobId,
+): string {
+  return i18next.t("buffFormat.consumedResourceProc", {
+    name: resourceName(i18next.t, jobId, consumedResourceProc.resourceId),
+    rate: formatProcRate(consumedResourceProc.procRate),
+  });
+}
+
 /** 効いているバフに重ねて無駄になる確率付与。例: "ホークアイ上書き確率 12.3%" (#842) */
 export function formatWastedProc(
   wastedProc: NonNullable<ResolvedTimelineEntry["wastedProc"]>,
@@ -90,20 +101,34 @@ export function formatWastedProc(
   return i18next.t("buffFormat.wastedProc", { name, rate: formatProcRate(wastedProc.rate) });
 }
 
-/** 発生の有無を指定できる確率付与のバフ。ほかのジョブの確率付与は対象外 (#838) */
-export const PROC_OUTCOME_BUFF_ID = "hawks-eye";
+/** 発生の有無を指定できない確率付与のバフ。黒魔道士のファイアスターターは #838 で対象外にした */
+const PROC_OUTCOME_EXCLUDED_BUFF_IDS: ReadonlySet<string> = new Set(["firestarter"]);
 
-/**
- * スキルが PROC_OUTCOME_BUFF_ID を 1 未満の確率で付与するか。
- * 確率はレベルに関係なく持つので、レベル調整後の buffApplications に入っているかも見る（Lv76 未満のバイト系は付与しない）
- */
-export function isProcOutcomeSource(skill: Skill): boolean {
-  const rate = skill.buffApplicationProcRates?.[PROC_OUTCOME_BUFF_ID];
-  return rate !== undefined && rate < 1 && (skill.buffApplications?.includes(PROC_OUTCOME_BUFF_ID) ?? false);
+/** 確率付与のバフの発生の有無を指定できるか（上書き確率もこれに当たるバフだけ出す） */
+export function isProcOutcomeBuff(buffId: string): boolean {
+  return !PROC_OUTCOME_EXCLUDED_BUFF_IDS.has(buffId);
 }
 
-/** TimelineEntry.procOccurred の表示名。例: "ホークアイ: 発生" */
-export function formatProcOccurred(procOccurred: boolean, jobId: JobId): string {
-  const name = buffName(i18next.t, jobId, PROC_OUTCOME_BUFF_ID);
+/**
+ * スキルが発生の有無を指定できる確率付与を持つなら、その付与するバフか得るリソースの表示名を返す (#838 / #1005)。
+ * 見るのは buffApplicationProcRates が 1 未満のバフと、procRate が 1 未満の獲得。コンボで付く分はコンボが成立したときだけ見る。
+ * 指定は解決でそのスキルの確率付与すべてに効くが、名前は最初に当たった 1 つだけ返す（確率付与を 2 つ持つスキルは今のデータに無い）。
+ * レベル調整後のスキルを渡す（Lv76 未満のバイト系はホークアイを付与しない）
+ */
+export function getProcOutcomeName(skill: Skill, jobId: JobId, comboEstablished: boolean): string | undefined {
+  const buffIds = [...(skill.buffApplications ?? []), ...(comboEstablished ? skill.comboBuffApplications ?? [] : [])];
+  const buffId = buffIds.find((id) => {
+    const rate = skill.buffApplicationProcRates?.[id];
+    return rate !== undefined && rate < 1 && isProcOutcomeBuff(id);
+  });
+  if (buffId !== undefined) return buffName(i18next.t, jobId, buffId);
+
+  const changes = [...(skill.resourceChanges ?? []), ...(comboEstablished ? skill.comboResourceChanges ?? [] : [])];
+  const change = changes.find((c) => c.amount > 0 && c.procRate !== undefined && c.procRate < 1);
+  return change ? resourceName(i18next.t, jobId, change.resourceId) : undefined;
+}
+
+/** TimelineEntry.procOccurred の表示名。name は getProcOutcomeName の名前。例: "ホークアイ: 発生" */
+export function formatProcOccurred(procOccurred: boolean, name: string): string {
   return i18next.t(procOccurred ? "buffFormat.procOccurred" : "buffFormat.procNotOccurred", { name });
 }
