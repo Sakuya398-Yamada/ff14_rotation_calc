@@ -104,8 +104,10 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
     }
   );
 
-  it("最後のエントリより後の付与による短縮は、レーンの区間に入らない（計算が最後のエントリより先に進まないため。#898）", () => {
-    expect(base[1].cooldownEndTime).toBe(Math.round((firstUse + 15) * 1000) / 1000);
+  it("最後のエントリより後の付与による短縮も、レーンの区間に入る（後ろにエントリを足したときと同じ時刻で終わる。#1007）", () => {
+    const followed = resolve([...chargesUsedUp("mages-ballad"), entry("burst-shot", songTime + 8)]).entries;
+    expect(base[1].cooldownEndTime).toBe(followed[1].cooldownEndTime);
+    expect(base[1].cooldownEndTime).toBe(Math.round((songTime + 6) * 1000) / 1000);
   });
 
   it("旅神のメヌエット中は短縮されず、15 秒後まで回復しない", () => {
