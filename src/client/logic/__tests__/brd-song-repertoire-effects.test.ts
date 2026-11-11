@@ -90,7 +90,7 @@ describe("BRD: 賢人のバラード中の詩心付与でブラッドレッタ�
   it.each(["heartbreak-shot", "rain-of-death"])(
     "%s のリキャストのレーンの区間は、短縮でチャージが戻る時刻（2 回目の付与）で終わる (#898)",
     (skillId) => {
-      // 付与を計算に進めさせるため、2 回目の付与より後にエントリを置く
+      // 2 回目の付与より後にエントリを置いた並び（最後のエントリより後で終わる並びは、下の #1007 のテスト）
       const after = (song: string) =>
         resolve([...chargesUsedUp(song, skillId), entry("burst-shot", songTime + 8)]).entries;
       const ballad = after("mages-ballad");
