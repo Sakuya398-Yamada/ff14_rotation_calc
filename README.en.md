@@ -107,6 +107,8 @@ The timeline is split into several lanes.
 | Recasts | Recast status of each action |
 | DoT | Durations of damage over time effects |
 
+Double-click a lane (except the labels on the left) with the mouse (double-tapping on touch devices is not supported) to draw a vertical line at that position and show, in the panel below the timeline, the resources (value / maximum) and recasts (whether each action is ready and the seconds left; for actions with charges, the charges and the seconds until the next charge) at that time. Open the "＞" next to the seconds left to see when the recast is actually ready, including reductions from actions used later. If you edit the timeline while the panel is open, the values are updated for the same time. Close the panel with its close button (clicking an action switches to the action details panel).
+
 ### Setting the calculation range
 
 - **PPS range**: Set the time range used to calculate the total potency and PPS
