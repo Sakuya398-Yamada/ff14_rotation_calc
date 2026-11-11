@@ -44,9 +44,7 @@ const skillMap = new Map([gcdSkill, ogcdSkill].map((s) => [s.id, s]));
 
 /** Timeline.tsx の getResolvedEntryRecast と同じ式（Timeline の中で作って hook に渡しているので、テストでも同じものを渡す） */
 const getResolvedEntryRecast = (entry: ResolvedTimelineEntry, skill: Skill): number =>
-  skill.type === "gcd"
-    ? Math.round((entry.gcdAvailableAt - entry.startTime) * 1000) / 1000
-    : skill.recastTime;
+  skill.type === "gcd" ? entry.gcdRecast : skill.recastTime;
 
 /** jsdom はレイアウトを持たず、どのドロップ先にも当たらないので、常にタイムライン本体に当てる */
 const collideWithTimeline: CollisionDetection = ({ droppableContainers }) =>

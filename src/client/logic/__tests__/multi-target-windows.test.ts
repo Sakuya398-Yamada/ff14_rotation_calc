@@ -51,6 +51,7 @@ function makeResolvedEntry(overrides: Partial<ResolvedTimelineEntry>): ResolvedT
     dhRateBonus: 0,
     gcdAvailableAt: 0,
     actionAvailableAt: 0,
+    gcdRecast: 0,
     castTime: 0,
     targetCount: 1,
     ...overrides,

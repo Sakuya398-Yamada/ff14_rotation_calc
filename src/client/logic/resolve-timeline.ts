@@ -934,8 +934,8 @@ export function resolveTimeline(
  * エントリの前と同じ順（着弾した付与 → 時間切れ → 自動生成）で time まで進める。引数は resolveTimeline と同じ。
  * 状態を進める処理は、途中の時刻で 1 回余計に呼ぶと後のエントリの結果が変わり得る（自動生成のタイマーの再開・上限の差し替え）ので、
  * 本番の計算の途中では取り出さず、time で止めた別の計算で求める。
- * 配列の順に進めるので、手動の開始時刻で時刻が逆戻りする並びでは、time より後に始まるエントリより後ろのエントリは、
- * time 以前にエラー無しで置かれたものも入らない
+ * 配列の順に進め、time より後に始まるエントリの手前で止める。手動の開始時刻で時刻が逆戻りする並びでも、
+ * それより後ろで time 以前に始まるのは、手動で早く置いたリキャストエラーのエントリ（効果が無い）だけになる（#1008）
  */
 export function resolveStateAt(
   entries: TimelineEntry[],
@@ -1234,9 +1234,8 @@ function runTimeline(
   /**
    * fromIndex のエントリより後に使った、エラーの無い GCD（WS）のうち、着弾（hitTime。無ければ開始時刻）が [from, until) に入り、
    * ボス離脱中に着弾していないものの数（ワイルドファイア。#958）。時間差の攻撃の判定（judge）から呼ぶ。
-   * 判定は until 以降に始まるエントリより前に走るので、until より前に着弾するエントリはすべて resolved にある。
-   * 例外: 手動の開始時刻でエラーになったエントリの後は、自動配置の GCD が配列で前のエントリより早い時刻に戻ることがあり、
-   * 判定が済んだ後に置かれたその GCD は数えない（時刻の逆転は既存の挙動で、バフの付与・失効の順も同じく崩れる）
+   * 判定は until 以降に始まるエントリより前に走るので、until より前に着弾するエントリはすべて resolved にある
+   * （エラーの無いエントリは配列の順に時刻が戻らない。#1008）
    */
   const countWeaponskillsLanded = (fromIndex: number, from: number, until: number): number =>
     resolved.filter((e, i) => {
@@ -1252,6 +1251,8 @@ function runTimeline(
 
     let startTime: number;
     let resolvedCastTime = 0;
+    /** このエントリが発生させた GCD のリキャスト（GCD と triggersGcdRecast の oGCD 以外は 0） */
+    let gcdRecast = 0;
 
     let autoStartTime: number;
 
@@ -1282,7 +1283,9 @@ function runTimeline(
     applyPendingBuffsUntil(startTime);
     expireBuffsUntil(startTime);
 
-    if (originalSkill.type !== "gcd") actionAvailableAt = startTime + originalSkill.animationLock;
+    // 手動で前のエントリより早く置いたエントリ（リキャストエラー）が、次に使える時刻を巻き戻さないように遅い方を取る。
+    // 巻き戻すと、次に自動配置したエントリが戻った時刻にエラー無しで置かれ、計算が時刻順でなくなる（#1008）
+    if (originalSkill.type !== "gcd") actionAvailableAt = Math.max(actionAvailableAt, startTime + originalSkill.animationLock);
 
     // 自動変化チェック: バフ条件 / リソース条件を満たす場合、変化先スキルに差し替え（チェーン対応）
     let skill = originalSkill;
@@ -1353,9 +1356,11 @@ function runTimeline(
         ? Math.round((stats ? calcGcd(skill.castTime, stats) : skill.castTime) * speedMul * castMul * 1000) / 1000
         : 0;
 
-      gcdAvailableAt = startTime + recastTime;
+      gcdRecast = recastTime;
+      // 次に使える時刻は巻き戻さない（上の oGCD の actionAvailableAt と同じ。#1008）
+      gcdAvailableAt = Math.max(gcdAvailableAt, startTime + recastTime);
       // 詠唱中はoGCDを挟めない: actionAvailableAtは詠唱完了時刻かアニメーションロック完了時刻の遅い方
-      actionAvailableAt = startTime + Math.max(resolvedCastTime, skill.animationLock);
+      actionAvailableAt = Math.max(actionAvailableAt, startTime + Math.max(resolvedCastTime, skill.animationLock));
     }
 
     // 着弾時刻（#901）。詠唱のあるスキルは詠唱完了から遅れを数える（実機のスナップショットは詠唱完了時）。遅れが未設定なら 0 秒として扱う
@@ -2306,6 +2311,7 @@ function runTimeline(
       dhRateBonus,
       gcdAvailableAt,
       actionAvailableAt,
+      gcdRecast,
       castTime: resolvedCastTime,
       targetCount,
     });
@@ -2331,14 +2337,6 @@ function runTimeline(
     };
   }
 
-  // 最後のエントリまでに戻らなかったチャージは、計算のタイマーを複製して先に進め、戻る時刻を求める。
-  // 区間の終わりは後のエントリの回復・短縮で決まるので、全エントリを解決してから持たせる
-  for (const [chargeKey, spans] of chargeSpans) {
-    const state = skillChargeState.get(chargeKey);
-    if (state) recoverCharges({ ...state }, Infinity, spans.cooldown, spans.maxCharges, (at) => endOldestCooldownSpan(chargeKey, at));
-  }
-  for (const [index, endTime] of cooldownEndTimes) resolved[index].cooldownEndTime = endTime;
-
   // 最後のエントリまでに着弾しなかった付与も付け、着弾で付いたバフと無駄になった確率付与を、付けたエントリに書き戻す（#948）。
   // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない
   applyPendingBuffsUntil(Infinity);
@@ -2346,13 +2344,24 @@ function runTimeline(
   for (const [index, wasted] of hitWastedProcs) resolved[index].wastedProc = wasted;
   for (const [index, hits] of delayedHitResults) resolved[index].delayedHits = hits;
 
-  // 段差を描く自動生成（黙想）は、最後のエントリの後も条件バフが切れるまで数える。
+  // 結果に出る自動生成は、最後のエントリの後も条件バフが切れるまで数える（黙想の段差と、歌の詩心の付与によるリキャスト短縮）。
   // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない
   const tickGateEnds = currentActiveBuffs
     .filter((ab) => Number.isFinite(ab.endTime)
-      && resources.some((r) => r.showAutoGenerateTicks && r.autoGenerateWhileBuff?.includes(ab.buffId)))
+      && resources.some((r) =>
+        (r.showAutoGenerateTicks || r.whileBuffModifiers?.some((m) => m.cooldownReductionOnGain))
+        && r.autoGenerateWhileBuff?.includes(ab.buffId)))
     .map((ab) => ab.endTime);
   if (tickGateEnds.length > 0) expireBuffsUntil(Math.max(...tickGateEnds));
+
+  // 最後のエントリまでに戻らなかったチャージは、計算のタイマーを複製して先に進め、戻る時刻を求める。
+  // 区間の終わりは後のエントリの回復・短縮で決まるので、全エントリを解決し、着弾待ちの付与と歌の付与も進めてから持たせる
+  for (const [chargeKey, spans] of chargeSpans) {
+    const state = skillChargeState.get(chargeKey);
+    if (state) recoverCharges({ ...state }, Infinity, spans.cooldown, spans.maxCharges, (at) => endOldestCooldownSpan(chargeKey, at));
+  }
+  for (const [index, endTime] of cooldownEndTimes) resolved[index].cooldownEndTime = endTime;
+
   // エントリと同時刻の付与は、そのエントリの resourceSnapshot に含まれるので除く（時刻はどちらも小数 3 桁に丸め済み）
   const entryTimes = new Set(resolved.map((e) => e.startTime));
   const visibleResourceTicks = resourceTicks

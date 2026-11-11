@@ -55,6 +55,14 @@ describe("WHM: 神速魔（プレゼンス・オブ・マインド） (#322)", (
     expect(recastOf(last)).toBeCloseTo(2.5, 3);
     expect(last.castTime).toBeCloseTo(1.5, 3);
   });
+
+  it("GCD のバーに使う gcdRecast は、バフで縮んだリキャストも含めて startTime と gcdAvailableAt の差と一致する（#1008）", () => {
+    const result = resolve([entry("presence-of-mind"), ...glares(12)]);
+    const gcds = result.entries.slice(1);
+    expect(gcds[0].gcdRecast).toBe(2);
+    expect(gcds[gcds.length - 1].gcdRecast).toBe(2.5);
+    for (const e of gcds) expect(e.gcdRecast).toBe(recastOf(e));
+  });
 });
 
 describe("WHM: sacred-sight とグレアジャ (#322)", () => {
