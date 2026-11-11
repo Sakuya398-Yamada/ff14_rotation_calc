@@ -104,7 +104,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 3. 1 回の実行で付けるのは 10 件まで（既定値）。案が high → medium → low の順、同じ優先度なら番号の小さい順に付け、超えた分は実行報告の「見送り」に案を添えて書く（次の実行で付ける）
 4. 付ける直前に `gh api repos/{owner}/{repo}/issues/<N> --jq '{state, labels: [.labels[].name]}'` で取り直し、Closed になっていたり `priority:*` が付いていたりしたら触らない
 5. `gh api repos/{owner}/{repo}/issues/<N>/labels -f "labels[]=priority:<high|medium|low>"` で付ける（追加だけなので、ほかのラベルを落とさない）。GitHub MCP の `issue_write`（method: `update`）を使うときは、`labels` がラベル全体を置き換えるので、手順 6-4 で取り直したラベルに新しい `priority:*` を 1 つ足した配列を渡す
-6. （モデルの割り当てを使う場合）手順 5 で `model:*` の案を出した Issue に、手順 6-4・6-5 と同じ形で `model:<名前>` を付ける（`priority:*` の有無は問わない。取り直して Closed か `model:*` 付きなら触らない）。1 回 10 件まで（既定値）、番号の小さい順で、超えた分は実行報告の「見送り」に書く
+6. （モデルの割り当てを使う場合）手順 5 で `model:*` の案を出した Issue に、手順 6-4・6-5 と同じ形で `model:<名前>` を付ける（`priority:*` の有無は問わない。取り直して Closed か `model:*` 付きなら触らない）。
 
 ## 7. 着手順のおすすめを選ぶ
 
