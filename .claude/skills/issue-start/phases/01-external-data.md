@@ -21,7 +21,7 @@
   # 1. ジョブガイドの生 HTML を取得（URL は WebFetch / 検索で特定済みのもの）
   curl -sL "https://jp.finalfantasyxiv.com/jobguide/blackmage/" -o "${TMPDIR:-/tmp}/jobguide.html"
 
-  # 2. タグ除去してスキル名の前後220字の原文を抽出
+  # 2. タグ除去して、PvE 欄に出たスキル名の前後220字の原文だけを抽出
   node -e '
   const fs = require("fs");
   const text = fs.readFileSync(process.argv[1], "utf8")
@@ -30,10 +30,14 @@
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ");
   const name = process.argv[2];
+  // PvE 欄の終わりは「PatchX.Y…のPvP全般のアップデート内容は」の行（PvP 欄の終わりにも同じ行があるので、最初の出現で切る）
+  const end = text.search(/Patch ?[\d.]+.{0,40}PvP全般のアップデート内容は/);
+  if (end === -1) console.error("PvE 欄の終わりの行が見つからないので、ページ全体を探す");
+  const pve = end === -1 ? text : text.slice(0, end);
   let i = -1;
-  while ((i = text.indexOf(name, i + 1)) !== -1) {
-    console.log("--- match at " + i + " ---");
-    console.log(text.slice(Math.max(0, i - 220), i + 220));
+  while ((i = pve.indexOf(name, i + 1)) !== -1) {
+    console.log("--- " + (end === -1 ? "match" : "PvE match") + " at " + i + " ---");
+    console.log(pve.slice(Math.max(0, i - 220), i + 220));
     console.log();
   }
   ' "${TMPDIR:-/tmp}/jobguide.html" "ハイファイラ"
@@ -42,10 +46,10 @@
   運用上の注意:
 
   - 出力ファイルはセッションの scratchpad ディレクトリ等の一時領域に置く（リポジトリ直下に残さない）
-  - **同一スキル名は PvE 欄と PvP 欄の両方にマッチする**。抽出結果ごとに周辺原文を読み、どちらの欄の記述かを必ず判別する（PvP 欄は威力の桁が大きい・「PvP」見出しが近傍に出る等で見分けられる）
+  - 標準エラーに「PvE 欄の終わりの行が見つからない」と出たら、ページ全体を探していて、同じスキル名が PvP 欄にも当たる。抽出結果ごとに周辺原文で欄を見分け（PvP 欄は威力の桁が大きい・「PvP」見出しが近傍に出る等）、境界の行の書き方が変わっていないかを、後述「PvE / PvP 欄の境界」の表のジョブガイドの行と照らしてスニペットの判定を見直す
   - 減衰・条件付き効果は「対象数に応じて威力が減少」等の**原文の有無**で判定する。原文に記載がなければ減衰なしと確定してよい（#273 で PvE 欄原文により「減衰記載があるのはフレア/フレアスター/ファウルのみ」と確定した実績）
 - **特性習得前の値（Lv100 未満で使う値）の出典**: ジョブガイドは Lv100 時点の値しか載せないので、新規ジョブの追加や既存ジョブへの特性の反映で特性習得前の値が要るときは、次の順で取る（#498 で確定した手順）
-  1. 各版のパッチノートの PvE 欄から「修得時の威力」の履歴（「アクション威力アップIII修得時の威力が 640 → 680 に変更されます」のような行。特性名の I〜III はジョブ・版で変わる）を抜き出す。上のスニペットに検索語 `修得時の威力` を渡せば取れる。各版の URL は後述「パッチ追従の検証（定型）」① のパッチノート一覧から取る
+  1. 各版のパッチノートの PvE 欄から「修得時の威力」の履歴（「アクション威力アップIII修得時の威力が 640 → 680 に変更されます」のような行。特性名の I〜III はジョブ・版で変わる）を抜き出す。後述「パッチ追従の検証（定型）」① のスニペット（PvE 欄の判定込み）に検索語 `修得時の威力` を渡せば取れる。各版の URL は同じ ① のパッチノート一覧から取る
   2. consolegameswiki（`https://ffxiv.consolegameswiki.com/wiki/<英語のアクション名。空白は _>`）の「Potency is N prior to learning the ... trait」「The potency of this action is N until ... is learned」の行で裏取りする。パッチノートに出るのは変更のあった値だけなので、変更の無い値はここで取る
      - wikitext は `https://ffxiv.consolegameswiki.com/mediawiki/api.php?action=parse&page=<ページ名>&prop=wikitext&format=json` で取れる。`acquired` がクラス（`Pugilist` など）のアクションには、説明文がジョブと違うときだけ `description-class` の行がある。クラスで見たときの説明文なので、ジョブで覚える特性が掛かる前の値で、Notes の裏取りに使える。Notes と History の読み方が割れたら、`description-class` と一致する方を取る（#517 では、双掌打の History の 7.0 の行「Potency has been increased to 340 between level 84-94.」と Notes「Potency is 340 until Melee Mastery (Monk) is learned at Lv. 84.」が割れ、`description-class` の「Delivers an attack with a potency of 340.」と一致する Notes を取った）。クラスで覚えるアクションでも、行が無ければ（`Fire_III`）この裏取りはできない
      - ほかのジョブのアクションや、武器・NPC などと名前が被るアクションは、名前だけのページで別の記事が返ることがある（`Ruin_II` は巴術士・召喚士のアクション、`Thunderclap` は `{{Weapon infobox`、`Mountain_Buster` は曖昧さ回避ページの `{{disambig}}`）。返った wikitext の冒頭に `{{other uses|…}}`（`{{otheruses|…}}`）があれば、引数を見る。1 つ目がこのページの説明で、そのあとに別のページの説明とページ名が交互に並ぶ（`{{otheruses|the arcanist and summoner action|the [[scholar]] action|Ruin II (scholar)}}`）。見たいジョブの PvE のアクションに合うのが別のページの説明なら、そのページ名で取り直す（`Ruin_II_(scholar)`・`Thunderclap_(PvE_action)`）。`{{disambig}}` なら、下のリストのうち見たいジョブのページ名で取り直す（`Mountain_Buster_(Summoner)`）。括弧が付くのがどちらのジョブか、括弧の中が大文字か小文字かはページごとに違う（学者の `Energy_Drain` は括弧が無く、巴術士・召喚士の方が `Energy_Drain_(Arcanist)`）。組み立てたページ名は大文字と小文字の違いでも `missingtitle` のエラーになるので、`{{other uses|…}}` やリストの表記のまま使う（空白は `_`）
