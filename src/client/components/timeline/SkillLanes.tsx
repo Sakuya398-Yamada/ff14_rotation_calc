@@ -7,10 +7,11 @@ import type { DisplayEntry } from "./types";
 import { calcEntryDelayedHitsExpectedPotency, calcEntryPotencyBreakdown } from "../../logic/expected-potency";
 import {
   formatConsumedProc,
+  formatConsumedResourceProc,
   formatProcOccurred,
   formatWastedProc,
-  isProcOutcomeSource,
-  PROC_OUTCOME_BUFF_ID,
+  getEntryProcOutcomeName,
+  isProcOutcomeBuff,
 } from "../../logic/buff-format";
 import { formatResourceErrorWarnings } from "../../logic/resource-error-format";
 import { formatComboErrorWarnings } from "../../logic/combo-error-format";
@@ -37,6 +38,29 @@ interface SkillLanesProps {
 /** 時間差の攻撃（#957）のバフ込みの威力の合計。持たないエントリは 0 */
 function delayedHitsBuffedPotency(entry: ResolvedTimelineEntry): number {
   return (entry.delayedHits ?? []).reduce((sum, hit) => sum + Math.floor(hit.potency * hit.buffMultiplier), 0);
+}
+
+/**
+ * ツールチップに出す確率の表示（期待値の補正に使った確率と上書き確率。先頭に " / " を付けて返す）と、
+ * 確率付与の発生の指定（TimelineEntry.procOccurred）の表示名。GCD と oGCD のレーンで共通 (#1005)
+ */
+function formatEntryProcLabels(entry: DisplayEntry, jobId: JobId): { procRateLabel: string; procOccurredLabel: string | null } {
+  const procRateLabel = [
+    entry.consumedProc ? formatConsumedProc(entry.consumedProc, jobId) : null,
+    entry.consumedResourceProc ? formatConsumedResourceProc(entry.consumedResourceProc, jobId) : null,
+    entry.wastedProc && isProcOutcomeBuff(entry.wastedProc.buffId) ? formatWastedProc(entry.wastedProc, jobId) : null,
+  ]
+    .filter((label) => label !== null)
+    .map((label) => ` / ${label}`)
+    .join("");
+  // 付与元でなくなった指定（レベルを下げたバイト系・コンボが切れたファウンテン・撃てた確率 0 の枠など）は解決で無視されるので出さない
+  const procOutcomeName = entry.procOccurred !== undefined
+    ? getEntryProcOutcomeName(entry, entry.displaySkill, jobId)
+    : undefined;
+  const procOccurredLabel = entry.procOccurred !== undefined && procOutcomeName !== undefined
+    ? formatProcOccurred(entry.procOccurred, procOutcomeName)
+    : null;
+  return { procRateLabel, procOccurredLabel };
 }
 
 /** dnd-kit のドラッグ元となるタイムラインエントリのアイコン（タッチ・マウス両対応） */
@@ -110,17 +134,7 @@ export function SkillLanes({
               : null;
             const expectedPot = breakdown || delayedExpected !== null ? (breakdown?.total ?? 0) + (delayedExpected ?? 0) : null;
             const targetBreakdown = formatTargetBreakdown(breakdown, t);
-            const consumedProcLabel = entry.consumedProc
-              ? ` / ${formatConsumedProc(entry.consumedProc, jobId)}`
-              : "";
-            // 上書きの表示はホークアイだけ（ほかのジョブの確率付与は対象外。#842）
-            const wastedProcLabel = entry.wastedProc?.buffId === PROC_OUTCOME_BUFF_ID
-              ? ` / ${formatWastedProc(entry.wastedProc, jobId)}`
-              : "";
-            // 付与元でなくなった指定（レベルを下げたバイト系など）は解決で無視されるので出さない
-            const procOccurredLabel = entry.procOccurred !== undefined && isProcOutcomeSource(entry.displaySkill)
-              ? formatProcOccurred(entry.procOccurred, jobId)
-              : null;
+            const { procRateLabel, procOccurredLabel } = formatEntryProcLabels(entry, jobId);
             const isAutoTransformed = entry.resolvedSkillId !== entry.skillId;
             const name = skillName(t, jobId, entry.displaySkill.id);
             // castTime > recast の場合は次 GCD が打てるのは castTime 後（resolve-timeline.ts と整合）。
@@ -178,7 +192,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.skillIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.skillIconDragging : {}),
                   }}
-                  title={`${name}${isAutoTransformed ? ` (← ${skillName(t, jobId, entry.skill.id)})` : ""} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 && entry.resolvedPotency > 0 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${consumedProcLabel}${wastedProcLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${castTime > 0 ? ` ${t("skillLanes.cast", { time: castTime })}` : ` ${t("skillLanes.instant")}`}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? ` ⚠ ${t("skillLanes.comboBroken")}` : ""}${entry.unconfirmedProcBuffs ? ` ⚠ ${t("skillLanes.unconfirmedProc")}` : ""}${entry.untargetableHit ? ` ⚠ ${t("skillLanes.untargetableHit")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
+                  title={`${name}${isAutoTransformed ? ` (← ${skillName(t, jobId, entry.skill.id)})` : ""} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 && entry.resolvedPotency > 0 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${procRateLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${castTime > 0 ? ` ${t("skillLanes.cast", { time: castTime })}` : ` ${t("skillLanes.instant")}`}${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.wsComboError ? ` ⚠ ${t("skillLanes.comboBroken")}` : ""}${entry.unconfirmedProcBuffs ? ` ⚠ ${t("skillLanes.unconfirmedProc")}` : ""}${entry.untargetableHit ? ` ⚠ ${t("skillLanes.untargetableHit")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
@@ -222,6 +236,7 @@ export function SkillLanes({
               : null;
             const expectedPot = breakdown || delayedExpected !== null ? (breakdown?.total ?? 0) + (delayedExpected ?? 0) : null;
             const targetBreakdown = formatTargetBreakdown(breakdown, t);
+            const { procRateLabel, procOccurredLabel } = formatEntryProcLabels(entry, jobId);
             const name = skillName(t, jobId, entry.displaySkill.id);
             return (
               <div
@@ -242,7 +257,7 @@ export function SkillLanes({
                     ...(selectedEntryUid === entry.uid ? styles.ogcdIconSelected : {}),
                     ...(draggingEntryUid === entry.uid ? styles.ogcdIconDragging : {}),
                   }}
-                  title={`${name} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 && entry.resolvedPotency > 0 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${entry.untargetableHit ? ` ⚠ ${t("skillLanes.untargetableHit")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
+                  title={`${name} (${t("skillLanes.potency", { potency: buffedPotency })}${entry.buffMultiplier !== 1 && entry.resolvedPotency > 0 ? ` [${entry.resolvedPotency}x${entry.buffMultiplier.toFixed(2)}]` : ""}${expectedPot !== null ? ` / ${t("skillLanes.expected", { value: expectedPot })}${targetBreakdown}` : ""}${procRateLabel}) [${entry.startTime.toFixed(2)}s${entry.manualStartTime !== undefined ? ` ${t("skillLanes.manual")}` : ""}]${procOccurredLabel !== null ? ` ${procOccurredLabel}` : ""}${entry.untargetableHit ? ` ⚠ ${t("skillLanes.untargetableHit")}` : ""}${formatResourceErrorWarnings(entry.resourceErrors)}${formatComboErrorWarnings(entry.comboErrors)}${entry.untargetableError ? ` ⚠ ${t("skillLanes.untargetable")}` : ""}${entry.recastError ? ` ⚠ ${t("skillLanes.recastError")}` : ""}`}
                   onClick={() => onSelectEntry(entry.uid)}
                 >
                   <img
@@ -253,6 +268,9 @@ export function SkillLanes({
                   />
                   {entry.manualStartTime !== undefined && (
                     <ManualStartTimeBadge />
+                  )}
+                  {entry.procOccurred !== undefined && procOccurredLabel !== null && (
+                    <ProcOutcomeBadge procOccurred={entry.procOccurred} title={procOccurredLabel} />
                   )}
                 </DraggableEntryIcon>
                 <div style={{

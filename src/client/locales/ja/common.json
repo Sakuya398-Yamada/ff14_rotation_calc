@@ -269,6 +269,7 @@
     "someSkills": "{{effect}}（一部スキル）",
     "consumedProc": "{{name}}発動確率 {{rate}}",
     "consumedProcWithFallback": "{{name}}発動確率 {{rate}}（不発時は{{skill}}）",
+    "consumedResourceProc": "{{name}}がある確率 {{rate}}",
     "wastedProc": "{{name}}上書き確率 {{rate}}",
     "procOccurred": "{{name}}: 発生",
     "procNotOccurred": "{{name}}: 不発"

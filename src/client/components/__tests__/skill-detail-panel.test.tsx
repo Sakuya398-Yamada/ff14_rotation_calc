@@ -157,6 +157,57 @@ describe("SkillDetailPanel: ホークアイの発生の有無の指定 (#838)", 
   });
 });
 
+describe("SkillDetailPanel: 踊り子の確率付与・幻扇の発生の指定 (#1005)", () => {
+  it.each([
+    [["cascade"], "対称投擲の発生"],
+    [["cascade", "fountain"], "非対称投擲の発生"],
+    [["fan-dance"], "扇の舞い【急】実行可の発生"],
+    [["windmill", "reverse-cascade"], "幻扇の発生"],
+  ])("%j の最後のスキルに「%s」の指定のボタンが出る", (skillIds, groupName) => {
+    renderLastEntry(skillIds, DNC);
+
+    expect(screen.getByRole("group", { name: groupName })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["コンボが切れたファウンテン", ["fountain"], DNC],
+    ["確率付与の無い扇の舞い【急】", ["fan-dance", "fan-dance-iii"], DNC],
+    ["黒魔道士のファイア", ["fire"], BLM],
+    // 対称投擲が無いので撃てた確率 0（実際にはカスケードを撃つ枠）
+    ["対称投擲の無いリバースカスケード", ["reverse-cascade"], DNC],
+  ])("%s には指定のボタンが出ない", (_label, skillIds, job) => {
+    renderLastEntry(skillIds, job);
+
+    expect(screen.queryByRole("group", { name: /の発生$/ })).not.toBeInTheDocument();
+  });
+
+  it("カスケード → カスケードの 2 つ目に「対称投擲上書き確率 25.0%」と出る", () => {
+    renderLastEntry(["cascade", "cascade"], DNC);
+
+    expect(screen.getByText("対称投擲上書き確率 25.0%")).toBeInTheDocument();
+  });
+
+  // 黒魔道士のファイアスターターは、上書き確率も対象外のまま (#838)
+  it("ファイア → ファイアの 2 つ目には上書き確率が出ない", () => {
+    renderLastEntry(["fire", "fire"], BLM);
+
+    expect(screen.queryByText(/上書き確率/)).not.toBeInTheDocument();
+  });
+
+  // 幻扇は 50% で得るので、扇の舞い【序】の威力は幻扇がある確率を掛けた期待値になる (#959)
+  it("カスケード → リバースカスケード → 扇の舞い【序】の扇の舞い【序】に「幻扇がある確率 25.0%」と出る", () => {
+    renderLastEntry(["cascade", "reverse-cascade", "fan-dance"], DNC);
+
+    expect(screen.getByText("幻扇がある確率 25.0%")).toBeInTheDocument();
+  });
+
+  it("幻扇を確率で得ていない扇の舞い【序】には、幻扇がある確率が出ない", () => {
+    renderLastEntry(["fan-dance"], DNC);
+
+    expect(screen.queryByText(/がある確率/)).not.toBeInTheDocument();
+  });
+});
+
 describe("SkillDetailPanel: 歌の判定ごとの発生の指定 (#900)", () => {
   function renderEntry(skillId: string, autoGenerateProcOccurred?: (boolean | null)[], job = BRD) {
     const onAutoGenerateProcChange = vi.fn();

@@ -1816,12 +1816,12 @@ function runTimeline(
         }
       };
       // 確率で得る獲得（ResourceChange.procRate）は、発生しなかったと指定したものと撃てなかったもの（撃てた確率 0）を数えない。
-      // 発生したと指定したものは確率 1。量の分布は、確率の獲得のあったリソースだけ、量を変える前の値から追う（#959）
+      // 発生したと指定したものは確率 1（撃てなかったものは指定しても数えない。#1005）。量の分布は、確率の獲得のあったリソースだけ、量を変える前の値から追う（#959）
       const applySkillResourceChanges = (changes: ResourceChange[]) => {
         const rates = new Map<ResourceChange, number>();
         const kept = changes.filter((c) => {
           if (c.amount <= 0 || c.procRate === undefined) return true;
-          const rate = entry.procOccurred === true ? 1 : c.procRate * executedRate;
+          const rate = entry.procOccurred === true && executedRate > 0 ? 1 : c.procRate * executedRate;
           if (entry.procOccurred === false || rate === 0) return false;
           rates.set(c, rate);
           return true;
@@ -2022,9 +2022,9 @@ function runTimeline(
           const isUncertainProc = procRate !== undefined && procRate < 1;
           // 確率付与を「発生しなかった」と指定した付与元は、付与も延長も付与元の蓄積もしない (#838)
           if (isUncertainProc && entry.procOccurred === false) continue;
-          // 期待値で撃ったスキルの確率付与は、撃てた確率を掛ける。撃てなかった（0）なら付けない (#959)
+          // 期待値で撃ったスキルの確率付与は、撃てた確率を掛ける。撃てなかった（0）なら、発生したと指定しても付けない (#959 / #1005)
           let rate = procRate;
-          if (isUncertainProc) rate = entry.procOccurred === true ? 1 : procRate * executedRate;
+          if (isUncertainProc) rate = entry.procOccurred === true && executedRate > 0 ? 1 : procRate * executedRate;
           if (rate === 0) continue;
 
           scheduleBuffApplication([buffId], (t) => {

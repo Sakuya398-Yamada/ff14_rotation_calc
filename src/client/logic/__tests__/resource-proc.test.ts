@@ -64,6 +64,14 @@ const procSpenderGain = makeSkill({
   buffConsumptionAnyOf: [{ buffId: "proc", stacks: 1, fallbackPotency: 100 }],
   resourceChanges: [{ resourceId: "feather", amount: 1, procRate: 0.5 }],
 });
+// proc を期待値で消費して撃ち、撃てた確率で別の proc を付ける
+const procSpenderProc = makeSkill({
+  id: "proc-spender-proc",
+  potency: 300,
+  buffConsumptionAnyOf: [{ buffId: "proc", stacks: 1, fallbackPotency: 100 }],
+  buffApplications: ["combo-proc"],
+  buffApplicationProcRates: { "combo-proc": 0.5 },
+});
 const comboStart = makeSkill({ id: "combo-start" });
 const comboFinish = makeSkill({
   id: "combo-finish",
@@ -78,7 +86,7 @@ const comboProcConsumer = makeOgcd({
 });
 
 const skillMap = new Map(
-  [gain, sureGain, smallGain, spend, smallSpend, spendAndProc, procConsumer, procGrant, sureProcGrant, procSpenderGain, comboStart, comboFinish, comboProcConsumer].map(
+  [gain, sureGain, smallGain, spend, smallSpend, spendAndProc, procConsumer, procGrant, sureProcGrant, procSpenderGain, procSpenderProc, comboStart, comboFinish, comboProcConsumer].map(
     (s) => [s.id, s],
   ),
 );
@@ -158,6 +166,26 @@ describe("期待値で撃ったスキルの確率付与（撃てた確率を掛�
     const result = resolve([entry("proc-spender-gain")]);
     expect(result[0].resolvedPotency).toBe(100);
     expect(result[0].resourceSnapshot.feather).toBe(0);
+  });
+
+  // 撃てた確率 0 の枠は、実際には出なかったときのスキルを撃っているので、発生の指定は効かない (#1005)
+  it("フィラー枠（撃てた確率 0）に発生したと指定しても、確率で得るリソースは得ない", () => {
+    const result = resolve([entry("proc-spender-gain", true), entry("spend")]);
+    expect(result[0].resourceSnapshot.feather).toBe(0);
+    expect(result[1].resourceErrors).toEqual([{ resourceId: "feather", kind: "insufficient" }]);
+  });
+
+  it("フィラー枠（撃てた確率 0）に発生したと指定しても、確率付与のバフは付かない", () => {
+    const result = resolve([entry("proc-spender-proc", true), entry("combo-proc-consumer")]);
+    expect(result[0].activeBuffs.map((b) => b.buffId)).not.toContain("combo-proc");
+    expect(result[1].resolvedPotency).toBe(0);
+  });
+
+  // 撃てた確率が 0 より大きければ、発生の指定は実際に撃って出たことを表すので確定で得る
+  it("撃てた確率が 0 より大きい枠に発生したと指定すれば、確定で得る", () => {
+    const result = resolve([entry("proc-grant"), entry("proc-spender-gain", true), entry("spend")]);
+    expect(result[2].consumedResourceProc?.procRate).toBe(1);
+    expect(result[2].resolvedPotency).toBe(100);
   });
 });
 
