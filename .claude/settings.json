@@ -99,6 +99,9 @@
       "Bash(git push * +*)",
       "Bash(git reset --hard*)",
       "Bash(git clean -f*)",
+      "Bash(gh pr merge *)",
+      "mcp__github__merge_pull_request",
+      "mcp__github__enable_pr_auto_merge",
       "Read(**/.env)",
       "Read(**/.env.*)",
       "Edit(**/.env)",
@@ -119,6 +122,12 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/validate-commit-message.sh",
+            "timeout": 10,
+            "onFailure": "block"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/validate-push-target.sh",
             "timeout": 10,
             "onFailure": "block"
           },

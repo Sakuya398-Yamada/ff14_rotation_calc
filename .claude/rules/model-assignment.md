@@ -2,6 +2,7 @@
 paths:
   - ".claude/agents/*.md"
   - ".claude/settings.json"
+  - ".claude/skills/issue-priority/model-assignment.md"
 ---
 
 # モデルと effort の割り当て
@@ -19,15 +20,17 @@ frontmatter の `paths:` により、`.claude/agents/*.md` か `.claude/settings
 | `code-explorer` / `code-reviewer` | `claude-opus-5-5` | `high` | agents の frontmatter |
 | `code-architect` | `claude-opus-5-5` | `xhigh` | agents の frontmatter |
 
+Issue に `model:*` があれば、`/issue-start` と `weekday-issue-start` はラベルのモデルのセッションに引き継ぐ（モデルと effort は `.claude/skills/issue-priority/model-assignment.md`「ラベルとモデル」。#1021）。
+
 ## 書き方
 
-- model はエイリアス（`opus` 等）ではなく完全なモデル ID で書く。effort の目盛りはモデルごとに較正されているので、エイリアスの指す先が黙って変わると model と effort の組み合わせがずれる。新しいモデルに移るときは、この表と frontmatter を同じ PR で書き換える
+- model はエイリアス（`opus` 等）ではなく完全なモデル ID で書く。effort の目盛りはモデルごとに較正されているので、エイリアスの指す先が黙って変わると model と effort の組み合わせがずれる。新しいモデルに移るときは、この表と frontmatter を同じ PR で書き換える。例外として、`.claude/skills/issue-priority/model-assignment.md`「ラベルとモデル」の表は、テンプレート元と同じに保つためエイリアスと既定の effort のまま書く（#1021 でユーザーが決定）
 - effort も明示する。書かないとセッションの effort を引き継ぐ（#495 のクラウドセッションでは xhigh で動いていた）
 - メインセッションとルーティンの effort は `.claude/settings.json` の `modelSettings` にモデルごとに書く。トップレベルの `effortLevel` は全モデルに同じ値で効くので、モデルの違うルーティンに別々の effort を割り当てられない。プロジェクト設定はユーザー設定（`/effort` で保存した既定）より優先されるので、このリポジトリではこちらが既定になる。`/effort` と `--effort` はそのセッションだけ上書きする。どこにも指定が無いと Opus 5.5 は `medium` で動く（#597 で計測）
 - ルーティンのモデルはスケジュールタスクの登録側で選ぶ（リポジトリからは変えられない）。ルーティンのモデルを替えたら、そのモデルの `modelSettings` があるかを見る。無ければそのモデルの既定の effort で動く
 - skill には `model` も `effort` も書かない。skill はユーザーがセッション開始画面でモデルと effort を選んで始めるもので、frontmatter の値はその選択を、skill を呼んだターンの残りだけ黙って上書きし、次のメッセージで戻す。モデルを切り替えたターンは会話全体をキャッシュ無しで読み直すうえ、クラウドセッションで Claude が Skill ツールから呼んだ経路では `model` が効かなかった（#495）
 - 無人ルーティン（`.claude/routines/`）から起動するサブエージェントにも agents の frontmatter が効く
-- Fable は Max プランでは週の利用枠の 50% までの別上限があり、ほかのモデルより早く枠を減らす。無人で回る経路のうち毎日動くもの（日次のルーティンと、ルーティンから起動するサブエージェント）には割り当てない。週 1 回の `weekly` は Fable 5.1 で動かす（#597 でユーザーが決定）
+- Fable は Max プランでは週の利用枠の 50% までの別上限があり、ほかのモデルより早く枠を減らす。無人で回る経路のうち毎日動くもの（日次のルーティンと、ルーティンから起動するサブエージェント）には割り当てない。週 1 回の `weekly` は Fable 5.1 で動かす（#597 でユーザーが決定）。例外として、`weekday-issue-start` が `model:fable` の Issue を選んだとき（着手後の再判定で `model:fable` に上げたときも）は、Issue ごとのモデルの割り当て（`.claude/skills/issue-priority/model-assignment.md`「無人実行の引き継ぎ」）どおり Fable のセッションに引き継ぐ（#1021 でユーザーが決定）
 
 ## 変えたときの検証
 

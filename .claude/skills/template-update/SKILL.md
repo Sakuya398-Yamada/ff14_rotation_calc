@@ -6,12 +6,12 @@ argument-hint: "[vNEW]"
 
 # テンプレート更新の取り込み（/template-update）
 
-更新用 Issue（`refactor: テンプレートを vX.Y.Z に更新`）を `/issue-start` したときの **Phase 5 の実装内容**。
+更新用 Issue（`refactor: テンプレートを vX.Y.Z に更新`）を `/issue-start` したときの Phase 5 の実装内容。
 
 ## 前提
 
 - `<repo>` は `.claude/template-version` の `repo`、`vOLD` は同ファイルの `version`、`vNEW` は更新用 Issue の版（引数で指定されていればそれ）
-- テンプレートのファイルはこのプロジェクト側でカスタマイズ済みなので、**機械的に上書きしない**
+- テンプレートのファイルはこのプロジェクト側でカスタマイズ済みなので、機械的に上書きしない
 - 作業は未コミットの変更が無い状態で始める（現プロジェクト版を `HEAD` から取るため。後述「3-way マージの定型手順」5）
 - 更新用 Issue の `/issue-start` の外から直接呼ばれたら、取り込みに入らない。版は引数、無ければ `.claude/skills/issue-start/phases/01-issue-analysis.md` 手順 0.5 の表と `.claude/skills/issue-start/phases/01-template-update-check.md`「バナーを信じる前の確認」に沿って SessionStart バナーから決める（`⚠ Template update available` でなければ、表の動作に従い、取り込まずにその旨を伝えて終える）。そのうえで同ファイル「更新があるときの確認と起票」の [Y] と同じ手順で同じ版の更新用 Issue を探し、無ければ起票を提案する（確認の形式は同じで、「（今の Issue の作業はそのまま続けます）」は省き、[Y] ならこの流れのまま `/issue-start` に進むと添える）。見つけた・起票した Issue は `/issue-start <番号>` を呼んで進める。起票を断られたら取り込まない
 
@@ -19,7 +19,7 @@ argument-hint: "[vNEW]"
 
 1. テンプレート元のクローンを先に作る（後述「3-way マージの定型手順」の `git clone`。以下の `<scratchpad>/template-src`）。Release notes と差分（`git diff vOLD..vNEW -- template/` をクローンで実行、または compare URL）を読み、変更ファイルの一覧を得る。Release notes を読めないときは、`git -C <scratchpad>/template-src show vNEW:CHANGELOG.md` の、vOLD より新しく vNEW 以下の版の節で代える（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは、セッションに付いていないリポジトリの Release やファイルを API で読めない」）
    - 手動対応もここで読む（手順 2）。手動対応は、テンプレート元の `docs/upgrade-notes.md` に `## v<版>` の節で新しい版から順にある（Release notes の「手動対応」と同じ中身で、`CHANGELOG.md` には無い）。`git -C <scratchpad>/template-src show vNEW:docs/upgrade-notes.md` を先頭から読み、vOLD 以下の版の節に来たら止める（`HEAD` ではなく vNEW のタグで読む。`--no-checkout` のクローンの `HEAD` は clone した時点の既定ブランチのままで、使い回したクローンでは古い版を、新しいクローンでも未リリースの記述を読みうる。vNEW のタグが無いと言われたら、使い回したクローンが古いので `git -C <scratchpad>/template-src fetch -q --tags` で取り直す）。vOLD より新しく vNEW 以下の版で節の無いものには、手動対応が無い。このファイルが無いテンプレート元（フォークした独自テンプレートなど）では、Release notes の「手動対応」を見る
-2. 変更ファイルごとに、このプロジェクト側の対応ファイル（`template/` を除いたパス）へ **3-way マージ**（`git merge-file`）で反映する。差分を読んで手で当てるより取りこぼしが少なく、プロジェクト固有の記述とぶつかる箇所だけがコンフリクトとして残る（後述「3-way マージの定型手順」）
+2. 変更ファイルごとに、このプロジェクト側の対応ファイル（`template/` を除いたパス）へ 3-way マージ（`git merge-file`）で反映する。差分を読んで手で当てるより取りこぼしが少なく、プロジェクト固有の記述とぶつかる箇所だけがコンフリクトとして残る（後述「3-way マージの定型手順」）
    - コンフリクト箇所は、テンプレート側の変更を取り込みつつプロジェクト固有の記述（とくにカスタマイズ済みファイル: `tech-stack.md` / `coding-standards.md` / `CLAUDE.md` のプロジェクト固有部分 / `settings.json` の許可リスト等）を壊さない形に手で直す
    - 手順 1 で読んだ手動対応に従う（マージの前にやると書かれたものは、マージの前に済ませる）
 3. **テンプレート外の参照を確かめる**: 書き戻しが終わったら、後述「テンプレート外の参照の確認」で、テンプレートが持ち込んだ印・規約を判定に使うプロジェクト独自のファイルや固有の記述と、Issue コメント・Open Issue の本文に残った旧形式の印を探す
@@ -69,7 +69,7 @@ done
    - `settings.json` の `allow` や hooks の登録、`.claude/hooks/` のスクリプトのように権限やガードを変える差分は、Edit で当てても止められることがある（この分類器の規則は、ユーザーが明示的に求めていない権限・ガードの変更を対象にしている）。止められたら差分をユーザーに示し、その変更を取り込むことをユーザー自身のメッセージで伝えてもらってから当て直す
    - `settings.json` の hooks に、`vNEW` で追加された hook のスクリプト（ループが「project にない」と出した `.claude/hooks/` のファイル）の登録が入るときは、先に手順 4 でそのスクリプトを置いてから `settings.json` を書き戻す。hooks の変更は実行中のセッションにもすぐ効くので、登録だけが先に入ると、`"onFailure": "block"` の hook が起動に失敗して Bash の呼び出しがすべて止まる（`... failed; blocking because onFailure is "block"`）。止まったら、Edit で登録を外し、Write でスクリプトを置いてから登録し直す（Edit / Write は Bash を通らないので、Bash が止まっていても戻せる）
 2. `conflicts=N`（N > 0）のファイルは、`$W/<path>.merged` の `<<<<<<< ours` 〜 `>>>>>>> vNEW` の箇所だけを上記の方針で解消し、マーカーが残っていないことを `grep -n '^<<<<<<<\|^>>>>>>>' "$W/<path>.merged"` で確かめてから、手順 1 と同じ方法で書き戻す
-3. **書き戻したら、テンプレート版との残差を確認する**: `diff <(git -C "$SRC" show "vNEW:template/<path>") <(tr -d '\r' < <path>)`。残ってよいのは意図したプロジェクト固有の記述だけで、到達不能な分岐・重複した関数定義・同じ内容の二重の箇条書きが出ていたら手で除く。`merge-file` は両側が同じ領域を別の文面で変えていても、変更行が重ならなければコンフリクトにせず隣接する追記として黙って合成する。**プロジェクト側で先行修正したファイル（テンプレートへ還元した知見を自前でも直していた場合など）は `conflicts=0` でも必須**
+3. **書き戻したら、テンプレート版との残差を確認する**: `diff <(git -C "$SRC" show "vNEW:template/<path>") <(tr -d '\r' < <path>)`。残ってよいのは意図したプロジェクト固有の記述だけで、到達不能な分岐・重複した関数定義・同じ内容の二重の箇条書きが出ていたら手で除く。`merge-file` は両側が同じ領域を別の文面で変えていても、変更行が重ならなければコンフリクトにせず隣接する追記として黙って合成する。プロジェクト側で先行修正したファイル（テンプレートへ還元した知見を自前でも直していた場合など）は `conflicts=0` でも必須
    固有記述の多いファイルでは、取り込み後の残差だけ見ると今回の変化が従来の固有記述に埋もれる。取り込み前（`vOLD` 対 `HEAD`）の残差も作って突き合わせると、取り込みで変わった残差だけが出る。両者が一致すれば固有記述は失われていない:
 
    ```bash

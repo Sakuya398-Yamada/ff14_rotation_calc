@@ -6,13 +6,13 @@ argument-hint: "#<Issue番号>"
 
 # Issue開発スキル（/issue-start）
 
-対象 Issue: **$ARGUMENTS**（`#` の有無は問わない。番号が読み取れなければ最初に質問する）
+対象 Issue: $ARGUMENTS（`#` の有無は問わない。番号が読み取れなければ最初に質問する）
 
 指定された GitHub Issue に基づいて、ブランチ作成から実装・レビュー・PR作成・Issue への記録までを一連で行う。
 
 ## Phase一覧（progressive disclosure）
 
-各 Phase の手順は `phases/` 配下に分割してある。**該当 Phase に入る直前にそのファイルを読む**。冒頭でまとめて読み込まない。読むのは Read ツールで行う（`cat` だと出力上限を超えたファイルは先頭しか届かない。`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）。
+各 Phase の手順は `phases/` 配下に分割してある。該当 Phase に入る直前にそのファイルを読む。冒頭でまとめて読み込まない。読むのは Read ツールで行う（`cat` だと出力上限を超えたファイルは先頭しか届かない。`.claude/skills/issue-start/pitfalls.md`「Bash の出力上限は、文字数ではなくバイト数で効く」）。
 
 | # | Phase | ファイル | スキップ |
 |---|-------|---------|---------|
@@ -47,9 +47,9 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 |---------------|------|------|
 | `code-explorer` | コード探索・トレース。生の探索ログを主会話に入れず要約だけ受け取る | `.claude/agents/code-explorer.md` |
 | `code-architect` | 実装ブループリント（1 案に絞って提案） | `.claude/agents/code-architect.md` |
-| `code-reviewer` | 実装者とは別の新しいコンテキストでの批判的レビュー（信頼度80以上のみ報告） | `.claude/agents/code-reviewer.md` |
+| `code-reviewer` | 実装者とは別の新しいコンテキストでの批判的レビュー（見つけた指摘を信頼度・重要度付きで全部返す。絞り込みは Phase 6 で主セッションが行う） | `.claude/agents/code-reviewer.md` |
 
-起動数・使いどころ・プロンプトに含めるものは `.claude/rules/context-efficiency.md`「サブエージェント委譲」と各 Phase の起動数表。バックグラウンドのサブエージェントの報告が届かず、output ファイルのパスだけが渡されたら、ファイルを読まずに `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでコンテナが再起動すると、バックグラウンドのサブエージェントの報告が届かない」のコマンドで報告だけを取り出す。
+起動数・使いどころ・プロンプトに含めるものは `.claude/rules/context-efficiency.md`「原則」3・「サブエージェント委譲」と各 Phase の起動数表。バックグラウンドのサブエージェントの報告が届かず、output ファイルのパスだけが渡されたら、ファイルを読まずに `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでコンテナが再起動すると、バックグラウンドのサブエージェントの報告が届かない」のコマンドで報告だけを取り出す。
 
 `subagent_type` が見つからない（`Agent type '...' not found`）ときは、エージェント定義がセッション開始時にしか読み込まれないのが原因。クラウドセッションの途中でリポジトリを付けたなら、クローン後に登録ツール（`register_repo_root`）を呼べば次のターンから使える。それでも見つからなければ `general-purpose` に `.claude/agents/<name>.md` を読ませて代わりにする。その場合、定義の `tools` に無い操作（`code-reviewer` ならファイルの編集）はしないようプロンプトに書く。
 
@@ -66,7 +66,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
 ## スコープ外問題の起票提案（Phase横断）
 
-当該 Issue のスコープ外の問題を見つけたら **その場で直さず、別 Issue としての起票を提案する**（1 Issue = 1 PR）。
+当該 Issue の目的と関係ない問題（スコープ外の問題）を見つけたらその場で直さず、別 Issue としての起票を提案する（1 Issue = 1 PR）。目的のために明らかに要る周辺の修正はスコープ内で、Phase 4 の設計に含める（`.claude/rules/git-conventions.md`「スコープ原則（1 Issue = 1 PR）」）。
 
 ### 検出タイミング
 
@@ -75,12 +75,12 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 | 1（Issue 分析） | 乖離チェック・外部情報の裏取りなどで見つけた別の問題 | Phase 1.5「補完結果の確認」と同じ呼び出しで、別の質問にして聞く（補完が無ければ、それだけを聞いてから Phase 2 に進む）。親の本文に子の番号を書くなら、まとめずに起票の確認を先に聞いて起票し、その番号を入れた補完案で確認する（「全体ルール」の「確認の聞き方」の、前の答えで次が決まる確認） |
 | 3（コード探索） | 既存コードの別バグ・設計上の違和感 | Phase 末尾で一覧化して提示 |
 | 5（実装） | 実装中に周辺コードのバグに遭遇 | 即時は記録のみ、Phase 末尾でまとめて提示 |
-| 6（レビュー） | レビュアーの指摘が当該 Issue の DoD 外 | スコープ内（即修正）／外（起票候補）に仕分け |
+| 6（レビュー） | レビュアーの指摘が当該 Issue の目的・承認した設計の外 | スコープ内（即修正）／外（起票候補）に仕分け |
 
 ### 起票判定基準
 
 - **起票する**: 機能不具合／仕様乖離／データ誤り／ユーザー体験を損なう振る舞い／複数ジョブ横断の類似問題
-- **起票しない**: コードスタイルの好み／影響の無いリファクタ案／当該 Issue の DoD 内／重複が確かな既存 Issue（重複かもしれないだけの候補は、起票フローで [A] を示す）／空回しで挙がった、変更前からある文面の迷い（実際の入力で誤った結果が出たものは除く。`phases/05-implementation.md`「変更前の文面でも挙がる迷い」）
+- **起票しない**: コードスタイルの好み／影響の無いリファクタ案／当該 Issue の目的に要るもの（設計に含める）／重複が確かな既存 Issue（重複かもしれないだけの候補は、起票フローで [A] を示す）／空回しで挙がった、変更前からある文面の迷い（実際の入力で誤った結果が出たものは除く。`phases/05-implementation.md`「変更前の文面でも挙がる迷い」）
 
 ### 起票フロー（共通）
 
@@ -111,14 +111,14 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
    [A] のときは起票せず、その既存 Issue に、見つけた内容（概要・箇所・再現手順）をコメントで追記する
 
    還元先は、問題がワークフロー自体（`CLAUDE.md`・`.claude/`・`.github/ISSUE_TEMPLATE/`）にあるときだけ、`.claude/rules/workflow-feedback.md`「還元する / しないの判定」で決めて書く（テンプレート汎用にする前に、`phases/08-issue-recording.md` 手順 5「書き込み手順」3 のとおりテンプレート元の取り込み済みの版と見比べる）。テンプレート汎用なら [U] を推奨にする（同じファイル「テンプレート元への還元」）。[U] のときは起票せず、`phases/08-issue-recording.md` 手順 5 の知見ボードに `還元先: テンプレート汎用` で書く候補として控え、同じく手順 6 で還元する（どちらも、[U] とは別に Phase 8 のそれぞれの手順でユーザー確認を挟む）。いまの作業を塞いでいて直さないと進めない不具合のときだけ [Y] で起票してよい。その場合も Phase 8 で還元する
-3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で **sub-issue として** 作成する。本文は `.claude/rules/git-conventions.md` の「Issue のタイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く。sub-issue の階層の上限（7 段。`You can’t add more than 7 layers of sub-issues`）で失敗したときは、同じタイトルの Issue が作られていないかを見てから（`issue_write` では作られないことを確かめてあるが、ほかの経路では確かめていない）、親を外して作り直し、同じく本文末尾に書く。子 Issue の完了条件が、作業中の親 Issue のまだマージされていない変更を前提にする（親が足す API を使う別の機能など）なら、本文の「## 関連Issue」に `依存: #<親番号>` を書き、GitHub の依存関係（blocked by）にも付ける（`.claude/skills/issue-start/dependencies.md`「付け方」）。書かないと子の PR が親より先にマージされ得る。親の変更そのもので誤りになる記述（親が変える仕様を説明している利用者向けドキュメントなど）は、子 Issue にせず、不可避な副次変更として親の PR で直す（`.claude/rules/git-conventions.md`「スコープ原則（1 Issue = 1 PR）」、`phases/03-exploration.md`「スキップ条件」）
+3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で sub-issue として作成する。本文は `.claude/rules/git-conventions.md` の「Issue のタイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く。sub-issue の階層の上限（7 段。`You can’t add more than 7 layers of sub-issues`）で失敗したときは、同じタイトルの Issue が作られていないかを見てから（`issue_write` では作られないことを確かめてあるが、ほかの経路では確かめていない）、親を外して作り直し、同じく本文末尾に書く。子 Issue の完了条件が、作業中の親 Issue のまだマージされていない変更を前提にする（親が足す API を使う別の機能など）なら、本文の「## 関連Issue」に `依存: #<親番号>` を書き、GitHub の依存関係（blocked by）にも付ける（`.claude/skills/issue-start/dependencies.md`「付け方」）。書かないと子の PR が親より先にマージされ得る。親の変更そのもので誤りになる記述（親が変える仕様を説明している利用者向けドキュメントなど）は、子 Issue にせず、不可避な副次変更として親の PR で直す（`.claude/rules/git-conventions.md`「スコープ原則（1 Issue = 1 PR）」、`phases/03-exploration.md`「スキップ条件」）
 4. **親Issueへの記録**: Phase 8 で親 Issue に子 Issue の一覧をコメントする（`phases/08-issue-recording.md`）
 
 無人起票はしない。スコープ外問題を自動修正もしない（口頭報告か起票のみ）。
 
 ## ワークフロー改善の知見ボード（Phase 8）
 
-個別 Issue のスコープ外問題（コードのバグ等）とは別に、**ワークフロー自体（`/issue-start` の手順・`.claude/rules/*`・`CLAUDE.md`・hooks・agents・skills・MCP 運用）への気づき** を累積する常時 Open の Issue がある。
+個別 Issue のスコープ外問題（コードのバグ等）とは別に、ワークフロー自体（`/issue-start` の手順・`.claude/rules/*`・`CLAUDE.md`・hooks・agents・skills・MCP 運用）への気づきを累積する常時 Open の Issue がある。
 
 - **知見ボードIssue**: #195（`meta: ワークフロー改善の知見ボード`）
 - **書き込み**: Phase 8 の最後にユーザー確認を挟んで `add_issue_comment` で追記する（運用規約は `.claude/rules/workflow-feedback.md`）
