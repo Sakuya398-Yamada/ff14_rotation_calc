@@ -76,6 +76,8 @@ describe("確定クリティカル・ダイレクトヒットのバフを applie
     expectNoError(e[1]);
     expect(e[1].critRateBonus).toBe(0);
     expect(e[1].dhRateBonus).toBe(0);
+    expect(e[1].guaranteedCrit).toBeUndefined();
+    expect(e[1].guaranteedDh).toBeUndefined();
     expect(stacksOf(e[1], "limited")).toBe(3);
     expect(getBuffContributions(e[1].activeBuffsAtUse, buffDefMap, "other", "gcd")).toEqual([]);
   });
@@ -83,8 +85,8 @@ describe("確定クリティカル・ダイレクトヒットのバフを applie
   it("対象の GCD は確定になり、CRT・DH・consumeOnGcd を併せ持っても 1 スタックだけ減る", () => {
     const e = resolve([entry("grant-limited"), entry("target")]);
     expectNoError(e[1]);
-    expect(e[1].critRateBonus).toBe(1);
-    expect(e[1].dhRateBonus).toBe(1);
+    expect(e[1].guaranteedCrit).toBe(true);
+    expect(e[1].guaranteedDh).toBe(true);
     expect(stacksOf(e[1], "limited")).toBe(2);
     const [contribution] = getBuffContributions(e[1].activeBuffsAtUse, buffDefMap, "target", "gcd");
     expect(contribution).toMatchObject({ buffId: "limited", guaranteedCrit: true, guaranteedDh: true });
@@ -93,7 +95,7 @@ describe("確定クリティカル・ダイレクトヒットのバフを applie
   it("スキル自身が確定の GCD は、対象外のバフのスタックを減らさない", () => {
     const e = resolve([entry("grant-limited"), entry("self-guaranteed")]);
     expectNoError(e[1]);
-    expect(e[1].critRateBonus).toBe(1);
+    expect(e[1].guaranteedCrit).toBe(true);
     expect(stacksOf(e[1], "limited")).toBe(3);
   });
 
@@ -107,8 +109,8 @@ describe("確定クリティカル・ダイレクトヒットのバフを applie
   it("appliesToSkillIds の無いバフは全 GCD に効き、CRT と DH を併せ持っても 1 スタックだけ減る", () => {
     const e = resolve([entry("grant-both"), entry("other"), entry("target")]);
     e.forEach(expectNoError);
-    expect(e[1].critRateBonus).toBe(1);
-    expect(e[1].dhRateBonus).toBe(1);
+    expect(e[1].guaranteedCrit).toBe(true);
+    expect(e[1].guaranteedDh).toBe(true);
     expect(stacksOf(e[1], "both")).toBe(2);
     expect(stacksOf(e[2], "both")).toBe(1);
   });

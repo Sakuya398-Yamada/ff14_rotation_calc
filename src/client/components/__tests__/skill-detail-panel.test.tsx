@@ -18,6 +18,9 @@ import { BLM_RESOURCES } from "../../data/blm-resources";
 import { DRK_ATTACK_SKILLS } from "../../data/drk-skills";
 import { DRK_BUFFS } from "../../data/drk-buffs";
 import { DRK_RESOURCES } from "../../data/drk-resources";
+import { DNC_ATTACK_SKILLS } from "../../data/dnc-skills";
+import { DNC_BUFFS } from "../../data/dnc-buffs";
+import { DNC_RESOURCES } from "../../data/dnc-resources";
 import { calcDelayedHitBreakdown } from "../../logic/expected-potency";
 import type { BuffDefinition, CharacterStats, ResourceDefinition, Skill } from "../../types/skill";
 import type { JobId } from "../../data/job-registry";
@@ -52,6 +55,7 @@ const BRD = setupJob("brd", BRD_ATTACK_SKILLS, BRD_BUFFS, BRD_RESOURCES);
 const MNK = setupJob("mnk", MNK_ATTACK_SKILLS, MNK_BUFFS, MNK_RESOURCES);
 const BLM = setupJob("blm", BLM_ATTACK_SKILLS, BLM_BUFFS, BLM_RESOURCES);
 const DRK = setupJob("drk", DRK_ATTACK_SKILLS, DRK_BUFFS, DRK_RESOURCES);
+const DNC = setupJob("dnc", DNC_ATTACK_SKILLS, DNC_BUFFS, DNC_RESOURCES);
 
 /** skillIds を解決し、最後のエントリの詳細パネルを描画する */
 function renderLastEntry(skillIds: string[], job = BRD) {
@@ -442,6 +446,22 @@ describe("SkillDetailPanel: 時間差の攻撃 (#957)", () => {
     times.forEach((time, i) => {
       expect(screen.getByText(new RegExp(`^（着弾: ${time}s） ${potencies[i]} × 1\\.00 × [0-9.]+ = ${hitTotals[i]}$`))).toBeInTheDocument();
     });
+  });
+});
+
+describe("SkillDetailPanel: 確定クリティカル・ダイレクトヒット (#1004)", () => {
+  it("攻めのタンゴ中の流星の舞いは、見出しに確定と出し、率の上昇を換算した倍率で期待値を出す", () => {
+    renderLastEntry(["devilment", "cascade", "starfall-dance"], DNC);
+
+    const crit = within(screen.getByText("CRT率ボーナス").parentElement!.parentElement!);
+    expect(crit.getByText("確定CRT")).toBeInTheDocument();
+    expect(crit.getByText("+20.0%")).toBeInTheDocument();
+    const dh = within(screen.getByText("DH率ボーナス").parentElement!.parentElement!);
+    expect(dh.getByText("確定DH")).toBeInTheDocument();
+    expect(dh.getByText("+20.0%")).toBeInTheDocument();
+    // CRIT=3000: クリ倍率 1.585 × floor3(1 + 0.585 × 0.2) = 1.117。DH: 1.25 × floor3(1 + 0.25 × 0.2) = 1.05。
+    // DET=2500 の 1.103 に DH=2000 の 0.079 を足して 1.182。合わせて 2.747（600 × 2.747… = 1647）
+    expect(screen.getByText("600 × 1.00 × 2.747 = 1647")).toBeInTheDocument();
   });
 });
 

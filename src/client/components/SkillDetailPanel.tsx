@@ -183,7 +183,7 @@ export function SkillDetailPanel({
   const dhContribs = contributions.filter((c) => c.dhRateBonus !== undefined || c.guaranteedDh);
 
   const buffedPotency = Math.floor(entry.resolvedPotency * entry.buffMultiplier);
-  const expectedMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus);
+  const expectedMul = calcExpectedMultiplier(stats, entry.critRateBonus, entry.dhRateBonus, { crit: entry.guaranteedCrit, dh: entry.guaranteedDh });
   // ゴースト（着弾時にボス離脱中。#950）は期待値が 0 なので、計算式の行は出さない
   const singleTargetExpected = !hasError && !entry.untargetableHit && entry.resolvedPotency > 0
     ? Math.floor(buffedPotency * expectedMul)
@@ -407,7 +407,7 @@ export function SkillDetailPanel({
           )}
         </Section>
 
-        <Section label={t("skillDetailPanel.critRateBonus")} value={formatPercent(entry.critRateBonus)}>
+        <Section label={t("skillDetailPanel.critRateBonus")} value={entry.guaranteedCrit ? t("skillDetailPanel.guaranteedCrit") : formatPercent(entry.critRateBonus)}>
           {critContribs.length === 0 ? (
             <div style={styles.emptyContrib}>{t("skillDetailPanel.noContributions")}</div>
           ) : (
@@ -424,7 +424,7 @@ export function SkillDetailPanel({
           )}
         </Section>
 
-        <Section label={t("skillDetailPanel.dhRateBonus")} value={formatPercent(entry.dhRateBonus)}>
+        <Section label={t("skillDetailPanel.dhRateBonus")} value={entry.guaranteedDh ? t("skillDetailPanel.guaranteedDh") : formatPercent(entry.dhRateBonus)}>
           {dhContribs.length === 0 ? (
             <div style={styles.emptyContrib}>{t("skillDetailPanel.noContributions")}</div>
           ) : (

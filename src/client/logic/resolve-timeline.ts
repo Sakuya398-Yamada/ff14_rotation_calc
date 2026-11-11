@@ -1742,13 +1742,10 @@ function runTimeline(
     const buffMultiplierBeforeApply = hasError ? 1 : getPotencyMultiplier(currentActiveBuffs, buffDefMap, resolvedSkillId);
     const guaranteedCritBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedCrit === true || hasGuaranteedHit(currentActiveBuffs, buffDefMap, resolvedSkillId, "guaranteedCrit"));
     const guaranteedDhBeforeApply = !hasError && skill.type === "gcd" && (skill.guaranteedDh === true || hasGuaranteedHit(currentActiveBuffs, buffDefMap, resolvedSkillId, "guaranteedDh"));
-    // バフによるCRT率ボーナス（guaranteedCritとは別に計算。DoTスナップショットでも使用）
-    const baseCritRateBonus = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
-    // 直接ダメージ用: guaranteedCritの場合は100%に上書き
-    const critRateBonusBeforeApply = guaranteedCritBeforeApply ? 1 : baseCritRateBonus;
-    const baseDhRateBonus = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
-    // 直接ダメージ用: guaranteedDhの場合は100%に上書き
-    const dhRateBonusBeforeApply = guaranteedDhBeforeApply ? 1 : baseDhRateBonus;
+    // バフによるCRT率・DH率ボーナス。確定クリ/DH でも 1 に上書きせず、期待値の計算で確定のフラグと一緒にダメージの上昇へ換算する（#1004）。
+    // DoT のスナップショットもこの値を使う（確定クリ/DH は DoT に乗らない）
+    const critRateBonusBeforeApply = hasError ? 0 : getCritRateBonus(currentActiveBuffs, buffDefMap);
+    const dhRateBonusBeforeApply = hasError ? 0 : getDhRateBonus(currentActiveBuffs, buffDefMap);
 
     // 詳細パネル等で「このスキルの威力に寄与したバフ」を表示するためのスナップショット。
     // buffMultiplierBeforeApply / *BeforeApply と同じタイミングで取得することで、
@@ -2152,7 +2149,7 @@ function runTimeline(
         const dotPotency = skill.dotPotency;
         const dotDuration = skill.dotDuration;
         const buffMultiplier = buffMultiplierBeforeApply;
-        const dotCritRateBonus = baseCritRateBonus;
+        const dotCritRateBonus = critRateBonusBeforeApply;
         const dotDhRateBonus = dhRateBonusBeforeApply;
         scheduleBuffApplication([], (t) => {
           const endTime = Math.round((t + dotDuration) * 1000) / 1000;
@@ -2190,7 +2187,7 @@ function runTimeline(
       if (skill.refreshesDots) {
         const refreshesDots = skill.refreshesDots;
         const refreshBuffMultiplier = buffMultiplierBeforeApply;
-        const refreshCritRateBonus = baseCritRateBonus;
+        const refreshCritRateBonus = critRateBonusBeforeApply;
         const refreshDhRateBonus = dhRateBonusBeforeApply;
         scheduleBuffApplication([], (t) => {
           for (const dotSkillId of refreshesDots) {
@@ -2309,6 +2306,8 @@ function runTimeline(
       buffMultiplier,
       critRateBonus,
       dhRateBonus,
+      ...(guaranteedCrit ? { guaranteedCrit: true as const } : {}),
+      ...(guaranteedDhBeforeApply ? { guaranteedDh: true as const } : {}),
       gcdAvailableAt,
       actionAvailableAt,
       gcdRecast,

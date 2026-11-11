@@ -177,7 +177,7 @@ describe("WAR: 原初の解放", () => {
     const e = setup(100).resolve(["inner-release", "fell-cleave", "fell-cleave", "fell-cleave"]);
     e.forEach(expectNoError);
     expect(e.slice(1).map(gauge)).toEqual([0, 0, 0]);
-    expect(e.slice(1).map((x) => [x.critRateBonus, x.dhRateBonus])).toEqual([[1, 1], [1, 1], [1, 1]]);
+    expect(e.slice(1).map((x) => [x.guaranteedCrit, x.guaranteedDh])).toEqual([[true, true], [true, true], [true, true]]);
     expect(e.slice(1).map((x) => buffOf(x, "inner-release")?.stacks)).toEqual([2, 1, undefined]);
   });
 
@@ -186,6 +186,8 @@ describe("WAR: 原初の解放", () => {
     e.forEach(expectNoError);
     expect(e[1].critRateBonus).toBe(0);
     expect(e[1].dhRateBonus).toBe(0);
+    expect(e[1].guaranteedCrit).toBeUndefined();
+    expect(e[1].guaranteedDh).toBeUndefined();
     expect(buffOf(e[1], "inner-release")?.stacks).toBe(3);
   });
 
@@ -225,7 +227,7 @@ describe("WAR: ウォークライと原初の混沌", () => {
     expect(hasBuff(e[0], "nascent-chaos")).toBe(true);
     expect(e[1].resolvedSkillId).toBe("inner-chaos");
     expect(e[1].resolvedPotency).toBe(700);
-    expect([e[1].critRateBonus, e[1].dhRateBonus]).toEqual([1, 1]);
+    expect([e[1].guaranteedCrit, e[1].guaranteedDh]).toEqual([true, true]);
     expect(gauge(e[1])).toBe(0);
     expect(hasBuff(e[1], "nascent-chaos")).toBe(false);
   });
@@ -243,7 +245,7 @@ describe("WAR: ウォークライと原初の混沌", () => {
     e.forEach(expectNoError);
     expect(e[1].resolvedSkillId).toBe("chaotic-cyclone");
     expect(e[1].resolvedPotency).toBe(200);
-    expect(e[1].critRateBonus).toBe(1);
+    expect(e[1].guaranteedCrit).toBe(true);
   });
 
   it("Lv70 では原初の混沌が付かず、フェルクリーヴのまま", () => {
@@ -292,11 +294,11 @@ describe("WAR: プライマルレンド", () => {
     const e = setup(100).resolve(["inner-release", "primal-rend", "primal-rend"]);
     e.forEach(expectNoError);
     expect(e[1].resolvedPotency).toBe(720);
-    expect([e[1].critRateBonus, e[1].dhRateBonus]).toEqual([1, 1]);
+    expect([e[1].guaranteedCrit, e[1].guaranteedDh]).toEqual([true, true]);
     expect(buffOf(e[1], "inner-release")?.stacks).toBe(3);
     expect(e[2].resolvedSkillId).toBe("primal-ruination");
     expect(e[2].resolvedPotency).toBe(800);
-    expect([e[2].critRateBonus, e[2].dhRateBonus]).toEqual([1, 1]);
+    expect([e[2].guaranteedCrit, e[2].guaranteedDh]).toEqual([true, true]);
   });
 
   it("Lv90 ではルイネーター実行可が付かず、2 回目のプライマルレンドは使えない", () => {

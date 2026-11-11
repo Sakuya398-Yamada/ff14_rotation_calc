@@ -115,7 +115,7 @@ describe("侍: 居合術 autoTransform（閃数 ＋ 天道バフ分岐）", () =
     const last = result.entries[result.entries.length - 1];
     expect(last.resolvedSkillId).toBe("midare-setsugekka");
     expect(last.resolvedPotency).toBe(680);
-    expect(last.critRateBonus).toBe(1);
+    expect(last.guaranteedCrit).toBe(true);
     // 閃が全消費されている
     expect(last.resourceSnapshot.setsu).toBe(0);
     expect(last.resourceSnapshot.getsu).toBe(0);
@@ -197,6 +197,6 @@ describe("侍: 居合術 autoTransform（閃数 ＋ 天道バフ分岐）", () =
     const last = result.entries[result.entries.length - 1];
     expect(last.resolvedSkillId).toBe("tendo-setsugekka");
     expect(last.resolvedPotency).toBe(1100);
-    expect(last.critRateBonus).toBe(1);
+    expect(last.guaranteedCrit).toBe(true);
   });
 });

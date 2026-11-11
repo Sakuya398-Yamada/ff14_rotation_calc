@@ -172,11 +172,12 @@ describe("DRG: ライフサージの確定クリティカルは、計算と同�
     expect(highJump.resolvedSkillId).toBe("high-jump");
     expect(highJump.activeBuffsAtUse.some((ab) => ab.buffId === "life-surge")).toBe(true);
     expect(highJump.critRateBonus).toBe(0);
+    expect(highJump.guaranteedCrit).toBeUndefined();
     expect(contributionsOf(highJump).some((c) => c.guaranteedCrit)).toBe(false);
 
     expectNoError(trueThrust);
     expect(trueThrust.resolvedSkillId).toBe("true-thrust");
-    expect(trueThrust.critRateBonus).toBe(1);
+    expect(trueThrust.guaranteedCrit).toBe(true);
     expect(contributionsOf(trueThrust)).toContainEqual(expect.objectContaining({ buffId: "life-surge", guaranteedCrit: true }));
   });
 });

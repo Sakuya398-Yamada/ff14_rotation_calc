@@ -61,7 +61,7 @@ describe("侍: 燕返し 4 種と返し波切（autoTransform + exclusiveGroup�
     const last = result.entries[result.entries.length - 1];
     expect(last.resolvedSkillId).toBe("kaeshi-setsugekka");
     expect(last.resolvedPotency).toBe(680);
-    expect(last.critRateBonus).toBe(1);
+    expect(last.guaranteedCrit).toBe(true);
   });
 
   it("天道五剣後 → 天道返し五剣（威力410）", () => {
@@ -103,7 +103,7 @@ describe("侍: 燕返し 4 種と返し波切（autoTransform + exclusiveGroup�
     const last = result.entries[result.entries.length - 1];
     expect(last.resolvedSkillId).toBe("tendo-kaeshi-setsugekka");
     expect(last.resolvedPotency).toBe(1100);
-    expect(last.critRateBonus).toBe(1);
+    expect(last.guaranteedCrit).toBe(true);
   });
 
   it("奥義波切後の奥義波切 → 返し波切（威力1000、確定クリ）", () => {
@@ -124,8 +124,9 @@ describe("侍: 燕返し 4 種と返し波切（autoTransform + exclusiveGroup�
     expect(last.resolvedSkillId).toBe("kaeshi-namikiri");
     expect(last.comboErrors).toEqual([]);
     expect(last.resolvedPotency).toBe(1000);
-    expect(last.critRateBonus).toBe(1);
+    expect(last.guaranteedCrit).toBe(true);
     expect(last.dhRateBonus).toBe(0);
+    expect(last.guaranteedDh).toBeUndefined();
   });
 
   it("奥義波切後の燕返しは返し波切に変化しない", () => {

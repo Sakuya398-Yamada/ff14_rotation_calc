@@ -176,18 +176,19 @@ describe("MCH: 整備", () => {
   it("次の WS が確定クリティカル・ダイレクトヒットになり、整備は消える", () => {
     const e = setup(100).resolve(["reassemble", "drill", "air-anchor"]);
     e.forEach(expectNoError);
-    expect([e[1].critRateBonus, e[1].dhRateBonus]).toEqual([1, 1]);
+    expect([e[1].guaranteedCrit, e[1].guaranteedDh]).toEqual([true, true]);
     expect(hasBuff(e[1], "reassembled")).toBe(false);
     expect([e[2].critRateBonus, e[2].dhRateBonus]).toEqual([0, 0]);
+    expect([e[2].guaranteedCrit, e[2].guaranteedDh]).toEqual([undefined, undefined]);
   });
 
   it("フルメタルバーストは自分で確定クリ・DH になり、整備を使わない（次の WS に残る）", () => {
     const e = setup(100).resolve(["barrel-stabilizer", "reassemble", "full-metal-field", "drill"]);
     e.forEach(expectNoError);
     expect(e[2].resolvedPotency).toBe(900);
-    expect([e[2].critRateBonus, e[2].dhRateBonus]).toEqual([1, 1]);
+    expect([e[2].guaranteedCrit, e[2].guaranteedDh]).toEqual([true, true]);
     expect(hasBuff(e[2], "reassembled")).toBe(true);
-    expect([e[3].critRateBonus, e[3].dhRateBonus]).toEqual([1, 1]);
+    expect([e[3].guaranteedCrit, e[3].guaranteedDh]).toEqual([true, true]);
   });
 
   it("Lv80 は 1 チャージ、Lv84 から 2 チャージ", () => {
@@ -343,7 +344,7 @@ describe("MCH: ワイルドファイア", () => {
     expect(hit.noCritDh).toBe(true);
     expect([hit.critRateBonus, hit.dhRateBonus]).toEqual([0, 0]);
     // 整備はドリルが使う
-    expect([e[2].critRateBonus, e[2].dhRateBonus]).toEqual([1, 1]);
+    expect([e[2].guaranteedCrit, e[2].guaranteedDh]).toEqual([true, true]);
     expect(calcDelayedHitBreakdown(hit, skillMap.get("wildfire"), DEFAULT_STATS).total).toBe(
       Math.floor(240 * calcDetMultiplier(DEFAULT_STATS)),
     );
