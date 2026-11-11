@@ -341,18 +341,19 @@ describe("getRecastStatesAt: 時刻 t のリキャスト（#1000）", () => {
     expect(states).toEqual([{ skillId: "bloodletter", ...expected }, { skillId: "rain-of-death", ...expected }]);
   });
 
-  it("時刻が逆戻りした後に自動配置したスキルは、t より前にエラー無しで置かれても t の状態に入らない（既知の制限）", () => {
-    // 100 秒に置いた oGCD の後ろに、5 秒に置いた oGCD（リキャストエラー）を並べると、エラーでもアニメーションロックは進むので、
-    // 次に自動配置した single は 5.65 秒にエラー無しで置かれる。計算は配列の順に進めるので、t = 10 の状態は 100 秒の oGCD の手前で止まる
+  it("時刻が逆戻りする並びでも、自動配置したスキルは戻った時刻に置かれず、t の状態とレーンの区間が食い違わない（#1008）", () => {
+    // 100 秒に置いた oGCD の後ろに、5 秒に置いた oGCD（リキャストエラー）を並べる。エラーのエントリはアニメーションロックを巻き戻さないので、
+    // 次に自動配置した single は 100 秒の oGCD のアニメーションロック明けに置かれる
     const ogcd = makeSkill({ id: "ogcd", type: "ogcd", recastTime: 0.65 });
     const map = new Map([...syntheticMap, [ogcd.id, ogcd]]);
     const entries = [entry("plain"), entry("ogcd", 100), entry("ogcd", 5), entry("single")];
     const e = resolveTimeline(entries, map, [], undefined, []).entries;
-    expect(e[2].recastError).toBe(true);
-    expect(e[3]).toMatchObject({ startTime: 5.65, recastError: false, cooldownEndTime: 65.65 });
+    expect(e[2]).toMatchObject({ startTime: 5, recastError: true });
+    expect(e[3]).toMatchObject({ startTime: 100.65, recastError: false, cooldownEndTime: 160.65 });
+    expect(buildCooldownSpans(e, map).get("single")).toEqual([expect.objectContaining({ startTime: 100.65, endTime: 160.65 })]);
     const state = resolveStateAt(entries, map, [], undefined, [], undefined, undefined, undefined, 10);
-    // レーンでは 10 秒がリキャストの区間に入るが、計算の状態には使ったことが入らず、使用可能になる
-    expect(getRecastStatesAt(state, e, map)).toEqual([{ skillId: "single", available: true, remaining: 0, actualEndTime: 65.65 }]);
+    // 10 秒はレーンの区間の外で、計算の状態でもまだ使っていない
+    expect(getRecastStatesAt(state, e, map)).toEqual([{ skillId: "single", available: true, remaining: 0 }]);
   });
 
   it("最後のエントリより後の詩心の付与による短縮は、残り秒数には入るが、レーンの区間（実際に戻る時刻）には入らない（#898 の既知の制限。#1007）", () => {
