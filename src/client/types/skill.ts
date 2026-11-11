@@ -844,10 +844,15 @@ export interface ResolvedTimelineEntry {
   guaranteedCrit?: true;
   /** 確定ダイレクトヒット（スキル自身か、効いているバフによる）。期待値では dhRateBonus がダメージの上昇に換算される */
   guaranteedDh?: true;
-  /** このエントリ実行後、次のGCDが使用可能になる時刻（秒） */
+  /** このエントリ実行後、次のGCDが使用可能になる時刻（秒）。手動で前より早く置いたエラーのエントリでも巻き戻らない（#1008） */
   gcdAvailableAt: number;
-  /** このエントリ実行後、次のアクション（GCD/oGCD問わず）が使用可能になる時刻（秒） */
+  /** このエントリ実行後、次のアクション（GCD/oGCD問わず）が使用可能になる時刻（秒）。gcdAvailableAt と同じく巻き戻らない */
   actionAvailableAt: number;
+  /**
+   * このエントリが発生させた GCD のリキャスト（秒。スキルスピード・バフを反映済み）。GCD と triggersGcdRecast の oGCD 以外は 0。
+   * gcdAvailableAt は巻き戻らないので、gcdAvailableAt - startTime はこの値と一致しないことがある（#1008）
+   */
+  gcdRecast: number;
   /**
    * 実行時に適用された詠唱時間（秒）。
    * 速度バフ・castTimeMultiplier バフ・instantCast バフ（三連魔・ファイアスターター等）を反映済み。

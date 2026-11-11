@@ -153,7 +153,7 @@ export function Timeline({
   /** エントリのアクティブバフを考慮したリキャスト計算 */
   /**
    * 既存エントリのリキャスト時間を resolve-timeline 側の計算結果から取得する。
-   * GCD: gcdAvailableAt - startTime（自スキル付与の speed バフは除外済み = 実機準拠）
+   * GCD: gcdRecast（自スキル付与の speed バフは除外済み = 実機準拠）
    * oGCD: スキル固有の recastTime（gcdAvailableAt は前 GCD 由来のため使えない）
    *
    * 注意: entry.activeBuffs から自前で speed を再計算するのは NG。
@@ -164,7 +164,7 @@ export function Timeline({
   const getResolvedEntryRecast = useCallback(
     (entry: ResolvedTimelineEntry, skill: Skill) => {
       if (skill.type === "gcd") {
-        return Math.round((entry.gcdAvailableAt - entry.startTime) * 1000) / 1000;
+        return entry.gcdRecast;
       }
       return getRecastTime(skill);
     },

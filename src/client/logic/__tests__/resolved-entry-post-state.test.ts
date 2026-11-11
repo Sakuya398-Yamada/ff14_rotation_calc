@@ -95,4 +95,24 @@ describe("ResolvedTimelineEntry post-entry state (Issue #187)", () => {
     expect(refiltered.entries[0].gcdAvailableAt).toBeCloseTo(full.entries[0].gcdAvailableAt, 6);
     expect(refiltered.entries[0].actionAvailableAt).toBeCloseTo(full.entries[0].actionAvailableAt, 6);
   });
+
+  it("手動で前のエントリより早く置いたエラーの GCD は、次に使える時刻を巻き戻さず、自分の GCD リキャストは gcdRecast に持つ（#1008）", () => {
+    const entries: TimelineEntry[] = [
+      makeEntry("true-thrust"),
+      { ...makeEntry("disembowel"), manualStartTime: 30 },
+      { ...makeEntry("chaotic-spring"), manualStartTime: 5 },
+      makeEntry("true-thrust"),
+    ];
+    const [, late, early, next] = resolveTimeline(entries, allSkills, []).entries;
+    expect(late).toMatchObject({ startTime: 30, recastError: false, gcdAvailableAt: 32.5, gcdRecast: 2.5 });
+    expect(early).toMatchObject({ startTime: 5, recastError: true, gcdAvailableAt: 32.5, actionAvailableAt: 30.65, gcdRecast: 2.5 });
+    // 次の自動配置の GCD は、30 秒の GCD のリキャスト明けに置かれる
+    expect(next).toMatchObject({ startTime: 32.5, recastError: false });
+  });
+
+  it("gcdRecast は、GCD では自分のリキャスト、GCD を拘束しない oGCD では 0", () => {
+    const [gcd, ogcd] = resolveTimeline([makeEntry("true-thrust"), makeEntry("life-surge")], allSkills, []).entries;
+    expect(gcd.gcdRecast).toBe(2.5);
+    expect(ogcd.gcdRecast).toBe(0);
+  });
 });

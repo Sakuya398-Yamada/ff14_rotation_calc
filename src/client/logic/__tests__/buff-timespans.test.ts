@@ -31,6 +31,7 @@ function makeEntry(startTime: number, activeBuffs: ActiveBuff[]): ResolvedTimeli
     dhRateBonus: 0,
     gcdAvailableAt: startTime,
     actionAvailableAt: startTime,
+    gcdRecast: 0,
     castTime: 0,
     targetCount: 1,
   };

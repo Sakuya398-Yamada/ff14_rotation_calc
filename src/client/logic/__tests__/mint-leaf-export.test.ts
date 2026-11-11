@@ -46,11 +46,10 @@ describe("toMintLeafText", () => {
     expect(exportOf(["slow-gcd"]).text).toBe("25793 GCD 3.33 0");
   });
 
-  it("開始時刻との引き算に出る浮動小数の誤差で、2 桁の丸めがずれない", () => {
-    // 1.895 + 2.125 - 1.895 は 2.1249999999999996 になる
+  it("GCD のリキャストは開始時刻に関わらず、エントリ自身の値（gcdRecast）を 2 桁に丸めて書き出す", () => {
+    // 開始時刻との引き算では 1.895 + 2.125 - 1.895 が 2.1249999999999996 になるが、書き出しは引き算をしない（#1008）
     const hasted = new Map([["hasted-gcd", skill({ id: "hasted-gcd", type: "gcd", gameActionId: 3577, recastTime: 2.125 })]]);
     const { entries } = resolveTimeline([entry("hasted-gcd", 1.895)], hasted, []);
-    expect(entries[0].gcdAvailableAt - entries[0].startTime).toBeLessThan(2.125);
     expect(toMintLeafText(entries, hasted).text).toBe("3577 GCD 2.13 0");
   });
 
