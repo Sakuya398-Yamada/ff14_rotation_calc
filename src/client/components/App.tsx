@@ -7,6 +7,7 @@ import type { TimelineDragData } from "./timeline/dnd-types";
 import { SkillPalette } from "./SkillPalette";
 import { Timeline } from "./Timeline";
 import { SkillDetailPanel } from "./SkillDetailPanel";
+import { TimelineStatePanel } from "./TimelineStatePanel";
 import { SettingsButton } from "./SettingsButton";
 import { SaveTimelineDialog } from "./SaveTimelineDialog";
 import { MyTimelinesDialog } from "./MyTimelinesDialog";
@@ -14,7 +15,8 @@ import { MintLeafExportDialog } from "./MintLeafExportDialog";
 import { SummaryBar } from "./SummaryBar";
 import { JobPicker } from "./JobPicker";
 import "./layout.css";
-import { resolveTimeline } from "../logic/resolve-timeline";
+import { resolveStateAt, resolveTimeline } from "../logic/resolve-timeline";
+import { getRecastStatesAt } from "../logic/recast-state";
 import { normalizeAutoGenerateProcOccurred } from "../logic/auto-generate-proc";
 import { calcRangePps, calcTimelineSummary } from "../logic/timeline-summary";
 import { JOB_DATA } from "../data/job-registry";
@@ -86,6 +88,8 @@ export function App() {
   const [hitDelays, setHitDelays] = useState<Record<string, number>>(restored?.hitDelays ?? {});
   const [ppsRange, setPpsRange] = useState<PpsRange | null>(null);
   const [selectedEntryUid, setSelectedEntryUid] = useState<string | null>(null);
+  // タイムラインをダブルクリックして開いた、状態のパネルの時刻（#1001）。スキル詳細パネルとは入れ替えて出す
+  const [stateTime, setStateTime] = useState<number | null>(null);
   // 保存するときに複製元（parentId）として付ける ID。共有 URL から開いたタイムラインの ID で、保存したら保存した ID に置き換える
   // （続けて保存すると、前の保存が複製元になる）。ジョブを変えると外す。リロードでは引き継がない
   const [sourceTimelineId, setSourceTimelineId] = useState<string | null>(null);
@@ -143,6 +147,7 @@ export function App() {
     setHitDelays({});
     setPpsRange(null);
     setSelectedEntryUid(null);
+    setStateTime(null);
     // 中身が別のタイムラインになるので、複製元も外す
     setSourceTimelineId(null);
     setSharedInfo(null);
@@ -165,6 +170,7 @@ export function App() {
     setHitDelays(state.hitDelays ?? {});
     setPpsRange(null);
     setSelectedEntryUid(null);
+    setStateTime(null);
   }, []);
 
   // 共有 URL（/t/<id>）で開かれたら、保存済みのタイムラインを読み込んで置き換える
@@ -239,6 +245,28 @@ export function App() {
   );
 
   const resolvedEntries = timelineResult.entries;
+
+  // 状態のパネルの値。エントリなどの編集で計算し直すので、パネルを開いたまま編集すると同じ時刻のまま更新される
+  const stateAt = useMemo(
+    () => stateTime === null
+      ? null
+      : resolveStateAt(entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows, hitDelays, stateTime),
+    [stateTime, entries, allSkillMap, levelResources, stats, levelBuffs, untargetableWindows, multiTargetWindows, hitDelays]
+  );
+  const recastStatesAt = useMemo(
+    () => (stateAt === null ? [] : getRecastStatesAt(stateAt, resolvedEntries, allSkillMap)),
+    [stateAt, resolvedEntries, allSkillMap]
+  );
+
+  const handleSelectEntry = useCallback((uid: string | null) => {
+    setSelectedEntryUid(uid);
+    if (uid !== null) setStateTime(null);
+  }, []);
+
+  const handleStateTimeSelect = useCallback((time: number) => {
+    setStateTime(time);
+    setSelectedEntryUid(null);
+  }, []);
 
   const handleAddEntry = useCallback((skillId: string, insertBeforeUid?: string) => {
     const uid = `entry-${nextUid++}`;
@@ -532,9 +560,22 @@ export function App() {
               onPpsRangeChange={setPpsRange}
               overallEndTime={summary.duration}
               selectedEntryUid={selectedEntryUid}
-              onSelectEntry={setSelectedEntryUid}
+              onSelectEntry={handleSelectEntry}
+              stateTime={stateTime}
+              onStateTimeSelect={handleStateTimeSelect}
             />
           </div>
+          {stateAt && (
+            <TimelineStatePanel
+              // 別の時刻を開き直したら「＞」の開閉を戻す（同じ時刻のままの編集では保つ）
+              key={stateAt.time}
+              jobId={selectedJob}
+              state={stateAt}
+              recastStates={recastStatesAt}
+              skillMap={allSkillMap}
+              onClose={() => setStateTime(null)}
+            />
+          )}
           {selectedEntry && selectedSkill && (
             <SkillDetailPanel
               entry={selectedEntry}

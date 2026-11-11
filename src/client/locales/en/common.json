@@ -389,13 +389,26 @@
   },
   "timeline": {
     "placeholder": "Drag and drop actions from the palette to add them",
-    "hint": "Drag actions on the timeline to reorder them / drop them on the area at the bottom to delete them"
+    "hint": "Drag actions on the timeline to reorder them / drop them on the area at the bottom to delete them / double-click a lane to show the resources and recasts at that time"
   },
   "timelineOverlays": {
     "untargetableTitle": "Boss untargetable ({{start}}s - {{end}}s)",
     "untargetable": "Untargetable",
     "multiTargetTitle": "Multi-target ×{{targets}} ({{start}}s - {{end}}s)",
     "ppsRangeTitle": "PPS range ({{start}}s - {{end}}s)"
+  },
+  "timelineStatePanel": {
+    "label": "State at time panel",
+    "heading": "State at {{time}}s",
+    "close": "Close",
+    "resources": "Resources",
+    "recasts": "Recasts",
+    "available": "Ready",
+    "remaining": "{{seconds}}s left",
+    "nextCharge": "Next charge in {{seconds}}s",
+    "charges": "Charges {{charges}}/{{max}}",
+    "showActualEndTime": "Show when {{name}} is actually ready",
+    "actualEndTime": "Actually ready at (including later reductions): {{time}}s"
   },
   "recastLanes": {
     "laneTitle": "{{name}} recast",

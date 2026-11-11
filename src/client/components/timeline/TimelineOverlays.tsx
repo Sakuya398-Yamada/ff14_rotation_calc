@@ -7,14 +7,17 @@ interface TimelineOverlaysProps {
   multiTargetWindows: MultiTargetWindow[];
   ppsRange: PpsRange | null;
   showPpsRange: boolean;
+  /** 状態のパネルを開いている時刻。縦線を引く（#1001） */
+  stateTime: number | null;
 }
 
-/** タイムライン上に重ねる縦帯オーバーレイ（ボス離脱／複数体／PPS範囲） */
+/** タイムライン上に重ねる縦帯オーバーレイ（ボス離脱／複数体／PPS範囲）と、状態のパネルの時刻の縦線 */
 export function TimelineOverlays({
   untargetableWindows,
   multiTargetWindows,
   ppsRange,
   showPpsRange,
+  stateTime,
 }: TimelineOverlaysProps) {
   const { t } = useTranslation();
   return (
@@ -121,6 +124,23 @@ export function TimelineOverlays({
           />
         );
       })()}
+
+      {/* 状態のパネルの時刻。時間軸まで引き、左のレーンのラベル（zIndex 6）の下に隠れるようにする */}
+      {stateTime !== null && (
+        <div
+          data-testid="timeline-state-line"
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: LANE_LABEL_WIDTH + stateTime * PX_PER_SEC - 1,
+            width: "2px",
+            backgroundColor: "var(--color-accent)",
+            zIndex: 5,
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </>
   );
 }

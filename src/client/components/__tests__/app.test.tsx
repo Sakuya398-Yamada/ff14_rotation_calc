@@ -314,3 +314,99 @@ describe("App の PPS 範囲選択の「全体」(#987)", () => {
     expect(summaryValue("PPS 区間")).toBe(overall);
   });
 });
+
+describe("App のタイムラインをダブルクリックした時刻の状態 (#1001)", () => {
+  beforeEach(() => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      serializeAppState({
+        selectedJob: "brd",
+        level: 100,
+        entries: [
+          { uid: "minuet-1", skillId: "wanderers-minuet" },
+          { uid: "heartbreak-1", skillId: "heartbreak-shot" },
+          { uid: "burst-1", skillId: "burst-shot" },
+          { uid: "burst-2", skillId: "burst-shot" },
+        ],
+        stats: DEFAULT_STATS,
+        untargetableWindows: [],
+        multiTargetWindows: [],
+      })
+    );
+  });
+
+  // jsdom はレイアウトを持たず、矩形の左端はどれも 0。x はレーンのラベルの幅（52px）から時刻の 0 秒になる
+  const timelineContent = (container: HTMLElement) => container.querySelector(".timeline-scroll")!.firstElementChild!;
+  const statePanel = () => screen.queryByRole("complementary", { name: "時刻の状態パネル" });
+  const skillPanel = () => screen.queryByRole("complementary", { name: "スキル詳細パネル" });
+
+  it("ダブルクリックで縦線とパネルが出て、スキルの選択とは入れ替わり、閉じると縦線も消える", () => {
+    const { container } = render(<App />);
+    fireEvent.doubleClick(timelineContent(container), { clientX: 52 + 1.5 * 80 });
+    expect(statePanel()).toHaveTextContent("1.50s 時点の状態");
+    expect(within(statePanel()!).getByText("旅神のメヌエット")).toBeInTheDocument();
+    expect(screen.getByTestId("timeline-state-line")).toBeInTheDocument();
+
+    // スキルを選ぶとスキル詳細パネルに入れ替わる
+    fireEvent.click(container.querySelector('[data-skill-entry-uid="burst-1"]')!);
+    expect(skillPanel()).not.toBeNull();
+    expect(statePanel()).toBeNull();
+    expect(screen.queryByTestId("timeline-state-line")).toBeNull();
+
+    // スキルアイコンの上でダブルクリックしても、時刻のパネルに入れ替わる
+    const icon = container.querySelector('[data-skill-entry-uid="burst-1"]')!;
+    fireEvent.doubleClick(icon, { clientX: 52 + 3 * 80 });
+    expect(statePanel()).toHaveTextContent("3.00s 時点の状態");
+    expect(skillPanel()).toBeNull();
+
+    fireEvent.click(within(statePanel()!).getByRole("button", { name: "閉じる" }));
+    expect(statePanel()).toBeNull();
+    expect(screen.queryByTestId("timeline-state-line")).toBeNull();
+  });
+
+  it("パネルを開いたままタイムラインの設定を変えると、同じ時刻のまま値を計算し直す", () => {
+    const { container } = render(<App />);
+    fireEvent.doubleClick(timelineContent(container), { clientX: 52 + 1.5 * 80 });
+    const recasts = () => within(statePanel()!).getByRole("region", { name: "リキャスト" });
+    expect(within(recasts()).getByText("ハートブレイクショット")).toBeInTheDocument();
+
+    // パネルを閉じずに、ハートブレイクショット（敵が対象。0.65 秒に使う）をボス離脱の時間帯（0〜10 秒）に入れる。
+    // 離脱中は使えずエラーになるので、リキャストの一覧から消える（自分が対象のメヌエットは残る）
+    fireEvent.click(screen.getByTitle("ボス離脱タイミング設定"));
+    fireEvent.click(screen.getByRole("button", { name: "+ 追加" }));
+    // 追加した時間帯は 5〜10 秒。開始を 0 秒にする
+    fireEvent.change(screen.getByDisplayValue("5"), { target: { value: "0" } });
+    expect(statePanel()).toHaveTextContent("1.50s 時点の状態");
+    expect(within(recasts()).queryByText("ハートブレイクショット")).toBeNull();
+    expect(within(recasts()).getByText("旅神のメヌエット")).toBeInTheDocument();
+  });
+});
+
+describe("App の時刻の状態のパネルの「＞」(#1001)", () => {
+  it("別の時刻を開き直すと、開いていた「＞」は閉じた状態に戻る", () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      serializeAppState({
+        selectedJob: "brd",
+        level: 100,
+        entries: [
+          { uid: "minuet-1", skillId: "wanderers-minuet" },
+          { uid: "burst-1", skillId: "burst-shot" },
+        ],
+        stats: DEFAULT_STATS,
+        untargetableWindows: [],
+        multiTargetWindows: [],
+      })
+    );
+    const { container } = render(<App />);
+    const content = container.querySelector(".timeline-scroll")!.firstElementChild!;
+    const toggle = () => screen.getByRole("button", { name: "旅神のメヌエット が実際に戻る時刻を表示" });
+
+    fireEvent.doubleClick(content, { clientX: 52 + 1.5 * 80 });
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.doubleClick(content, { clientX: 52 + 2 * 80 });
+    expect(toggle()).toHaveAttribute("aria-expanded", "false");
+  });
+});

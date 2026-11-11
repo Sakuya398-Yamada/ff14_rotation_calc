@@ -23,6 +23,16 @@ export function formatTargetBreakdown(
 }
 
 /**
+ * ダブルクリックした位置の時刻（0.01 秒に丸め）。左のレーンのラベルの上（ラベルは左端に貼り付いている）と、0 秒より前は null（#1001）。
+ * contentLeft はスクロールの中のコンテンツの左端（スクロールした分も込み）、viewportLeft はスクロール領域の左端（いずれも clientX と同じ座標系）
+ */
+export function timeAtPointer(clientX: number, contentLeft: number, viewportLeft: number): number | null {
+  if (clientX - viewportLeft < LANE_LABEL_WIDTH) return null;
+  const time = Math.round(((clientX - contentLeft - LANE_LABEL_WIDTH) / PX_PER_SEC) * 100) / 100;
+  return time < 0 ? null : time;
+}
+
+/**
  * ドラッグ中のマウスX座標から挿入インデックスを計算する。
  * resolvedEntriesの各エントリの中央位置と比較し、挿入位置を決定する。
  */
