@@ -17,11 +17,11 @@
 
 すべて `main` から派生し、`main` にマージする。例: `feature/1-add-skill-data-model` / `fix/5-fix-damage-calculation`
 
-- `<kebab-case説明>` は **小文字英数字とハイフンのみ**（`add-user-model`）。大文字・アンダースコア・連続ハイフンは不可
+- `<kebab-case説明>` は小文字英数字とハイフンのみ（`add-user-model`）。大文字・アンダースコア・連続ハイフンは不可
 - `<issue番号>` は対象 Issue の番号（`#` は付けない）。ブランチは必ず Issue に紐づく
 - `#` を入れないのは、Workers Builds がブランチ名をそのままプレビュー名にし、`#` を含む名前ではプレビューの作成が push 直後に失敗するため（#609）
 
-> **例外**: エージェントのセッションブランチ **`claude/*`**（Claude Code on the web / GitHub Actions）と **`copilot/*`**（Copilot cloud agent、旧 coding agent）は、ツール側が自動命名するためこの規約の対象外。クラウドセッションで割り当てられた作業ブランチも、名前が `claude/*` でなくても同じ扱い（`/issue-start` Phase 2「クラウドセッションの場合」）。`main` / `master` / `develop` もそのまま使う。
+> **例外**: エージェントのセッションブランチ `claude/*`（Claude Code on the web / GitHub Actions）と `copilot/*`（Copilot cloud agent、旧 coding agent）は、ツール側が自動命名するためこの規約の対象外。クラウドセッションで割り当てられた作業ブランチも、名前が `claude/*` でなくても同じ扱い（`/issue-start` Phase 2「クラウドセッションの場合」）。`main` / `master` / `develop` もそのまま使う。
 
 ## コミットメッセージ
 
@@ -29,7 +29,7 @@
 <type>: <subject> #<issue番号>
 ```
 
-[Conventional Commits](https://www.conventionalcommits.org/ja/v1.0.0/) 互換。任意で **scope** と **破壊的変更マーカー `!`** を付けられる（`<type>(<scope>)!: <subject> #<issue番号>`）。`!` を付けたコミットはリリース時に major 版を上げる扱いになるので、後方互換を壊す変更にだけ使う。
+[Conventional Commits](https://www.conventionalcommits.org/ja/v1.0.0/) 互換。任意で scope と破壊的変更マーカー `!` を付けられる（`<type>(<scope>)!: <subject> #<issue番号>`）。`!` を付けたコミットはリリース時に major 版を上げる扱いになるので、後方互換を壊す変更にだけ使う。
 
 | type | 説明 |
 |------|------|
@@ -49,14 +49,14 @@
 
 ### スコープ原則（1 Issue = 1 PR）
 
-- 1つのPRは**1つのIssueの完了条件（DoD）のみ**を満たす変更に限定する。スコープ外の問題は同じブランチ／PRで修正せず、`/issue-start` の提案フロー（Phase 1.5 の確認、Phase 3/5/6 の末尾）に従って**別Issueとして起票**し、独立した PR で対応する
-- 例外: 作業中のIssueを満たすために不可避な副次変更（例: 同ファイル内で参照先が変わる / 型定義の追従）はこの限りではないが、PR本文の「## 変更点」に明示する
+- 1つのPRは1つのIssueの目的のための変更に限定する。目的と関係ない問題（スコープ外の問題）は同じブランチ／PRで修正せず、`/issue-start` の提案フロー（Phase 1.5 の確認、Phase 3/5/6 の末尾）に従って別Issueとして起票し、独立した PR で対応する
+- 目的のために明らかに要る変更はスコープ内。不可避な副次変更（例: 同ファイル内で参照先が変わる / 型定義の追従）はそのまま含めてよく、周辺の構造の作り直し（重複の統合・呼び出し側の作り直しなど）は `/issue-start` Phase 4 の設計案に書いて承認を得てから含める。どちらも PR本文の「## 変更点」に明示する
 
 ### PR のタイトルと本文
 
-- タイトル: `<type>: <簡潔な説明> #<issue番号>`
+- タイトル: `<type>: <簡潔な説明> #<issue番号>`（複数の Issue を閉じる PR は、末尾に ` #12 #13` のように空白区切りで並べ、本文に Issue ごとの `closes #N` を 1 行ずつ書く）
 - `## 概要`: 変更内容の要約（1〜3行）
-- `## 変更点`: 具体的な変更のリスト
+- `## 変更点`: 具体的な変更のリスト（diff の全ファイルを 1 行ずつ）。既存の挙動が変わる箇所は `## 挙動の変化` にも書く（無ければ「なし」）
 - `## テスト`: テスト方法・結果
 - `closes #<issue番号>`: マージ時にIssueを自動クローズ（マージ後に行う DoD が残るなら `refs #<issue番号>` にし、終えてから手でクローズする。`/issue-start` Phase 7）
 
@@ -72,16 +72,17 @@
 
 ### 粒度
 
-1 Issue = 1 PR なので、Issue の粒度がそのまま PR の粒度と `/issue-start` 1 回分の作業量になる。粒度が揺れるとレビュー負荷と手戻りも揺れるため、以下を既定とする。
+1 Issue = 1 PR なので、Issue の粒度がそのまま PR の粒度と `/issue-start` 1 回分の作業量になる。範囲は変更の行数やファイル数ではなく、下の表で決める（数で切ると、各セッションが切れ端だけを見て、既存の構造に足すだけの変更に寄るため）。人がコードを読んでレビューするなら、差分の目安を表に足してよい（テンプレート元の `customization.md`「Issue の粒度を調整する」）。
 
 | 観点 | 既定 |
 |------|------|
 | 目的 | 1 Issue に目的は 1 つ。「背景・目的」が 1〜2 文で書ける |
-| 作業量 | `/issue-start` 1 セッションで Phase 1〜8 を完走できる量。目安: 変更ファイル 10 個以内・差分 300 行以内（1 つのパターンを多数のファイルに機械的に当てる作業は、目安を超えてもパターンごとに 1 Issue。判定は `/issue-plan`「粒度の判定」） |
+| 設計承認 | `/issue-start` Phase 4 の設計承認 1 回で判断しきれる（変える範囲と方針を 1 つの設計案で示せる） |
+| 戻しやすさ | まとめて revert してよい（一部だけ先にマージしたい・残したい塊が無い） |
 | 完了条件 | 単独で検証可能（テスト・動作確認・目視のいずれかで「できた／できていない」を判定できる） |
 | 独立性 | 他 Issue の完了を待たずに着手できる。待つ必要があるなら本文に `依存: #N` を明記する |
 
-分ける／分けないの判定表、親Issue・sub-issue の扱い、要望からの分割・起票は `/issue-plan`（`.claude/skills/issue-plan/SKILL.md`「粒度の判定」）が正本。迷ったら **「このIssueのPRだけをマージしても、壊れず・単独で説明できるか」** で判定する。Yes なら粒度は適切。
+分ける／分けないの判定表、親Issue・sub-issue の扱い、要望からの分割・起票は `/issue-plan`（`.claude/skills/issue-plan/SKILL.md`「粒度の判定」）が正本。迷ったら「このIssueのPRだけをマージしても、壊れず・単独で説明できるか」で判定する。Yes なら粒度は適切。
 
 - 先に別 Issue の完了が必要な場合は、本文の「## 関連Issue」に `依存: #N` と書き、GitHub の依存関係（blocked by）にも付ける（手順は `.claude/skills/issue-start/dependencies.md`）。`/issue-start` Phase 1 で依存先が未完了なら、着手前にユーザーに確認する
 
@@ -98,6 +99,9 @@
 | `question` | 要確認・議論 | `#D876E3` |
 | `needs-decision` | 無人実行（日次の `weekday-issue-start`）が判断できず人の決定待ち。人が決めてラベルを外すと再び選定対象になる | `#D4C5F9` |
 | `routine-ok` | 人が無人実装を許可した印。日次の `weekday-issue-start` はこれが付いた Issue だけを選ぶ。付けるのは人だけ（ルーティンは付けない） | `#C5DEF5` |
+| `model:sonnet` | 着手するセッションのモデル（変更箇所と方針が決まっている Issue）。判定は `.claude/skills/issue-priority/model-assignment.md` | `#BFDADC` |
+| `model:opus` | 着手するセッションのモデル（既定） | `#5319E7` |
+| `model:fable` | 着手するセッションのモデル（難しい Issue） | `#1D76DB` |
 | `priority:high` | 優先度高 | `#B60205` |
 | `priority:medium` | 優先度中 | `#FBCA04` |
 | `priority:low` | 優先度低 | `#C2E0C6` |
@@ -112,6 +116,7 @@
 |------|---------|
 | `.claude/hooks/validate-branch-name.sh` | `git checkout -b/-B/--orphan`、`git switch -c/-C/--create`、`git branch <name>`、`git worktree add -b` で作る新ブランチ名 |
 | `.claude/hooks/validate-commit-message.sh` | `git commit` の `-m` / `-am` / `--message` / heredoc（`-m "$(cat <<'EOF' ...)"`、`-F -`）で渡す件名 |
+| `.claude/hooks/validate-push-target.sh` | `git push` の push 先。`main`・`master` と `origin/HEAD` が指すブランチへの push を止める（refspec の無い `git push` と `HEAD` は、今のブランチと上流から解く） |
 
 件名は、その `git commit` 自身のオプション（次の改行・`;`・`&`・`|` まで）と、同じ行で開いた heredoc の先頭行からだけ取り出す。`git add ... && git commit -F - <<'MSG'` のように他コマンドと連結してよく、heredoc 本文や後続コマンド中の `-m "..."` は件名として扱われない。`-F <file>` や `--amend --no-edit` のように件名を取り出せない形は誤検知を避けるため通す（git 自身が空メッセージを拒否する）。
 

@@ -41,7 +41,7 @@ git checkout -b <type>/<issue番号>-<kebab-case説明>
 
 ### クラウドセッションの場合（割り当て済みの作業ブランチ）
 
-Claude Code のクラウドセッションは、開始時に作業ブランチが割り当てられ（多くは `claude/*`。`ccr-*` など別の名前のこともある）、セッションの指示で他のブランチへの push が制限されていることが多い（git のプロキシ自体は通すので、制限は指示によるもの。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない」）。**`CLAUDE_CODE_REMOTE=true` で、セッションの指示が作業ブランチを指定している、または `git branch --show-current` が `claude/*` なら**（push 制限が明示されていなくても）、上の手順（`git checkout main` / `git pull` / `git checkout -b`）は行わず、**割り当てられたブランチでそのまま作業する**（ブランチ名の規約の対象外。`.claude/rules/git-conventions.md`「ブランチ命名」の例外）。それ以外（ローカル、またはクラウドでも指示に作業ブランチが無く `main` 等にいる場合）は上の通常手順に従う。GitHub MCP が無く `gh` に頼る場合、クラウドでは GraphQL 系のサブコマンドが使えない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
+Claude Code のクラウドセッションは、開始時に作業ブランチが割り当てられ（多くは `claude/*`。`ccr-*` など別の名前のこともある）、セッションの指示で他のブランチへの push が制限されていることが多い（git のプロキシ自体は通すので、制限は指示によるもの。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない」）。`CLAUDE_CODE_REMOTE=true` で、セッションの指示が作業ブランチを指定している、または `git branch --show-current` が `claude/*` なら（push 制限が明示されていなくても）、上の手順（`git checkout main` / `git pull` / `git checkout -b`）は行わず、割り当てられたブランチでそのまま作業する（ブランチ名の規約の対象外。`.claude/rules/git-conventions.md`「ブランチ命名」の例外）。それ以外（ローカル、またはクラウドでも指示に作業ブランチが無く `main` 等にいる場合）は上の通常手順に従う。GitHub MCP が無く `gh` に頼る場合、クラウドでは GraphQL 系のサブコマンドが使えない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
 
 1. `git branch --show-current` が指示のブランチと違えば、`git switch <ブランチ名>` で切り替える（ローカルか `origin` にあれば、作成扱いにならずブランチ名 hook に当たらない）。どちらにも無ければ、セッションブランチ（`claude/*`・`copilot/*`）の名前なら `git switch -c <ブランチ名>` で作る。それ以外の名前は hook が作成を止める（hook は名前でしか判定できない）ので、ユーザーに確認する
 2. `git fetch origin main` のあと、`git log --oneline origin/main..HEAD` が空であることを確かめる。コミットが残っていれば、どちらの残りかを見分ける
@@ -81,7 +81,7 @@ Claude Code のクラウドセッションは、開始時に作業ブランチ�
 
 ## 古い main 派生の検知
 
-`git pull origin main` を忘れた、worktree がローカル main を更新できなかった、別作業から復帰した直後などに、新ブランチが古い main から派生する事故が起きる（過去事例: #210）。テストが失敗するまで気付かないと `stash → fetch → merge → unstash` の手戻りになるので、**最初のコミット前に** 確認する：
+`git pull origin main` を忘れた、worktree がローカル main を更新できなかった、別作業から復帰した直後などに、新ブランチが古い main から派生する事故が起きる（過去事例: #210）。テストが失敗するまで気付かないと `stash → fetch → merge → unstash` の手戻りになるので、最初のコミット前に確認する：
 
 ```bash
 git fetch origin main

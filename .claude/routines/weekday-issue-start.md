@@ -7,7 +7,7 @@ description: routine-ok の付いた Open Issue を 1 件選び、/issue-start �
 
 # weekday-issue-start
 
-あなたはこのリポジトリの日次の無人実装ルーティンです。人が `routine-ok` ラベルを付けた Open Issue から **1 件だけ**選び、`/issue-start` の手順で実装して PR を作成するところまで行います。**無人実行**なので、ユーザーへの質問はしません。**PR のマージと auto-merge の設定はしません**。
+あなたはこのリポジトリの日次の無人実装ルーティンです。人が `routine-ok` ラベルを付けた Open Issue から 1 件だけ選び、`/issue-start` の手順で実装して PR を作成するところまで行います。無人実行なので、ユーザーへの質問はしません。PR のマージと auto-merge の設定はしません。
 
 - 実行環境: クラウドのスケジュールタスク。実行のたびにリポジトリを clone し、その直下から、`main` から切った作業ブランチ（`claude/*` など）で起動する。以降の作業はすべてこのリポジトリ直下（以下 `<work>`）で行い、git と `gh` は `-C` を付けずに打つ
 - このリポジトリの名前は書かない。`gh api` の `{owner}/{repo}` は、`gh` がカレントの git リモートから埋める
@@ -21,7 +21,7 @@ description: routine-ok の付いた Open Issue を 1 件選び、/issue-start �
 Issue を選ぶ前に、過去の実行が残した PR とブランチを点検する。Open PR が上限に達していても、手順 1-2〜1-4 は行う（人がレビュー中の PR を古くしないため）。
 
 1. `git rev-parse --is-shallow-repository` が `true` なら、`git fetch --unshallow origin` で履歴を取り切る（浅いままだと、手順 1-3 で古い PR の head と `origin/main` の merge-base が見つからず、merge が `refusing to merge unrelated histories` で止まる）
-2. **自分の Open PR** を取る（draft も含める）。本文にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` が **単独の行として** ある PR だけを、自分の PR とみなす（人の PR も本文にこの文字列を引用することがあるため）。Open PR は人の PR も含めて全件を、ページごとに次で取る。1 行に、番号・draft・head ブランチ・自分の PR か、が出る。100 行出たら次のページへ進む（`--paginate` は 2 ページ目で止まるので使わない）。手順 1-4 で人の Open PR とも突き合わせるので、全件の出力を残しておく
+2. **自分の Open PR** を取る（draft も含める）。本文にフッター `_スケジュール実行（weekday-issue-start）による無人実装_` が単独の行としてある PR だけを、自分の PR とみなす（人の PR も本文にこの文字列を引用することがあるため）。Open PR は人の PR も含めて全件を、ページごとに次で取る。1 行に、番号・draft・head ブランチ・自分の PR か、が出る。100 行出たら次のページへ進む（`--paginate` は 2 ページ目で止まるので使わない）。手順 1-4 で人の Open PR とも突き合わせるので、全件の出力を残しておく
 
    ```bash
    gh api "repos/{owner}/{repo}/pulls?state=open&per_page=100&page=<N>" \
@@ -42,14 +42,14 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
 
    - 解消の判断がつかない、または検証が通らないときは push せず（コミット前なら `git merge --abort`）、実行報告の「conflict 解消」に `conflict 未解消: PR #N（理由）` と書く（解消は人が行う）
    - `mergeable` が `null`（GitHub が計算中）なら 30 秒ほど待って取り直す。それでも `null` なら触らず、`mergeable 未判定: PR #N` と書く
-4. **取り残しブランチの報告**: リモートの Issue ブランチのうち、**Issue が Open で、そのブランチを head にした Open PR が無い**ものを、実行報告に挙げる（削除はしない。削除は人が判断する）。途中で落ちた実行の残りで、その Issue は候補条件（リモートに `*/<番号>-*` のブランチが無い）により黙って選ばれなくなっている
+4. **取り残しブランチの報告**: リモートの Issue ブランチのうち、Issue が Open で、そのブランチを head にした Open PR が無いものを、実行報告に挙げる（削除はしない。削除は人が判断する）。途中で落ちた実行の残りで、その Issue は候補条件（リモートに `*/<番号>-*` のブランチが無い）により黙って選ばれなくなっている
 
    ```bash
    git ls-remote --heads origin | sed 's#.*refs/heads/##' | grep -E '^(feature|fix|refactor|docs)/[0-9]+-'
    ```
 
    番号ごとに Issue の状態（`gh api repos/{owner}/{repo}/issues/<番号> --jq .state`）を見て、Open PR の有無は手順 1-2 の全件の出力の head ブランチと突き合わせる
-5. **Open PR の上限**: 手順 1-2 の自分の PR の件数（draft 含む）が **5 件以上**（既定値。人がさばける PR の本数に合わせて変えてよい）なら、Issue の選定に進まず、実行報告の「対象」に `対象なし（Open PR 上限 5 件に到達）` と書いて終える
+5. **Open PR の上限**: 手順 1-2 の自分の PR の件数（draft 含む）が 5 件以上（既定値。人がさばける PR の本数に合わせて変えてよい）なら、Issue の選定に進まず、実行報告の「対象」に `対象なし（Open PR 上限 5 件に到達）` と書いて終える
 
 ## 2. 対象 Issue の選定
 
@@ -67,6 +67,7 @@ Issue を選ぶ前に、過去の実行が残した PR とブランチを点検�
      ```
 
 3. 選ぶのは 1 件だけで、順は `routine-candidates.md`「選ぶ順」に従う。候補が無ければ（`routine-ok` の付いた Issue が無い日も含む）何もせず、実行報告に「対象なし」と書いて終える
+4. **モデルの振り分け**: 選んだ Issue にラベル `model:*` があれば、`origin/main` の `.claude/skills/issue-priority/model-assignment.md`（`git show` で読む）「無人実行の引き継ぎ」に従う。子セッションに引き継いだら（手順 4 の再判定で引き継いだときも）、以降の手順と実行報告は行わない
 
 ## 3. 作業環境
 
@@ -120,7 +121,7 @@ _スケジュール実行（weekday-issue-start）による無人実装_
 
 ## 5. 実行報告
 
-最後に、次の形式で報告する。報告の本文は、実行ログ Issue にもコメントとして投稿する（**1 実行 1 コメント**。「対象なし」で終わる実行も投稿する）。投稿できなければ（GitHub MCP も gh も使えない等）、セッションに報告を出すだけにする。
+最後に、次の形式で報告する（書き方は `CLAUDE.md`「報告はそれだけで読めるように書く」）。報告の本文は、実行ログ Issue にもコメントとして投稿する（1 実行 1 コメント。「対象なし」で終わる実行も投稿する）。投稿できなければ（GitHub MCP も gh も使えない等）、セッションに報告を出すだけにする。
 
 ```
 ## weekday-issue-start 実行報告（YYYY-MM-DD）
@@ -129,6 +130,7 @@ _スケジュール実行（weekday-issue-start）による無人実装_
 - 取り残しブランチ: <ブランチ名>（#N、Open PR 無し）… ／ なし
 - 完了せずに閉じた依存先: #N に needs-decision を付けた（依存先 #M（別のリポジトリなら owner/repo#M）が not_planned）… ／ なし
 - 対象: #N タイトル（選定理由: 優先度・番号）／ または「対象なし」「対象なし（Open PR 上限 5 件に到達）」
+- （モデルの割り当てを使う場合）モデル: ラベル model:<名前>、実装は <モデル>（一致 ／ セッション <ID> から引き継ぎ ／ 再判定で model:<旧> から上げた ／ 引き継げなかった: <理由>）／ ラベルなし
 - PR: <URL>（draft かどうか）／ なし（needs-decision を付けた: <理由>）
 - 検証: テスト・リント・UI 確認の結果（未検証の項目は明記）
 - 実装判断: 無人で決めた設計判断の要約

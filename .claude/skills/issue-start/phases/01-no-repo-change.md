@@ -14,7 +14,7 @@
    | 別の Issue で直すべき問題が見つかった | `SKILL.md`「スコープ外問題の起票提案」の起票フローで sub-issue として起票し、Phase 2〜7 を省略して Phase 8 へ |
    | 変更も起票も要らない | Phase 2〜7 を省略して Phase 8 へ |
 
-3. Phase 8 では、個別 Issue への記録（`phases/08-issue-recording.md` の 1〜4）に代えて **結論**（調べ方・結果・判断とその根拠）を Issue にコメントする。知見ボード（5）と還元（6）は通常どおり行う。起票した Issue があれば同じコメントに一覧を書く
+3. Phase 8 では、個別 Issue への記録（`phases/08-issue-recording.md` の 1〜4）に代えて結論（調べ方・結果・判断とその根拠）を Issue にコメントする。知見ボード（5）と還元（6）は通常どおり行う。起票した Issue があれば同じコメントに一覧を書く
 4. 結論をユーザーに示し、確認を得てから Issue をクローズする（GitHub MCP の `issue_write`（method: `update`、`state: closed`、`state_reason: completed`）。`gh issue close <N> --reason completed` でも可（クラウドセッションでは REST。`SKILL.md`「全体ルール」の「GitHub 操作」））。PR が無いので `closes #N` での自動クローズは起きない
 
 ## GitHub 上の操作だけで終わる Issue
@@ -27,4 +27,4 @@
      git push --force-with-lease=refs/heads/<ブランチ>:<dry-run で見た SHA> origin --delete <ブランチ>
      ```
 3. **適用したら取り直して確かめる**: 本文は取り直して送った内容と比べ、ブランチは `git ls-remote --heads origin` で消えたことを見る。取り直した結果が dry-run と違えば（増えた・消えた対象、実行時に条件から外れて残した対象）、その差と理由を手順 4 の操作の記録に書く。増えた対象も操作するなら、改めて dry-run を示して確認を得る。Claude Code のクラウドセッションでは、書き込んだ経路によって末尾の署名フッターが付いたり（`gh api`）外れたり（GitHub MCP の `issue_write`）して一致しなくなるので、フッターを除いて比べる（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションで `gh api` から本文やコメントを書き込むと、署名フッターが末尾に付く」）
-4. Phase 8 では、個別 Issue への記録（1〜4）に代えて **操作の記録**（対象・操作の前後・dry-run との差・確かめた方法と範囲）を Issue にコメントする。知見ボード（5）と還元（6）は通常どおり行う。クローズは、上の「調査だけの Issue」手順 4 と同じく確認を得てから行う
+4. Phase 8 では、個別 Issue への記録（1〜4）に代えて操作の記録（対象・操作の前後・dry-run との差・確かめた方法と範囲）を Issue にコメントする。知見ボード（5）と還元（6）は通常どおり行う。クローズは、上の「調査だけの Issue」手順 4 と同じく確認を得てから行う

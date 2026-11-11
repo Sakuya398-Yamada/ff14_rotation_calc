@@ -11,44 +11,15 @@
 - DB操作は **Drizzle ORM** のクエリビルダー経由で行い、SQL 文字列を直接書かない（`sql` テンプレートは CHECK・DEFAULT・式インデックスなど、API で書けない箇所に限る）
 - マイグレーションは `npm run db:generate` で生成し、生成物を手で編集しない（`wrangler d1 migrations create` も使わない。drizzle-kit の `migrations/meta/` とずれる）
 
-## ディレクトリ構成
+## ファイルの置き場所
 
-```
-ff14_rotation_calc/
-├── CLAUDE.md            # コア原則＋rules への索引
-├── CONTRIBUTING.md
-├── .mcp.json            # プロジェクト共通の MCP サーバー（Playwright / Brave Search / GitHub）
-├── package.json
-├── drizzle.config.ts    # drizzle-kit の設定
-├── migrations/          # drizzle-kit が生成する D1 のマイグレーション（meta/ も含めてコミット）
-├── scripts/             # 本番の運用で手や cron から呼ぶスクリプト（D1 のバックアップ。docs/d1-backup.md。削除の依頼で Discord ID の HMAC を出す。docs/deletion-requests.md）
-├── src/
-│   ├── client/          # React フロントエンド
-│   │   ├── assets/      # アイコン画像（icons/<ジョブ ID>/*.png）
-│   │   ├── components/
-│   │   ├── data/        # ジョブごとのスキル・バフ・リソースのデータ（<ジョブ ID>-skills.ts 等）と、ジョブ・コンテンツの一覧
-│   │   ├── en/          # 英語版の HTML（/en/ で配信する index.html）
-│   │   ├── locales/     # i18n の辞書（{ja,en}/<名前空間>.json。後述「多言語化（i18n）」）
-│   │   ├── logic/       # 画面に依らない処理（タイムラインの解決・期待値の計算・保存・言語の判定など）
-│   │   ├── public/      # そのまま配信する静的ファイル（robots.txt・sitemap.xml・OGP 画像の ogp.png）
-│   │   ├── styles/      # CSS（デザイントークンの tokens.css）
-│   │   ├── types/       # スキル・バフ・リソースなどのデータの型（skill.ts）
-│   │   ├── i18n.ts      # i18next の初期化
-│   │   └── main.tsx
-│   └── server/          # Hono バックエンド（Cloudflare Worker）
-│       ├── db/          # Drizzle のスキーマ（schema.ts）
-│       ├── routes/
-│       ├── services/
-│       └── index.ts
-└── .claude/
-    ├── agents/          # サブエージェント定義
-    ├── rules/           # 自動読み込みされる規約集
-    ├── routines/        # スケジュールタスク（定期ルーティン）の手順書。登録側の呼び出し文が実行のたびに読む（rules/routines.md）
-    ├── hooks/           # PreToolUse / SessionStart で使うシェルスクリプト
-    ├── scripts/         # 手で呼ぶ補助スクリプト（知見ボードの読み出し等）
-    ├── settings.json    # 権限と hooks の登録
-    └── skills/          # /issue-start, /issue-plan, /issue-priority, /template-update, /playwright-mcp, /dev-plan, /skill-creator（外部）
-```
+- `migrations/` は drizzle-kit が生成する D1 のマイグレーションで、`meta/` も含めてコミットする
+- `scripts/`（リポジトリ直下）には本番の運用で手や cron から呼ぶスクリプトを置く（D1 のバックアップは `docs/d1-backup.md`、削除の依頼で Discord ID の HMAC を出すものは `docs/deletion-requests.md`）。Claude のワークフローで手で呼ぶ補助スクリプトは `.claude/scripts/` に置く
+- ジョブごとのスキル・バフ・リソースのデータは `src/client/data/<ジョブ ID>-skills.ts` 等に、アイコン画像は `src/client/assets/icons/<ジョブ ID>/*.png` に置く。データの型は `src/client/types/skill.ts`
+- 画面に依らない処理（タイムラインの解決・期待値の計算・保存・言語の判定など）は `src/client/logic/` に置く
+- i18n の辞書は `src/client/locales/{ja,en}/<名前空間>.json`（後述「多言語化（i18n）」）。英語版の HTML は `src/client/en/index.html`
+- そのまま配信する静的ファイル（robots.txt・sitemap.xml・OGP 画像の ogp.png）は `src/client/public/` に置く
+- 定期ルーティンの手順書は `.claude/routines/` に置く（登録側の呼び出し文が実行のたびに読む。`.claude/rules/routines.md`）
 
 ## 命名規約
 

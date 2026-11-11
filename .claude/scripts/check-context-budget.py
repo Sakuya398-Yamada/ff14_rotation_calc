@@ -56,8 +56,9 @@ SKILL_MAX_BYTES = 30000  # each file must be smaller than this
 # All skill and routine files together must stay at or under this, so that an addition comes with
 # a deletion or a deliberate raise of this number (say why in the commit message). Set from the
 # 453,045 bytes measured when it was introduced (#897): the next thousand plus 1,000, the same
-# margin the template took over its own total.
-SKILL_TOTAL_MAX_BYTES = 455000
+# margin the template took over its own total. Raised to 459,000 for the v2.8.0 template update
+# (#1021), which adds the model assignment procedure: 457,475 bytes, the next thousand plus 1,000.
+SKILL_TOTAL_MAX_BYTES = 459000
 SKILL_EXCLUDE = (".claude/skills/skill-creator/",)
 
 
