@@ -355,14 +355,36 @@ describe("getRecastStatesAt: 時刻 t のリキャスト（#1000）", () => {
     expect(getRecastStatesAt(state, e, map)).toEqual([{ skillId: "single", available: true, remaining: 0, actualEndTime: 65.65 }]);
   });
 
-  it("最後のエントリより後の詩心の付与による短縮は、残り秒数には入るが、レーンの区間（実際に戻る時刻）には入らない（#898 の既知の制限。#1007）", () => {
+  it("最後のエントリより後の詩心の付与による短縮も、レーンの区間（実際に戻る時刻）に入る（#898 の制限を直した。#1007）", () => {
     const entries = [entry("mages-ballad"), entry("heartbreak-shot")];
     const e = brd.resolve(entries).entries;
     const ballad = e[0].startTime;
     const used = e[1].startTime;
-    // レーンは最後のエントリより先の付与を数えないので、短縮の無い 15 秒で終わる
-    expect(e[1].cooldownEndTime).toBe(used + 15);
+    // 後ろに GCD を足して、付与が最後のエントリより前に起きるようにしたときと同じ時刻（歌の 6 秒）で終わる
+    const followed = brd.resolve([...entries, ...repeat("burst-shot", 8)]).entries;
+    expect(followed[1].cooldownEndTime).toBe(ballad + 6);
+    expect(e[1].cooldownEndTime).toBe(followed[1].cooldownEndTime);
+
+    // 歌の間のどの時刻でも、残りチャージ数がレーンの区間の数と合い、実際に戻る時刻は「t + 残り秒数」より遅くならない
+    const spans = buildCooldownSpans(e, brd.skillMap).get("heartbreak-shot")!;
+    for (let t = 0; t <= 20; t += 0.25) {
+      const covering = spans.filter((s) => s.startTime <= t && t < s.endTime);
+      const state = brdRecastAt(entries, t).find((s) => s.skillId === "heartbreak-shot")!;
+      expect(state.charges, `t=${t}`).toBe(3 - covering.length);
+      expect(state.actualEndTime, `t=${t}`).toBe(covering.length > 0 ? Math.min(...covering.map((c) => c.endTime)) : undefined);
+      if (state.actualEndTime !== undefined) expect(state.actualEndTime, `t=${t}`).toBeLessThanOrEqual(t + state.remaining);
+    }
+    // 3 秒の付与の後は、残り秒数にも区間の終わりにも、その分の短縮が入っている
     const state = brdRecastAt(entries, ballad + 4).find((s) => s.skillId === "heartbreak-shot")!;
-    expect(state).toMatchObject({ remaining: Math.round((used + 7.5 - ballad - 4) * 1000) / 1000, actualEndTime: used + 15 });
+    expect(state).toMatchObject({ remaining: Math.round((used + 7.5 - ballad - 4) * 1000) / 1000, actualEndTime: ballad + 6 });
+  });
+
+  it("最後のエントリの後に着弾する賢人のバラードの付与でも、先に使ったハートブレイクショットの区間の終わりが縮む", () => {
+    // 5 秒の着弾の遅れを付けると、バラードは最後のエントリを実行した時点では着弾しておらず、その 3 秒後の判定から短縮が入る
+    const delayed = setup(BRD_ATTACK_SKILLS, BRD_BUFFS, BRD_RESOURCES, 100, { "mages-ballad": 5 });
+    const e = delayed.resolve([entry("heartbreak-shot"), entry("mages-ballad")]).entries;
+    expect(e[1].pendingBuffIds).toContain("mages-ballad");
+    // 着弾の 3 秒後の判定で 7.5 秒縮み、そのときにはもうチャージが戻る時刻（使ってから 7.5 秒後）を過ぎているので、その判定の時刻に戻る
+    expect(e[0].cooldownEndTime).toBe(Math.round((e[1].startTime + 5 + 3) * 1000) / 1000);
   });
 });
