@@ -17,7 +17,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 1. リポジトリの `CLAUDE.md` と `.claude/rules/*.md` に従う
 2. 最初に `git fetch origin` し、`git show origin/main:.claude/rules/routines.md` を読み、「管理用の Issue」から実行ログ Issue・メモ inbox Issue の番号を控える。知見ボード Issue の番号は `.claude/rules/workflow-feedback.md`「知見ボードIssue」から控える
    - どれかが `<...>` のプレースホルダーのままなら、その Issue を使う手順は飛ばし、実行報告の「その他」に書く。実行ログの番号が無ければ、`meta: ルーティン実行ログ` の Open Issue を探して使う
-3. 区分と優先度の判定基準は、`/issue-priority` skill（`git show origin/main:.claude/skills/issue-priority/SKILL.md`）を読んで使う。skill が参照する `.claude/skills/issue-priority/routine-candidates.md` と `model-assignment.md` も同じく `git show origin/main:<path>` で読む。作業ツリーの変更・ブランチ作成・コミット・PR はしない
+3. 区分と優先度の判定基準は、`/issue-priority` skill（`git show origin/main:.claude/skills/issue-priority/SKILL.md`）を読んで使う。skill が参照する `.claude/skills/issue-priority/routine-candidates.md` と `.claude/skills/issue-priority/model-assignment.md` も同じく `git show origin/main:<path>` で読む。作業ツリーの変更・ブランチ作成・コミット・PR はしない
 4. GitHub 操作は GitHub MCP を使い、使えなければ REST の `gh api repos/{owner}/{repo}/...` にフォールバックする。`gh issue` / `gh pr` などの GraphQL 系サブコマンドは、クラウドセッションでは 403 になるので使わない（`/issue-priority` 手順 1）。ただし手順 6 のラベル付与は `gh api` を先に使う（理由は手順 6-5）
 5. 書き込みは `.claude/rules/routines.md`「事前に承認した書き込み」の `daily-triage` の分だけ。これ以外の新規コメント、Issue 本文の編集、既存の Issue への `priority:*` と `model:*` 以外のラベル（`routine-ok` を含む）の追加・削除はしない。テンプレート元（`.claude/template-version` の `repo`）への起票・コメントもしない
    - **起票**（手順 2・3）
