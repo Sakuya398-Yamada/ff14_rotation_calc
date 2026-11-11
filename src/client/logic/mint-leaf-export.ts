@@ -24,7 +24,7 @@ export function toMintLeafText(entries: ResolvedTimelineEntry[], skillMap: Map<s
     }
     lines.push(
       skill.type === "gcd"
-        ? `${skill.gameActionId} GCD ${formatSeconds(entry.gcdAvailableAt - entry.startTime)} ${formatSeconds(entry.castTime)}`
+        ? `${skill.gameActionId} GCD ${formatSeconds(entry.gcdRecast)} ${formatSeconds(entry.castTime)}`
         : `${skill.gameActionId} oGCD normal`,
     );
   }
@@ -33,7 +33,7 @@ export function toMintLeafText(entries: ResolvedTimelineEntry[], skillMap: Map<s
 
 /**
  * 小数 2 桁に丸める。resolveTimeline の時間はミリ秒単位なので、先にミリ秒に丸めて、
- * gcdAvailableAt と startTime の差に出る浮動小数の誤差（2.125 が 2.1249999… になる）で 2 桁の丸めがずれないようにする
+ * 秒の計算に出る浮動小数の誤差（2.125 が 2.1249999… になる）で 2 桁の丸めがずれないようにする
  */
 function formatSeconds(seconds: number): string {
   const ms = Math.round(seconds * 1000);
