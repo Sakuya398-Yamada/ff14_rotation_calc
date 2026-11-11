@@ -2331,14 +2331,6 @@ function runTimeline(
     };
   }
 
-  // 最後のエントリまでに戻らなかったチャージは、計算のタイマーを複製して先に進め、戻る時刻を求める。
-  // 区間の終わりは後のエントリの回復・短縮で決まるので、全エントリを解決してから持たせる
-  for (const [chargeKey, spans] of chargeSpans) {
-    const state = skillChargeState.get(chargeKey);
-    if (state) recoverCharges({ ...state }, Infinity, spans.cooldown, spans.maxCharges, (at) => endOldestCooldownSpan(chargeKey, at));
-  }
-  for (const [index, endTime] of cooldownEndTimes) resolved[index].cooldownEndTime = endTime;
-
   // 最後のエントリまでに着弾しなかった付与も付け、着弾で付いたバフと無駄になった確率付与を、付けたエントリに書き戻す（#948）。
   // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない
   applyPendingBuffsUntil(Infinity);
@@ -2346,13 +2338,24 @@ function runTimeline(
   for (const [index, wasted] of hitWastedProcs) resolved[index].wastedProc = wasted;
   for (const [index, hits] of delayedHitResults) resolved[index].delayedHits = hits;
 
-  // 段差を描く自動生成（黙想）は、最後のエントリの後も条件バフが切れるまで数える。
+  // 結果に出る自動生成は、最後のエントリの後も条件バフが切れるまで数える（黙想の段差と、歌の詩心の付与によるリキャスト短縮）。
   // 各エントリの resourceSnapshot / activeBuffs は複製済みなので、ここで状態を進めても既存の結果は変わらない
   const tickGateEnds = currentActiveBuffs
     .filter((ab) => Number.isFinite(ab.endTime)
-      && resources.some((r) => r.showAutoGenerateTicks && r.autoGenerateWhileBuff?.includes(ab.buffId)))
+      && resources.some((r) =>
+        (r.showAutoGenerateTicks || r.whileBuffModifiers?.some((m) => m.cooldownReductionOnGain))
+        && r.autoGenerateWhileBuff?.includes(ab.buffId)))
     .map((ab) => ab.endTime);
   if (tickGateEnds.length > 0) expireBuffsUntil(Math.max(...tickGateEnds));
+
+  // 最後のエントリまでに戻らなかったチャージは、計算のタイマーを複製して先に進め、戻る時刻を求める。
+  // 区間の終わりは後のエントリの回復・短縮で決まるので、全エントリを解決し、着弾待ちの付与と歌の付与も進めてから持たせる
+  for (const [chargeKey, spans] of chargeSpans) {
+    const state = skillChargeState.get(chargeKey);
+    if (state) recoverCharges({ ...state }, Infinity, spans.cooldown, spans.maxCharges, (at) => endOldestCooldownSpan(chargeKey, at));
+  }
+  for (const [index, endTime] of cooldownEndTimes) resolved[index].cooldownEndTime = endTime;
+
   // エントリと同時刻の付与は、そのエントリの resourceSnapshot に含まれるので除く（時刻はどちらも小数 3 桁に丸め済み）
   const entryTimes = new Set(resolved.map((e) => e.startTime));
   const visibleResourceTicks = resourceTicks
