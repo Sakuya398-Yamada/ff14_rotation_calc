@@ -8,6 +8,7 @@ import {
   formatProcRate,
   formatProcRateShort,
   formatWastedProc,
+  getEntryProcOutcomeName,
   getProcOutcomeName,
 } from "../buff-format";
 import { getAllSkillMapForLevel, getSkillsForLevel } from "../skill-level";
@@ -20,7 +21,7 @@ import { DNC_RESOURCES } from "../../data/dnc-resources";
 import { BLM_ATTACK_SKILLS } from "../../data/blm-skills";
 import { BLM_BUFFS } from "../../data/blm-buffs";
 import { BLM_RESOURCES } from "../../data/blm-resources";
-import type { BuffDefinition, PlayerLevel, ResourceDefinition, Skill } from "../../types/skill";
+import type { BuffDefinition, PlayerLevel, ResolvedTimelineEntry, ResourceDefinition, Skill } from "../../types/skill";
 
 function makeBuff(effects: BuffDefinition["effects"]): BuffDefinition {
   return { id: "b", icon: "", duration: 10, effects, color: "#ffffff" };
@@ -160,7 +161,7 @@ describe("getProcOutcomeName", () => {
     [70, "iron-jaws", undefined],
     [70, "heavy-shot", "ホークアイ"],
     [100, "refulgent-arrow", undefined],
-  ] as const)("Lv%i の %s は %s", (level, skillId, expected) => {
+  ] as const)("Lv%i の %s は %s（undefined は付与元でない）", (level, skillId, expected) => {
     expect(getProcOutcomeName(brdSkillAt(level, skillId), "brd", true)).toBe(expected);
   });
 
@@ -226,6 +227,20 @@ describe("getProcOutcomeName", () => {
   });
 });
 
+// 解決で指定が効く条件と揃える。期待値で撃った確率が 0 の枠は、出なかったときのスキルを撃っている (#1005)
+describe("getEntryProcOutcomeName", () => {
+  const reverseCascade = skillMapAt(100, DNC_ATTACK_SKILLS, DNC_BUFFS, DNC_RESOURCES).get("reverse-cascade")!;
+  const entryWith = (fields: Partial<ResolvedTimelineEntry>) => ({ wsComboError: false, ...fields }) as ResolvedTimelineEntry;
+
+  it.each([
+    ["消費したバフの確率が 0.5 なら、名前を返す", { consumedProc: { buffId: "silken-symmetry", procRate: 0.5 } }, "幻扇"],
+    ["消費したバフの確率が 0 なら、指定できない", { consumedProc: { buffId: "silken-symmetry", procRate: 0 } }, undefined],
+    ["消費したリソースの確率が 0 なら、指定できない", { consumedResourceProc: { resourceId: "esprit", procRate: 0 } }, undefined],
+  ] as const)("%s", (_label, fields, expected) => {
+    expect(getEntryProcOutcomeName(entryWith(fields), reverseCascade, "dnc")).toBe(expected);
+  });
+});
+
 describe("buff-format（英語）", () => {
   beforeEach(() => i18next.changeLanguage("en"));
   afterEach(() => i18next.changeLanguage("ja"));
@@ -247,7 +262,7 @@ describe("buff-format（英語）", () => {
     );
     expect(formatWastedProc({ buffId: "hawks-eye", rate: 0.35 * 0.35 }, "brd")).toBe("Hawk's Eye overwrite chance 12.3%");
     expect(formatConsumedResourceProc({ resourceId: "dnc-feather", procRate: 0.75 }, "dnc")).toBe(
-      "chance of having Fourfold Feathers 75.0%",
+      "Chance of having Fourfold Feathers 75.0%",
     );
   });
 });

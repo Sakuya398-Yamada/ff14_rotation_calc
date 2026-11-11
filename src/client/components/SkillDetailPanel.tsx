@@ -13,7 +13,7 @@ import {
   formatConsumedProc,
   formatConsumedResourceProc,
   formatWastedProc,
-  getProcOutcomeName,
+  getEntryProcOutcomeName,
   isProcOutcomeBuff,
 } from "../logic/buff-format";
 import { formatResourceErrors } from "../logic/resource-error-format";
@@ -137,7 +137,7 @@ export function SkillDetailPanel({
   };
 
   const isManual = entry.manualStartTime !== undefined;
-  const procOutcomeName = getProcOutcomeName(resolvedSkill, jobId, !entry.wsComboError);
+  const procOutcomeName = getEntryProcOutcomeName(entry, resolvedSkill, jobId);
   const resolvedSkillName = skillName(t, jobId, resolvedSkill.id);
   const autoGenerateProcSource = getAutoGenerateProcSource(resolvedSkill, resources, buffDefMap);
 

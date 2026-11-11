@@ -162,7 +162,7 @@ describe("SkillDetailPanel: 踊り子の確率付与・幻扇の発生の指定 
     [["cascade"], "対称投擲の発生"],
     [["cascade", "fountain"], "非対称投擲の発生"],
     [["fan-dance"], "扇の舞い【急】実行可の発生"],
-    [["reverse-cascade"], "幻扇の発生"],
+    [["windmill", "reverse-cascade"], "幻扇の発生"],
   ])("%j の最後のスキルに「%s」の指定のボタンが出る", (skillIds, groupName) => {
     renderLastEntry(skillIds, DNC);
 
@@ -173,6 +173,8 @@ describe("SkillDetailPanel: 踊り子の確率付与・幻扇の発生の指定 
     ["コンボが切れたファウンテン", ["fountain"], DNC],
     ["確率付与の無い扇の舞い【急】", ["fan-dance", "fan-dance-iii"], DNC],
     ["黒魔道士のファイア", ["fire"], BLM],
+    // 対称投擲が無いので撃てた確率 0（実際にはカスケードを撃つ枠）
+    ["対称投擲の無いリバースカスケード", ["reverse-cascade"], DNC],
   ])("%s には指定のボタンが出ない", (_label, skillIds, job) => {
     renderLastEntry(skillIds, job);
 

@@ -429,7 +429,8 @@ describe("Timeline: 踊り子の確率付与・幻扇の発生の指定 (#1005)"
     ["cascade", "カスケード", false, "対称投擲: 不発"],
     ["reverse-cascade", "リバースカスケード", true, "幻扇: 発生"],
   ] as const)("%s（%s）に procOccurred = %s を指定すると、ツールチップとバッジに「%s」が出る", (skillId, name, procOccurred, label) => {
-    renderDncEntries([{ ...makeEntry(skillId), procOccurred }]);
+    // 前のウィンドミルが対称投擲を付けるので、リバースカスケードは撃てた確率 50% の期待値で撃つ
+    renderDncEntries([makeEntry("windmill"), { ...makeEntry(skillId), procOccurred }]);
 
     expect(screen.getByTitle(new RegExp(`^${name} \\(威力: `))).toHaveAttribute("title", expect.stringContaining(` ${label}`));
     expect(screen.getByTitle(label)).toBeInTheDocument();
@@ -441,6 +442,13 @@ describe("Timeline: 踊り子の確率付与・幻扇の発生の指定 (#1005)"
 
     expect(screen.getByTitle(/^ファウンテン \(威力: /)).not.toHaveAttribute("title", expect.stringContaining("非対称投擲: "));
     expect(screen.queryByTitle(/^非対称投擲: /)).not.toBeInTheDocument();
+  });
+
+  it("撃てた確率 0 のリバースカスケードに指定が残っていても出さない", () => {
+    renderDncEntries([{ ...makeEntry("reverse-cascade"), procOccurred: true }]);
+
+    expect(screen.getByTitle(/^リバースカスケード \(威力: /)).not.toHaveAttribute("title", expect.stringContaining("幻扇: "));
+    expect(screen.queryByTitle(/^幻扇: (発生|不発)$/)).not.toBeInTheDocument();
   });
 
   it("カスケード → カスケードの 2 つ目のツールチップに上書き確率が出る", () => {

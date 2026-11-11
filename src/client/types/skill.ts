@@ -376,8 +376,9 @@ export interface TimelineEntry {
    */
   manualStartTime?: number;
   /**
-   * 確率付与（buffApplicationProcRates が 1 未満）のバフが発生したか。
-   * true なら確率 1 で付与し、false なら付与しない（効いているバフの延長もしない）。未設定なら確率を期待値に使う
+   * 確率付与（buffApplicationProcRates が 1 未満）のバフと、確率で得るリソース（ResourceChange.procRate）が発生したか。
+   * true なら確率 1 で付与・獲得し、false なら付与・獲得しない（効いているバフの延長もしない）。未設定なら確率を期待値に使う。
+   * 期待値で撃った確率が 0 の枠（出なかったときのスキルを撃っている）では、true でも付与・獲得しない（#1005）
    */
   procOccurred?: boolean;
   /**

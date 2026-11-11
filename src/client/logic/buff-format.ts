@@ -128,6 +128,16 @@ export function getProcOutcomeName(skill: Skill, jobId: JobId, comboEstablished:
   return change ? resourceName(i18next.t, jobId, change.resourceId) : undefined;
 }
 
+/**
+ * 解決済みのエントリで発生の有無を指定できるなら、その表示名を返す。解決で指定が効く条件と揃える：
+ * コンボで付く分はコンボが成立したときだけ、期待値で撃った確率（consumedProc・consumedResourceProc）が 0 の枠は
+ * 実際には出なかったときのスキルを撃っているので対象にしない (#1005)
+ */
+export function getEntryProcOutcomeName(entry: ResolvedTimelineEntry, skill: Skill, jobId: JobId): string | undefined {
+  if (entry.consumedProc?.procRate === 0 || entry.consumedResourceProc?.procRate === 0) return undefined;
+  return getProcOutcomeName(skill, jobId, !entry.wsComboError);
+}
+
 /** TimelineEntry.procOccurred の表示名。name は getProcOutcomeName の名前。例: "ホークアイ: 発生" */
 export function formatProcOccurred(procOccurred: boolean, name: string): string {
   return i18next.t(procOccurred ? "buffFormat.procOccurred" : "buffFormat.procNotOccurred", { name });

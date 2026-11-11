@@ -10,7 +10,7 @@ import {
   formatConsumedResourceProc,
   formatProcOccurred,
   formatWastedProc,
-  getProcOutcomeName,
+  getEntryProcOutcomeName,
   isProcOutcomeBuff,
 } from "../../logic/buff-format";
 import { formatResourceErrorWarnings } from "../../logic/resource-error-format";
@@ -53,9 +53,9 @@ function formatEntryProcLabels(entry: DisplayEntry, jobId: JobId): { procRateLab
     .filter((label) => label !== null)
     .map((label) => ` / ${label}`)
     .join("");
-  // 付与元でなくなった指定（レベルを下げたバイト系・コンボが切れたファウンテンなど）は解決で無視されるので出さない
+  // 付与元でなくなった指定（レベルを下げたバイト系・コンボが切れたファウンテン・撃てた確率 0 の枠など）は解決で無視されるので出さない
   const procOutcomeName = entry.procOccurred !== undefined
-    ? getProcOutcomeName(entry.displaySkill, jobId, !entry.wsComboError)
+    ? getEntryProcOutcomeName(entry, entry.displaySkill, jobId)
     : undefined;
   const procOccurredLabel = entry.procOccurred !== undefined && procOutcomeName !== undefined
     ? formatProcOccurred(entry.procOccurred, procOutcomeName)
