@@ -10,9 +10,9 @@ Issue ごとに着手するセッションのモデルと effort を決める、
 |--------|-------|--------|
 | `model:fable` | `fable` | `high` |
 | `model:sonnet` | `sonnet` | `medium` |
-| `model:opus` | `opus` | `xhigh` |
+| `model:opus` | `opus` | `medium` |
 
-model と effort は既定値で、プロジェクトで変えてよい（model は `Agent` ツールの `model` 引数と同じエイリアス）。このプロジェクトでは effort を `.claude/rules/model-assignment.md` の割り当てに合わせ、`model:opus` を `xhigh` にしている。強さの順は `sonnet` < `opus` < `fable`。
+model と effort は既定値で、プロジェクトで変えてよい（model は `Agent` ツールの `model` 引数と同じエイリアス）。強さの順は `sonnet` < `opus` < `fable`。
 
 ## 判定
 

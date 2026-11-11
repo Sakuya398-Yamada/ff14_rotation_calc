@@ -24,7 +24,7 @@ Issue に `model:*` があれば、`/issue-start` と `weekday-issue-start` は�
 
 ## 書き方
 
-- model はエイリアス（`opus` 等）ではなく完全なモデル ID で書く。effort の目盛りはモデルごとに較正されているので、エイリアスの指す先が黙って変わると model と effort の組み合わせがずれる。新しいモデルに移るときは、この表と frontmatter を同じ PR で書き換える
+- model はエイリアス（`opus` 等）ではなく完全なモデル ID で書く。effort の目盛りはモデルごとに較正されているので、エイリアスの指す先が黙って変わると model と effort の組み合わせがずれる。新しいモデルに移るときは、この表と frontmatter を同じ PR で書き換える。例外として、`.claude/skills/issue-priority/model-assignment.md`「ラベルとモデル」の表は、テンプレート元と同じに保つためエイリアスと既定の effort のまま書く（#1021 でユーザーが決定）
 - effort も明示する。書かないとセッションの effort を引き継ぐ（#495 のクラウドセッションでは xhigh で動いていた）
 - メインセッションとルーティンの effort は `.claude/settings.json` の `modelSettings` にモデルごとに書く。トップレベルの `effortLevel` は全モデルに同じ値で効くので、モデルの違うルーティンに別々の effort を割り当てられない。プロジェクト設定はユーザー設定（`/effort` で保存した既定）より優先されるので、このリポジトリではこちらが既定になる。`/effort` と `--effort` はそのセッションだけ上書きする。どこにも指定が無いと Opus 5.5 は `medium` で動く（#597 で計測）
 - ルーティンのモデルはスケジュールタスクの登録側で選ぶ（リポジトリからは変えられない）。ルーティンのモデルを替えたら、そのモデルの `modelSettings` があるかを見る。無ければそのモデルの既定の effort で動く
