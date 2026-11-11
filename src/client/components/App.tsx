@@ -567,6 +567,8 @@ export function App() {
           </div>
           {stateAt && (
             <TimelineStatePanel
+              // 別の時刻を開き直したら「＞」の開閉を戻す（同じ時刻のままの編集では保つ）
+              key={stateAt.time}
               jobId={selectedJob}
               state={stateAt}
               recastStates={recastStatesAt}

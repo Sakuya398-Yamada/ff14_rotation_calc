@@ -381,3 +381,32 @@ describe("App のタイムラインをダブルクリックした時刻の状態
     expect(within(recasts()).getByText("旅神のメヌエット")).toBeInTheDocument();
   });
 });
+
+describe("App の時刻の状態のパネルの「＞」(#1001)", () => {
+  it("別の時刻を開き直すと、開いていた「＞」は閉じた状態に戻る", () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      serializeAppState({
+        selectedJob: "brd",
+        level: 100,
+        entries: [
+          { uid: "minuet-1", skillId: "wanderers-minuet" },
+          { uid: "burst-1", skillId: "burst-shot" },
+        ],
+        stats: DEFAULT_STATS,
+        untargetableWindows: [],
+        multiTargetWindows: [],
+      })
+    );
+    const { container } = render(<App />);
+    const content = container.querySelector(".timeline-scroll")!.firstElementChild!;
+    const toggle = () => screen.getByRole("button", { name: "旅神のメヌエット が実際に戻る時刻を表示" });
+
+    fireEvent.doubleClick(content, { clientX: 52 + 1.5 * 80 });
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.doubleClick(content, { clientX: 52 + 2 * 80 });
+    expect(toggle()).toHaveAttribute("aria-expanded", "false");
+  });
+});
