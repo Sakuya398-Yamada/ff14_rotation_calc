@@ -6,6 +6,7 @@ import { TIMELINE_DROPZONE_ID } from "./timeline/dnd-types";
 import { calcGcd } from "../logic/stat-calc";
 import { computeBuffTimespans } from "../logic/buff-timespans";
 import { buildCooldownSpans } from "../logic/recast-state";
+import { timeAtPointer } from "./timeline/helpers";
 import { PX_PER_SEC, LANE_LABEL_WIDTH } from "./timeline/constants";
 import { styles } from "./timeline/styles";
 import { useTimelineDnd } from "./timeline/use-timeline-dnd";
@@ -48,6 +49,10 @@ interface TimelineProps {
   overallEndTime: number;
   selectedEntryUid: string | null;
   onSelectEntry: (uid: string | null) => void;
+  /** 状態のパネルを開いている時刻（縦線を引く）。開いていなければ null（#1001） */
+  stateTime: number | null;
+  /** レーンをダブルクリックした位置の時刻 */
+  onStateTimeSelect: (time: number) => void;
 }
 
 export function Timeline({
@@ -74,6 +79,8 @@ export function Timeline({
   overallEndTime,
   selectedEntryUid,
   onSelectEntry,
+  stateTime,
+  onStateTimeSelect,
 }: TimelineProps) {
   const { t } = useTranslation();
   const [showResources, setShowResources] = useState(true);
@@ -298,6 +305,19 @@ export function Timeline({
     return set;
   }, [resolvedEntries]);
 
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const viewport = scrollRef.current;
+      if (!viewport) return;
+      const time = timeAtPointer(e.clientX, e.currentTarget.getBoundingClientRect().left, viewport.getBoundingClientRect().left);
+      if (time === null) return;
+      // ダブルクリックで選択された文字（時間軸の「5s」など）を残さない
+      window.getSelection()?.removeAllRanges();
+      onStateTimeSelect(time);
+    },
+    [onStateTimeSelect]
+  );
+
   return (
     <div style={styles.container}>
       <TimelineHeader
@@ -362,7 +382,7 @@ export function Timeline({
           </div>
         ) : (
           <div ref={scrollRef} className="timeline-scroll" style={styles.scrollContainer}>
-            <div style={{ ...styles.timelineContent, width: timelineWidth }}>
+            <div style={{ ...styles.timelineContent, width: timelineWidth }} onDoubleClick={handleDoubleClick}>
               {/* 挿入インジケーター */}
               {indicatorX !== null && (
                 <div
@@ -434,6 +454,7 @@ export function Timeline({
                 multiTargetWindows={multiTargetWindows}
                 ppsRange={ppsRange}
                 showPpsRange={showPpsRange}
+                stateTime={stateTime}
               />
 
               <TimelineRuler rulerTicks={rulerTicks} labelBg={labelBg} />

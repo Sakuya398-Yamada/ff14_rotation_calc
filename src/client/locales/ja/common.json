@@ -389,13 +389,26 @@
   },
   "timeline": {
     "placeholder": "スキルパレットからドラッグ＆ドロップしてスキルを追加",
-    "hint": "タイムライン上のスキルをドラッグで並び替え／画面下部のエリアにドロップで削除"
+    "hint": "タイムライン上のスキルをドラッグで並び替え／画面下部のエリアにドロップで削除／レーンをダブルクリックでその時刻のリソースとリキャストを表示"
   },
   "timelineOverlays": {
     "untargetableTitle": "ボス離脱 ({{start}}s - {{end}}s)",
     "untargetable": "離脱",
     "multiTargetTitle": "複数体 ×{{targets}} ({{start}}s - {{end}}s)",
     "ppsRangeTitle": "PPS範囲 ({{start}}s - {{end}}s)"
+  },
+  "timelineStatePanel": {
+    "label": "時刻の状態パネル",
+    "heading": "{{time}}s 時点の状態",
+    "close": "閉じる",
+    "resources": "リソース",
+    "recasts": "リキャスト",
+    "available": "使用可能",
+    "remaining": "残り {{seconds}}s",
+    "nextCharge": "次のチャージまで {{seconds}}s",
+    "charges": "チャージ {{charges}}/{{max}}",
+    "showActualEndTime": "{{name}} が実際に戻る時刻を表示",
+    "actualEndTime": "実際に戻る時刻（この後の短縮込み）: {{time}}s"
   },
   "recastLanes": {
     "laneTitle": "{{name}} リキャスト",

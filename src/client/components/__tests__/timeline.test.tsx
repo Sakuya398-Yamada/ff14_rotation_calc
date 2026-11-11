@@ -134,6 +134,8 @@ function renderTimeline(overrides: Partial<Parameters<typeof Timeline>[0]> = {})
     overallEndTime: 0,
     selectedEntryUid: null,
     onSelectEntry: vi.fn(),
+    stateTime: null as number | null,
+    onStateTimeSelect: vi.fn(),
     ...overrides,
   };
   const utils = render(<Timeline {...props} />, { wrapper: TestDndProvider });
@@ -614,6 +616,44 @@ describe("Timeline: リキャストのレーンの区間は、リキャストの
     const first = screen.getByTitle("ウォークライ リキャスト (0.00s - 50.00s / 60s)");
     expect(first.style.width).toBe(`${50 * PX_PER_SEC}px`);
     expect(screen.getByTitle("ウォークライ リキャスト (0.65s - 110.00s / 60s)")).toBeInTheDocument();
+  });
+});
+
+describe("Timeline: ダブルクリックした時刻の状態 (#1001)", () => {
+  // jsdom はレイアウトを持たず、スクロール領域とコンテンツの左端はどちらも 0。x はレーンのラベルの幅（52px）から時刻の 0 秒になる
+  it("レーンをダブルクリックすると、x 位置の時刻を 0.01 秒に丸めて渡す（スキルアイコンの上でも、その開始時刻には寄せない）", () => {
+    const resolvedEntries = resolve([makeEntry(gcdSkill.id), makeEntry(ogcdSkill.id)]);
+    const { props, container } = renderTimeline({ resolvedEntries });
+    const content = container.querySelector(".timeline-scroll")!.firstElementChild!;
+
+    fireEvent.doubleClick(content, { clientX: 52 + 1.234 * PX_PER_SEC });
+    expect(props.onStateTimeSelect).toHaveBeenLastCalledWith(1.23);
+
+    const icon = container.querySelector(`[data-skill-entry-uid="${resolvedEntries[0].uid}"]`)!;
+    fireEvent.doubleClick(icon, { clientX: 52 + 0.3 * PX_PER_SEC });
+    expect(props.onStateTimeSelect).toHaveBeenLastCalledWith(0.3);
+    expect(props.onStateTimeSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it("横にスクロールした分も時刻に入れ、左のレーンのラベル（スクロールしても左端に残る）の上では渡さない", () => {
+    const { props, container } = renderTimeline({ resolvedEntries: resolve([makeEntry(gcdSkill.id)]) });
+    const content = container.querySelector(".timeline-scroll")!.firstElementChild!;
+    // 400px スクロールした状態: コンテンツの左端だけが左へずれる（スクロール領域の左端は 0 のまま）
+    vi.spyOn(content, "getBoundingClientRect").mockReturnValue({ left: -400 } as DOMRect);
+
+    fireEvent.doubleClick(content, { clientX: 51 });
+    expect(props.onStateTimeSelect).not.toHaveBeenCalled();
+    fireEvent.doubleClick(content, { clientX: 52 });
+    expect(props.onStateTimeSelect).toHaveBeenCalledWith((52 + 400 - 52) / PX_PER_SEC);
+  });
+
+  it("stateTime の位置に縦線を引き、null なら引かない", () => {
+    const resolvedEntries = resolve([makeEntry(gcdSkill.id)]);
+    const { props, rerender } = renderTimeline({ resolvedEntries, stateTime: 2.5 });
+    expect(screen.getByTestId("timeline-state-line").style.left).toBe(`${52 + 2.5 * PX_PER_SEC - 1}px`);
+
+    rerender(<Timeline {...props} stateTime={null} />);
+    expect(screen.queryByTestId("timeline-state-line")).toBeNull();
   });
 });
 
