@@ -17,14 +17,16 @@ description: Playwright MCP で UI（src/client/**）の変更をブラウザで
 
 型チェック・ユニットテストは「コードの正しさ」は示すが「機能の正しさ」は示さない。UI 変更は必ずブラウザで確認してから完了報告する。
 
-既存の行・欄（ヘッダー・ボタンの並びなど）に要素を足す変更では、いつもの幅に加えて 390px 幅でも撮り、ボタン・ラベルの文字の折り返しを見る。#842 では、詳細パネルのヘッダーの行に文言を 1 つ足しただけで、390px でだけボタンが「期待／値」と折り返した（jsdom のユニットテストは幅を持たないので気付けない）。幅は MCP なら `browser_resize`（width 390、height 844）、Node なら `page.setViewportSize({ width: 390, height: 844 })` で変える。折り返しは文字の行数で見る。日本語は 1 文字ずつ折り返せるので、ボタンが縮んでも横にははみ出さず、`scrollWidth > clientWidth` では見つからない。次の関数を `browser_evaluate` か `page.evaluate` に渡すと、2 行以上に折り返した要素の文字が返る（`<要素>` は見る要素のセレクター。詳細パネルなら `aside button, aside label`。クラウドセッションの Chromium 153 + playwright 1.63 で動作検証済、2026-11-08、Issue #906）：
+既存の行・欄（ヘッダー・ボタンの並びなど）に要素を足す変更では、390px 幅でも撮り、ボタン・ラベルの折り返しを見る。#842 では 390px でだけボタンが「期待／値」と折り返した（jsdom では気付けない）。幅は `browser_resize`（390×844）か `page.setViewportSize({ width: 390, height: 844 })` で変える。日本語は折り返して横にははみ出さないので、`scrollWidth > clientWidth` ではなく文字の行数で見る。次の関数を `browser_evaluate` か `page.evaluate` に渡すと、2 行以上に折り返した要素の文字が返る（書体の違う span が並ぶボタンは上端が 1px ずれるので、上端の差が行の高さの半分を超えたときだけ折り返しと数える。`<要素>` は見る要素のセレクター（`aside button, aside label` など）。クラウドの Chromium 153 + playwright 1.63 で動作検証済、2026-11-12、#906・#973）：
 
 ```js
 () => [...document.querySelectorAll('<要素>')]
   .filter((el) => {
     const range = document.createRange();
     range.selectNodeContents(el);
-    return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size > 1;
+    const rs = [...range.getClientRects()].filter((r) => r.height);
+    const top = rs.map((r) => r.top), h = rs.map((r) => r.height);
+    return rs.length > 1 && Math.max(...top) - Math.min(...top) > Math.min(...h) / 2;
   })
   .map((el) => el.textContent.trim())
 ```
