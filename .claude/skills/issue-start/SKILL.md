@@ -1,14 +1,12 @@
 ---
 name: issue-start
-description: GitHub Issue を起点に、ブランチ作成・探索・設計・実装・レビュー・PR作成・Issueへの記録まで一連の開発を行うスキル。「Issue #N をやって」「#N を実装して」「/issue-start #N」のように Issue 番号を指定して作業を依頼されたときに使う。Issue の分割・起票だけなら /issue-plan を使う。各 Phase の詳細は phases/ 配下に分割してあり、該当 Phase に入る直前に読む（progressive disclosure）。
+description: GitHub Issue を起点に、ブランチ作成・探索・設計・実装・レビュー・PR作成・Issueへの記録まで一連の開発を行うスキル。「Issue #N をやって」「#N を実装して」「/issue-start #N」のように Issue 番号を指定して作業を依頼されたときに使う。Issue の分割・起票だけなら /issue-plan を使う。
 argument-hint: "#<Issue番号>"
 ---
 
 # Issue開発スキル（/issue-start）
 
 対象 Issue: $ARGUMENTS（`#` の有無は問わない。番号が読み取れなければ最初に質問する）
-
-指定された GitHub Issue に基づいて、ブランチ作成から実装・レビュー・PR作成・Issue への記録までを一連で行う。
 
 ## Phase一覧（progressive disclosure）
 
@@ -31,12 +29,12 @@ argument-hint: "#<Issue番号>"
 
 - **確認ポイント**: Phase 1 の不足確認、Phase 4 の設計承認、スコープ外問題の起票、GitHub 上の操作だけで終わる Issue の適用前（dry-run の結果を示す）、Phase 8 の知見ボード追記とテンプレート元への起票では、ユーザーの Y/E/N を得てから進む
 - **確認の聞き方**: 確認ポイントと各 Phase の提示フォーマットの問いは、`AskUserQuestion` で選択式に聞く。1 つのテキストに並べて聞くと、「Y」だけの返事がどれへの答えか読めない
-  - 設計案・起票本文などの中身は先にメッセージ本文に出し、質問には問いと選択肢だけを載せる。問いには候補番号とタイトルを入れ、質問だけでどれへの確認か読めるようにする
+  - 設計案・起票本文などの中身は先にメッセージ本文に出し、質問には問いと選択肢だけを載せる。ダイアログを開いている間は本文が見えないことがあるので、問いは本文を読まなくても答えられるように書く（「上の内容で」と書かず、候補番号とタイトルで何への確認かを示し、判断に要る要点を 1 行入れる）
   - 選択肢はフォーマットの選択肢の行（[Y] / [N]、Phase 1 の旧 PR の [R] / [N] など）から取る。行の無い問い（Phase 4 の案の選択、Phase 1.5 の [Y/E/N]）は、案が複数なら案ごと（推奨を先頭）、1 つなら「進める / 進めない」のように立てる。[E] や修正点は選択肢に入れず、自由記述（Other）で受ける。受けたあとの扱いは各フォーマットの [E] の行のとおり
   - 独立した確認が複数あるとき（起票候補が複数ある等）は、1 回の呼び出しの中で別々の質問にする（1 回 4 問まで。超えたら呼び出しを分ける）。前の答えで次が決まる確認（知見ボードへの投稿のあとのテンプレート元への起票など）はまとめず、順に聞く。plan mode で設計承認を `ExitPlanMode` に乗せるときは、ほかの確認を先に聞いてから `ExitPlanMode` を呼ぶ
+  - 複数の手順を踏んでもらう依頼や、値を貼ってもらうような選択肢を立てられない問いは、`AskUserQuestion` を使わず本文に書いてターンを終え、次のメッセージで答えを受け取る。同時に聞く選択式の問いも、次の箇条の形で本文に並べる
   - `AskUserQuestion` が使えないときは、質問ごとに名前（`設計`・`候補1` など）を付けて並べ、`設計-Y 候補1-N` の形で答えてもらう
 - **判断の線引き**: 読み方が分かれて成果物が変わる曖昧さは質問し、調べれば分かることは自分で調べる
-- **1 Issue = 1 PR**: スコープ外の変更を混ぜない（後述「スコープ外問題の起票提案」）
 - **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ）を使う。未接続・エラー時（使うツールがツール一覧に無いときも含む）は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe` のフルパス起動。`.claude/rules/mcp-setup.md`「利用不可時のフォールバック」）にフォールバックし（クラウドセッション（`CLAUDE_CODE_REMOTE=true`）では、各 Phase の `gh issue` / `gh pr` などを `.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の REST に置き換える）、それも無ければ整形済みの本文を提示してユーザーに操作を依頼する。フロー全体は止めない
 
 ## サブエージェント
@@ -65,8 +63,6 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 | UI 動作確認 | Playwright MCP（`browser_navigate` / `browser_snapshot` 等、`--browser ${PLAYWRIGHT_MCP_BROWSER:-msedge}`。`.claude/skills/playwright-mcp/SKILL.md`） | クラウドセッションでは Node から Playwright を直接使う（`playwright-mcp/SKILL.md`「MCP が使えないとき」）。それもできなければユーザーに手動確認を依頼し、未検証と明記する |
 
 ## スコープ外問題の起票提案（Phase横断）
-
-当該 Issue の目的と関係ない問題（スコープ外の問題）を見つけたらその場で直さず、別 Issue としての起票を提案する（1 Issue = 1 PR）。目的のために明らかに要る周辺の修正はスコープ内で、Phase 4 の設計に含める（`.claude/rules/git-conventions.md`「スコープ原則（1 Issue = 1 PR）」）。
 
 ### 検出タイミング
 
@@ -110,7 +106,7 @@ Phase 3/4/6 で使う専門エージェントは `.claude/agents/` に定義済�
 
    [A] のときは起票せず、その既存 Issue に、見つけた内容（概要・箇所・再現手順）をコメントで追記する
 
-   還元先は、問題がワークフロー自体（`CLAUDE.md`・`.claude/`・`.github/ISSUE_TEMPLATE/`）にあるときだけ、`.claude/rules/workflow-feedback.md`「還元する / しないの判定」で決めて書く（テンプレート汎用にする前に、`phases/08-issue-recording.md` 手順 5「書き込み手順」3 のとおりテンプレート元の取り込み済みの版と見比べる）。テンプレート汎用なら [U] を推奨にする（同じファイル「テンプレート元への還元」）。[U] のときは起票せず、`phases/08-issue-recording.md` 手順 5 の知見ボードに `還元先: テンプレート汎用` で書く候補として控え、同じく手順 6 で還元する（どちらも、[U] とは別に Phase 8 のそれぞれの手順でユーザー確認を挟む）。いまの作業を塞いでいて直さないと進めない不具合のときだけ [Y] で起票してよい。その場合も Phase 8 で還元する
+   還元先は、問題がワークフロー自体（`CLAUDE.md`・`.claude/`・`.github/ISSUE_TEMPLATE/`）にあるときだけ、`.claude/rules/workflow-feedback.md`「還元する / しないの判定」で決めて書く（テンプレート汎用にする前に、`phases/08-issue-recording.md` 節 5「書き込み手順」3 のとおりテンプレート元の取り込み済みの版と見比べる）。テンプレート汎用なら [U] を推奨にする（同じファイル「テンプレート元への還元」）。[U] のときは起票せず、`phases/08-issue-recording.md` 節 5 の知見ボードに `還元先: テンプレート汎用` で書く候補として控え、同じく節 6 で還元する（どちらも、[U] とは別に Phase 8 のそれぞれの手順でユーザー確認を挟む）。いまの作業を塞いでいて直さないと進めない不具合のときだけ [Y] で起票してよい。その場合も Phase 8 で還元する
 3. **起票**: 承認（Y/E）後、`issue_write`（method: `create`、`parent_issue_number` に親 Issue 番号）で sub-issue として作成する。本文は `.claude/rules/git-conventions.md` の「Issue のタイトルと本文」の構成と「粒度」に揃える。sub-issue にできない場合（`gh` フォールバック等）は本文末尾に `親Issue: #<親番号>` と書く。sub-issue の階層の上限（7 段。`You can’t add more than 7 layers of sub-issues`）で失敗したときは、同じタイトルの Issue が作られていないかを見てから（`issue_write` では作られないことを確かめてあるが、ほかの経路では確かめていない）、親を外して作り直し、同じく本文末尾に書く。子 Issue の完了条件が、作業中の親 Issue のまだマージされていない変更を前提にする（親が足す API を使う別の機能など）なら、本文の「## 関連Issue」に `依存: #<親番号>` を書き、GitHub の依存関係（blocked by）にも付ける（`.claude/skills/issue-start/dependencies.md`「付け方」）。書かないと子の PR が親より先にマージされ得る。親の変更そのもので誤りになる記述（親が変える仕様を説明している利用者向けドキュメントなど）は、子 Issue にせず、不可避な副次変更として親の PR で直す（`.claude/rules/git-conventions.md`「スコープ原則（1 Issue = 1 PR）」、`phases/03-exploration.md`「スキップ条件」）
 4. **親Issueへの記録**: Phase 8 で親 Issue に子 Issue の一覧をコメントする（`phases/08-issue-recording.md`）
 

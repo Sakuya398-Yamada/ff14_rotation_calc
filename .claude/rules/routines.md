@@ -54,10 +54,10 @@ Claude Code のクラウドのスケジュールタスク（claude.ai/code の R
 | 候補の Issue への新規コメント（`needs-decision` を付けるときの理由と、Phase 8 の実装メモ）と、ラベル `needs-decision` の付与 | `weekday-issue-start` | `.claude/routines/weekday-issue-start.md`「2.」「4.」 |
 | `priority:*` の無い Open Issue への `priority:*` の付与（進行中の Issue と、付いている priority は変えない） | `daily-triage` | `.claude/routines/daily-triage.md`「6. priority を付ける」 |
 | `model:*` の無い Open Issue への `model:*` の付与（モデルの割り当てを使うプロジェクトだけ。進行中の Issue と、付いている model は変えない） | `daily-triage` | `.claude/routines/daily-triage.md`「6. priority を付ける」手順 6、`.claude/skills/issue-priority/model-assignment.md`「判定」 |
-| 選んだ Issue のラベル `model:*` と自分のモデルが違うときと、着手後の再判定で上げるときの、ラベルのモデルの子セッションの作成（`create_session`。続きの手順と実行報告は子セッションが行い、承認した書き込みの範囲は変わらない）。再判定での、選んだ Issue の `model:*` の付け替え（上げる方向だけ） | `weekday-issue-start` | `.claude/skills/issue-priority/model-assignment.md`「着手後の再判定」「無人実行の引き継ぎ」 |
+| 選んだ Issue のラベル `model:*` と自分のモデルが違うときと、着手後の再判定で付け替えるときの、ラベルのモデルの子セッションの作成（`create_session`。続きの手順と実行報告は子セッションが行い、承認した書き込みの範囲は変わらない）。再判定での、選んだ Issue の `model:*` の付け替え（上げ下げ合わせて 1 回まで） | `weekday-issue-start` | `.claude/skills/issue-priority/model-assignment.md`「着手後の再判定」「無人実行の引き継ぎ」 |
 
-- テンプレート元への起票・コメント（還元）は、ルーティンではしない。還元が要る知見は実行報告の「要還元」に挙げ、人が `/issue-start` Phase 8 手順 6 の形で行う
-- 既存の Issue には、`priority:*`・`model:*`（`daily-triage` が付け、`weekday-issue-start` が再判定で上げる）と `needs-decision`（`weekday-issue-start` が付ける）以外のラベル（`routine-ok` を含む）を付けない・外さない（起票する Issue に種別のラベルを付けるのは、起票の一部）
+- テンプレート元への起票・コメント（還元）は、ルーティンではしない。還元が要る知見は実行報告の「要還元」に挙げ、人が `/issue-start` Phase 8 節 6 の形で行う
+- 既存の Issue には、`priority:*`・`model:*`（`daily-triage` が付け、`weekday-issue-start` が再判定で付け替える）と `needs-decision`（`weekday-issue-start` が付ける）以外のラベル（`routine-ok` を含む）を付けない・外さない（起票する Issue に種別のラベルを付けるのは、起票の一部）
 
 ## 呼び出し文
 

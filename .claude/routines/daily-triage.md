@@ -52,7 +52,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 1. **Open の作業 Issue**（Open Issue から次を除いたもの）を数える。依存待ち・進行中の Issue は含める
    - `meta` / `question` ラベルの Issue（ほかのラベルと一緒に付いていても除く）
    - #2 のテンプレート Issue
-   - sub-issue を持つ親 Issue（`sub_issues_summary.total` が 1 以上。子がすべて Closed でも除く。`.claude/skills/issue-priority/routine-candidates.md`「候補条件」の親 Issue と同じ読み方）
+   - sub-issue を持つ親 Issue（`sub_issues_summary.total` が 1 以上。`.claude/skills/issue-priority/routine-candidates.md`「候補条件」の親 Issue と同じ読み方）
 
    一覧は `gh api "repos/{owner}/{repo}/issues?state=open&per_page=100&page=<N>" --jq '{n: length, issues: [.[] | select(.pull_request | not) | {number, labels: [.labels[].name], sub_issues: (.sub_issues_summary.total // 0)}]}'` で取る。この API は PR も返すので、`pull_request` の有無で除く。`n` は除く前のそのページの件数で、100 なら次のページへ進む（除いたあとの `issues` の件数では、次のページの有無を判断できない）。GitHub MCP の `list_issues` は `sub_issues_summary` を返さないので、共通ルール 4 の MCP 優先によらず `gh api` を使う
 2. **25 件以上なら、手順 3 の昇格の起票だけを見送る**（25 件は既定値。人が消化できる量に合わせて変えてよい）
@@ -64,7 +64,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 
 1. メモ inbox のコメントのうち、`✅ Issue #<番号> 起票済み` の行が無いものを対象にする（共通ルール 6 の 2 列目が `false` のもの。`mark` で付けた印の後ろにはクラウドの経路が署名フッターを付けるので、末尾の行だけで判定しない）
 2. 各メモを正式な Issue に整えて起票する。1 つのメモに目的が複数あれば、粒度規約（`.claude/rules/git-conventions.md`「粒度」）に従って分割する。分けた Issue の一方が他方の成果を前提にするなら、`依存: #N` と blocked by の両方に付ける（`.claude/skills/issue-start/dependencies.md`「付け方」）。親 Issue と sub-issue には分けない
-3. 起票したら、元のコメントの末尾に `✅ Issue #<番号> 起票済み` を `mark` で追記する（共通ルール 5）。分割したら `✅ Issue #<番号>, #<番号> 起票済み` のように 1 行に並べて、1 回で付ける（`mark` は別の印があるコメントには追記しない）
+3. 起票したら、元のコメントの末尾に `✅ Issue #<番号> 起票済み` を `mark` で追記する（共通ルール 5）。分割したら `✅ Issue #<番号>, #<番号> 起票済み` のように 1 行に並べて、1 回で付ける
 4. 曖昧で要件にできないメモは起票せず、実行報告の「要追記」に挙げる
 5. フッターの系統名: `メモ inbox 系統`
 
@@ -76,8 +76,8 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
      - 還元先 URL のリポジトリ（`https://github.com/<owner>/<repo>/issues/<番号>` の `<owner>/<repo>`）が `.claude/template-version` の `repo` と違えば（大文字と小文字は区別しない）、テンプレート元の番号とは対応しないので版は探さず、実行報告の「取り込み待ち」に「還元先が template-version の repo と違う」と添えて挙げる（印を付けるかは人が決める）
      - その還元先の Issue の修正を含む版を探す。テンプレート元（`.claude/template-version` の `repo`）を `git clone -q --no-checkout https://github.com/<repo>.git <scratchpad>/template-src` で取り、`git -C <scratchpad>/template-src show HEAD:CHANGELOG.md` の版の節のうち、`#<還元先の番号>` を含む節がその版。すぐ後ろに数字が続くもの（`#42` に対する `#420`）は、別の番号なので数えない（Release notes はセッションに付いていないリポジトリだと読めないので、クローンで読む）
      - このプロジェクトに、その版以上の版の更新用 Issue（`refactor: テンプレートを vX.Y.Z に更新`）があれば、元のコメントに `✅ Issue #<更新用 Issue の番号> で対応` を `mark` で追記する（共通ルール 5）。まだ無ければ、または版を確かめられなければ（クローンに失敗した、など）、実行報告の「取り込み待ち」に挙げる
-   - **`テンプレート汎用（未還元）`**: このプロジェクトでは昇格しない（テンプレート元で直して、テンプレート更新で取り込む）。重要度が Medium 以上なら、実行報告の「要還元（ユーザー）」に挙げる（還元は人が `/issue-start` Phase 8 手順 6 の形で行い、`還元先` を `テンプレート汎用（↗ 還元済み: <URL>）` に書き換える。ルーティンは還元しない）
-   - **上記以外**（プロジェクト固有／記入なし）: 重要度が Medium 以上のものを、独立した Issue へ昇格して起票する（Low は再発するまで昇格せず、実行報告にも挙げない。`.claude/rules/workflow-feedback.md`「重要度の判定基準」）。同じ節を直す知見は 1 件にまとめる。起票したら元のコメントに `✅ Issue #<番号> で対応` を `mark` で追記する（共通ルール 5。再発として Medium で書かれた知見なら、本文に挙がった前回の Low のコメントにも）。バックログが上限に達した日は起票しない（手順 1-2）
+   - **`テンプレート汎用（未還元）`**: このプロジェクトでは昇格しない（テンプレート元で直して、テンプレート更新で取り込む）。重要度が Medium 以上なら、実行報告の「要還元（ユーザー）」に挙げる（還元は人が `/issue-start` Phase 8 節 6 の形で行い、`還元先` を `テンプレート汎用（↗ 還元済み: <URL>）` に書き換える。ルーティンは還元しない）
+   - **上記以外**（プロジェクト固有／記入なし）: 重要度が Medium 以上のものを、独立した Issue へ昇格して起票する（Low は実行報告にも挙げない。`.claude/rules/workflow-feedback.md`「重要度の判定基準」）。同じ節を直す知見は 1 件にまとめる。起票したら元のコメントに `✅ Issue #<番号> で対応` を `mark` で追記する（共通ルール 5。再発として Medium で書かれた知見なら、本文に挙がった前回の Low のコメントにも）。バックログが上限に達した日は起票しない（手順 1-2）
 3. **昇格の起票は 1 回の実行で 3 件まで**（既定値。手順 3-2 の「上記以外」だけを数える。✅ の印の追記は数えない）。対象が多ければ重要度 High → Medium、同じ重要度なら古い順に起票し、残りは実行報告の「見送り」に ID を書く（次の実行で起票する）
 4. フッターの系統名: `知見ボード棚卸し系統`。フッターに `元知見: 知見ボード #<番号> の [#<作業Issue番号>] コメント` を添える
 
@@ -104,7 +104,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 3. 1 回の実行で付けるのは 10 件まで（既定値）。案が high → medium → low の順、同じ優先度なら番号の小さい順に付け、超えた分は実行報告の「見送り」に案を添えて書く（次の実行で付ける）
 4. 付ける直前に `gh api repos/{owner}/{repo}/issues/<N> --jq '{state, labels: [.labels[].name]}'` で取り直し、Closed になっていたり `priority:*` が付いていたりしたら触らない
 5. `gh api repos/{owner}/{repo}/issues/<N>/labels -f "labels[]=priority:<high|medium|low>"` で付ける（追加だけなので、ほかのラベルを落とさない）。GitHub MCP の `issue_write`（method: `update`）を使うときは、`labels` がラベル全体を置き換えるので、手順 6-4 で取り直したラベルに新しい `priority:*` を 1 つ足した配列を渡す
-6. （モデルの割り当てを使う場合）手順 5 で `model:*` の案を出した Issue に、手順 6-4・6-5 と同じ形で `model:<名前>` を付ける（`priority:*` の有無は問わない。取り直して Closed か `model:*` 付きなら触らない）。
+6. （モデルの割り当てを使う場合）手順 5 で `model:*` の案を出した Issue に、手順 6-4・6-5 と同じ形で `model:<名前>` を付ける（`priority:*` の有無は問わない。取り直して Closed か `model:*` 付きなら触らない）。件数の上限は置かない（見送っても、次の実行で同じ判定をやり直すだけのため）
 
 ## 7. 着手順のおすすめを選ぶ
 
@@ -115,7 +115,7 @@ description: メモ inbox・知見ボードから Issue を起票し、priority:
 
 ## 8. 実行報告
 
-最後に、次の形式で報告する（書き方は `CLAUDE.md`「報告はそれだけで読めるように書く」）。報告の本文は、実行ログ Issue にもコメントとして投稿する（1 実行 1 コメント。起票も付与も 0 件の実行も投稿する）。投稿できなければ（GitHub MCP も gh も使えない等）、セッションに報告を出すだけにする。無人実装を使わないプロジェクトでは、「`routine-ok` を付ける候補」の節を出さない。
+最後に、次の形式で報告する。報告の本文は、実行ログ Issue にもコメントとして投稿する（1 実行 1 コメント。起票も付与も 0 件の実行も投稿する）。投稿できなければ（GitHub MCP も gh も使えない等）、セッションに報告を出すだけにする。無人実装を使わないプロジェクトでは、「`routine-ok` を付ける候補」の節を出さない。
 
 ```
 ## daily-triage 実行報告（YYYY-MM-DD）

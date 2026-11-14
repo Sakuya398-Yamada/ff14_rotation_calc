@@ -26,7 +26,6 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 
 - **粒度・依存関係・親Issue**: 後述「粒度の判定」（正本）
 - **本文の構成**: `.claude/rules/git-conventions.md`「Issue のタイトルと本文」の見出し構成（背景・目的 / 要件（やること・やらないこと）/ 完了条件（DoD）/ 未確定事項）
-- **タイトル・ラベル**: `<ラベル名>: <簡潔な説明>`、ラベルは `feature` / `bug` / `refactor` / `docs` のいずれか
 - **GitHub 操作**: `.mcp.json` の GitHub MCP（`github-mcp-server` バイナリ、`.claude/rules/mcp-setup.md`）。未接続・エラー時（使うツールがツール一覧に無いときも含む）は `gh` CLI（`/c/Program Files/GitHub CLI/gh.exe`。クラウドセッションでは手順 5 の `gh issue create` / `gh issue edit` が GraphQL で 403 になるので、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の REST に置き換える）、それも無ければ整形済み本文を提示して起票を依頼する
 
 ## 粒度の判定
@@ -53,7 +52,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 
 ### 1. 要望の把握（不足があれば質問して止まる）
 
-以下が揃っているかを確認し、足りなければ推測せずに質問する。質問は 1 回にまとめ、可能なら選択肢を添える（`AskUserQuestion` が使えるなら選択式で）。手順 2 の調べで質問が増えそうなら、手順 2 を先に済ませてから、まとめて聞く。
+以下が揃っているかを確認し、足りなければ推測せずに質問する。質問は 1 回にまとめ、可能なら選択肢を添える（`AskUserQuestion` が使えるなら選択式で。値を貼ってもらうような選択肢を立てられない問いは、ダイアログを使わず本文に書いてターンを終える。同時に聞く選択式の問いも本文に並べる）。手順 2 の調べで質問が増えそうなら、手順 2 を先に済ませてから、まとめて聞く。
 
 | 項目 | 確認内容 |
 |------|---------|
@@ -71,7 +70,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 
 1. **重複・関連 Issue の検索**: `search_issues`（`owner` / `repo` を指定、query は自然文）で検索する。`search_issues` がツール一覧に無いか拒まれたら、`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」の重複検索で代える。重複候補があればリンクを提示し、新規起票ではなく既存 Issue へのコメント追記・本文更新を提案する。ただし、バグ報告で当たったのが完了済み（`state_reason` が `completed`）の Issue なら、重複ではなく下の 6 の由来の Issue の候補として扱い、それに紐づけた新規起票を提案する（完了済みの Issue は PR がマージ済みで、追記しても着手されない）
 2. **技術前提の実在確認**: 要望に「○○を新規実装する」のような技術前提があれば `Grep` で実在を確認する。既に存在すればスコープを縮める
-3. **既存構造の把握（必要な場合のみ）**: 大きめの機能で、既存構造を知らないと分割できない場合に限り、`code-explorer` を 1 個起動する。返却量の上限（例: 「`file:line` と 3 行以内の要約のみ、合計 200 行以内」）を明記する（`.claude/rules/context-efficiency.md`）。全読みはしない
+3. **既存構造の把握（必要な場合のみ）**: 大きめの機能で、既存構造を知らないと分割できない場合に限り、`code-explorer` を 1 個起動する。返却量の上限（例: 「`file:line` と 3 行以内の要約のみ、合計 200 行以内」）を明記する（`.claude/rules/context-efficiency.md`）
 4. **依頼された調査**: 要望の中で「〜を調べてほしい」と頼まれた調査は、この手順と同じ軽さ（Grep・局所読み・公式ドキュメントやパッケージ情報の参照・既存のコマンドで現状値を読む程度。コードを跨ぐなら `code-explorer` を 1 個まで起動してよく、3 と兼ねる）で済むなら、ここで済ませて結果を本文の「補足」に書き、手順 4 の提示にも載せる。それを超えるもの（試作・新しい依存を入れての計測・`code-explorer` 1 個に収まらない調査）は、未確定事項に「`/issue-start` の探索で調べる」と書いて回す（`[要確認]` はユーザーに聞く項目の印なので付けない）。調査の結果次第で分割の仕方が変わるなら、調査だけの Issue を先に起票し、残りの分割はその結論を受けて改めて `/issue-plan` で行う
 5. **利用者向けドキュメントの記述（利用者から見える挙動・上限・制約を変える要望のみ。ラベルは問わない）**: README の制限事項・既知の制約・FAQ などを、変える仕様のキーワードで Grep する。変更後と食い違う記述があれば、その書き換えを候補の「やること」に含める（目的が別なら別の候補にする）。`/issue-start` は修正箇所が明確な bug で Phase 3 を飛ばせるので、ここで拾っておく
 6. **バグの由来の Issue（bug の候補になる要望のみ）**: 完了済みの Issue の成果物に入った不具合なら、その不具合を入れた Issue（由来の Issue）を次の順に探し、下の段落の条件に合うものが見つかったところで止める
@@ -98,7 +97,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 
 ### 4. ユーザー確認（必須）
 
-以下のフォーマットで提示し、承認を得るまで起票しない。中身（【Issue計画】から推奨着手順まで）はメッセージ本文に出し、末尾の「起票しますか？」は `AskUserQuestion` の選択式の質問で聞く（選択肢は [Y] と [N]。[E] は自由記述（Other）で修正内容を受ける。候補ごとには分けず 1 問で聞く。使えないときは末尾もテキストで出す）。
+以下のフォーマットで提示し、承認を得るまで起票しない。中身（【Issue計画】から推奨着手順まで）はメッセージ本文に出し、末尾の「起票しますか？」は `AskUserQuestion` の選択式の質問で聞く（選択肢は [Y] と [N]。[E] は自由記述（Other）で修正内容を受ける。候補ごとには分けず 1 問で聞き、ダイアログの間は本文が見えないことがあるので、問いに件数と各候補のタイトルを入れる。使えないときは末尾もテキストで出す）。
 
 ```
 【Issue計画】要望: <1行要約>
@@ -130,7 +129,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 - [E] の場合は修正を反映して再提示し、改めて Y/E/N を取る
 - 由来の Issue の候補が複数のときは、[E] でどれかを選んでもらう。選ばずに [Y] なら、由来を書かずに起票する
 - 一部の候補だけ起票したい場合は、Other（テキストで聞いたならその返答）で候補番号を指定してもらう
-- ワークフロー自体（`CLAUDE.md`・`.claude/`・`.github/ISSUE_TEMPLATE/`）の改善の候補は、`.claude/rules/workflow-feedback.md`「還元する / しないの判定」で還元先を決め、テンプレート汎用なら「還元先」の行に挙げて [Y] の起票から外す（同じファイル「テンプレート元への還元」）。外した候補は、計画への [Y] とは別に、`/issue-start` の `phases/08-issue-recording.md` 手順 5 の提示と確認を経て知見ボードに `還元先: テンプレート汎用` で書き、手順 6 の確認を経て還元する。いまの作業を塞いでいる不具合で、このプロジェクトでも先に直すとユーザーが決めたとき（[E] でその候補を起票に戻す）だけ起票する（`.claude/skills/issue-start/SKILL.md`「起票フロー（共通）」と同じ）
+- ワークフロー自体（`CLAUDE.md`・`.claude/`・`.github/ISSUE_TEMPLATE/`）の改善の候補は、`.claude/rules/workflow-feedback.md`「還元する / しないの判定」で還元先を決め、テンプレート汎用なら「還元先」の行に挙げて [Y] の起票から外す（同じファイル「テンプレート元への還元」）。外した候補は、計画への [Y] とは別に、`/issue-start` の `phases/08-issue-recording.md` 節 5 の提示と確認を経て知見ボードに `還元先: テンプレート汎用` で書き、節 6 の確認を経て還元する。いまの作業を塞いでいる不具合で、このプロジェクトでも先に直すとユーザーが決めたとき（[E] でその候補を起票に戻す）だけ起票する（`.claude/skills/issue-start/SKILL.md`「起票フロー（共通）」と同じ）
 
 ### 5. 起票
 
@@ -138,7 +137,7 @@ argument-hint: "[要望の概要 または 分割したい既存Issue番号]"
 2. 子 Issue を依存順に 1 件ずつ起票する（`issue_write`、method: `create`）。親がある場合は `parent_issue_number` に親の番号を渡して sub-issue として作る。本文は `git-conventions.md`「Issue のタイトルと本文」の構成に揃える。由来の Issue を紐づけた候補は「## 関連Issue」に `- 由来: #N` を書く（#N は閉じているので、依存関係（blocked by）は付けない）
 3. 後続 Issue の `依存: #N` は、先行 Issue の実番号に置き換えてから起票する。起票したら、`.claude/skills/issue-start/dependencies.md`「付け方」で GitHub の依存関係（blocked by）にも付ける（`gh` が無いときの画面から付ける案内は、手順 6 の結果の提示で行う）
 4. ラベルを付ける（権限が無ければ省略してよい。`/issue-start` Phase 2 で判定される）
-5. sub-issue を作れない環境（`gh issue create` が `--parent` を持たない版など。`gh api` の REST なら `issues/<親番号>/sub_issues` で紐づけられるので代用は要らない）では、親本文のタスクリスト `- [ ] #N <タイトル>` と各子 Issue 末尾の `親Issue: #<親番号>` で代用する（`issue_write` method: `update` / `gh issue edit`）。クラウドセッションでは `gh issue edit` が GraphQL を使うので 403 になる。本文は REST の `gh api -X PATCH repos/{owner}/{repo}/issues/N -F body=@<file>` で更新する（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。`/issue-start` がスコープ外問題で起票する子Issue も同じ扱い
+5. sub-issue を作れない環境（`gh issue create` が `--parent` を持たない版など。`gh api` の REST なら `issues/<親番号>/sub_issues` で紐づけられるので代用は要らない）では、親本文のタスクリスト `- [ ] #N <タイトル>` と各子 Issue 末尾の `親Issue: #<親番号>` で代用する（`issue_write` method: `update` / `gh issue edit`）。クラウドセッションでは `gh issue edit` が GraphQL を使うので 403 になる。本文は REST の `gh api -X PATCH repos/{owner}/{repo}/issues/N -F body=@<file>` で更新する（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）
 6. **起票に失敗した場合**（権限・ネットワーク等）: 整形済み本文を提示して手動起票を案内する。`gh issue create --title ... --label ... --body-file <tmp>` へのフォールバックも可。クラウドセッションでは `gh issue create` も 403 になるので、REST の `gh api repos/{owner}/{repo}/issues -f title=... -F body=@<tmp> -f "labels[]=..."` で起票する。親がある場合は、続けて手順 5 と同じ pitfalls-cloud.md の節にある `sub_issues` の REST で sub-issue に紐づける
 
 ### 6. 結果の提示

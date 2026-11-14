@@ -10,19 +10,7 @@ Issue にラベルが付いていない場合、本文の内容から判定し�
 - ドキュメントのみの変更 → `docs`
 - 判断がつかない場合 → ユーザーに確認
 
-GitHub MCP の `issue_write`（method: `update`、`labels`）で付与する（`gh issue edit <N> --add-label <label>` でも可（クラウドセッションでは REST。`SKILL.md`「全体ルール」の「GitHub 操作」））。
-
-## ラベル → ブランチ prefix
-
-| Issueラベル | ブランチprefix |
-|-------------|---------------|
-| `feature` | `feature/` |
-| `bug` | `fix/` |
-| `refactor` | `refactor/` |
-| `docs` | `docs/` |
-| `test` | `feature/` |
-
-> `test` ラベルに専用 prefix は設けない（hook は `feature|fix|refactor|docs` の 4 種のみ許可）。テスト追加は `feature/` を使う（前例: #281、詳細は `.claude/rules/git-conventions.md`）。
+GitHub MCP の `issue_write`（method: `update`、`labels`）で付与する（`gh issue edit <N> --add-label <label>` でも可）。
 
 ## ブランチ作成
 
@@ -32,7 +20,6 @@ git pull origin main
 git checkout -b <type>/<issue番号>-<kebab-case説明>
 ```
 
-- 説明は小文字英数字とハイフンのみ（例: `feature/42-add-user-model`）。PreToolUse hook（`.claude/hooks/validate-branch-name.sh`）が検証し、違反はブロックされる
 - 作業中の変更がある場合は、ユーザーに確認してから切り替える
 - Phase 1 手順 2 で「## 着手」の印を、印のブランチがこのチェックアウトにあるので自分の印とした場合は、上のコマンドで新しく切らず、そのブランチで続ける（今いなければ `git switch <ブランチ名>`）
 - **同名ブランチが既にある**（ローカルまたは `origin`）場合は過去の試行の残り。黙って `-B` / force-push で上書きせず、Phase 1 手順 2（`phases/01-existing-pr-branch.md`「オープンな旧 PR／既存ブランチがある場合」）の確認結果に従う（作り直すなら `-v2` 等を付けた別名で切る）
@@ -41,7 +28,7 @@ git checkout -b <type>/<issue番号>-<kebab-case説明>
 
 ### クラウドセッションの場合（割り当て済みの作業ブランチ）
 
-Claude Code のクラウドセッションは、開始時に作業ブランチが割り当てられ（多くは `claude/*`。`ccr-*` など別の名前のこともある）、セッションの指示で他のブランチへの push が制限されていることが多い（git のプロキシ自体は通すので、制限は指示によるもの。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない」）。`CLAUDE_CODE_REMOTE=true` で、セッションの指示が作業ブランチを指定している、または `git branch --show-current` が `claude/*` なら（push 制限が明示されていなくても）、上の手順（`git checkout main` / `git pull` / `git checkout -b`）は行わず、割り当てられたブランチでそのまま作業する（ブランチ名の規約の対象外。`.claude/rules/git-conventions.md`「ブランチ命名」の例外）。それ以外（ローカル、またはクラウドでも指示に作業ブランチが無く `main` 等にいる場合）は上の通常手順に従う。GitHub MCP が無く `gh` に頼る場合、クラウドでは GraphQL 系のサブコマンドが使えない（`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションでは gh の GraphQL 系が使えない」）。
+Claude Code のクラウドセッションは、開始時に作業ブランチが割り当てられ（多くは `claude/*`。`ccr-*` など別の名前のこともある）、セッションの指示で他のブランチへの push が制限されていることが多い（git のプロキシ自体は通すので、制限は指示によるもの。`.claude/skills/issue-start/pitfalls-cloud.md`「クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない」）。`CLAUDE_CODE_REMOTE=true` で、セッションの指示が作業ブランチを指定している、または `git branch --show-current` が `claude/*` なら（push 制限が明示されていなくても）、上の手順（`git checkout main` / `git pull` / `git checkout -b`）は行わず、割り当てられたブランチでそのまま作業する（ブランチ名の規約の対象外。`.claude/rules/git-conventions.md`「ブランチ命名」の例外）。それ以外（ローカル、またはクラウドでも指示に作業ブランチが無く `main` 等にいる場合）は上の通常手順に従う。
 
 1. `git branch --show-current` が指示のブランチと違えば、`git switch <ブランチ名>` で切り替える（ローカルか `origin` にあれば、作成扱いにならずブランチ名 hook に当たらない）。どちらにも無ければ、セッションブランチ（`claude/*`・`copilot/*`）の名前なら `git switch -c <ブランチ名>` で作る。それ以外の名前は hook が作成を止める（hook は名前でしか判定できない）ので、ユーザーに確認する
 2. `git fetch origin main` のあと、`git log --oneline origin/main..HEAD` が空であることを確かめる。コミットが残っていれば、どちらの残りかを見分ける
