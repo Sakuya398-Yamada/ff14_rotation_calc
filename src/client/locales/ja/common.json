@@ -18,6 +18,8 @@
     "closeSharedLoadError": "閉じる",
     "sharedInfo": "開いた共有タイムライン",
     "closeSharedInfo": "共有タイムラインの情報を閉じる",
+    "fflogsLoginFailed": "FF Logs にログインできませんでした。もう一度試してください。",
+    "closeFflogsLoginFailed": "閉じる",
     "contactLabel": "不具合・要望:",
     "mailLabel": "メール:",
     "privacyPolicy": "プライバシーポリシー"
@@ -28,6 +30,14 @@
     "loggingOut": "ログアウト中…",
     "logoutFailed": "ログアウトできませんでした。通信状況を確かめて、もう一度試してください。",
     "privacyPolicy": "プライバシーポリシー"
+  },
+  "fflogsControl": {
+    "login": "FF Logs でログイン",
+    "logout": "FF Logs からログアウト",
+    "connected": "連携中: {{name}}",
+    "expired": "FF Logs のログインの期限が切れました。もう一度ログインしてください。",
+    "unavailable": "この環境では FF Logs にログインできません。",
+    "loginStartFailed": "FF Logs のログインを始められませんでした。ブラウザの設定を確かめて、もう一度試してください。"
   },
   "privacyPolicyPage": {
     "siteName": "FF14 Rotation Calculator",
@@ -59,7 +69,8 @@
     },
     "browserStorage": {
       "heading": "ブラウザ内にのみ保存する情報",
-      "body": "本ツールは、編集中のタイムライン、設定及び最近使ったジョブを、利用者のブラウザの localStorage にのみ保存する。サーバーに送信するのは、「保存・共有」で保存したタイムラインのみである。"
+      "body": "本ツールは、編集中のタイムライン、設定及び最近使ったジョブを、利用者のブラウザの localStorage にのみ保存する。サーバーに送信するのは、「保存・共有」で保存したタイムラインのみである。",
+      "fflogs": "利用者が FF Logs にログインしたときは、FF Logs が発行したアクセストークン、その有効期限及び FF Logs のユーザー名を、利用者のブラウザの localStorage に保存する。これらは本ツールのサーバーには送信せず、利用者が本ツールで FF Logs からログアウトしたときに削除する。ログインの途中でのみ利用する値（state・code_verifier）及びログイン後に戻るページは、利用者のブラウザの sessionStorage に保存し、FF Logs から戻ったときに削除する。"
     },
     "use": {
       "heading": "利用目的",
@@ -76,6 +87,9 @@
       "discordLabel": "Discord",
       "discord": "ログインに利用する。利用者がログインすると、本ツールは Discord から利用者の情報を受け取る（利用するのはユーザー ID のみであり、保存するのはユーザー ID から生成した値のみである）。",
       "discordPolicy": "Discord のプライバシーポリシー",
+      "fflogsLabel": "FF Logs",
+      "fflogs": "利用者の FF Logs アカウントとの連携に利用する。利用者が FF Logs にログインすると、利用者のブラウザは FF Logs と直接通信し、IP アドレス、ブラウザの情報等が FF Logs に送信される。本ツールが FF Logs から受け取るのはアクセストークン及びユーザー名であり、いずれも利用者のブラウザ内にのみ保存する（本ツールのサーバーには送信されない）。",
+      "fflogsPolicy": "FF Logs のプライバシーポリシー",
       "googleFontsLabel": "Google Fonts",
       "googleFonts": "文字の表示に利用する。利用者がページを開くと、IP アドレス、ブラウザの情報等が Google に送信される。",
       "googleFontsPolicy": "Google のプライバシーポリシー"
@@ -223,6 +237,7 @@
       "compact": "コンパクト"
     },
     "account": "アカウント",
+    "fflogs": "FF Logs 連携",
     "savedNote": "テーマとアクセントカラーはこのブラウザに保存されます",
     "closeButton": "閉じる"
   },

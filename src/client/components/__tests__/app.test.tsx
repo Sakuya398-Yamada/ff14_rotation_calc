@@ -410,3 +410,29 @@ describe("App の時刻の状態のパネルの「＞」(#1001)", () => {
     expect(toggle()).toHaveAttribute("aria-expanded", "false");
   });
 });
+
+describe("App の FF Logs のログイン失敗の帯 (#1014)", () => {
+  it("失敗していなければ出さない", () => {
+    render(<App />);
+    expect(screen.queryByText("FF Logs にログインできませんでした。もう一度試してください。")).not.toBeInTheDocument();
+  });
+
+  it("認可画面から戻ってログインに失敗していたら帯で知らせ、閉じるボタンで消せる", () => {
+    render(<App fflogsLoginFailed />);
+    expect(screen.getByRole("alert")).toHaveTextContent("FF Logs にログインできませんでした。もう一度試してください。");
+
+    fireEvent.click(screen.getByRole("button", { name: "閉じる" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  describe("英語", () => {
+    beforeEach(() => i18next.changeLanguage("en"));
+    afterEach(() => i18next.changeLanguage("ja"));
+
+    it("帯を英語で出す", () => {
+      render(<App fflogsLoginFailed />);
+      expect(screen.getByRole("alert")).toHaveTextContent("Couldn't log in to FF Logs. Try again.");
+      expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    });
+  });
+});

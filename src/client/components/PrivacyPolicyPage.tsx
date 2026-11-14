@@ -20,7 +20,7 @@ const ISSUES_URL = "https://github.com/Sakuya398-Yamada/ff14_rotation_calc/issue
 //   本文から条を指すときは、番号を文面に書かず articleReference で入れる
 // 文面を変えたら最終改定日を書き換える（制定日は変えない）
 const ESTABLISHED_ON = new Date(Date.UTC(2026, 10, 6));
-const LAST_REVISED_ON = new Date(Date.UTC(2026, 10, 9));
+const LAST_REVISED_ON = new Date(Date.UTC(2026, 10, 14));
 
 const ARTICLES = [
   "stored",
@@ -49,6 +49,7 @@ const EXTERNAL_SERVICES = [
   { id: "cloudflare", policyUrl: "https://www.cloudflare.com/privacypolicy/" },
   { id: "turnstile", policyUrl: "https://www.cloudflare.com/turnstile-privacy-policy/" },
   { id: "discord", policyUrl: "https://discord.com/privacy" },
+  { id: "fflogs", policyUrl: "https://www.fflogs.com/help/privacy" },
   { id: "googleFonts", policyUrl: "https://policies.google.com/privacy" },
 ] as const;
 
@@ -117,6 +118,8 @@ export function PrivacyPolicyPage() {
         <section>
           {articleHeading("browserStorage")}
           <p>{t("privacyPolicyPage.browserStorage.body")}</p>
+          {/* 保存する項目と消すときは src/client/logic/fflogs-auth.ts に揃える（#1014） */}
+          <p>{t("privacyPolicyPage.browserStorage.fflogs")}</p>
         </section>
 
         <section>

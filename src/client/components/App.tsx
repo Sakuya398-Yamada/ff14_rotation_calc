@@ -46,7 +46,12 @@ function hitDelaysToSave(hitDelays: Record<string, number>): { hitDelays?: Recor
   return Object.keys(hitDelays).length > 0 ? { hitDelays } : {};
 }
 
-export function App() {
+interface AppProps {
+  /** FF Logs の認可画面から戻ってきて、ログインに失敗していた（main.tsx が描画の前に 1 度だけ読む） */
+  fflogsLoginFailed?: boolean;
+}
+
+export function App({ fflogsLoginFailed: initialFflogsLoginFailed = false }: AppProps = {}) {
   const { t } = useTranslation();
   const lang = useLanguage();
   const [saveOpen, setSaveOpen] = useState(false);
@@ -94,6 +99,7 @@ export function App() {
   // （続けて保存すると、前の保存が複製元になる）。ジョブを変えると外す。リロードでは引き継がない
   const [sourceTimelineId, setSourceTimelineId] = useState<string | null>(null);
   const [sharedLoadError, setSharedLoadError] = useState<SharedLoadError | null>(null);
+  const [fflogsLoginFailed, setFflogsLoginFailed] = useState(initialFflogsLoginFailed);
   // 共有 URL から開いたタイムラインのタイトルとコンテンツ。ジョブを変えるか保存すると、別のタイムラインになるので外す
   const [sharedInfo, setSharedInfo] = useState<{ title: string | null; contentId: string | null } | null>(null);
   // 設定ダイアログの言語の切り替え先と、ログインした後に戻るパスを作る。replaceState では再描画されないので、書き換えたときに一緒に更新する
@@ -490,6 +496,19 @@ export function App() {
             type="button"
             aria-label={t("app.closeSharedLoadError")}
             onClick={() => setSharedLoadError(null)}
+            style={styles.sharedLoadErrorClose}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {fflogsLoginFailed && (
+        <div style={styles.sharedLoadError}>
+          <span role="alert">{t("app.fflogsLoginFailed")}</span>
+          <button
+            type="button"
+            aria-label={t("app.closeFflogsLoginFailed")}
+            onClick={() => setFflogsLoginFailed(false)}
             style={styles.sharedLoadErrorClose}
           >
             ×
