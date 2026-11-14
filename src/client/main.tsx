@@ -31,9 +31,7 @@ function renderPage() {
 
 // FF Logs の認可画面からは、登録したリダイレクト URL（オリジン）に戻る。描画の前にログインを終えて、
 // ログインを始めたページに移る（URL からコードを消し、/en/ から始めたなら英語の HTML を開き直すため）
-const fflogsCallback =
-  window.location.pathname === "/" ? handleFflogsCallback(window.location.search, window.location.origin) : Promise.resolve(null);
-void fflogsCallback.then((returnTo) => {
+void handleFflogsCallback(window.location).then((returnTo) => {
   if (returnTo !== null) window.location.replace(returnTo);
   else renderPage();
 });

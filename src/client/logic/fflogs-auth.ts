@@ -4,6 +4,8 @@
 const AUTHORIZE_URL = "https://www.fflogs.com/oauth/authorize";
 const TOKEN_URL = "https://www.fflogs.com/oauth/token";
 const USER_API_URL = "https://www.fflogs.com/api/v2/user";
+// 認可画面から戻ったページは、FF Logs との通信が終わるまで描画しない。応答が返らないときに白紙のまま止めない
+const REQUEST_TIMEOUT_MS = 15_000;
 
 export const FFLOGS_SESSION_STORAGE_KEY = "ff14-rotation-calc:fflogs-session";
 /** 認可画面から戻るまでのあいだだけ、state・code_verifier・戻るパスを持つ（sessionStorage） */
@@ -80,17 +82,21 @@ function loadSession(): FflogsSession | null {
   return { accessToken, expiresAt, userName };
 }
 
+/** ブラウザに保存したトークンを消す（FF Logs 側のトークンは失効させない） */
+export function logoutFflogs(): void {
+  removeStorage("localStorage", FFLOGS_SESSION_STORAGE_KEY);
+}
+
 export function loadFflogsAccount(now: number = Date.now()): FflogsAccount {
-  if (clientId() === "") return { status: "unavailable" };
+  if (clientId() === "") {
+    // ログアウトのボタンを出せないので、前に保存したトークンが残っていれば消す
+    logoutFflogs();
+    return { status: "unavailable" };
+  }
   const session = loadSession();
   if (!session) return { status: "loggedOut" };
   if (now >= session.expiresAt) return { status: "expired" };
   return { status: "loggedIn", userName: session.userName };
-}
-
-/** ブラウザに保存したトークンを消す（FF Logs 側のトークンは失効させない） */
-export function logoutFflogs(): void {
-  removeStorage("localStorage", FFLOGS_SESSION_STORAGE_KEY);
 }
 
 function base64Url(bytes: Uint8Array): string {
@@ -139,15 +145,19 @@ function takePendingLogin(): PendingLogin | null {
   return { state, codeVerifier, returnTo };
 }
 
-/** 戻るパスは同じオリジンのパスだけを通す（"//host" や "/\host" は別のオリジンに解決される） */
+/**
+ * 戻るパスは同じオリジンのパスだけを通す（"//host" や "/\host" は別のオリジンに解決される。
+ * タブと改行は URL の解釈で取り除かれるので、"/\t/host" も "//host" になる）
+ */
 function safeReturnPath(value: string | undefined): string {
-  return value !== undefined && /^\/(?![/\\])/.test(value) ? value : "/";
+  return value !== undefined && /^\/(?![/\\])[^\t\n\r]*$/.test(value) ? value : "/";
 }
 
 async function exchangeCode(code: string, pending: PendingLogin, origin: string): Promise<{ accessToken: string; expiresAt: number } | null> {
   // フォームの形式で送る（JSON と違い、CORS のプリフライトが要らない）
   const res = await fetch(TOKEN_URL, {
     method: "POST",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     body: new URLSearchParams({
       client_id: clientId(),
       code_verifier: pending.codeVerifier,
@@ -169,6 +179,7 @@ async function fetchUserName(accessToken: string): Promise<string | null> {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ query: "{ userData { currentUser { name } } }" }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!res.ok) return null;
   const body = (await res.json()) as { data?: { userData?: { currentUser?: { name?: unknown } | null } | null } | null };
@@ -192,13 +203,14 @@ async function completeLogin(params: URLSearchParams, pending: PendingLogin, ori
 }
 
 /**
- * FF Logs の認可画面から戻ってきた URL（"?code=…&state=…" か "?error=…&state=…"）なら、ログインを終えて、
- * 次に移るパス（ログインを始めたページ）を返す。それ以外の URL なら null。
+ * FF Logs の認可画面から戻ってきた URL（登録したリダイレクト URL のトップで、"?code=…&state=…" か "?error=…&state=…"）なら、
+ * ログインを終えて、次に移るパス（ログインを始めたページ）を返す。それ以外の URL なら null。
  * 失敗したときは、移った先で consumeFflogsLoginFailed() が 1 度だけ true を返す
  */
-export async function handleFflogsCallback(search: string, origin: string): Promise<string | null> {
-  const params = new URLSearchParams(search);
-  if (!params.has("state") || !(params.has("code") || params.has("error"))) return null;
+export async function handleFflogsCallback(location: { pathname: string; search: string; origin: string }): Promise<string | null> {
+  const { origin } = location;
+  const params = new URLSearchParams(location.search);
+  if (location.pathname !== "/" || !params.has("state") || !(params.has("code") || params.has("error"))) return null;
   const pending = takePendingLogin();
   // 認可画面で拒否して戻ったときは、利用者が自分でやめたので失敗として知らせない
   const cancelled = pending !== null && params.get("error") === "access_denied" && params.get("state") === pending.state;

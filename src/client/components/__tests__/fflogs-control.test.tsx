@@ -31,7 +31,9 @@ describe("FflogsControl", () => {
     render(<FflogsControl returnTo="/" />);
 
     expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toBeDisabled();
-    expect(screen.getByText("この環境では FF Logs にログインできません。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toHaveAccessibleDescription(
+      "この環境では FF Logs にログインできません。"
+    );
   });
 
   it("ログインしていなければ、押せるログインのボタンだけを出す", () => {
@@ -40,6 +42,7 @@ describe("FflogsControl", () => {
     expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toBeEnabled();
     expect(screen.queryByText("この環境では FF Logs にログインできません。")).not.toBeInTheDocument();
     expect(screen.queryByText(/期限が切れました/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toHaveAccessibleDescription("");
     expect(screen.queryByRole("button", { name: "FF Logs からログアウト" })).not.toBeInTheDocument();
   });
 
@@ -97,10 +100,23 @@ describe("FflogsControl", () => {
     storeSession(Date.now() - 1);
     render(<FflogsControl returnTo="/" />);
 
-    expect(screen.getByText("FF Logs のログインの期限が切れました。もう一度ログインしてください。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toHaveAccessibleDescription(
+      "FF Logs のログインの期限が切れました。もう一度ログインしてください。"
+    );
     expect(screen.queryByText("連携中: Sakuya")).not.toBeInTheDocument();
+  });
+
+  it("期限が切れたトークンも、ログアウトのボタンでブラウザから消せる", () => {
+    storeSession(Date.now() - 1);
+    render(<FflogsControl returnTo="/" />);
+    expect(localStorage.getItem(FFLOGS_SESSION_STORAGE_KEY)).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "FF Logs からログアウト" }));
+
+    expect(localStorage.getItem(FFLOGS_SESSION_STORAGE_KEY)).toBeNull();
+    expect(screen.queryByText(/期限が切れました/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "FF Logs からログアウト" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toHaveFocus();
   });
 });
 

@@ -421,7 +421,7 @@ describe("App の FF Logs のログイン失敗の帯 (#1014)", () => {
     render(<App fflogsLoginFailed />);
     expect(screen.getByRole("alert")).toHaveTextContent("FF Logs にログインできませんでした。もう一度試してください。");
 
-    fireEvent.click(screen.getByRole("button", { name: "閉じる" }));
+    fireEvent.click(screen.getByRole("button", { name: "FF Logs のログインの失敗の知らせを閉じる" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -432,7 +432,7 @@ describe("App の FF Logs のログイン失敗の帯 (#1014)", () => {
     it("帯を英語で出す", () => {
       render(<App fflogsLoginFailed />);
       expect(screen.getByRole("alert")).toHaveTextContent("Couldn't log in to FF Logs. Try again.");
-      expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Close the FF Logs login error" })).toBeInTheDocument();
     });
   });
 });

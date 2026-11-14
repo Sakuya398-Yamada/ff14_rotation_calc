@@ -28,6 +28,10 @@ function fflogsResponds(url: string): Response {
   return jsonResponse({ data: { userData: { currentUser: { name: "Sakuya" } } } });
 }
 
+function callbackUrl(search: string, pathname = "/") {
+  return { pathname, search, origin: ORIGIN };
+}
+
 function storePendingLogin(returnTo = "/en/") {
   sessionStorage.setItem(
     FFLOGS_PENDING_LOGIN_STORAGE_KEY,
@@ -57,10 +61,11 @@ afterEach(() => {
 });
 
 describe("loadFflogsAccount", () => {
-  it("クライアント ID が無ければ、トークンが保存されていても unavailable", () => {
+  it("クライアント ID が無ければ、トークンが保存されていても unavailable で、保存されていたトークンは消す", () => {
     vi.stubEnv("VITE_FFLOGS_CLIENT_ID", "");
     storeSession(NOW + 1000);
     expect(loadFflogsAccount()).toEqual({ status: "unavailable" });
+    expect(localStorage.getItem(FFLOGS_SESSION_STORAGE_KEY)).toBeNull();
   });
 
   it("トークンが保存されていなければ loggedOut", () => {
@@ -81,6 +86,8 @@ describe("loadFflogsAccount", () => {
     expect(loadFflogsAccount()).toEqual({ status: "loggedIn", userName: "Sakuya" });
     vi.setSystemTime(NOW + 1000);
     expect(loadFflogsAccount()).toEqual({ status: "expired" });
+    // 期限切れの保存値は、ログアウトかログインのし直しまで残す（再ログインを促し続けるため）
+    expect(localStorage.getItem(FFLOGS_SESSION_STORAGE_KEY)).not.toBeNull();
   });
 });
 
@@ -133,15 +140,22 @@ describe("beginFflogsLogin", () => {
 describe("handleFflogsCallback", () => {
   it.each(["", "?fight=3", "?code=code-1", "?state=state-1"])("認可画面から戻った URL でなければ（%o）null を返し、控えた値に触らない", async (search) => {
     storePendingLogin();
-    expect(await handleFflogsCallback(search, ORIGIN)).toBeNull();
+    expect(await handleFflogsCallback(callbackUrl(search))).toBeNull();
     expect(sessionStorage.getItem(FFLOGS_PENDING_LOGIN_STORAGE_KEY)).not.toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
     expect(consumeFflogsLoginFailed()).toBe(false);
   });
 
+  it.each(["/en/", "/privacy", "/t/V1StGXR8_Z5jdHi6B-myT"])("トップ以外のパス（%s）は、同じクエリが付いていても処理しない", async (pathname) => {
+    storePendingLogin();
+    expect(await handleFflogsCallback(callbackUrl("?code=code-1&state=state-1", pathname))).toBeNull();
+    expect(sessionStorage.getItem(FFLOGS_PENDING_LOGIN_STORAGE_KEY)).not.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("コードをトークンに交換し、ユーザー名を取って保存し、ログインを始めたパスを返す", async () => {
     storePendingLogin("/en/");
-    expect(await handleFflogsCallback("?code=code-1&state=state-1", ORIGIN)).toBe("/en/");
+    expect(await handleFflogsCallback(callbackUrl("?code=code-1&state=state-1"))).toBe("/en/");
 
     const [tokenUrl, tokenInit] = fetchMock.mock.calls[0];
     expect(tokenUrl).toBe("https://www.fflogs.com/oauth/token");
@@ -155,6 +169,9 @@ describe("handleFflogsCallback", () => {
     });
     const [userUrl, userInit] = fetchMock.mock.calls[1];
     expect(userUrl).toBe("https://www.fflogs.com/api/v2/user");
+    // 応答が返らないときに待ち続けないよう、どちらの通信にも中断のシグナルを付ける
+    expect(tokenInit?.signal).toBeInstanceOf(AbortSignal);
+    expect(userInit?.signal).toBeInstanceOf(AbortSignal);
     expect(new Headers(userInit?.headers).get("Authorization")).toBe("Bearer access-1");
 
     // リフレッシュトークンは保存しない
@@ -170,14 +187,16 @@ describe("handleFflogsCallback", () => {
 
   it("state が控えた値と違えば、FF Logs を呼ばずに失敗にする", async () => {
     storePendingLogin("/en/");
-    expect(await handleFflogsCallback("?code=code-1&state=other", ORIGIN)).toBe("/en/");
+    expect(await handleFflogsCallback(callbackUrl("?code=code-1&state=other"))).toBe("/en/");
     expect(fetchMock).not.toHaveBeenCalled();
     expect(loadFflogsAccount()).toEqual({ status: "loggedOut" });
     expect(consumeFflogsLoginFailed()).toBe(true);
+    // 控えた値は 1 度きり。同じコードでやり直しても通らない
+    expect(sessionStorage.getItem(FFLOGS_PENDING_LOGIN_STORAGE_KEY)).toBeNull();
   });
 
   it("控えた値が無ければ（別のタブで始めたログインなど）、FF Logs を呼ばずに失敗にしてトップに戻す", async () => {
-    expect(await handleFflogsCallback("?code=code-1&state=state-1", ORIGIN)).toBe("/");
+    expect(await handleFflogsCallback(callbackUrl("?code=code-1&state=state-1"))).toBe("/");
     expect(fetchMock).not.toHaveBeenCalled();
     expect(consumeFflogsLoginFailed()).toBe(true);
   });
@@ -199,7 +218,7 @@ describe("handleFflogsCallback", () => {
         return override ? override() : fflogsResponds(url);
       });
       storePendingLogin("/en/");
-      expect(await handleFflogsCallback("?code=code-1&state=state-1", ORIGIN)).toBe("/en/");
+      expect(await handleFflogsCallback(callbackUrl("?code=code-1&state=state-1"))).toBe("/en/");
       expect(localStorage.getItem(FFLOGS_SESSION_STORAGE_KEY)).toBeNull();
       expect(consumeFflogsLoginFailed()).toBe(true);
     }
@@ -207,7 +226,7 @@ describe("handleFflogsCallback", () => {
 
   it("認可画面で拒否して戻ったときは、FF Logs を呼ばず、失敗としても知らせない", async () => {
     storePendingLogin("/en/");
-    expect(await handleFflogsCallback("?error=access_denied&state=state-1", ORIGIN)).toBe("/en/");
+    expect(await handleFflogsCallback(callbackUrl("?error=access_denied&state=state-1"))).toBe("/en/");
     expect(fetchMock).not.toHaveBeenCalled();
     expect(loadFflogsAccount()).toEqual({ status: "loggedOut" });
     expect(consumeFflogsLoginFailed()).toBe(false);
@@ -215,7 +234,7 @@ describe("handleFflogsCallback", () => {
 
   it("拒否以外のエラーで戻ったときは、失敗にする", async () => {
     storePendingLogin("/en/");
-    expect(await handleFflogsCallback("?error=server_error&state=state-1", ORIGIN)).toBe("/en/");
+    expect(await handleFflogsCallback(callbackUrl("?error=server_error&state=state-1"))).toBe("/en/");
     expect(fetchMock).not.toHaveBeenCalled();
     expect(consumeFflogsLoginFailed()).toBe(true);
   });
@@ -224,22 +243,22 @@ describe("handleFflogsCallback", () => {
     storeSession(NOW - 1);
     expect(loadFflogsAccount()).toEqual({ status: "expired" });
     storePendingLogin("/");
-    await handleFflogsCallback("?code=code-1&state=state-1", ORIGIN);
+    await handleFflogsCallback(callbackUrl("?code=code-1&state=state-1"));
     expect(loadFflogsAccount()).toEqual({ status: "loggedIn", userName: "Sakuya" });
   });
 
-  it.each(["//evil.example/", "/\\evil.example/", "https://evil.example/", ""])(
+  it.each(["//evil.example/", "/\\evil.example/", "/\t/evil.example/", "/\n/evil.example/", "https://evil.example/", ""])(
     "控えた戻るパスが同じオリジンのパスでなければ（%o）、トップに戻す",
     async (returnTo) => {
       storePendingLogin(returnTo);
-      expect(await handleFflogsCallback("?code=code-1&state=state-1", ORIGIN)).toBe("/");
+      expect(await handleFflogsCallback(callbackUrl("?code=code-1&state=state-1"))).toBe("/");
     }
   );
 });
 
 describe("consumeFflogsLoginFailed", () => {
   it("失敗は 1 度だけ伝える", async () => {
-    await handleFflogsCallback("?code=code-1&state=state-1", ORIGIN);
+    await handleFflogsCallback(callbackUrl("?code=code-1&state=state-1"));
     expect(consumeFflogsLoginFailed()).toBe(true);
     expect(consumeFflogsLoginFailed()).toBe(false);
   });

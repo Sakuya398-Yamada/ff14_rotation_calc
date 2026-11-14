@@ -19,7 +19,7 @@
     "sharedInfo": "Opened shared timeline",
     "closeSharedInfo": "Close the shared timeline info",
     "fflogsLoginFailed": "Couldn't log in to FF Logs. Try again.",
-    "closeFflogsLoginFailed": "Close",
+    "closeFflogsLoginFailed": "Close the FF Logs login error",
     "contactLabel": "Bugs & requests:",
     "mailLabel": "Email:",
     "privacyPolicy": "Privacy policy"
@@ -70,7 +70,7 @@
     "browserStorage": {
       "heading": "Information kept only in your browser",
       "body": "The timeline you are editing, your settings and your recently used jobs are kept only in your browser's localStorage. The only information sent to our server is a timeline you save with \"Save & share\".",
-      "fflogs": "When you log in to FF Logs, the access token issued by FF Logs, its expiry time and your FF Logs username are kept in your browser's localStorage. They are not sent to our server, and they are deleted when you log out of FF Logs in the Service. The values used only while you log in (state and code_verifier) and the page to return to after logging in are kept in your browser's sessionStorage and deleted when you return from FF Logs."
+      "fflogs": "When you log in to FF Logs, the access token issued by FF Logs, its expiry time and your FF Logs username are kept in your browser's localStorage. They are not sent to our server, and they are deleted when you log out of FF Logs in the Service. The values used only while you log in (state and code_verifier) and the page to return to after logging in are kept in your browser's sessionStorage and deleted when you return from FF Logs (if you do not return, they are cleared when you close the tab)."
     },
     "use": {
       "heading": "How we use information",
@@ -88,7 +88,7 @@
       "discord": "We use Discord for logging in. When you log in, the Service receives your user information from Discord (we use only your user ID, and we store only a value derived from it).",
       "discordPolicy": "Discord Privacy Policy",
       "fflogsLabel": "FF Logs",
-      "fflogs": "We use FF Logs to connect your FF Logs account. When you log in to FF Logs, your browser communicates directly with FF Logs, and your IP address and browser information are sent to FF Logs. The Service receives only an access token and your username from FF Logs, and both are kept only in your browser (they are not sent to our server).",
+      "fflogs": "We use FF Logs to connect your FF Logs account. When you log in to FF Logs, your browser communicates directly with FF Logs, and your IP address and browser information are sent to FF Logs. Of what the Service receives from FF Logs, it keeps only an access token, its expiry time and your username, and keeps them only in your browser (they are not sent to our server).",
       "fflogsPolicy": "FF Logs Privacy Policy",
       "googleFontsLabel": "Google Fonts",
       "googleFonts": "We use Google Fonts to display text. When you open a page, your IP address and browser information are sent to Google.",

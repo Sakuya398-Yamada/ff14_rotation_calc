@@ -40,6 +40,7 @@
                ├ /t/*    → Hono → Static Assets の /（index.html）
                └ それ以外 → Static Assets（dist/client。未知のパスは index.html）
              ※ 共有 URL（/t/*・/en/t/*）の応答には Hono が X-Robots-Tag: noindex（#837）と Referrer-Policy: strict-origin（#976）を付ける
+[ブラウザ] → [FF Logs（www.fflogs.com）]  ※ FF Logs 連携のログインと API は、Worker を経由せずブラウザから直接呼ぶ（#1014）
 [Cron Trigger（毎日 UTC 19:00 = JST 04:00。wrangler.jsonc の triggers）] → 同じ Worker の scheduled → D1 の期限切れのセッションの行を消す（#919）
 ```
 

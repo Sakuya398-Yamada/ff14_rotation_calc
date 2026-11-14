@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { beginFflogsLogin, loadFflogsAccount, logoutFflogs } from "../logic/fflogs-auth";
 
@@ -13,6 +13,7 @@ export function FflogsControl({ returnTo, navigate = (url) => window.location.as
   const { t } = useTranslation();
   const [account, setAccount] = useState(() => loadFflogsAccount());
   const [loginStartFailed, setLoginStartFailed] = useState(false);
+  const noteId = useId();
   const startingRef = useRef(false);
   const loginButtonRef = useRef<HTMLButtonElement>(null);
   // ログアウトすると押したボタンが消えてフォーカスが外れるので、代わりに出るログインのボタンへ移す
@@ -55,17 +56,32 @@ export function FflogsControl({ returnTo, navigate = (url) => window.location.as
         </>
       ) : (
         <>
-          {account.status === "expired" && <span style={styles.note}>{t("fflogsControl.expired")}</span>}
+          {account.status === "expired" && (
+            <span id={noteId} style={styles.note}>
+              {t("fflogsControl.expired")}
+            </span>
+          )}
           <button
             ref={loginButtonRef}
             type="button"
             onClick={() => void handleLogin()}
             disabled={account.status === "unavailable"}
+            aria-describedby={account.status === "loggedOut" ? undefined : noteId}
             style={account.status === "unavailable" ? { ...styles.button, ...styles.buttonDisabled } : styles.button}
           >
             {t("fflogsControl.login")}
           </button>
-          {account.status === "unavailable" && <span style={styles.note}>{t("fflogsControl.unavailable")}</span>}
+          {/* 期限が切れたトークンも、ログインし直さずにブラウザから消せるようにする */}
+          {account.status === "expired" && (
+            <button type="button" onClick={handleLogout} style={styles.button}>
+              {t("fflogsControl.logout")}
+            </button>
+          )}
+          {account.status === "unavailable" && (
+            <span id={noteId} style={styles.note}>
+              {t("fflogsControl.unavailable")}
+            </span>
+          )}
         </>
       )}
       {loginStartFailed && (
