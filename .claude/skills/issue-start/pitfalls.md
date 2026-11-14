@@ -1,8 +1,7 @@
 # 環境依存のハマりどころ（pitfalls）
 
-`/issue-start` の各 Phase から参照される補助ファイルで、常駐しない。特定の OS・ツール・版・端末に条件付けられた回避策だけを置く（書き先の仕分けは `.claude/rules/documentation-policy.md`「ハマりどころの書き先」）。該当する環境・ツールを使うときだけ読めばよい。条件が Claude Code のクラウドセッション（claude.ai/code）のものは `.claude/skills/issue-start/pitfalls-cloud.md` に分けてある（1 ファイルを Bash の出力上限より十分小さく保つため）。
+`/issue-start` の各 Phase から参照される補助ファイルで、常駐しない。特定の OS・ツール・版・端末に条件付けられた回避策だけを置く。該当する環境・ツールを使うときだけ読めばよい。条件が Claude Code のクラウドセッション（claude.ai/code）のものは `.claude/skills/issue-start/pitfalls-cloud.md` に分けてある（1 ファイルを Bash の出力上限より十分小さく保つため）。
 
-- 各項目は条件 / 症状 / 回避 / 確認の 4 点で書く。確認は `ツール名（版が分かれば）/ 年月 / 出自 Issue`
 - 条件が消えたら項目ごと消す。確認から 6 か月経った項目は棚卸しで見直す（まだ起きるなら確認を更新し、起きなければ削除する）
 
 ## 一括置換で改行コードが LF に変わる
@@ -30,7 +29,7 @@
 
 - **条件**: `gh api --jq` で正規表現を書くとき（`gh` 内蔵の jq は gojq）。Windows の Git Bash から `gh.exe` を呼ぶときは、引数の変換が 2 段目として重なる
 - **症状**: gojq は文字列リテラル中の `\.` / `\s` を受け付けず、`test("\.sh$")` が `invalid escape sequence "\." in string literal` で止まる。`\\s` と重ねると Linux では通るが、Git Bash から Windows の `.exe` に渡す引数では `\\` が 1 本に潰れて `\s` で届き、同じエラーになる
-- **回避**: `--jq` の正規表現ではバックスラッシュを使わず、`[.]` / `[[:space:]]` のような文字クラスで書く（`test("[.]sh$")`、`test("abc[[:space:]]+$")`）。一致する例が GitHub 上に無いときは、`"abc" + ([10]|implode)` のように入力を合成して確かめる。版の間の差分や特定ファイルの patch は、`gh api --jq` より `git clone --no-checkout` したクローンの `git diff` / `git show` を使う方が簡単（Phase 1 手順 3）
+- **回避**: `--jq` の正規表現ではバックスラッシュを使わず、`[.]` / `[[:space:]]` のような文字クラスで書く（`test("[.]sh$")`、`test("abc[[:space:]]+$")`）。一致する例が GitHub 上に無いときは、`"abc" + ([10]|implode)` のように入力を合成して確かめる
 - **確認**: gh 2.89 / 2026-10 / issue-driven-dev-starter#28・#529（`\\` が潰れるのは Git for Windows の Git Bash + gh（版未記録）/ 2026-10 / #445）
 
 ## Bash の出力上限は、文字数ではなくバイト数で効く

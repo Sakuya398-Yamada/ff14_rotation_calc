@@ -35,7 +35,7 @@ description: コードスキャン（と、プロジェクト固有の系統）�
 
 系統1 に入る前に 1 回だけ数える。数は実行報告の「その他」に書く。
 
-1. **バックログ（Open の作業 Issue）** を、`origin/main` の `.claude/routines/daily-triage.md`「1. バックログを数える」の数え方で数える（数え方と上限の正本はそちら。`git show origin/main:.claude/routines/daily-triage.md` で読む）
+1. **バックログ（Open の作業 Issue）** を、`origin/main` の `.claude/routines/daily-triage.md`「1. バックログを数える」の数え方で数える（`git show origin/main:.claude/routines/daily-triage.md` で読む）
 2. **上限以上なら、系統1（コードスキャン）を見送る**（手順全体を飛ばす）。実行報告の「見送り」に「バックログ上限に到達（N 件）」と書く。系統2 は、外部が起点の系統（外部の仕様の更新の監視など）は見送らず、それ以外は系統1 と同じく見送る
 3. 無人実装を使うプロジェクト（リポジトリにラベル `routine-ok` がある。`/issue-priority`「無人実装を使うか」）だけ、無人実装の Open PR も数える（数え方は `origin/main` の `.claude/routines/weekday-issue-start.md`「1. 事前点検（安全弁）」手順 2 の、自分の Open PR の見分け方。手順書が無ければ数えず、実行報告に「数えられず（手順書が無い）」と書く）。数は実行報告に書くだけで、見送りの判定には使わない。使わないプロジェクトでは数えない
 
@@ -91,12 +91,12 @@ description: コードスキャン（と、プロジェクト固有の系統）�
 起票はしない。系統1・2 で起票した Issue も対象に含めるため、最後に行う。起票しないので、バックログ上限による見送りの対象にもしない。
 
 1. `origin/main` の `/issue-priority` skill（`git show origin/main:.claude/skills/issue-priority/SKILL.md`。skill が参照する `.claude/skills/issue-priority/routine-candidates.md` も同じく読む）の「無人実装を使うか」と手順 1〜4 を、引数なし（Open Issue 全件）として行う。本文とコメントは、手順 2 のとおり `general-purpose` エージェントに任せ、要約だけを受け取る
-2. 進行中ではなく、`priority:*` が付いていて案と違う Issue を、「現在 → 案」と理由（skill 手順 4「priority の根拠」の言い回し）で並べる。`priority:*` が無い Issue は件数だけ数える（日次の `daily-triage` が付ける）
+2. 進行中ではなく、`priority:*` が付いていて案と違う Issue を、「現在 → 案」と理由（skill 手順 4「priority の根拠」の言い回し）で並べる。`priority:*` が無い Issue は件数だけ数える
 3. **ラベルは変えない**（付与も付け替えもしない）。付け直すかは、人が実行報告を読んで `/issue-priority` で決める
 
 ## 実行報告
 
-最後に、次の形式で報告する（書き方は `CLAUDE.md`「報告はそれだけで読めるように書く」）。報告の本文は、実行ログ Issue にもコメントとして投稿する（1 実行 1 コメント。起票が 0 件の実行も投稿する）。投稿できなければ（GitHub MCP も gh も使えない等）、セッションに報告を出すだけにする。無人実装を使わないプロジェクトでは、「無人実装の Open PR 数」の行を出さない。
+最後に、次の形式で報告する。報告の本文は、実行ログ Issue にもコメントとして投稿する（1 実行 1 コメント。起票が 0 件の実行も投稿する）。投稿できなければ（GitHub MCP も gh も使えない等）、セッションに報告を出すだけにする。無人実装を使わないプロジェクトでは、「無人実装の Open PR 数」の行を出さない。
 
 ```
 ## weekly 実行報告（YYYY-MM-DD）

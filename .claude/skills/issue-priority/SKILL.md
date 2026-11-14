@@ -18,7 +18,7 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 ```
 
 - 入力が無ければ、Open Issue 全件（`meta` / `question` ラベルの Issue を、ほかのラベルと一緒に付いていても除き、#2 のテンプレート Issue も除く）を対象にする
-- Issue 番号を指定したら、順位表とラベル案はその Issue だけに絞る（手順 2 の読み込みは全件で行う）
+- Issue 番号を指定したら、順位表とラベル案はその Issue だけに絞る
 
 ## 無人実装を使うか
 
@@ -36,7 +36,7 @@ Open Issue の消化優先度を判定し、順位表と `priority:*` ラベル�
 ### 1. 集める
 
 1. GitHub MCP の `list_issues`（`state: OPEN`、`fields: ["number", "title", "labels"]`、`perPage: 100`）で Open Issue を一覧する。`pageInfo.hasNextPage` が `true` のあいだは、`after` に `endCursor` を渡して続きを読む（一覧が欠けると、手順 3 で Open の依存先を閉じていると読む）
-2. `list_pull_requests`（`state: open`、`fields: ["number", "title", "body", "draft", "head"]`、`perPage: 100`。100 件返ったら `page` を進める）で Open PR を一覧し、タイトル末尾の ` #N` の並び（複数の Issue をまとめた PR は ` #12 #13` と並ぶ。`.claude/rules/git-conventions.md`「PR のタイトルと本文」）と本文の `closes #N` で Issue に紐づける。一覧は `mergeable_state` を返さない（`fields` に入れても項目ごと落ちる）ので、紐づいた PR ごとに `pull_request_read`（method: `get`）で読む
+2. `list_pull_requests`（`state: open`、`fields: ["number", "title", "body", "draft", "head"]`、`perPage: 100`。100 件返ったら `page` を進める）で Open PR を一覧し、タイトル末尾の ` #N` の並び（`.claude/rules/git-conventions.md`「PR のタイトルと本文」）と本文の `closes #N` で Issue に紐づける。一覧は `mergeable_state` を返さない（`fields` に入れても項目ごと落ちる）ので、紐づいた PR ごとに `pull_request_read`（method: `get`）で読む
 3. リモートのブランチから `*/<番号>-*` に当たるもの（`.claude/rules/git-conventions.md`「ブランチ命名」）を Issue に紐づける。全件を出さずに対象の番号で絞る: `git ls-remote --heads origin | grep -E '/(12|13|...)-'`
 4. 対象の Issue ごとに、紐づくマージ済み PR があるかを、無人実装を使わないプロジェクトでも `.claude/skills/issue-priority/routine-candidates.md`「確かめ方」手順 5 で確かめる。`refs #N` の PR はマージ後も Issue を Open のまま残し、head ブランチもマージ時に消えるので、手順 1-2・1-3 では見つからない
 
@@ -180,7 +180,6 @@ priority ラベルを案のとおり付け替えますか？
 - 当てはまる Issue が無い区分は、表の代わりに「なし」と書く。依存待ちの依存先が複数なら「依存待ち #A、#B」と書く（別のリポジトリの依存先は `owner/repo#M` と書く）。blocked by を読めなかったとき（`.claude/skills/issue-start/dependencies.md`「読み方」）は、本文の `依存: #N` だけで判定したことを「### 注記」に書く
 - [E] の場合は修正を反映して再提示し、改めて Y/E/N を取る
 - ルーティン向け（`routine-ok` 付き）の Issue は、priority に関係なく次以降の無人実装で実装される（priority が決めるのは選ぶ順だけ）
-- priority を見送った Issue には、日次ルーティン `daily-triage` を登録していれば、次の実行で手順 4 の判定どおりに付く（`.claude/routines/daily-triage.md`）
 - 人がいるセッションでやりたい Issue に `routine-ok` が付いていれば、外すことをユーザーに提案する。`needs-decision` が付いている Issue には提案しない（人が決めて `needs-decision` を外せばルーティン向けに戻る）。無人向き候補に `routine-ok` を付けるかはユーザーが決める（どちらもこのスキルの手順の外で行う）
 
 ### 6. ラベルを付け替える
@@ -188,13 +187,13 @@ priority ラベルを案のとおり付け替えますか？
 承認された Issue のうち、現在のラベルと案が違うものだけを更新する。
 
 - `issue_write`（method: `update`）の `labels` はラベル全体を置き換える。現在のラベルから `priority:*` を除き、新しい `priority:*` を 1 つ足した配列を渡す（種別ラベルや `needs-decision` / `routine-ok` を落とさない）
-- `gh` なら REST でラベルを 1 つずつ足し引きする（他のラベルには触れない）。`gh api repos/{owner}/{repo}/issues/<N>/labels -f "labels[]=priority:<新>"` で足し、旧い `priority:*` があれば `gh api -X DELETE repos/{owner}/{repo}/issues/<N>/labels/priority:<旧>` で外す。`gh issue edit` は GraphQL 系なので使わない
+- `gh` なら REST でラベルを 1 つずつ足し引きする（他のラベルには触れない）。`gh api repos/{owner}/{repo}/issues/<N>/labels -f "labels[]=priority:<新>"` で足し、旧い `priority:*` があれば `gh api -X DELETE repos/{owner}/{repo}/issues/<N>/labels/priority:<旧>` で外す
 - `model:*` の案は、同じ形で 1 つ足す（`issue_write` なら同じ配列に、`gh` なら `-f "labels[]=model:<名前>"`）。[E] で付け替えを指定された Issue は、旧い `model:*` を外す
 - 付け替えた Issue の一覧（番号・旧 → 新）を最後に示す
 
 ## 自動化しないこと
 
-- **無人でラベルを付け替えない**。手順 5 の確認を挟む。例外は日次ルーティン `daily-triage` で、`priority:*` の無い Open Issue（進行中を除く）に手順 1〜4 の判定で付ける（`model:*` も同じ）。付いている priority と model は `daily-triage` でも変えない（`/issue-start` と `weekday-issue-start` が、着手後の再判定で model を上げることはある）（`.claude/rules/routines.md`「事前に承認した書き込み」）
+- **無人でラベルを付け替えない**。手順 5 の確認を挟む。例外は日次ルーティン `daily-triage` で、`priority:*` の無い Open Issue（進行中を除く）に手順 1〜4 の判定で付ける（`model:*` も同じ）。付いている priority と model は `daily-triage` でも変えない（`.claude/rules/routines.md`「事前に承認した書き込み」）
 - **Issue 本文・コメントを書き換えない、起票しない**（分割や新規起票が要るなら `/issue-plan` を案内する）
 - **進行中の Issue のラベルは変えない**
 - **`routine-ok` を付けない・外さない**（判断するのは人）

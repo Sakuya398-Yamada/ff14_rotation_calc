@@ -1,6 +1,6 @@
 # 環境依存のハマりどころ（Claude Code のクラウドセッション）
 
-`/issue-start` の各 Phase から参照される補助ファイルで、常駐しない。`.claude/skills/issue-start/pitfalls.md` のうち、条件が Claude Code のクラウドセッション（claude.ai/code）のものをここに分けてある。項目の書き方と見直しの決まりは `pitfalls.md` の冒頭と同じ。クラウドセッションで作業するときだけ読めばよい。
+`/issue-start` の各 Phase から参照される補助ファイルで、常駐しない。見直しの決まりは `pitfalls.md` の冒頭と同じ。クラウドセッションで作業するときだけ読めばよい。
 
 ## クラウドセッションでは gh の GraphQL 系が使えない
 
@@ -14,11 +14,11 @@
   - Issue のクローズ: `gh api -X PATCH repos/{owner}/{repo}/issues/N -f state=closed -f state_reason=completed`
   - PR 作成: `gh api repos/{owner}/{repo}/pulls -f title=... -f head=<ブランチ> -f base=main -F body=@<file>`
   - ブランチの PR の有無（Phase 7 の再実行前の確認）: `gh api "repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=all"`
-  - Issue の重複検索（`search_issues` の代わり）: まず検索 API を試す。`full=$(gh api "repos/{owner}/{repo}" --jq .full_name)` のあと `gh api -X GET search/issues -f q="repo:$full is:issue <キーワード>" -f per_page=20 --jq '.items[] | [.number, .state, .title] | @tsv'`。`is:issue`（PR なら `is:pull-request`）を付けないと `Query must include 'is:issue' or 'is:pull-request' (HTTP 422)` で失敗する（GitHub API 自体の要件）。`{owner}` / `{repo}` は `-f` の値の中では置き換わらないので、`full` で渡す。拒まれたら、Issue の一覧をタイトルの語で絞る: `gh api "repos/{owner}/{repo}/issues?state=all&per_page=100" --jq '.[] | select(.pull_request == null) | select(.title | test("<キーワード>")) | [.number, .state, .title] | @tsv'`。タイトルの語でしか絞れないので、言い換えた語でも引く。100 件を超えるなら次節のループで回す
+  - Issue の重複検索（`search_issues` の代わり）: まず検索 API を意味検索で試す。`full=$(gh api "repos/{owner}/{repo}" --jq .full_name)` のあと `gh api -X GET search/issues -f q="repo:$full is:issue -label:meta <自然文>" -f search_type=semantic -f per_page=20 --jq '.search_type, (.items[] | [.number, .state, .title] | @tsv)'`。`search_type` が無いとキーワード検索になり、語がすべて入った Issue しか返らないので、自然文では 0 件になる（GitHub MCP の `search_issues` は既定で意味検索）。1 行目に実際に走った種類が出る（`lexical` なら、語を減らして引き直す）。意味検索は 1 分に 10 回まで。言い換えは OR でつながず、語として並べる。`-label:meta` は、本文の長い管理用の Issue が上位に来るのを避けるため。`is:issue`（PR なら `is:pull-request`）を付けないと `Query must include 'is:issue' or 'is:pull-request' (HTTP 422)` で失敗する（GitHub API 自体の要件）。`{owner}` / `{repo}` は `-f` の値の中では置き換わらないので、`full` で渡す。拒まれたら、Issue の一覧をタイトルの語で絞る: `gh api "repos/{owner}/{repo}/issues?state=all&per_page=100" --jq '.[] | select(.pull_request == null) | select(.title | test("<キーワード>")) | [.number, .state, .title] | @tsv'`。タイトルの語でしか絞れないので、言い換えた語でも引く。100 件を超えるなら次節のループで回す
   - Issue に関連する PR（検索 API の代わり）: `gh api "repos/{owner}/{repo}/issues/N/timeline?per_page=100" --jq '.[] | select(.event == "cross-referenced" and .source.issue.pull_request) | [.source.issue.html_url, .source.issue.state, (.source.issue.pull_request.merged_at // "-"), .source.issue.title] | @tsv'`。タイトルや本文でこの Issue に触れた PR だけが、マージ日時（未マージは `-`）付きで、古いものも取りこぼさずに返る。別のリポジトリの PR も混ざるので、番号ではなく URL を出し、このリポジトリの PR かは URL で見分ける（番号だけだと、別リポジトリのマージ済み PR をこの Issue の PR と取り違える）。イベント（コメントを含む）が 100 件を超える Issue は次節のループで回す。超えているかは同じ URL を `--jq 'length'` で取って見る（100 件ちょうどなら次のページがある。絞った出力の件数では分からない）
   - CI の確認: `gh api repos/{owner}/{repo}/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
   - draft の ready 化・レビュースレッドの resolve のように GraphQL にしかない操作は、403 のメッセージに載る代替ルート（`repos/{owner}/{repo}/pulls/N/ccr/...`）を使う
-- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#83（issue-driven-dev-starter#81 も同内容）。`search/issues` が `is:issue` 付きで通ること、GitHub MCP の `search_*` が無いセッション: 2026-11 / issue-driven-dev-starter#229（スケジュール実行のセッションでは確かめていない）
+- **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#83（issue-driven-dev-starter#81 も同内容）。`search/issues` が `is:issue` 付きで通ること、GitHub MCP の `search_*` が無いセッション: 2026-11 / issue-driven-dev-starter#229（スケジュール実行のセッションでは確かめていない）。`search_type=semantic` で意味検索になること（無いと `lexical`）と、`-label:` が効くこと: 2026-11 / issue-driven-dev-starter#351
 
 ## クラウドセッションでは `gh api --paginate` が 2 ページ目で止まる
 
@@ -56,6 +56,13 @@
   コメントなら、取り直す URL を `repos/{owner}/{repo}/issues/comments/<コメントの ID>`（ID は投稿したときの応答の `id`）にする。スクリプトは、フッターで区切った各部分の前後の改行（`--jq` が足す末尾の改行も）を落とし、空でない部分を空行 1 つでつないで比べる。送った本文がもとからフッターを含むとき（前に `gh api` で編集した本文の書き換え、フッター付きの投稿、フッターの後ろへの追記）も、フッターの位置と改行の数だけで食い違わないようにするため。「不一致」なら `diff <scratchpad>/sent.md <scratchpad>/after.md` で中身を見る
 - **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-10 / issue-driven-dev-starter#125（このテンプレート元で、REST と GitHub MCP での編集をフッターの有無を変えて試した）、issue-driven-dev-starter#156（還元元で、フッターと改行で終わる本文を REST でコメント投稿し、空行が 1 つ増え、二重にはならなかった）、issue-driven-dev-starter#174（還元元で、末尾がフッターのコメントに 1 行追記して REST で編集し、フッターが末尾に移った。使い捨てのコメント 2 件で再現）。回避の比べ方は、この 3 件の結果を `gh` のスタブで再現して確かめた（末尾のフッターだけ除く比べ方は issue-driven-dev-starter#174 の形で、取り直した本文からだけ除く比べ方は issue-driven-dev-starter#156 の形で一致しなかった）。Claude Code クラウドセッション + GitHub MCP / 2026-11 / issue-driven-dev-starter#272（還元元で、フッターで終わる本文を `issue_write` で update すると末尾の 4 行（空行 2・`---`・フッター）だけが外れ、create した 4 件も末尾のフッターが無かった。このテンプレート元のセッションでは再現していない。回避の比べ方がこの形でも「一致」になることは確かめた）
 
+## クラウドセッションで Issue 本文を書き換えると、一部の URL に `''` が積み重なる
+
+- **条件**: Claude Code のクラウドセッションで、`gh api` か GitHub MCP の `issue_write` で Issue の本文を書き換えるとき（コメントでは確かめていない）
+- **症状**: 特定のドメインの URL が、保存のときに二重のバッククォートで囲まれ（``` ``https://<ドメイン>/<パス>`` ```）、リンクとして開けなくなる。囲まれた URL を含む本文を送り直すと、囲みの内側に `''` が差し込まれ、書き換えるたびに積み重なる。エラーは出ない（同じ本文のほかの 3 ドメインは変わらなかった）
+- **回避**: 囲みを外して普通のリンクで送る（保存されると囲まれた形に戻るが、`''` は増えない）。取り直した本文に `''https` が無いことを見る。開ける形には戻せないので、気になるなら URL を外すか文字で書く
+- **確認**: Claude Code クラウドセッション + gh・GitHub MCP / 2026-11 / issue-driven-dev-starter#318（還元元で 2 回観測。このテンプレート元では確かめていない）
+
 ## クラウドセッションの git プロキシは、別ブランチへの push を通し、ブランチの削除を通さない
 
 - **条件**: Claude Code のクラウドセッション（Web のセッション・ルーティン）で、push・リモートのブランチの削除をするとき
@@ -88,24 +95,24 @@
 - **条件**: Claude Code のクラウドセッション（Anthropic のクラウド環境）を、リポジトリを 2 つ以上付けて開始したとき
 - **症状**:
   - 作業ディレクトリが各クローンの親（git の管理外）になる。各リポジトリの `.claude/settings.json` から読まれるのは `enabledPlugins` と `extraKnownMarketplaces` だけで、hooks と permissions の deny が黙って無効になる。SessionStart のバナーが出ず、規約違反のブランチ名が PreToolUse hook を素通りし、deny した `.env` も読める。シェルの `cd` でリポジトリに移っても効くようにはならない
-  - CLAUDE.md・`.claude/rules/`・skills・agents は各リポジトリから読み込まれるので、挙動からは気付きにくい。Phase 1 手順 0 の `pwd -P` の判定で「settings.json 未読み込み」に当たる（起動ディレクトリで打ったとき。リポジトリに `cd` してから打つとすり抜ける）。SessionStart のバナー（`## Repository status`）がコンテキストに無いことでも気付ける
+  - CLAUDE.md・`.claude/rules/`・skills・agents は各リポジトリから読み込まれるので、挙動からは気付きにくい
   - 利用プロジェクトの `.claude/` とテンプレート元の `template/.claude/` には相対パスが同じファイルが多く、パスを絞らない Grep / Glob は両方に当たる。テンプレート元のクローンの `template/` 配下を Read すると、プレースホルダーのままの `template/CLAUDE.md` と `template/.claude/rules/*.md` が後から読み込まれ、利用プロジェクトの規約と並んでコンテキストに入る
   - 関連: Claude のプロジェクトのクラウドスレッドでは、リポジトリが 1 つでも settings.json の permission rules・hooks・`env` は読まれない（下の公式ドキュメント）
-- **回避**: リポジトリは 1 つだけ付けて開始し、テンプレート元は必要になったときに `add_repo` で足す。足すと以降は PreToolUse hook が呼ばれない（deny は未確認）ので、足すのはセッションの最後にし、以降は規約を手で守る（Phase 8 節 6 手順 3）。テンプレート元のファイルは、足したならクローンを Read せず `get_file_contents` で、足していなければ作業ツリーを作らないクローンから `git show` で読む（Phase 8 節 5 手順 3）。複数付けて開始してしまったセッションでは、`.claude/rules/git-conventions.md` の規約と deny にある操作の回避を手で守る（Phase 1 手順 0）
+- **回避**: リポジトリは 1 つだけ付けて開始し、テンプレート元は必要になったときに `add_repo` で足す。足すと以降は PreToolUse hook が呼ばれない（deny は未確認）ので、足すのはセッションの最後にし、以降は規約を手で守る（Phase 8 節 6 手順 3）
 - **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#171（還元元で、SessionStart・PreToolUse hook・deny が効かず、`cd` しても効かないままなことを確かめた。症状の 1 つ目の作業ディレクトリと読まれるキーは、公式ドキュメント [Settings in cloud sessions](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions) にもある）。途中の `add_repo` は 2026-11 / issue-driven-dev-starter#304（還元元で確かめた）
 
 ## フォアグラウンドで起動したサブエージェントも、2 分ほどでバックグラウンドに回される
 
 - **条件**: Claude Code のクラウドセッションで、Agent ツールを `run_in_background: false` で起動し、2 分ほどで終わらないとき
 - **症状**: 約 120 秒で呼び出しが `Async agent launched` を返し、エージェントはバックグラウンドで続く。結果は、ターンを終えなくても後のツール呼び出しの結果に添えて届く
-- **回避**: 届くまでは残りの検証を進める。進めるものが無くなったら、ターンを終えて待つ（結果が届くとセッションが再開する）。Stop hook に求められてもコミットしない（次項）
+- **回避**: 届くまでは残りの検証を進める。進めるものが無くなったら、ターンを終えて待つ（結果が届くとセッションが再開する）
 - **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#191（150 秒眠るだけのエージェントで再現した。空回し 2 体とレビュー 1 体も同じで、1 分以内に終わったものはその場で返った）
 
 ## クラウドセッションの Stop hook は、止まるたびに未コミットの変更の commit / push を 1 度だけ求める
 
 - **条件**: Claude Code のクラウドセッションで、未コミットの変更・追跡外のファイル・未 push のコミットがあるままターンを終えるとき
 - **症状**: 環境側の Stop hook（`~/.claude/stop-hook-git-check.sh`）が commit / push を求め、ターンが続く。従うと、空回しの結果や設計の承認を待つ変更が、検証・承認の前にコミット・push される
-- **回避**: まだコミットしない理由があれば、コミットせずに理由を 1〜2 行で書き、もう一度ターンを終える（hook は `stop_hook_active` が true なら何も求めずに通す）。Phase 4 の承認待ちの試作のように作業ツリーを戻してよい場面は、`git stash` で退避してから止まる。空回しの結果待ちでは退避しない（エージェントがディスクから読んでいる）
+- **回避**: まだコミットしない理由があれば、コミットせずに理由を 1〜2 行で書き、もう一度ターンを終える（hook は `stop_hook_active` が true なら何も求めずに通す）。空回しの結果待ちでは退避しない（エージェントがディスクから読んでいる）
 - **確認**: Claude Code クラウドセッション / 2026-10 / issue-driven-dev-starter#191（hook の本体と、このテンプレート元のセッションで、2 度目のターン終了で止まれることを確かめた）
 
 ## クラウドセッションでコンテナが再起動すると、バックグラウンドのサブエージェントの報告が届かない
@@ -124,5 +131,5 @@
 
 - **条件**: Claude Code のクラウドセッション（`CLAUDE_CODE_REMOTE=true`）で、テンプレート元のように、セッションに付いていないリポジトリの Release notes（`gh api repos/<owner>/<repo>/releases/tags/<版>`）や、特定のタグのファイル（`gh api "repos/<owner>/<repo>/contents/<path>?ref=<タグ>"`、GitHub MCP の `get_file_contents` に `ref` を渡すもの）を読むとき
 - **症状**: `gh` は `gh: GitHub access to this repository is not enabled for this session. Use add_repo to request access. ...（HTTP 403）`、`get_file_contents` は `Access denied: repository "<owner>/<repo>" is not configured for this session. ...` で失敗する。公開リポジトリでも同じ。一方、git の clone はプロキシを通るので、公開リポジトリのクローンは作れる（公開リポジトリへの読み取りの `add_repo` は、何も付けずに匿名の clone を案内してくる）
-- **回避**: クローンから読む。版の決まったファイルは `git clone -q --no-checkout --depth 1 --branch <タグ> https://github.com/<owner>/<repo>.git <scratchpad>/<名前>` で取り、`git -C <scratchpad>/<名前> show <タグ>:<path>` で読む（作業ツリーを作らない。`template/` 配下を Read すると、プレースホルダーのままの規約が読み込まれる）。テンプレート元の Release notes と手動対応は、テンプレート元のクローン（`/template-update`「3-way マージの定型手順」の `git clone --no-checkout`）から vNEW のタグで読む。Release notes の自動生成の部分は `git -C <scratchpad>/template-src show vNEW:CHANGELOG.md` の該当版の節（release-please が版ごとに書く同じ一覧）で代え、後から足す「手動対応」は `CHANGELOG.md` に無いので `git -C <scratchpad>/template-src show vNEW:docs/upgrade-notes.md` で読む。`HEAD` で読まないのは、`--no-checkout` のクローンの `HEAD` は clone した時点の既定ブランチのままで `git fetch --tags` しても進まず、使い回したクローンでは古い版を黙って読み（`upgrade-notes.md` がまだ無い版では `fatal: path 'docs/upgrade-notes.md' does not exist in 'HEAD'`）、新しいクローンでも未リリースの記述が入りうるため。クローンで読めるので、`add_repo` でテンプレート元を足さなくてよい（push の権限で足すなら、ユーザーの確認が要る）
+- **回避**: クローンから読む。版の決まったファイルは `git clone -q --no-checkout --depth 1 --branch <タグ> https://github.com/<owner>/<repo>.git <scratchpad>/<名前>` で取り、`git -C <scratchpad>/<名前> show <タグ>:<path>` で読む（作業ツリーを作らない。`template/` 配下を Read すると、プレースホルダーのままの規約が読み込まれる）。クローンで読めるので、`add_repo` でテンプレート元を足さなくてよい（push の権限で足すなら、ユーザーの確認が要る）
 - **確認**: Claude Code クラウドセッション + gh 2.89 / 2026-11 / issue-driven-dev-starter#225（ファイルの読み取り: issue-driven-dev-starter#235、タグで読む: issue-driven-dev-starter#228）
