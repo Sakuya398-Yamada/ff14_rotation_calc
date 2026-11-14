@@ -334,13 +334,21 @@ PR のプレビューではログインを出しません。リダイレクト U
 FF Logs へのログイン（#1014）は、FF Logs の API クライアントのクライアント ID を使います。secret を持たない公開クライアント（PKCE）にするので、Worker の secret に入れるものはありません。
 
 1. FF Logs にログインし、[API クライアントの管理ページ](https://www.fflogs.com/api/clients/) でクライアントを新しく作る
-   - 名前: FF Logs の認可画面に出る
-   - リダイレクト URL: 次の 2 つ。完全一致で照合されるので、スキーム（`https` / `http`）・ポート・末尾の `/` の有無まで揃える（どちらも末尾の `/` は付けない）
+   - 名前: FF Logs の認可画面に出る。何のツールのクライアントかが分かる名前にする（下記の利用規約が求めている）
+   - リダイレクト URL: 次の 2 つを、カンマ区切りで 1 つの欄に入れる。完全一致で照合されるので、スキーム（`https` / `http`）・ポート・末尾の `/` の有無まで揃える（どちらも末尾の `/` は付けない）
      - `https://ff14-rotation-calc.forestry-for.workers.dev`
      - `http://localhost:5173`
    - PKCE を使う公開クライアントにするチェックを入れる。入れずに作ったクライアントでは、ブラウザからのトークンの取得（`https://www.fflogs.com/oauth/token`）が `invalid_client` の 401 になる。その場合は、チェックを入れて作り直す
-2. 表示されたクライアント ID を、Worker の **Settings** → **Build** → **Build variables and secrets** に `VITE_FFLOGS_CLIENT_ID` として足す（Turnstile の sitekey と同じ場所。ビルド時にフロントに埋め込む値で、ページから誰でも見られる公開値）。ビルド変数は次のビルドから効く
+2. 表示されたクライアント ID を、Worker の **Settings** → **Build** → **Build variables and secrets** に `VITE_FFLOGS_CLIENT_ID` として足す（Turnstile の sitekey と同じ場所。ビルド時にフロントに埋め込む値）。ビルド変数は次のビルドから効く。クライアント ID は、リポジトリ（コード・`wrangler.jsonc`・ドキュメント）にも Issue・PR にも書かない（下記の利用規約。Discord のクライアント ID を `wrangler.jsonc` に書いているのとは扱いが違う）
 3. 本番で設定（歯車のボタン）を開き、「FF Logs 連携」からログインして、「連携中: <FF Logs のユーザー名>」が出ることを確かめる
+
+FF Logs の API は、[RPGLogs の API 利用規約](https://articles.fflogs.com/help/rpg-logs-api-terms-of-service)に従って使います（2026-11 に読んだ版）。このツールに関わる点:
+
+- クライアント ID などの開発者の資格情報は、オープンソースのプロジェクトに埋め込まない（Section 4.b）。このリポジトリは公開なので、ID はビルド変数とローカルの `.env.development.local`（gitignore 済み）だけに置く
+- クライアントは 1 つだけ使う。複数のアカウント・資格情報を使い分けない（Section 2.d）
+- 広告・課金などで収益を得る使い方（商用）には、事前の承認が要る（Section 2.a）。このツールに広告や課金を入れるときは、先に申請する
+- 利用者から何の情報を受け取り、どう使うかを、プライバシーポリシーに正確に書く（Section 3.d）。FF Logs から受け取る情報や保存の仕方を変えたら、`src/client/components/PrivacyPolicyPage.tsx` も直す
+- API から取った非公開の内容を、本人の明示の同意なしにほかの利用者や第三者に見せない（Section 5.c）。API から取った内容の恒久的な複製・データベース化もしない（Section 5.d）
 
 PR のプレビューでは FF Logs にログインできません。リダイレクト URL は完全一致でしか登録できず、プレビューの URL はブランチごとに変わるためです。プレビューのビルドにはビルド変数が渡らないので（#581）、クライアント ID が無く、「FF Logs 連携」のボタンが押せない表示になります。
 
