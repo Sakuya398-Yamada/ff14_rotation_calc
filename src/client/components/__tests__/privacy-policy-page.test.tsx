@@ -135,6 +135,20 @@ describe("PrivacyPolicyPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("FF Logs のトークン・期限・ユーザー名はブラウザの localStorage にだけ保存し、ブラウザが FF Logs と直接通信すると書いている (#1014)", () => {
+    render(<PrivacyPolicyPage />);
+    expect(
+      screen.getByText(/FF Logs が発行したアクセストークン、その有効期限及び FF Logs のユーザー名を、利用者のブラウザの localStorage に保存する。これらは本ツールのサーバーには送信せず、利用者が本ツールで FF Logs からログアウトしたときに削除する/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/利用者のブラウザは FF Logs と直接通信し、IP アドレス、ブラウザの情報等が FF Logs に送信される/)
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "FF Logs のプライバシーポリシー" })).toHaveAttribute(
+      "href",
+      "https://www.fflogs.com/help/privacy"
+    );
+  });
+
   describe("英語", () => {
     beforeEach(() => i18next.changeLanguage("en"));
     afterEach(() => i18next.changeLanguage("ja"));
@@ -232,6 +246,20 @@ describe("PrivacyPolicyPage", () => {
       expect(
         screen.getByText(/Cloudflare deletes access logs automatically after at most 7 days\. They cannot be deleted one by one, so they remain until then even if you request deletion/)
       ).toBeInTheDocument();
+    });
+
+    it("FF Logs のトークン・期限・ユーザー名はブラウザの localStorage にだけ保存し、ブラウザが FF Logs と直接通信すると書いている (#1014)", () => {
+      render(<PrivacyPolicyPage />);
+      expect(
+        screen.getByText(/the access token issued by FF Logs, its expiry time and your FF Logs username are kept in your browser's localStorage\. They are not sent to our server, and they are deleted when you log out of FF Logs in the Service/)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/your browser communicates directly with FF Logs, and your IP address and browser information are sent to FF Logs/)
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "FF Logs Privacy Policy" })).toHaveAttribute(
+        "href",
+        "https://www.fflogs.com/help/privacy"
+      );
     });
   });
 });
