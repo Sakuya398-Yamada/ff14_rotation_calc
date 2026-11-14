@@ -164,6 +164,25 @@ npm run db:migrate                        # ローカルの D1 に適用
 - `DISCORD_CLIENT_ID=` の行を消して（または行が無いまま）secret か `DISCORD_ID_HMAC_KEY` を書かずに起動すると、`/api/me` は `loginAvailable:true` を返し、`/api/auth/discord` が 500 になります（Turnstile と同じく、設定の誤りを黙って通さない）
 - テストは Discord を呼ばず、`fetch` を差し替えて確かめます（`src/server/routes/__tests__/auth.test.ts`）
 
+### FF Logs でのログイン
+
+FF Logs へのログイン（#1014）は、ブラウザが FF Logs と直接やり取りします（OAuth 2.0 の認可コード + PKCE。Worker は経由しない。`src/client/logic/fflogs-auth.ts`）。使うのは FF Logs の API クライアントのクライアント ID だけで、secret はありません。ID はビルド時の環境変数 `VITE_FFLOGS_CLIENT_ID` で渡します。ID の無い環境（下の手順 1 をしていないローカル・PR のプレビュー・CI）では、設定ダイアログの「FF Logs 連携」のボタンが押せない表示になります。
+
+ローカルでログインを試すとき:
+
+1. リポジトリ直下に `.env.development.local` を作り（gitignore 済み）、後述「FF Logs の API クライアント（初回のみ）」のクライアント ID を書く
+
+   ```
+   VITE_FFLOGS_CLIENT_ID=<クライアント ID>
+   ```
+
+2. `npm run dev` を起動し直し、`http://localhost:5173` で設定（歯車のボタン）を開き、「FF Logs 連携」の「FF Logs でログイン」を押す。FF Logs で承認すると元のページに戻り、同じ欄に「連携中: <FF Logs のユーザー名>」が出る
+3. 「FF Logs からログアウト」を押すと、ログインのボタンに戻り、ブラウザの開発者ツールの Local Storage から `ff14-rotation-calc:fflogs-session` が消える
+
+- `http://127.0.0.1:5173` のように、登録したリダイレクト URL と違うオリジンで開くと、FF Logs の認可画面がエラーになります（リダイレクト URL には、開いているページのオリジンをそのまま送る）
+- ファイル名を `.env.local` にしない。`.env.local` はテスト（`npm test`）と `npm run build` にも読み込まれ、`.env.development.local` は `npm run dev` だけが読む
+- テストは FF Logs を呼ばず、`fetch` を差し替えて確かめます（`src/client/logic/__tests__/fflogs-auth.test.ts`）
+
 ---
 
 ## CI / Cloudflare Workers 配信
@@ -309,6 +328,29 @@ PR のプレビューではログインを出しません。リダイレクト U
    ダッシュボードなら、`DISCORD_CLIENT_SECRET` と同じく Worker の **Settings** → **Variables and Secrets**（Type: **Secret**）。**Build variables and secrets** ではない
 
 鍵は変えません。変えると、それまでの行が今の鍵で計算した値と一致しなくなり、全員が次のログインで別のユーザー（保存したタイムラインが一覧に出ない、新しいアカウント）になります。鍵を失ったときは、新しい鍵を作って同じ手順で入れ直し、これを受け入れます。前の鍵の行は消さずに残します（鍵が無いと誰のものか分からない値なので、残しても漏れる情報は無い）。ただし、その行は削除の依頼を受けても探せません。
+
+### FF Logs の API クライアント（初回のみ）
+
+FF Logs へのログイン（#1014）は、FF Logs の API クライアントのクライアント ID を使います。secret を持たない公開クライアント（PKCE）にするので、Worker の secret に入れるものはありません。
+
+1. FF Logs にログインし、[API クライアントの管理ページ](https://www.fflogs.com/api/clients/) でクライアントを新しく作る
+   - 名前: FF Logs の認可画面に出る。何のツールのクライアントかが分かる名前にする（下記の利用規約が求めている）
+   - リダイレクト URL: 次の 2 つを、カンマ区切りで 1 つの欄に入れる。完全一致で照合されるので、スキーム（`https` / `http`）・ポート・末尾の `/` の有無まで揃える（どちらも末尾の `/` は付けない）
+     - `https://ff14-rotation-calc.forestry-for.workers.dev`
+     - `http://localhost:5173`
+   - PKCE を使う公開クライアントにするチェックを入れる。入れずに作ったクライアントでは、ブラウザからのトークンの取得（`https://www.fflogs.com/oauth/token`）が `invalid_client` の 401 になる。その場合は、チェックを入れて作り直す
+2. 表示されたクライアント ID を、Worker の **Settings** → **Build** → **Build variables and secrets** に `VITE_FFLOGS_CLIENT_ID` として足す（Turnstile の sitekey と同じ場所。ビルド時にフロントに埋め込む値）。ビルド変数は次のビルドから効く。クライアント ID は、リポジトリ（コード・`wrangler.jsonc`・ドキュメント）にも Issue・PR にも書かない（下記の利用規約。Discord のクライアント ID を `wrangler.jsonc` に書いているのとは扱いが違う）
+3. 本番で設定（歯車のボタン）を開き、「FF Logs 連携」からログインして、「連携中: <FF Logs のユーザー名>」が出ることを確かめる
+
+FF Logs の API は、[RPGLogs の API 利用規約](https://articles.fflogs.com/help/rpg-logs-api-terms-of-service)に従って使います（2026-11 に読んだ版）。このツールに関わる点:
+
+- クライアント ID などの開発者の資格情報は、オープンソースのプロジェクトに埋め込まない（Section 4.b）。このリポジトリは公開なので、ID はビルド変数とローカルの `.env.development.local`（gitignore 済み）だけに置く
+- クライアントは 1 つだけ使う。複数のアカウント・資格情報を使い分けない（Section 2.d）
+- 広告・課金などで収益を得る使い方（商用）には、事前の承認が要る（Section 2.a）。このツールに広告や課金を入れるときは、先に申請する
+- 利用者から何の情報を受け取り、どう使うかを、プライバシーポリシーに正確に書く（Section 3.d）。FF Logs から受け取る情報や保存の仕方を変えたら、`src/client/components/PrivacyPolicyPage.tsx` も直す
+- API から取った非公開の内容を、本人の明示の同意なしにほかの利用者や第三者に見せない（Section 5.c）。API から取った内容の恒久的な複製・データベース化もしない（Section 5.d）
+
+PR のプレビューでは FF Logs にログインできません。リダイレクト URL は完全一致でしか登録できず、プレビューの URL はブランチごとに変わるためです。プレビューのビルドにはビルド変数が渡らないので（#581）、クライアント ID が無く、「FF Logs 連携」のボタンが押せない表示になります。
 
 ### 動作確認手順
 

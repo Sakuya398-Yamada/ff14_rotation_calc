@@ -195,3 +195,33 @@ describe("SettingsDialog: アカウント（英語）", () => {
     expect(screen.getByText("Theme and accent color are saved in this browser")).toBeInTheDocument();
   });
 });
+
+describe("SettingsDialog: FF Logs 連携 (#1014)", () => {
+  it("account を渡さなければ（プライバシーポリシーのページ）、FF Logs 連携の欄を出さない", () => {
+    renderDialog();
+    expect(screen.queryByRole("heading", { name: "FF Logs 連携" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "FF Logs でログイン" })).not.toBeInTheDocument();
+  });
+
+  it("Discord でログインできない環境でも、FF Logs 連携の欄は出す", () => {
+    renderDialog({ account: account("unavailable") });
+    expect(screen.queryByRole("heading", { name: "アカウント" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "FF Logs 連携" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "FF Logs でログイン" })).toBeInTheDocument();
+  });
+
+  it("閉じているあいだは、FF Logs 連携の欄を外す", () => {
+    renderDialog({ open: false, account: account("loggedOut") });
+    expect(screen.queryByRole("button", { name: "FF Logs でログイン", hidden: true })).not.toBeInTheDocument();
+  });
+
+  describe("英語", () => {
+    beforeEach(() => i18next.changeLanguage("en"));
+    afterEach(() => i18next.changeLanguage("ja"));
+
+    it("見出しを英語で出す", () => {
+      renderDialog({ account: account("loggedOut", "/en/") });
+      expect(screen.getByRole("heading", { name: "FF Logs connection" })).toBeInTheDocument();
+    });
+  });
+});

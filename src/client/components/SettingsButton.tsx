@@ -6,7 +6,7 @@ import { SettingsDialog, type SettingsAccount } from "./SettingsDialog";
 interface SettingsButtonProps {
   /** 設定ダイアログの言語の切り替え先（今のページの、相手の言語版のパス） */
   languageHref: string;
-  /** 渡すと設定ダイアログにアカウントの欄を出す */
+  /** 渡すと設定ダイアログにアカウントと FF Logs 連携の欄を出す */
   account?: SettingsAccount;
 }
 

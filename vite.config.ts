@@ -18,6 +18,8 @@ export default defineConfig({
       }),
   ],
   root: "src/client",
+  // .env.* はリポジトリ直下に置く（既定は root の src/client）。ローカルで FF Logs のクライアント ID を渡すのに使う（#1014）
+  envDir: "../..",
   server: {
     port: 5173,
   },

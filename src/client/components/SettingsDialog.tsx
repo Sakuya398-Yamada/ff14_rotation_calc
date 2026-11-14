@@ -6,6 +6,7 @@ import type { AccentColor, AppSettings, ThemePreference } from "../logic/app-set
 import type { Language } from "../logic/language-path";
 import { useLanguage } from "../i18n";
 import { AccountControl } from "./AccountControl";
+import { FflogsControl } from "./FflogsControl";
 import "./settings-dialog.css";
 
 const LANGUAGE_OPTIONS: Language[] = ["ja", "en"];
@@ -26,7 +27,7 @@ interface SettingsDialogProps {
   returnFocusRef: RefObject<HTMLElement | null>;
   /** 言語の切り替え先（今のページの、相手の言語版のパス）。言語はパスで決まるので、選ぶとそのページに移る */
   languageHref: string;
-  /** 渡すとアカウントの欄を出す（アプリの画面だけ。プライバシーポリシーのページは /api/me を取得しないので渡さない） */
+  /** 渡すとアカウントと FF Logs 連携の欄を出す（アプリの画面だけ。プライバシーポリシーのページは /api/me を取得しないので渡さない） */
   account?: SettingsAccount;
 }
 
@@ -183,6 +184,17 @@ export function SettingsDialog({
               {t("settingsDialog.account")}
             </h3>
             <AccountControl status={account.status} returnTo={account.returnTo} onLoggedOut={account.onLoggedOut} />
+          </section>
+        )}
+
+        {/* Discord でログインできない環境でも出す（FF Logs にログインできない環境では、欄の中でそう知らせる）。
+            閉じているあいだは外し、開き直すたびに保存したトークンの期限を見直す */}
+        {open && account && (
+          <section aria-labelledby="settings-dialog-fflogs">
+            <h3 id="settings-dialog-fflogs" style={styles.sectionHeading}>
+              {t("settingsDialog.fflogs")}
+            </h3>
+            <FflogsControl returnTo={account.returnTo} />
           </section>
         )}
       </div>
