@@ -243,7 +243,7 @@ export const XXX_ATTACK_SKILLS: Skill[] = [
    ```
 
    - `skills` には全スキル（`hidden: true` の変化先・状態違いの定義も含む）を書く。`buffs` と `resources` には `name`（ツールチップ・詳細パネル）と `shortName`（レーンのラベル）の両方を書く
-   - `shortName` は `\n` で 2 行に分けられる。レーンのラベルは幅 52px（文字の幅は 44px）・11px で、はみ出した分は黙って切れるので、画面で確かめる
+   - `shortName` は `\n` で 2 行に分けられる。レーンのラベルは幅 52px（文字の幅は 44px）・11px で、はみ出した分は黙って切れる。画面で各ラベルの行ごとの文字の幅を `Range.getClientRects()` で測り、44px 以下かを見る（`scrollWidth` / `clientWidth` は切れていても収まると出るので使えない）
    - ロールアクション（迅速魔・トゥルーノースなど）も、ジョブごとに書く
    - en の値を空にしない（空文字は ja に戻らず空欄で出る）
 2. 英語名は次の出典から取る
