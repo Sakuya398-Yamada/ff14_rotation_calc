@@ -25,7 +25,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 make_repo() { # make_repo <dir> <branch>
   git init -q -b main "$1"
-  git -C "$1" -c user.name=test -c user.email=test@example.com commit -q --allow-empty -m "init"
+  git -C "$1" -c user.name=test -c user.email=test@example.com -c commit.gpgsign=false commit -q --allow-empty -m "init"
   if [[ "$2" != main ]]; then git -C "$1" switch -q -c "$2"; fi
 }
 
@@ -83,7 +83,10 @@ run_case "git push -u origin <Issue branch> (allow)" 0 "$ON_ISSUE" \
   "git push -u origin $ISSUE_BRANCH"
 run_case "bare git push on an Issue branch (allow)" 0 "$ON_ISSUE" \
   'git push'
-run_case "git push --tags (allow)" 0 "$ON_ISSUE" \
+run_case "git push --tags on an Issue branch (allow)" 0 "$ON_ISSUE" \
+  'git push --tags'
+# Tags only: the current branch is not judged, so this must pass even on main
+run_case "git push --tags on main (allow: tags only)" 0 "$ON_MAIN" \
   'git push --tags'
 
 # 3) Not a push — ignore
